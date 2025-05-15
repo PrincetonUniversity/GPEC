@@ -31,16 +31,16 @@ c-----------------------------------------------------------------------
       subroutine mscvac(wv,mpert,mtheta,mthvac,complex_flag,
      $     kernelsignin,wall_flag,farwal_flag,grrio,xzptso,op_ahgfile)
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
-      real(8) :: kernelsignin
+      REAL(r8) :: kernelsignin
       integer mpert,mtheta,mthvac
-      complex*16 wv(mpert,mpert)
+      complex(r8) wv(mpert,mpert)
       logical, intent(in) :: complex_flag,wall_flag,farwal_flag
-      real(8) :: grrio(2*(mthvac+5),mpert*2),xzptso(mthvac+5,4)
+      REAL(r8) :: grrio(2*(mthvac+5),mpert*2),xzptso(mthvac+5,4)
 
-      complex(8), parameter :: ifac=(0,1)
+      complex(r8), parameter :: ifac=(0,1)
       dimension xi(nfm), xii(nfm), xilnq(nfm), xiilnq(nfm)
       character(128), intent(in), optional :: op_ahgfile
 
@@ -172,18 +172,18 @@ c-----------------------------------------------------------------------
       subroutine mscfld(wv,mpert,mtheta,mthvac,complex_flag,
      $     lx,lz,vgdl,vgdx,vgdz,vbx,vbz,vbp,op_ahgfile)
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       integer mpert,mtheta,mthvac
-      complex*16 wv(mpert,mpert)
+      complex(r8) wv(mpert,mpert)
       logical, intent(in) :: complex_flag
 
       integer, dimension(0:lx,0:lz) :: vgdl
-      real(8), dimension(0:lx,0:lz) :: vgdx,vgdz
-      complex(8), dimension(0:lx,0:lz) :: vbx,vbz,vbp
+      REAL(r8), dimension(0:lx,0:lz) :: vgdx,vgdz
+      complex(r8), dimension(0:lx,0:lz) :: vbx,vbz,vbp
 
-      complex(8), parameter :: ifac=(0,1)
+      complex(r8), parameter :: ifac=(0,1)
       dimension xi(nfm), xii(nfm), xilnq(nfm), xiilnq(nfm)
       character(128), intent(in), optional :: op_ahgfile
 
@@ -309,7 +309,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine defglo(mthvac)
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       integer, intent(in) :: mthvac
 c-----------------------------------------------------------------------
@@ -421,7 +421,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine ent33
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 c-----------------------------------------------------------------------
 c     declarations.
@@ -445,7 +445,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine funint
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       dimension zork1(nths), zork2(nths), dlenth(nths)
@@ -560,7 +560,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine diaplt
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       DIMENSION z1tmp(nths), z2tmp(nths), zorkr(nths),zorki(nths),
@@ -622,16 +622,16 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine pickup(blr,bli,lx,lz,vgdl,vgdx,vgdz,vbx,vbz,vbp)
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       INTEGER, DIMENSION(0:lx,0:lz) :: vgdl
-      REAL(8), DIMENSION(0:lx,0:lz) :: vgdx,vgdz
-      COMPLEX(8), DIMENSION(0:lx,0:lz) :: vbx,vbz,vbp
+      REAL(r8), DIMENSION(0:lx,0:lz) :: vgdx,vgdz
+      COMPLEX(r8), DIMENSION(0:lx,0:lz) :: vbx,vbz,vbp
 
       DIMENSION blr(*), bli(*)
       CHARACTER(130), DIMENSION(10) :: string
-      COMPLEX(8), PARAMETER :: ifac=(0,1)
+      COMPLEX(r8), PARAMETER :: ifac=(0,1)
 
       DIMENSION xloops(ndimlp),zloops(ndimlp),
      $     chir(5,ndimlp),chii(5,ndimlp),
@@ -890,7 +890,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine loops
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       REAL, DIMENSION(:,:), ALLOCATABLE :: xloopin, zloopin
@@ -968,7 +968,7 @@ c-----------------------------------------------------------------------
       subroutine chi(xsce,zsce,xscp,zscp,isg,creal,cimag,ns,ip,
      $     chir,chii,nsew,blr,bli,rgdl)
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       DIMENSION blr(*),bli(*),xsce(*),zsce(*),xscp(*),zscp(*)

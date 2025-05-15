@@ -1,9 +1,11 @@
       SUBROUTINE DINTDY (T, K, YH, NYH, DKY, IFLAG)
+      USE local_mod, ONLY: r8
+     
 C***BEGIN PROLOGUE  DINTDY
 C***SUBSIDIARY
 C***PURPOSE  Interpolate solution derivatives.
 C***LIBRARY   MATHLIB (ODEPACK)
-C***TYPE      REAL*8 (SINTDY-S, DINTDY-D)
+C***TYPE      REAL(r8) (SINTDY-S, DINTDY-D)
 C***AUTHOR  Hindmarsh, Alan C., (LLNL)
 C***DESCRIPTION
 C
@@ -33,7 +35,7 @@ C***REVISION HISTORY  (YYMMDD)
 C   791129  DATE WRITTEN
 C   890501  Modified prologue to SLATEC/LDOC format.  (FNF)
 C   890503  Minor cosmetic changes.  (FNF)
-C   930809  Renamed to allow single/real*8 versions. (ACH)
+C   930809  Renamed to allow single/real(r8) versions. (ACH)
 C***END PROLOGUE  DINTDY
 C**End
       INTEGER K, NYH, IFLAG
@@ -41,10 +43,10 @@ C**End
      1   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L, METH, MITER,
      2   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
       INTEGER I, IC, J, JB, JB2, JJ, JJ1, JP1
-      REAL*8 T, YH, DKY
-      REAL*8 ROWNS,
+      REAL(r8) T, YH, DKY
+      REAL(r8) ROWNS,
      1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND
-      REAL*8 C, R, S, TP
+      REAL(r8) C, R, S, TP
       CHARACTER*80 MSG
       DIMENSION YH(NYH,*), DKY(*)
       COMMON /DLS001/ ROWNS(209),

@@ -1414,7 +1414,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE ode_nojac(neq_jac, t, y, ml, mu, pd, nrpd)
          INTEGER  neq_jac, ml, mu, nrpd
-         REAL*8  t, y, pd(nrpd,2)
+         REAL(r8)  t, y, pd(nrpd,2)
          pd(:,:) = 0
 c-----------------------------------------------------------------------
 c     terminate.

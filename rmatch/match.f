@@ -980,8 +980,8 @@ c-----------------------------------------------------------------------
       
       INTEGER :: ifail
       REAL(r8) :: sfac,x0,q0,v1,taur,taua,dr,di,p1,ee,ff,hh
-      REAL(8) :: epsd,rmatch
-      COMPLEX(8) :: q,deltae,deltao
+      REAL(r8) :: epsd,rmatch
+      COMPLEX(r8) :: q,deltae,deltao
 
       ifail=0
       rmatch=3

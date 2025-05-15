@@ -12,7 +12,7 @@ else
     RECURSFLAG=-frecursive
 endif
 
-IFLAGS = -I../equil -I$(MATHINC)
+IFLAGS = -I../equil -I../globals -I$(MATHINC)
 F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS) $(RECURSFLAG)
 export FFLAGS
 
@@ -23,7 +23,8 @@ LIBDIR = ../lib
 
 LIBS = \
 	-llsode \
-	-lequil
+	-lequil \
+	-lglobals \
 
 OBJS = \
 	orbit_mod.o \

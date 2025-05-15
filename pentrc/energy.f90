@@ -157,7 +157,7 @@ module energy_integration
             lrw  = 20 + 16*neq(1)   ! for mf 10
             !lrw = 22+9*neq(1)+neq(1)**2 ! for mf 22
         integer iwork(liw)
-        real*8  atol(neq(1)),rtol(neq(1)),rwork(lrw),x,xout,&
+        real(r8)  atol(neq(1)),rtol(neq(1)),rwork(lrw),x,xout,&
                 y(neq(1)),yi(neq(1)),dky(neq(1))
         
         ! set default recording flag
@@ -332,7 +332,7 @@ module energy_integration
     !-----------------------------------------------------------------------
         implicit none
         integer ::  neq
-        real*8 x, y(neq), ydot(neq)
+        real(r8) x, y(neq), ydot(neq)
 
         complex(r8) :: denom,fx,cx,nux
 
@@ -435,7 +435,7 @@ module energy_integration
     !-----------------------------------------------------------------------
         implicit none
         integer  neq, ml, mu, nrpd
-        real*8  t, y, pd(nrpd,2)
+        real(r8)  t, y, pd(nrpd,2)
         ! null result
         pd(:,:) = 0
         return

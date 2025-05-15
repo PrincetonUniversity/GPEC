@@ -34,7 +34,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine spl1d1(n,x,f,w,iop,ij,a,b,c)
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension iop(*),x(*),f(*),w(*),a(*),b(*),c(*)
       data zz,oz,tz,sz/0.0e0,1.0e0,3.0e0,6.0e0/
@@ -364,7 +365,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine spl1d2(n,x,f,w,ij,y,tab)
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       data wz,sz/2.0e0,6.0e0/
       dimension x(*),f(*),w(*)
@@ -417,7 +419,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine search(xbar,x,n,i,mflag)
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension x(*)
 c-----------------------------------------------------------------------
@@ -543,7 +546,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine searchx(xbar,x,n,i,mflag)
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       integer xbar,x(*)
 c-----------------------------------------------------------------------
@@ -680,7 +684,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine green
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 c-----------------------------------------------------------------------
 c     computations.
@@ -737,18 +741,19 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE aleg(x,nloc,pm,pn,pp, aleg0,aleg1)
+      USE local_mod, only: r8
       IMPLICIT NONE
 
-      REAL(8), INTENT(IN) :: x
+      REAL(r8), INTENT(IN) :: x
       INTEGER, INTENT(IN) :: nloc
-      REAL(8), INTENT(OUT) :: pm,pn,pp,aleg0,aleg1
+      REAL(r8), INTENT(OUT) :: pm,pn,pp,aleg0,aleg1
 
       INTEGER :: kloc
-      REAL(8) :: ak02,elipe,elipk,gam,s,v,w,x1,x2,x3,x4,xxq,y,ysq
+      REAL(r8) :: ak02,elipe,elipk,gam,s,v,w,x1,x2,x3,x4,xxq,y,ysq
 
-      REAL(8), PARAMETER :: pi=3.1415926535897931_8,pii=2/pi,
+      REAL(r8), PARAMETER :: pi=3.1415926535897931_8,pii=2/pi,
      $     sqpi=1.7724538509055159_8
-      REAL(8), PARAMETER ::
+      REAL(r8), PARAMETER ::
      $     ak0=1.38629436112_8,
      $     ak1=0.09666344259_8,
      $     ak2=0.03590092383_8,
@@ -818,7 +823,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine trans ( vecin,mthin, vecout,mth )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension vecin(*), vecout(*)
 c-----------------------------------------------------------------------
@@ -855,7 +861,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine transdx ( vecin,mthin, vecout,mth, dx0 )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension vecin(*), vecout(*)
 c-----------------------------------------------------------------------
@@ -892,7 +899,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine transdxx ( vecin,mthin, vecout,mth, dx0,dx1 )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension vecin(*), vecout(*)
 c-----------------------------------------------------------------------
@@ -935,7 +943,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine smooth0 ( g, n )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension g(*)
 c-----------------------------------------------------------------------
@@ -966,7 +975,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine smooth ( g, n )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension g(*), h(301)
 c-----------------------------------------------------------------------
@@ -999,7 +1009,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine lagp ( ax, af, m, nl, x, f, df, iop, iper )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension ax(*), af(*)
 c-----------------------------------------------------------------------
@@ -1083,7 +1094,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine shft ( i0,i, axi, ax, m, dax )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension ax(*)
 c-----------------------------------------------------------------------
@@ -1115,7 +1127,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine lagpe4 ( f0,m, x,f, df, iop )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension f0(*)
 c-----------------------------------------------------------------------
@@ -1155,13 +1168,14 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE lag(ax,af,m,nl,x,f,df,iop)
+      USE local_mod, ONLY: r8
       IMPLICIT NONE
 
-      REAL(8), DIMENSION(*), INTENT(IN) :: ax,af
+      REAL(r8), DIMENSION(*), INTENT(IN) :: ax,af
       INTEGER, INTENT(IN) :: m,nl,iop
-      REAL(8), INTENT(OUT) :: f,df
+      REAL(r8), INTENT(OUT) :: f,df
 
-      REAL(8) :: alag,slag,x
+      REAL(r8) :: alag,slag,x
       INTEGER :: i,id,jn,jnmm,jnpp,j,nll,nlr
 c-----------------------------------------------------------------------
 c     computations.
@@ -1237,7 +1251,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine eigen(a,r,n,mv)
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension a(*),r(*)
 c-----------------------------------------------------------------------
@@ -1380,7 +1395,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine mult ( a, b, c, ndim, ndim2, m, l )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension a(ndim,ndim), b(ndim,ndim2), c(ndim,ndim2)
 c-----------------------------------------------------------------------
@@ -1408,7 +1424,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine matmul1 ( a, b, nda,ndb, n, c,ndc )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension a(nda,nda), b(ndb,ndb), c(ndc,ndc)
 c-----------------------------------------------------------------------
@@ -1436,7 +1453,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine matmul3 ( a, b, nda,ndb, la,lb,lc, c,ndc )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension a(nda,nda), b(ndb,ndb), c(ndc,ndc)
 c-----------------------------------------------------------------------
@@ -1464,7 +1482,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine indef4 ( f, fin, dx, n1, n2, defint, iend )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension f(*), fin(*)
 c-----------------------------------------------------------------------
@@ -1503,7 +1522,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       function atan2m ( z,x )
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       epszer = 1e-30

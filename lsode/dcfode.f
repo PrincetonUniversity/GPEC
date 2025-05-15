@@ -1,9 +1,10 @@
       SUBROUTINE DCFODE (METH, ELCO, TESCO)
+      USE local_mod, ONLY: r8
 C***BEGIN PROLOGUE  DCFODE
 C***SUBSIDIARY
 C***PURPOSE  Set ODE integrator coefficients.
 C***LIBRARY   MATHLIB (ODEPACK)
-C***TYPE      REAL*8 (SCFODE-S, DCFODE-D)
+C***TYPE      REAL(r8) (SCFODE-S, DCFODE-D)
 C***AUTHOR  Hindmarsh, Alan C., (LLNL)
 C***DESCRIPTION
 C
@@ -38,13 +39,13 @@ C***REVISION HISTORY  (YYMMDD)
 C   791129  DATE WRITTEN
 C   890501  Modified prologue to SLATEC/LDOC format.  (FNF)
 C   890503  Minor cosmetic changes.  (FNF)
-C   930809  Renamed to allow single/real*8 versions. (ACH)
+C   930809  Renamed to allow single/real(r8) versions. (ACH)
 C***END PROLOGUE  DCFODE
 C**End
       INTEGER METH
       INTEGER I, IB, NQ, NQM1, NQP1
-      REAL*8 ELCO, TESCO
-      REAL*8 AGAMQ, FNQ, FNQM1, PC, PINT, RAGQ,
+      REAL(r8) ELCO, TESCO
+      REAL(r8) AGAMQ, FNQ, FNQM1, PC, PINT, RAGQ,
      1   RQFAC, RQ1FAC, TSIGN, XPIN
       DIMENSION ELCO(13,12), TESCO(3,12)
       DIMENSION PC(12)

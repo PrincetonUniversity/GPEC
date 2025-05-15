@@ -1,10 +1,11 @@
       SUBROUTINE DPREPJ (NEQ, Y, YH, NYH, EWT, FTEM, SAVF, WM, IWM,
      1   F, JAC)
+      USE local_mod, ONLY: r8
 C***BEGIN PROLOGUE  DPREPJ
 C***SUBSIDIARY
 C***PURPOSE  Compute and process Newton iteration matrix.
 C***LIBRARY   MATHLIB (ODEPACK)
-C***TYPE      REAL*8 (SPREPJ-S, DPREPJ-D)
+C***TYPE      REAL(r8) (SPREPJ-S, DPREPJ-D)
 C***AUTHOR  Hindmarsh, Alan C., (LLNL)
 C***DESCRIPTION
 C
@@ -48,7 +49,7 @@ C***REVISION HISTORY  (YYMMDD)
 C   791129  DATE WRITTEN
 C   890501  Modified prologue to SLATEC/LDOC format.  (FNF)
 C   890504  Minor cosmetic changes.  (FNF)
-C   930809  Renamed to allow single/real*8 versions. (ACH)
+C   930809  Renamed to allow single/real(r8) versions. (ACH)
 C***END PROLOGUE  DPREPJ
 C**End
       EXTERNAL F, JAC
@@ -58,10 +59,10 @@ C**End
      2   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
       INTEGER I, I1, I2, IER, II, J, J1, JJ, LENP,
      1   MBA, MBAND, MEB1, MEBAND, ML, ML3, MU, NP1
-      REAL*8 Y, YH, EWT, FTEM, SAVF, WM
-      REAL*8 ROWNS,
+      REAL(r8) Y, YH, EWT, FTEM, SAVF, WM
+      REAL(r8) ROWNS,
      1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND
-      REAL*8 CON, DI, FAC, HL0, R, R0, SRUR, YI, YJ, YJJ,
+      REAL(r8) CON, DI, FAC, HL0, R, R0, SRUR, YI, YJ, YJJ,
      1   DVNORM
       DIMENSION NEQ(*), Y(*), YH(NYH,*), EWT(*), FTEM(*), SAVF(*),
      1   WM(*), IWM(*)

@@ -1,7 +1,11 @@
 
 include ../install/DEFAULTS.inc
 
-F90 = $(FC) $(FFLAGS) $(OMPFLAG)
+F90 = $(FC) $(FFLAGS) $(OMPFLAG) -I../globals
+
+LIBDIR = ../lib
+LIBS = \
+	-lglobals
 
 .f.o: 
 	$(F90) -c $*.f

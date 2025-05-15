@@ -22,7 +22,9 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE direct_mod
       USE global_mod
+      USE local_mod
       USE utils_mod
+      USE grid_mod
       IMPLICIT NONE
 
       INTEGER, PRIVATE :: istep

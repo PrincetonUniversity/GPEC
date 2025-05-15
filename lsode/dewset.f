@@ -1,9 +1,11 @@
       SUBROUTINE DEWSET (N, ITOL, RTOL, ATOL, YCUR, EWT)
+      USE local_mod, ONLY: r8
+
 C***BEGIN PROLOGUE  DEWSET
 C***SUBSIDIARY
 C***PURPOSE  Set error weight vector.
 C***LIBRARY   MATHLIB (ODEPACK)
-C***TYPE      REAL*8 (SEWSET-S, DEWSET-D)
+C***TYPE      REAL(r8) (SEWSET-S, DEWSET-D)
 C***AUTHOR  Hindmarsh, Alan C., (LLNL)
 C***DESCRIPTION
 C
@@ -18,12 +20,12 @@ C***REVISION HISTORY  (YYMMDD)
 C   791129  DATE WRITTEN
 C   890501  Modified prologue to SLATEC/LDOC format.  (FNF)
 C   890503  Minor cosmetic changes.  (FNF)
-C   930809  Renamed to allow single/real*8 versions. (ACH)
+C   930809  Renamed to allow single/real(r8) versions. (ACH)
 C***END PROLOGUE  DEWSET
 C**End
       INTEGER N, ITOL
       INTEGER I
-      REAL*8 RTOL, ATOL, YCUR, EWT
+      REAL(r8) RTOL, ATOL, YCUR, EWT
       DIMENSION RTOL(*), ATOL(*), YCUR(N), EWT(N)
 C
 C***FIRST EXECUTABLE STATEMENT  DEWSET

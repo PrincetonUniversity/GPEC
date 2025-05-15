@@ -472,9 +472,9 @@ c-----------------------------------------------------------------------
       SUBROUTINE read_eq_chum
 
       INTEGER :: jpsi,itht,ntor,ma,mtau
-      REAL(4) :: rquot,omega0,growth
-      REAL(4), DIMENSION(:), POINTER :: psi,f,p,q
-      REAL(4), DIMENSION(:,:), POINTER :: rcc,zcc
+      REAL(r4) :: rquot,omega0,growth
+      REAL(r4), DIMENSION(:), POINTER :: psi,f,p,q
+      REAL(r4), DIMENSION(:,:), POINTER :: rcc,zcc
 
       INTEGER, PARAMETER :: mpts=4
       INTEGER :: ipt
@@ -1375,9 +1375,9 @@ c-----------------------------------------------------------------------
       SUBROUTINE read_eq_rtaylor
 
       INTEGER :: mr,mz,ma
-      REAL(8) :: ip
-      REAL(8), DIMENSION(:), POINTER :: psi,f,p
-      REAL(8), DIMENSION(:,:), POINTER :: psig
+      REAL(r8) :: ip
+      REAL(r8), DIMENSION(:), POINTER :: psi,f,p
+      REAL(r8), DIMENSION(:,:), POINTER :: psig
 c-----------------------------------------------------------------------
 c     open input file, read scalar data, allocate and read arrays.
 c-----------------------------------------------------------------------

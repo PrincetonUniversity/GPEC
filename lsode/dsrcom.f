@@ -1,9 +1,11 @@
       SUBROUTINE DSRCOM (RSAV, ISAV, JOB)
+      USE local_mod, ONLY: r8
+
 C***BEGIN PROLOGUE  DSRCOM
 C***SUBSIDIARY
 C***PURPOSE  Save/restore ODEPACK COMMON blocks.
 C***LIBRARY   MATHLIB (ODEPACK)
-C***TYPE      REAL*8 (SSRCOM-S, DSRCOM-D)
+C***TYPE      REAL(r8) (SSRCOM-S, DSRCOM-D)
 C***AUTHOR  Hindmarsh, Alan C., (LLNL)
 C***DESCRIPTION
 C
@@ -27,13 +29,13 @@ C   890501  Modified prologue to SLATEC/LDOC format.  (FNF)
 C   890503  Minor cosmetic changes.  (FNF)
 C   921116  Deleted treatment of block /EH0001/.  (ACH)
 C   930801  Reduced Common block length by 2.  (ACH)
-C   930809  Renamed to allow single/real*8 versions. (ACH)
+C   930809  Renamed to allow single/real(r8) versions. (ACH)
 C***END PROLOGUE  DSRCOM
 C**End
       INTEGER ISAV, JOB
       INTEGER ILS
       INTEGER I, LENILS, LENRLS
-      REAL*8 RSAV,   RLS
+      REAL(r8) RSAV,   RLS
       DIMENSION RSAV(*), ISAV(*)
       COMMON /DLS001/ RLS(218), ILS(37)
       DATA LENRLS/218/, LENILS/37/

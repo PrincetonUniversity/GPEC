@@ -35,7 +35,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), POINTER, PRIVATE :: theta,dphi,r,z
       REAL(r8), DIMENSION(:,:), POINTER, PRIVATE :: thetas
       REAL(r8), DIMENSION(:,:,:), POINTER, PRIVATE :: project
-      REAL(8), DIMENSION(:,:), POINTER :: grri,xzpts
+      REAL(r8), DIMENSION(:,:), POINTER :: grri,xzpts
 
       TYPE(cspline_type) :: wvmats
       CONTAINS

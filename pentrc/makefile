@@ -11,7 +11,7 @@ endif
 
 include ../install/DEFAULTS.inc
 
-IFLAGS = -I../equil -I../harvest -I$(MATHINC) -I$(NETCDFINC)
+IFLAGS = -I../globals -I../equil -I../harvest -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS) $(RECURSFLAG)
 export FFLAGS
 
@@ -29,7 +29,8 @@ LIBDIR = ../lib
 LIBS = \
 	-llsode \
 	-lequil \
-	-lharvest
+	-lharvest \
+	-lglobals \
 
 OBJS = \
     params.o \
@@ -87,11 +88,11 @@ pentrc: $(OBJS)
 
 lsode1.o: ../lsode/lsode.o
 lsode2.o: ../lsode/lsode.o
-params.o: version.inc ../equil/local_mod.mod
+params.o: version.inc ../globals/local_mod.mod
 grid.o: 
 utilities.o: params.o
 special.o: params.o utilities.o
-dcon_interface.o: params.o utilities.o ../equil/spline_mod.mod ../equil/fspline_mod.mod ../equil/cspline_mod.mod ../equil/bicube_mod.mod
+dcon_interface.o: params.o utilities.o ../globals/spline_mod.mod ../globals/fspline_mod.mod ../globals/cspline_mod.mod ../globals/bicube_mod.mod
 inputs.o:  params.o utilities.o special.o dcon_interface.o
 energy.o:  params.o utilities.o lsode2.o
 pitch.o:   params.o utilities.o lsode1.o energy.o special.o

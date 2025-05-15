@@ -13,7 +13,7 @@ endif
 
 include ../install/DEFAULTS.inc
 
-IFLAGS = -I../equil -I$(MATHINC) -I$(NETCDFINC)
+IFLAGS = -I../globals -I../equil -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS) $(RECURSFLAG)
 
 .f.o:

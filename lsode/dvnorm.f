@@ -1,9 +1,11 @@
-      REAL*8 FUNCTION DVNORM (N, V, W)
+      REAL(r8) FUNCTION DVNORM (N, V, W)
+      USE local_mod, ONLY: r8
+
 C***BEGIN PROLOGUE  DVNORM
 C***SUBSIDIARY
 C***PURPOSE  Weighted root-mean-square vector norm.
 C***LIBRARY   MATHLIB (ODEPACK)
-C***TYPE      REAL*8 (SVNORM-S, DVNORM-D)
+C***TYPE      REAL(r8) (SVNORM-S, DVNORM-D)
 C***AUTHOR  Hindmarsh, Alan C., (LLNL)
 C***DESCRIPTION
 C
@@ -18,11 +20,11 @@ C***REVISION HISTORY  (YYMMDD)
 C   791129  DATE WRITTEN
 C   890501  Modified prologue to SLATEC/LDOC format.  (FNF)
 C   890503  Minor cosmetic changes.  (FNF)
-C   930809  Renamed to allow single/real*8 versions. (ACH)
+C   930809  Renamed to allow single/real(r8) versions. (ACH)
 C***END PROLOGUE  DVNORM
 C**End
       INTEGER N,   I
-      REAL*8 V, W,   SUM
+      REAL(r8) V, W,   SUM
       DIMENSION V(N), W(N)
 C
 C***FIRST EXECUTABLE STATEMENT  DVNORM

@@ -9,7 +9,7 @@ else
     ZEROFLAG=-finit-local-zero
 endif
 
-F90 = $(FC) $(FFLAGS) $(ZEROFLAG)
+F90 = $(FC) $(FFLAGS) $(ZEROFLAG) -I../globals
 
 .f.o:
 	$(F90) -c $*.f

@@ -1,9 +1,11 @@
       SUBROUTINE DSOLSY (WM, IWM, X, TEM)
+      USE local_mod, ONLY: r8
+
 C***BEGIN PROLOGUE  DSOLSY
 C***SUBSIDIARY
 C***PURPOSE  ODEPACK linear system solver.
 C***LIBRARY   MATHLIB (ODEPACK)
-C***TYPE      REAL*8 (SSOLSY-S, DSOLSY-D)
+C***TYPE      REAL(r8) (SSOLSY-S, DSOLSY-D)
 C***AUTHOR  Hindmarsh, Alan C., (LLNL)
 C***DESCRIPTION
 C
@@ -37,7 +39,7 @@ C***REVISION HISTORY  (YYMMDD)
 C   791129  DATE WRITTEN
 C   890501  Modified prologue to SLATEC/LDOC format.  (FNF)
 C   890503  Minor cosmetic changes.  (FNF)
-C   930809  Renamed to allow single/real*8 versions. (ACH)
+C   930809  Renamed to allow single/real(r8) versions. (ACH)
 C***END PROLOGUE  DSOLSY
 C**End
       INTEGER IWM
@@ -45,10 +47,10 @@ C**End
      1   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L, METH, MITER,
      2   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
       INTEGER I, MEBAND, ML, MU
-      REAL*8 WM, X, TEM
-      REAL*8 ROWNS,
+      REAL(r8) WM, X, TEM
+      REAL(r8) ROWNS,
      1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND
-      REAL*8 DI, HL0, PHL0, R
+      REAL(r8) DI, HL0, PHL0, R
       DIMENSION WM(*), IWM(*), X(*), TEM(*)
       COMMON /DLS001/ ROWNS(209),
      2   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND,

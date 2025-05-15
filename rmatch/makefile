@@ -1,6 +1,6 @@
 include ../install/DEFAULTS.inc
 
-IFLAGS = -I../equil -I$(MATHINC)
+IFLAGS = -I../globals -I../equil -I$(MATHINC)
 F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
 export FFLAGS # for sub-makes
 
@@ -11,7 +11,8 @@ LIBDIR = ../lib
 
 LIBS = \
 	-llsode \
-	-lequil
+	-lequil \
+	-lglobals \
 
 OBJS = \
 	gamma.o \
@@ -36,13 +37,13 @@ rmatch: $(OBJS)
 
 # dependencies
 
-msing.o: ../equil/local.o
-gamma.o: ../equil/local.o
+msing.o: ../globals/local_mod.mod
+gamma.o: ../globals/local_mod.mod
 deltar.o: gamma.o
-inps.o:  ../equil/local.o ../equil/utils.o
+inps.o:  ../globals/local_mod.mod ../globals/utils.o
 inpso.o: inps.o
 deltac.o: jacobi.o inpso.o
-inner.o: deltac.o
+inner.o: deltac.o ../globals/local_mod.mod
 match.o: deltar.o deltac.o inner.o msing.o
 
 clean:

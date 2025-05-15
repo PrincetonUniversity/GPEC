@@ -999,7 +999,7 @@ module torque
         character(8) :: methcom
         ! lsode type variables
         integer  neqarray(6),neq
-        real*8, dimension(:), allocatable ::  y,dky
+        real(r8), dimension(:), allocatable ::  y,dky
         ! declare new spline
         TYPE(cspline_type) :: tphi_spl
 
@@ -1215,8 +1215,8 @@ module torque
         integer  iopt, istate, itask, itol, mf, iflag,neqarray(6),&
             neq,liw,lrw
         integer, dimension(:), allocatable :: iwork
-        real*8 :: x,xout
-        real*8, dimension(:), allocatable ::  atol,rtol,rwork,y,dky
+        real(r8) :: x,xout
+        real(r8), dimension(:), allocatable ::  atol,rtol,rwork,y,dky
 
         common /tcom/ wdcom,dxcom,methcom,fcom
 
@@ -1374,7 +1374,7 @@ module torque
     !-----------------------------------------------------------------------
         implicit none
         integer ::  neq(*)
-        real*8 x, y(*), ydot(neq(1))
+        real(r8) x, y(*), ydot(neq(1))
 
         real(r8) :: wdfac,xfac,psi
         real(r8), dimension(nfluxfuns) :: ffuns
@@ -1511,7 +1511,7 @@ module torque
     !-----------------------------------------------------------------------
         implicit none
         integer  neq, ml, mu, nrpd
-        real*8  t, y, pd(nrpd,2)
+        real(r8)  t, y, pd(nrpd,2)
         ! null result
         pd(:,:) = 0
         return

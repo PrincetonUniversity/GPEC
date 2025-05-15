@@ -1,5 +1,7 @@
       SUBROUTINE LSODE (F, NEQ, Y, T, TOUT, ITOL, RTOL, ATOL, ITASK,
      1                  ISTATE, IOPT, RWORK, LRW, IWORK, LIW, JAC, MF)
+      USE local_mod, ONLY: r8
+
 C***BEGIN PROLOGUE  LSODE
 C***PURPOSE  Livermore solver for ordinary differential equations.
 C            LSODE solves the initial-value problem for stiff or
@@ -8,7 +10,7 @@ C               dy/dt = f(t,y),   or, in component form,
 C               dy(i)/dt = f(i) = f(i,t,y(1),y(2),...,y(N)),  i=1,...,N.
 C***LIBRARY   MATHLIB (ODEPACK)
 C***CATEGORY  I1A
-C***TYPE      REAL*8 (SLSODE-S, LSODE-D)
+C***TYPE      REAL(r8) (SLSODE-S, LSODE-D)
 C***KEYWORDS  ORDINARY DIFFERENTIAL EQUATIONS, INITIAL VALUE PROBLEM,
 C             STIFF, NONSTIFF
 C***AUTHOR  Hindmarsh, Alan C., (LLNL)
@@ -61,7 +63,7 @@ C
 C        EXTERNAL F, JAC
 C        INTEGER  NEQ, ITOL, ITASK, ISTATE, IOPT, LRW, IWORK(LIW),
 C       *         LIW, MF
-C        REAL*8 Y(NEQ), T, TOUT, RTOL, ATOL(ntol), RWORK(LRW)
+C        REAL(r8) Y(NEQ), T, TOUT, RTOL, ATOL(ntol), RWORK(LRW)
 C
 C        CALL LSODE (F, NEQ, Y, T, TOUT, ITOL, RTOL, ATOL, ITASK,
 C       *            ISTATE, IOPT, RWORK, LRW, IWORK, LIW, JAC, MF)
@@ -73,7 +75,7 @@ C                   program.  The form of F must be:
 C
 C                   SUBROUTINE  F (NEQ, T, Y, YDOT)
 C                   INTEGER  NEQ
-C                   REAL*8  T, Y(NEQ), YDOT(NEQ)
+C                   REAL(r8)  T, Y(NEQ), YDOT(NEQ)
 C
 C                   The inputs are NEQ, T, Y.  F is to set
 C
@@ -199,7 +201,7 @@ C                   dummy name.  The form of JAC must be:
 C
 C                   SUBROUTINE JAC (NEQ, T, Y, ML, MU, PD, NROWPD)
 C                   INTEGER  NEQ, ML, MU, NROWPD
-C                   REAL*8  T, Y(NEQ), PD(NROWPD,NEQ)
+C                   REAL(r8)  T, Y(NEQ), PD(NROWPD,NEQ)
 C
 C                   See item c, under "Description" below for more
 C                   information about JAC.
@@ -234,7 +236,7 @@ C     a. First write a subroutine of the form
 C
 C           SUBROUTINE  F (NEQ, T, Y, YDOT)
 C           INTEGER  NEQ
-C           REAL*8  T, Y(NEQ), YDOT(NEQ)
+C           REAL(r8)  T, Y(NEQ), YDOT(NEQ)
 C
 C        which supplies the vector function f by loading YDOT(i) with
 C        f(i).
@@ -264,7 +266,7 @@ C        subroutine of the form
 C
 C           SUBROUTINE  JAC (NEQ, T, Y, ML, MU, PD, NROWPD)
 C           INTEGER  NEQ, ML, MU, NRWOPD
-C           REAL*8  Y, Y(NEQ), PD(NROWPD,NEQ)
+C           REAL(r8)  Y, Y(NEQ), PD(NROWPD,NEQ)
 C
 C        which provides df/dy by loading PD as follows:
 C        - For a full Jacobian (MF = 21), load PD(i,j) with df(i)/dy(j),
@@ -307,7 +309,7 @@ C
 C        EXTERNAL  FEX, JEX
 C        INTEGER  IOPT, IOUT, ISTATE, ITASK, ITOL, IWORK(23), LIW, LRW,
 C       *         MF, NEQ
-C        REAL*8  ATOL(3), RTOL, RWORK(58), T, TOUT, Y(3)
+C        REAL(r8)  ATOL(3), RTOL, RWORK(58), T, TOUT, Y(3)
 C        NEQ = 3
 C        Y(1) = 1.
 C        Y(2) = 0.
@@ -342,7 +344,7 @@ C        END
 C
 C        SUBROUTINE  FEX (NEQ, T, Y, YDOT)
 C        INTEGER  NEQ
-C        REAL*8  T, Y(3), YDOT(3)
+C        REAL(r8)  T, Y(3), YDOT(3)
 C        YDOT(1) = -.04*Y(1) + 1.D4*Y(2)*Y(3)
 C        YDOT(3) = 3.D7*Y(2)*Y(2)
 C        YDOT(2) = -YDOT(1) - YDOT(3)
@@ -351,7 +353,7 @@ C        END
 C
 C        SUBROUTINE  JEX (NEQ, T, Y, ML, MU, PD, NRPD)
 C        INTEGER  NEQ, ML, MU, NRPD
-C        REAL*8  T, Y(3), PD(NRPD,3)
+C        REAL(r8)  T, Y(3), PD(NRPD,3)
 C        PD(1,1) = -.04
 C        PD(1,2) = 1.D4*Y(3)
 C        PD(1,3) = 1.D4*Y(2)
@@ -465,7 +467,7 @@ C              the scalar t and the vector y. Subroutine F is to compute
 C              the function f. It is to have the form
 C
 C                 SUBROUTINE F (NEQ, T, Y, YDOT)
-C                 REAL*8  Y(NEQ), YDOT(NEQ)
+C                 REAL(r8)  Y(NEQ), YDOT(NEQ)
 C
 C              where NEQ, T, and Y are input, and the array YDOT =
 C              f(T,Y) is output.  Y and YDOT are arrays of length NEQ.
@@ -701,7 +703,7 @@ C              0   No optional inputs are being used.  Default values
 C                  will be used in all cases.
 C              1   One or more optional inputs are being used.
 C
-C     RWORK    A real working array (real*8).  The length of
+C     RWORK    A real working array (real(r8)).  The length of
 C              RWORK must be at least
 C
 C                 20 + NYH*(MAXORD + 1) + 3*NEQ + LWM
@@ -774,7 +776,7 @@ C              scalar t and the vector y.  (See the MF description below
 C              for MITER.)  It is to have the form
 C
 C                 SUBROUTINE JAC (NEQ, T, Y, ML, MU, PD, NROWPD)
-C                 REAL*8  Y(NEQ), PD(NROWPD,NEQ)
+C                 REAL(r8)  Y(NEQ), PD(NROWPD,NEQ)
 C
 C              where NEQ, T, Y, ML, MU, and NROWPD are input and the
 C              array PD is to be loaded with partial derivatives
@@ -1030,7 +1032,7 @@ C     If LSODE is to be used in an overlay situation, the user must
 C     declare, in the primary overlay, the variables in:
 C     (1) the call sequence to LSODE,
 C     (2) the internal COMMON block /DLS001/, of length 255 
-C         (218 real*8 words followed by 37 integer words).
+C         (218 real(r8) words followed by 37 integer words).
 C
 C     If LSODE is used on a system in which the contents of internal
 C     COMMON blocks are not preserved between calls, the user should
@@ -1091,7 +1093,7 @@ C     given by NST = 0, NQ is 1 and H is temporarily set to 1.0.  The
 C     quantities NQ, NYH, H, and NST can be obtained by including in
 C     DEWSET the statements:
 C
-C           REAL*8  RLS
+C           REAL(r8)  RLS
 C           COMMON /DLS001/ RLS(218),ILS(37)
 C           NQ = ILS(33)
 C           NYH = ILS(12)
@@ -1156,7 +1158,7 @@ C           dummy dimensions from 1 to *. (ACH)
 C   930809  Changed to generic intrinsic names; changed names of
 C           subprograms and Common blocks to SLSODE etc. (ACH)
 C   930929  Eliminated use of REAL intrinsic; other minor changes. (ACH)
-C   931005  Generated real*8 version. (ACH)
+C   931005  Generated real(r8) version. (ACH)
 C***END PROLOGUE  LSODE
 C
 C*Internal Notes:
@@ -1195,13 +1197,13 @@ C  Declare arguments.
 C
       EXTERNAL F, JAC
       INTEGER NEQ, ITOL, ITASK, ISTATE, IOPT, LRW, IWORK, LIW, MF
-      REAL*8 Y, T, TOUT, RTOL, ATOL, RWORK
+      REAL(r8) Y, T, TOUT, RTOL, ATOL, RWORK
       DIMENSION NEQ(*), Y(*), RTOL(*), ATOL(*), RWORK(LRW), IWORK(LIW)
 C
 C  Declare externals.
 C
       EXTERNAL DPREPJ, DSOLSY
-      REAL*8 DUMACH, DVNORM
+      REAL(r8) DUMACH, DVNORM
 C
 C  Declare all other variables.
 C
@@ -1211,9 +1213,9 @@ C
      1   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
       INTEGER I, I1, I2, IFLAG, IMXER, KGO, LF0,
      1   LENIW, LENRW, LENWM, ML, MORD, MU, MXHNL0, MXSTP0
-      REAL*8 ROWNS,
+      REAL(r8) ROWNS,
      1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND
-      REAL*8 ATOLI, AYI, BIG, EWTI, H0, HMAX, HMX, RH, RTOLI,
+      REAL(r8) ATOLI, AYI, BIG, EWTI, H0, HMAX, HMX, RH, RTOLI,
      1   TCRIT, TDIST, TNEXT, TOL, TOLSF, TP, SIZE, SUM, W0
       DIMENSION MORD(2)
       LOGICAL IHIT

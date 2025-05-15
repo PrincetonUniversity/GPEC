@@ -22,7 +22,8 @@ c-----------------------------------------------------------------------
 c     subprogram 1. date_time.
 c-----------------------------------------------------------------------
       subroutine date_time(date_array,datex,timex)
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       integer date_array(*)
       character*(*) datex,timex
@@ -33,7 +34,7 @@ c-----------------------------------------------------------------------
 c     subprogram 2. shella.
 c-----------------------------------------------------------------------
       subroutine shella
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       integer*4 lib$delete_file,status
       status=lib$delete_file('modovmc')
@@ -49,7 +50,7 @@ c-----------------------------------------------------------------------
 c     subprogram 3. shellb
 c-----------------------------------------------------------------------
       subroutine shellb
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       return
       end
@@ -58,7 +59,8 @@ c     subprogram 4. gelima.
 c-----------------------------------------------------------------------
       subroutine gelima(copmat,nfm,uvpr,nfm1,jmax1,jmax2,uvp0,nfm2,
      $     wrki,waa,nfm3,wbb,nfm4,ifail)
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       integer ipiv(jmax1),info
       call dgetrf(jmax1,jmax1,copmat,nfm,ipiv,info)
@@ -70,7 +72,8 @@ c     subprogram 5. gelimb.
 c-----------------------------------------------------------------------
       subroutine gelimb(copmat,nfm,uvpwr,nfm1,jmax1,jmax2,uvpw0,
      $     nfm2,wrki,ifail)
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       integer ipiv(jmax1),info
       call dgetrf(jmax1,jmax1,copmat,nfm,ipiv,info)
@@ -83,10 +86,11 @@ c-----------------------------------------------------------------------
       subroutine zop(ioc,name,nsize,idisk,icode,ilab)
 c He apparently wants to control the writes directly.
 c VMS Fortran lets you do this, but it's a real kludge.
-c Since his reads and writes all pretend to be real*8
+c Since his reads and writes all pretend to be real(r8)
 c I open the file for direct access with 8byte records
 c (recl is in units of 4bytes)
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       character*(8) name
       open(unit=ioc,file=name,
@@ -99,7 +103,8 @@ c-----------------------------------------------------------------------
 c     subprogram 7. zcl.
 c-----------------------------------------------------------------------
       subroutine zcl(ioc,ierr)
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       close(ioc)
       return
@@ -108,7 +113,8 @@ c-----------------------------------------------------------------------
 c     subprogram 8. zwr.
 c-----------------------------------------------------------------------
       subroutine zwr(ioc,a,nwords,nadres,lgivup,irr)
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension a(1)
       integer*4 iocs,noffsets,fseek,ftell
@@ -133,7 +139,8 @@ c-----------------------------------------------------------------------
 c     subprogram 9. zrd.
 c-----------------------------------------------------------------------
       subroutine zrd(ioc,a,nwords,nadres,lgivup,irr)
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension a(1)
       integer*4 iocs,noffsets,fseek,ftell
@@ -158,7 +165,8 @@ c-----------------------------------------------------------------------
 c     subprogram 10. skipeof.
 c-----------------------------------------------------------------------
 	subroutine skipeof(iva,iva1)
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 	return
 	end
@@ -166,7 +174,8 @@ c-----------------------------------------------------------------------
 c     subprogram 11. timedate.
 c-----------------------------------------------------------------------
       subroutine timedate(ntim,ndat,mach,nsfx)
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       return
       end
@@ -174,7 +183,8 @@ c-----------------------------------------------------------------------
 c     subprogram 12. userinfo.
 c-----------------------------------------------------------------------
       subroutine userinfo(nuser,nacct,ndrop,nsfx)
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       return
       end

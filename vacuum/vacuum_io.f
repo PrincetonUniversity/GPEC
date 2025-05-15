@@ -22,7 +22,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine inglo
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 c-----------------------------------------------------------------------
 c     computations.
@@ -57,7 +57,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine cardmo
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       
       logical, save :: warned = .false.
@@ -171,7 +171,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine dskmd1
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       dimension vecin(ntsin), xigr_(ntsin), xigi_(ntsin)
@@ -466,9 +466,10 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine readahg (ahgfile, ahgdir, mthin,lmin,lmax,ndcon,qa1,
      $     xinf, zinf, delta, vecin, mth )
+      use local_mod, only: r8
       use vglobal_mod, only: dcon_set, mth_dcon, lmin_dcon,lmax_dcon,
      $     nn_dcon, qa1_dcon, x_dcon, z_dcon, delta_dcon
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       character(128) ahgdir
       character(128) ahgfile
@@ -531,7 +532,8 @@ c-----------------------------------------------------------------------
       subroutine readvacin ( mthin,rgato,ndum2,ngato,qa1,xinf,zinf,
      $     delta, vecin,xigr,xigi, mth,mth1,mth2, ndfel, dx0,
      $     ireig, nout1, nout2 )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       integer mthin,ndum2,ngato,ith
       dimension xinf(*), zinf(*), delta(*), vecin(*), xigr(*),xigi(*)
@@ -585,10 +587,11 @@ c-----------------------------------------------------------------------
      $     mthin, lmin,lmax,ntor, qa1,
      $     xinf,zinf, delta, vecin, bnlr,bnli,
      $     mth, dx0,dx1, ireig5)
+      use local_mod, only: r8
 c-----------------------------------------------------------------------
 c     read input.
 c-----------------------------------------------------------------------
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       INTEGER mthin, lmin, lmax, ntor, ith,jl, jmax1
       DIMENSION xinf(*),zinf(*),delta(*), vecin(*),bnlr(*), bnli(*)
@@ -655,7 +658,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine adjustm ( mth, mfel, mth1,mth2, ndfel, nout1,nout2 )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 c-----------------------------------------------------------------------
 c     computations.
@@ -709,11 +713,12 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine set_dcon_params ( mthin,lmin,lmax,nnin,qa1in,xin,
      $     zin, deltain )
+      use local_mod, only: r8
       use vglobal_mod, only: dcon_set, mth_dcon, lmin_dcon,lmax_dcon,
      $     nn_dcon, qa1_dcon, x_dcon, z_dcon, delta_dcon
       integer :: mthin,lmin,lmax,nnin,mthin1,mthin5,i
-      real*8 :: qa1in
-      real*8, dimension(*) :: xin, zin, deltain
+      real(r8) :: qa1in
+      real(r8), dimension(*) :: xin, zin, deltain
 c-----------------------------------------------------------------------
 c     computations.
 c-----------------------------------------------------------------------

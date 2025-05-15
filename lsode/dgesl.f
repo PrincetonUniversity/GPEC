@@ -1,14 +1,15 @@
       subroutine dgesl(a,lda,n,ipvt,b,job)
+      use local_mod, only: r8
       integer lda,n,ipvt(1),job
-      real*8 a(lda,1),b(1)
+      real(r8) a(lda,1),b(1)
 c
-c     dgesl solves the real*8 system
+c     dgesl solves the real(r8) system
 c     a * x = b  or  trans(a) * x = b
 c     using the factors computed by dgeco or dgefa.
 c
 c     on entry
 c
-c        a       real*8(lda, n)
+c        a       real(r8)(lda, n)
 c                the output from dgeco or dgefa.
 c
 c        lda     integer
@@ -20,7 +21,7 @@ c
 c        ipvt    integer(n)
 c                the pivot vector from dgeco or dgefa.
 c
-c        b       real*8(n)
+c        b       real(r8)(n)
 c                the right hand side vector.
 c
 c        job     integer
@@ -58,7 +59,7 @@ c     blas daxpy,ddot
 c
 c     internal variables
 c
-      real*8 ddot,t
+      real(r8) ddot,t
       integer k,kb,l,nm1
 c
       nm1 = n - 1

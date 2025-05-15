@@ -17,6 +17,7 @@ c-----------------------------------------------------------------------
       MODULE dcon_netcdf_mod
       USE dcon_mod
       USE sing_mod, ONLY: sing_detf
+      USE local_mod, ONLY: r8, r4
       USE netcdf
       IMPLICIT NONE
 
@@ -59,7 +60,7 @@ c-----------------------------------------------------------------------
      $    f_id, q_id, dv_id, mu_id, di_id, dr_id, ca_id,
      $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id, wt0_id,
      $    pd_dim, pd_id, df_id, ep_id, ew_id, eq_id
-      REAL(4) :: cpusec, wallsec
+      REAL(r4) :: cpusec, wallsec
       CHARACTER(2) :: sn
       CHARACTER(64) :: ncfile
 

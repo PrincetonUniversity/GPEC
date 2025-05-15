@@ -11,7 +11,7 @@ endif
 
 include ../install/DEFAULTS.inc
 
-IFLAGS = -I../equil -I../harvest -I../pentrc -I../vacuum -I$(MATHINC) -I$(NETCDFINC)
+IFLAGS = -I../globals -I../equil -I../harvest -I../pentrc -I../vacuum -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS) $(RECURSFLAG)
 export FFLAGS # for sub-makes
 
@@ -28,7 +28,8 @@ LIBS = \
 	-llsode \
 	-lequil \
 	-lvac \
-	-lharvest
+	-lharvest \
+	-lglobals
 
 OBJS = \
 	debug.o \
@@ -77,16 +78,16 @@ clean:
 
 # dependencies
 
-dcon_mod.o: ../equil/spline_mod.mod ../equil/global_mod.mod \
+dcon_mod.o: ../globals/spline_mod.mod ../equil/global_mod.mod \
 	../equil/equil_mod.mod ../equil/equil_out_mod.mod ../pentrc/dcon_interface.mod
 mercier.o: dcon_mod.o
 bal.o: dcon_mod.o
-fourfit.o: ../equil/fspline_mod.mod ../equil/global_mod.mod \
+fourfit.o: ../globals/fspline_mod.mod ../equil/global_mod.mod \
 	../pentrc/pentrc_interface.mod ../pentrc/utilities.mod ../pentrc/torque.mod ../pentrc/inputs.mod \
 	../pentrc/energy_integration.mod ../pentrc/pitch_integration.mod ../pentrc/dcon_interface.mod \
 	dcon_mod.o
 sing.o: fourfit.o
-debug.o: ../equil/local_mod.mod
+debug.o: ../globals/local_mod.mod
 ode_output.o: dcon_mod.o sing.o debug.o
 ode.o: ode_output.o free.o
 dcon_netcdf.o: dcon_mod.o

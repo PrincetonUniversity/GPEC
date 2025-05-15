@@ -112,7 +112,7 @@ c-----------------------------------------------------------------------
 
 #ifdef _OPENMP
       num_threads = OMP_GET_MAX_THREADS()
-      IF(verbose) WRITE(*,'(1x,a,i4,a)'),
+      IF(verbose) WRITE(*,'(1x,a,i4,a)')
      $                "  > Running with ",num_threads," OMP threads"
 #endif
 
@@ -126,7 +126,7 @@ c-----------------------------------------------------------------------
      $        dy(coil(i)%ncoil,coil(i)%s,nseg),
      $        dz(coil(i)%ncoil,coil(i)%s,nseg))
 
-      IF(verbose) WRITE(*,'(1x,a,i6,a,i3,a,i3,a)'),"  >> Mapping ",
+      IF(verbose) WRITE(*,'(1x,a,i6,a,i3,a,i3,a)') "  >> Mapping ",
      $      coil(i)%ncoil*coil(i)%s*nseg,
      $      " filaments from the coil "//
      $      TRIM(coil(i)%coil_name)//
@@ -331,7 +331,7 @@ c-----------------------------------------------------------------------
 
 #ifdef _OPENMP
       num_threads = OMP_GET_MAX_THREADS()
-      IF(verbose) WRITE(*,'(1x,a,i4,a)'),
+      IF(verbose) WRITE(*,'(1x,a,i4,a)')
      $                "  > Running with ",num_threads," OMP threads"
 #endif
 
@@ -345,7 +345,7 @@ c-----------------------------------------------------------------------
      $        dy(coil(i)%ncoil,coil(i)%s,nseg),
      $        dz(coil(i)%ncoil,coil(i)%s,nseg))
          
-         IF(verbose) WRITE(*,'(1x,a,i6,a,i4,a,i4,a,i4,a)'),"  >"//
+         IF(verbose) WRITE(*,'(1x,a,i6,a,i4,a,i4,a,i4,a)') "  >"//
      $      "Mapping ", coil(i)%ncoil*coil(i)%s*nseg,
      $      "filaments from the coil "
      $      //TRIM(coil(i)%coil_name)//

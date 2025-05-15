@@ -1,10 +1,11 @@
       SUBROUTINE DSTODE (NEQ, Y, YH, NYH, YH1, EWT, SAVF, ACOR,
      1   WM, IWM, F, JAC, PJAC, SLVS)
+      USE local_mod, ONLY: r8
 C***BEGIN PROLOGUE  DSTODE
 C***SUBSIDIARY
 C***PURPOSE  Performs one step of an ODEPACK integration.
 C***LIBRARY   MATHLIB (ODEPACK)
-C***TYPE      REAL*8 (SSTODE-S, DSTODE-D)
+C***TYPE      REAL(r8) (SSTODE-S, DSTODE-D)
 C***AUTHOR  Hindmarsh, Alan C., (LLNL)
 C***DESCRIPTION
 C
@@ -87,7 +88,7 @@ C***REVISION HISTORY  (YYMMDD)
 C   791129  DATE WRITTEN
 C   890501  Modified prologue to SLATEC/LDOC format.  (FNF)
 C   890503  Minor cosmetic changes.  (FNF)
-C   930809  Renamed to allow single/real*8 versions. (ACH)
+C   930809  Renamed to allow single/real(r8) versions. (ACH)
 C***END PROLOGUE  DSTODE
 C**End
       EXTERNAL F, JAC, PJAC, SLVS
@@ -96,10 +97,10 @@ C**End
      1   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L, METH, MITER,
      2   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
       INTEGER I, I1, IREDO, IRET, J, JB, M, NCF, NEWQ
-      REAL*8 Y, YH, YH1, EWT, SAVF, ACOR, WM
-      REAL*8 CONIT, CRATE, EL, ELCO, HOLD, RMAX, TESCO,
+      REAL(r8) Y, YH, YH1, EWT, SAVF, ACOR, WM
+      REAL(r8) CONIT, CRATE, EL, ELCO, HOLD, RMAX, TESCO,
      2   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND
-      REAL*8 DCON, DDN, DEL, DELP, DSM, DUP, EXDN, EXSM, EXUP,
+      REAL(r8) DCON, DDN, DEL, DELP, DSM, DUP, EXDN, EXSM, EXUP,
      1   R, RH, RHDN, RHSM, RHUP, TOLD, DVNORM
       DIMENSION NEQ(*), Y(*), YH(NYH,*), YH1(*), EWT(*), SAVF(*),
      1   ACOR(*), WM(*), IWM(*)
