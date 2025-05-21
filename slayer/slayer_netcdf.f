@@ -109,9 +109,8 @@ c -----------------------------------------------------------------------
       ! define dimensions
       IF(debug_flag) PRINT *," - Defining dimensions in netcdf"
 
-      WRITE(*,*)"netcdf msing=",msing
       !WRITE(*,*)"netcdf qval=",qval
-      WRITE(*,*)"netcdf qval_arr=",qval_arr
+      WRITE(*,*)">>> Writing results to NetCDF output file"
 
       IF(msing>0)THEN
          CALL sl_check( nf90_def_dim(ncid,"qsing",msing,qsing_dim) ) !r_dim = q_rational

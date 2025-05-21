@@ -199,8 +199,6 @@ c-----------------------------------------------------------------------
       COMPLEX(r8),INTENT(IN),DIMENSION(:) :: dels_db_arr,
      $                                    gamma_sol_arr,gamma_est_arr
 
-      WRITE(*,*)"Successfully entered output_gamma()"
-
       CALL slayer_netcdf_out(SIZE(qval_arr),est_gamma_flag,
      $         qval_arr,omegas_arr,Q_arr,Q_e_arr,Q_i_arr,d_beta_arr,
      $         c_beta_arr,D_norm_arr,P_perp_arr,lu_arr,psi_n_rational,
@@ -424,8 +422,9 @@ c     Adapted from
           END IF 
 
           IF (verbose .ne. 0) THEN
-              WRITE(*, '("  Q step = (", ES10.3, ", ", ES10.3,")" )')
-     $          g_r, g_i
+              WRITE(*, '(A, ES10.3, A, ES10.3, A, A, ES10.3)')
+     $              'Q step = (', g_r, ' + ', 
+     $              g_i, 'j )', '    Residual =', Residual
           ENDIF
           
           iter = iter + 1

@@ -22,7 +22,7 @@ c-----------------------------------------------------------------------
 
       CHARACTER(512) :: infile,ncfile
       INTEGER :: i,j,k,inum,jnum,knum,inn,count,
-     $           Q_num,n_k,scan_radius
+     $           Q_num,n_k
       INTEGER, DIMENSION(1) :: index
 
       LOGICAL :: params_flag,QPscan_flag,QPescan_flag,QPscan2_flag,
@@ -32,7 +32,7 @@ c-----------------------------------------------------------------------
      $     bal_flag,stability_flag,riccatiscan_flag,input_flag,
      $     params_check,stabscan_flag,read_eq,est_gamma_flag,
      $     match_gamma_flag,fitz_flag,br_th_flag
-      REAL(r8) :: n_e,t_e,t_i,omega,omega0,
+      REAL(r8) :: n_e,t_e,t_i,omega,omega0,scan_radius,
      $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,dr_val
       REAL(r8) :: inQ,inQ_e,inQ_i,inpr,inpe,inc_beta,inds,intau,inlu
       REAL(r8) :: psi0,jxb,Q0,Q_sol,br_th,d_b,Residual
@@ -349,8 +349,10 @@ c-----------------------------------------------------------------------
 
          ALLOCATE(gamma_est_arr(n_k),dels_db_arr(n_k))
          DO k=1,n_k
-            WRITE(*,*) "Calculating growth rate estimate on q=",
-     $       qval_arr(k)," rational surface"
+            WRITE(*,*)
+            WRITE(*,'(A,I0,A)') 'Calculating growth rate '//
+     $             'estimate on q = ',
+     $       qval_arr(k),' rational surface'
 
             dels_db=riccati_del_s(Q_arr(k),Q_e_arr(k),
      $                   Q_i_arr(k),P_perp_arr(k),c_beta_arr(k),
@@ -361,8 +363,9 @@ c-----------------------------------------------------------------------
 
             gamma_est_arr(k) = gammafac_arr(k)/del_s
             dels_db_arr(k) = dels_db
-            WRITE(*,*)"Growth rate estimate=",
-     $                 REAL(gamma_est_arr(k))," [Hz]"
+            WRITE(*,*)
+            WRITE(*,'(A,F0.3,A)')'Growth rate estimate = ',
+     $                 REAL(gamma_est_arr(k)),' [Hz]'
 
          ENDDO
 
@@ -442,9 +445,9 @@ c-----------------------------------------------------------------------
          ALLOCATE(gamma_sol_arr(n_k)) 
 
          DO k=1,n_k
-            WRITE(*,*) "Calculating growth rates on q=",
-     $       qval_arr(k)," rational surface"
-   
+            WRITE(*,*)
+            WRITE(*,'(A,I0,A)') 'Calculating growth rates on q = ',
+     $       qval_arr(k),' rational surface'
             Q_e = Q_e_arr(k)
             Q_i = Q_i_arr(k)
             P_perp = P_perp_arr(k)
@@ -477,17 +480,22 @@ c-----------------------------------------------------------------------
 
             CALL newton_root(g_r,g_i,1,fitz_flag)
 
-            WRITE(*,*)"Success! growth rate = ",
-     $                g_r/tauk," [Hz]"
+            WRITE(*,*)
+            WRITE(*,'(A,F0.3,A)') 'Success! Growth rate = ', 
+     $            g_r/tauk, ' [Hz]'
 
             CALL shrink_array(re_trace, n_trace)
             CALL shrink_array(im_trace, n_trace)
 
-            re_trace = re_trace/tauk
-            im_trace = im_trace/tauk
-
-            gamma_sol_arr(k) = g_r/tauk
-
+            IF (fitz_flag) THEN
+               re_trace = re_trace/tauk
+               im_trace = im_trace/tauk
+               gamma_sol_arr(k) = g_r/tauk
+            ELSE
+               re_trace = re_trace/tauk
+               im_trace = -im_trace/tauk
+               gamma_sol_arr(k) = -g_r/tauk
+            END IF
          ENDDO 
 
          IF (.NOT. (est_gamma_flag)) THEN
@@ -497,7 +505,8 @@ c-----------------------------------------------------------------------
 
          IF (stabscan_flag) THEN
             WRITE(*,*)"------------------------------------------"
-            WRITE(*,*)">>> Running Re(Q),Im(Q) scan, radius=",
+            WRITE(*,'(A,F0.1)')' >>> Running [Re(Q),'//
+     $            'Im(Q)] scan with radius = ',
      $                scan_radius
 
             ing_step = (2.0 * scan_radius) / (Q_num - 1)
@@ -520,7 +529,11 @@ c-----------------------------------------------------------------------
      $                             iinQ=ing_coarse)
                   END IF
                   inQs(i) = ing_coarse
-                  iinQs(j) = iing_coarse
+                  IF (fitz_flag) THEN
+                     iinQs(j) = iing_coarse
+                  ELSE
+                     iinQs(j) = -iing_coarse
+                  END IF
                   deltas(i,j) = delta
                ENDDO
             ENDDO
