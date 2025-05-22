@@ -290,6 +290,11 @@
 # When using modern gfortran, some additional flags needed may include
 #     $ make FFLAGS="-fallow-argument-mismatch"  # to pass over old, inconsistent portions of code
 #
+# On macs using gfortran, one may need to add links to X11 in xdraw/makefile for xdraw to compile properly:
+#     CFLAGS += -I/opt/X11/include
+#     LDFLAGS += -L/opt/X11/lib
+#     LIBS += -lX11
+#
 # If your platform is not properly included in this make file
 # contact nlogan@pppl.gov with your operating system, compiler, and
 # library installation details.
