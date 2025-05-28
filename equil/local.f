@@ -35,7 +35,9 @@ c-----------------------------------------------------------------------
       REAL(r8), PARAMETER :: e=1.6021917e-19,
      $     mp=1.672614e-27,me=9.1091e-31,
      $     c=2.997925e10,jzero=2.4048255577_r8,ev=e
-      REAL(r8), PARAMETER :: zero=0,one=1,two=2,half=.5
+      REAL(r8), PARAMETER :: zero=0.0_r8,one=1.0_r8,two=2.0_r8
+      REAL(r8), PARAMETER :: six=6.0_r8,three=3.0_r8,four=4.0_r8
+      REAL(r8), PARAMETER :: twelve=12.0_r8,half=0.5_r8
       COMPLEX(r8), PARAMETER :: ifac=(0,1)
       COMPLEX(r8), PARAMETER :: one_c=(1,0)
       COMPLEX(r8), PARAMETER :: negone_c=(-1,0)

@@ -118,17 +118,17 @@ c-----------------------------------------------------------------------
             psifac1=psiex(iex)
             DO
                it=it+1
-               psifac=(psifac0+psifac1)/2
+               psifac=(psifac0+psifac1)*0.5_r8
                CALL spline_eval(sq,psifac,0)
                singfac=(m-nn*sq%f(4))*dm
                IF(singfac > 0)THEN
                   psifac0=psifac
-                  psifac=(psifac+psifac1)/2
+                  psifac=(psifac+psifac1)*0.5_r8
                ELSE
                   psifac1=psifac
-                  psifac=(psifac+psifac0)/2
+                  psifac=(psifac+psifac0)*0.5_r8
                ENDIF
-               IF(ABS(singfac) <= 1e-12)EXIT
+               IF(ABS(singfac) <= 1.0e-12_r8)EXIT
                IF(it > itmax)
      $              CALL program_stop("sing_find can't find root")
             ENDDO

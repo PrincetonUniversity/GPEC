@@ -406,7 +406,7 @@ c-----------------------------------------------------------------------
             CALL sing1_xmin(ising+1,gal_eps_xmin,myxmin)
             intvl%cell(nx)%x_lsode=x1-myxmin(2)/nq1
             intvl%x(nx-1)=x1-myxmin(1)/nq1
-            intvl%x(nx-2)=x1-2*myxmin(1)/nq1
+            intvl%x(nx-2)=x1-2.0_r8*myxmin(1)/nq1
             ixmax=nx-2
          ELSE
             intvl%cell(nx)%x_lsode=x1-dx0/nq1
@@ -437,9 +437,9 @@ c     compute interior packed grid.
 c-----------------------------------------------------------------------
       x0=intvl%x(ixmin)
       x1=intvl%x(ixmax)
-      xm=(intvl%x(ixmax)+intvl%x(ixmin))/2
-      dx=(intvl%x(ixmax)-intvl%x(ixmin))/2
-      mx=(ixmax-ixmin)/2
+      xm=(intvl%x(ixmax)+intvl%x(ixmin))/2.0_r8
+      dx=(intvl%x(ixmax)-intvl%x(ixmin))/2.0_r8
+      mx=(ixmax-ixmin)/2.0_r8
       intvl%x(ixmin:ixmax)=xm+dx*gal_pack(mx,pfac,"both")
       intvl%x(ixmin)=x0
       intvl%x(ixmax)=x1

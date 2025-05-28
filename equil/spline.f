@@ -177,6 +177,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(spl%mx) :: b
       REAL(r8), DIMENSION(4) :: cl,cr
       REAL(r8), DIMENSION(0:spl%mx) :: xfac
+      REAL(r8), DIMENSION(spl%mx-1) :: temp1, temp2, temp3
 c-----------------------------------------------------------------------
 c     extract powers.
 c-----------------------------------------------------------------------
@@ -195,12 +196,14 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute first derivatives, interior.
 c-----------------------------------------------------------------------
+      spl%fs1=0.0_r8
       DO iqty=1,spl%nqty
-         spl%fs1(1:spl%mx-1,iqty)=
-     $        3*((spl%fs(2:spl%mx,iqty)-spl%fs(1:spl%mx-1,iqty))
+         temp1=(spl%fs(2:spl%mx,iqty)-spl%fs(1:spl%mx-1,iqty))
      $        *b(2:spl%mx)
-     $        +(spl%fs(1:spl%mx-1,iqty)-spl%fs(0:spl%mx-2,iqty))
-     $        *b(1:spl%mx-1))
+         temp2=(spl%fs(1:spl%mx-1,iqty)-spl%fs(0:spl%mx-2,iqty))
+     $        *b(1:spl%mx-1)
+         temp3=three*(temp1+temp2)
+         spl%fs1(1:spl%mx-1,iqty)=temp3        
       ENDDO
 c-----------------------------------------------------------------------
 c     extrapolation boundary conditions.
@@ -222,18 +225,18 @@ c-----------------------------------------------------------------------
 c     not-a-knot boundary conditions.
 c-----------------------------------------------------------------------
       CASE("not-a-knot")
-         spl%fs1(1,:)=spl%fs1(1,:)-(2*spl%fs(1,:)
-     $        -spl%fs(0,:)-spl%fs(2,:))*2*b(1)
+         spl%fs1(1,:)=spl%fs1(1,:)-(two*spl%fs(1,:)
+     $        -spl%fs(0,:)-spl%fs(2,:))*two*b(1)
          spl%fs1(spl%mx-1,:)=spl%fs1(spl%mx-1,:)
-     $        +(2*spl%fs(spl%mx-1,:)-spl%fs(spl%mx,:)
-     $        -spl%fs(spl%mx-2,:))*2*b(spl%mx)
+     $        +(two*spl%fs(spl%mx-1,:)-spl%fs(spl%mx,:)
+     $        -spl%fs(spl%mx-2,:))*two*b(spl%mx)
          CALL spline_trilus(a(:,1:spl%mx-1),spl%fs1(1:spl%mx-1,:))
-         spl%fs1(0,:)=(2*(2*spl%fs(1,:)-spl%fs(0,:)-spl%fs(2,:))
+         spl%fs1(0,:)=(two*(two*spl%fs(1,:)-spl%fs(0,:)-spl%fs(2,:))
      $        +(spl%fs1(1,:)+spl%fs1(2,:))*(spl%xs(2)-spl%xs(1))
      $        -spl%fs1(1,:)*(spl%xs(1)-spl%xs(0)))/(spl%xs(1)-spl%xs(0))
          spl%fs1(spl%mx,:)=
-     $        (2*(spl%fs(spl%mx-2,:)+spl%fs(spl%mx,:)
-     $        -2*spl%fs(spl%mx-1,:))
+     $        (two*(spl%fs(spl%mx-2,:)+spl%fs(spl%mx,:)
+     $        -two*spl%fs(spl%mx-1,:))
      $        +(spl%fs1(spl%mx-1,:)+spl%fs1(spl%mx-2,:))
      $        *(spl%xs(spl%mx-1)-spl%xs(spl%mx-2))
      $        -spl%fs1(spl%mx-1,:)
@@ -244,7 +247,7 @@ c     periodic boudary conditions.
 c-----------------------------------------------------------------------
       CASE("periodic")
          spl%periodic=.TRUE.
-         spl%fs1(0,:)=3*((spl%fs(1,:)-spl%fs(0,:))*b(1)
+         spl%fs1(0,:)=three*((spl%fs(1,:)-spl%fs(0,:))*b(1)
      $        +(spl%fs(0,:)-spl%fs(spl%mx-1,:))*b(spl%mx))
          CALL spline_morrison(a(:,0:spl%mx-1),spl%fs1(0:spl%mx-1,:))
          spl%fs1(spl%mx,:)=spl%fs1(0,:)
@@ -297,26 +300,26 @@ c-----------------------------------------------------------------------
          h(i)=spl%xs(i+1)-spl%xs(i)
       ENDDO
 
-      d(0)=1
+      d(0)=one
       DO i=1,spl%mx-1
-         d(i)=2*(h(i-1)+h(i))
+         d(i)=two*(h(i-1)+h(i))
       ENDDO
       d(spl%mx)=1
 
       DO i=1,spl%mx-1
          l(i)=h(i-1)
       ENDDO
-      l(spl%mx)=0
+      l(spl%mx)=0.0_r8
 
-      u(1)=0
+      u(1)=0.0_r8
       DO i=2,spl%mx
          u(i)=h(i-1)
       ENDDO
 
-      r(0,:)=0
+      r(0,:)=0.0_r8
       DO i=1,spl%mx-1
          r(i,:)=( (spl%fs(i+1,:)-spl%fs(i,:))/h(i)
-     $           -(spl%fs(i,:)-spl%fs(i-1,:))/h(i-1) )*6
+     $           -(spl%fs(i,:)-spl%fs(i-1,:))/h(i-1) )*six
       ENDDO
       r(spl%mx,:)=0
 
@@ -326,13 +329,13 @@ c-----------------------------------------------------------------------
          CALL spline_get_yp(spl%xs(spl%mx-3:spl%mx),
      $        spl%fs(spl%mx-3:spl%mx,:),spl%xs(spl%mx),
      $        r(spl%mx,:),spl%nqty)
-         d(0)=2*h(0)
-         d(spl%mx)=2*h(spl%mx-1)
+         d(0)=two*h(0)
+         d(spl%mx)=two*h(spl%mx-1)
          u(1)=h(0)
          l(spl%mx)=h(spl%mx-1)
-         r(0,:)=( (spl%fs(1,:)-spl%fs(0,:))/h(0) - r(0,:) )*6
+         r(0,:)=( (spl%fs(1,:)-spl%fs(0,:))/h(0) - r(0,:) )*six
          r(spl%mx,:)=( r(spl%mx,:)
-     $  -(spl%fs(spl%mx,:)-spl%fs(spl%mx-1,:))/h(spl%mx-1) )*6
+     $  -(spl%fs(spl%mx,:)-spl%fs(spl%mx-1,:))/h(spl%mx-1) )*six
 
       ENDIF
 c-----------------------------------------------------------------------
@@ -343,18 +346,18 @@ c-----------------------------------------------------------------------
 
       DO i=0, spl%mx-1
          bs=(spl%fs(i+1,:)-spl%fs(i,:))/h(i)
-     $    - 0.5*h(i)*r(i,:)
-     $    - h(i)*(r(i+1,:)-r(i,:))/6
+     $    - half*h(i)*r(i,:)
+     $    - h(i)*(r(i+1,:)-r(i,:))/six
          spl%fs1(i,:)=bs
       ENDDO
-      ds=(r(spl%mx,:)-r(spl%mx-1,:))/(h(spl%mx-1)*6)
-      cs=r(spl%mx-1,:)*0.5
+      ds=(r(spl%mx,:)-r(spl%mx-1,:))/(h(spl%mx-1)*six)
+      cs=r(spl%mx-1,:)*half
       i=spl%mx-1
       bs=(spl%fs(i+1,:)-spl%fs(i,:))/h(i)
-     $    - 0.5*h(i)*r(i,:)
-     $    - h(i)*(r(i+1,:)-r(i,:))/6
+     $    - half*h(i)*r(i,:)
+     $    - h(i)*(r(i+1,:)-r(i,:))/six
       i=spl%mx
-      spl%fs1(i,:)=bs+h(i-1)*(cs*2+h(i-1)*ds*3)
+      spl%fs1(i,:)=bs+h(i-1)*(cs*2+h(i-1)*ds*three)
       DEALLOCATE (d,l,u,r,h)
 c-----------------------------------------------------------------------
 c     terminate.
@@ -673,7 +676,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute interior matrix.
 c-----------------------------------------------------------------------
-      b=1/(spl%xs(1:spl%mx)-spl%xs(0:spl%mx-1))
+      b=1.0_r8/(spl%xs(1:spl%mx)-spl%xs(0:spl%mx-1))
       DO j=1,spl%mx-1
          a(-1,j)=b(j)
          a(0,j)=2*(b(j)+b(j+1))
@@ -685,8 +688,8 @@ c-----------------------------------------------------------------------
       SELECT CASE(endmode)
       CASE("extrap")
          b=b*b
-         cl(1)=(spl%xs(0)*(3*spl%xs(0)
-     $        -2*(spl%xs(1)+spl%xs(2)+spl%xs(3)))
+         cl(1)=(spl%xs(0)*(three*spl%xs(0)
+     $        -two*(spl%xs(1)+spl%xs(2)+spl%xs(3)))
      $        +spl%xs(1)*spl%xs(2)+spl%xs(1)*spl%xs(3)
      $        +spl%xs(2)*spl%xs(3))
      $        /((spl%xs(0)-spl%xs(1))*(spl%xs(0)-spl%xs(2))
@@ -700,8 +703,8 @@ c-----------------------------------------------------------------------
          cl(4)=((spl%xs(1)-spl%xs(0))*(spl%xs(2)-spl%xs(0)))
      $        /((spl%xs(3)-spl%xs(0))*(spl%xs(3)-spl%xs(1))
      $        *(spl%xs(3)-spl%xs(2)))
-         cr(1)=(spl%xs(spl%mx)*(3*spl%xs(spl%mx)
-     $        -2*(spl%xs(spl%mx-1)+spl%xs(spl%mx-2)
+         cr(1)=(spl%xs(spl%mx)*(three*spl%xs(spl%mx)
+     $        -two*(spl%xs(spl%mx-1)+spl%xs(spl%mx-2)
      $        +spl%xs(spl%mx-3)))+spl%xs(spl%mx-1)
      $        *spl%xs(spl%mx-2)+spl%xs(spl%mx-1)*spl%xs(spl%mx
      $        -3)+spl%xs(spl%mx-2)*spl%xs(spl%mx-3))
@@ -729,10 +732,10 @@ c     not-a-knot boundary conditions.
 c-----------------------------------------------------------------------
       CASE("not-a-knot")
          b=b*b
-         a(0,1)=a(0,1)+(spl%xs(2)+spl%xs(0)-2*spl%xs(1))*b(1)
+         a(0,1)=a(0,1)+(spl%xs(2)+spl%xs(0)-two*spl%xs(1))*b(1)
          a(1,1)=a(1,1)+(spl%xs(2)-spl%xs(1))*b(1)
          a(0,spl%mx-1)=a(0,spl%mx-1)
-     $        +(2*spl%xs(spl%mx-1)-spl%xs(spl%mx-2)
+     $        +(two*spl%xs(spl%mx-1)-spl%xs(spl%mx-2)
      $        -spl%xs(spl%mx))*b(spl%mx)
          a(-1,spl%mx-1)=a(-1,spl%mx-1)
      $        +(spl%xs(spl%mx-1)-spl%xs(spl%mx-2))*b(spl%mx)
@@ -773,6 +776,7 @@ c-----------------------------------------------------------------------
       INTEGER :: iqty,iside
       REAL(r8) :: xx,d,z,z1,xfac,dx
       REAL(r8) :: g,g1,g2,g3
+      REAL(r8), DIMENSION(spl%nqty) :: temp1, temp2, temp3
 c-----------------------------------------------------------------------
 c     preliminary computations.
 c-----------------------------------------------------------------------
@@ -808,39 +812,46 @@ c     evaluate offset and related quantities.
 c-----------------------------------------------------------------------
       d=spl%xs(spl%ix+1)-spl%xs(spl%ix)
       z=(xx-spl%xs(spl%ix))/d
-      z1=1-z
+      z1=one-z
 c-----------------------------------------------------------------------
 c     evaluate functions.
 c-----------------------------------------------------------------------
-      spl%f=spl%fs(spl%ix,1:spl%nqty)*z1*z1*(3-2*z1)
-     $     +spl%fs(spl%ix+1,1:spl%nqty)*z*z*(3-2*z)
-     $     +d*z*z1*(spl%fs1(spl%ix,1:spl%nqty)*z1
-     $     -spl%fs1(spl%ix+1,1:spl%nqty)*z)
+      temp1 = spl%fs(spl%ix,1:spl%nqty)*((z1*z1)*(three-(two*z1)))
+      temp2 = spl%fs(spl%ix+1,1:spl%nqty)*((z*z)*(three-(two*z)))
+      temp3 = temp1 + temp2
+      temp1 = spl%fs1(spl%ix,1:spl%nqty)*z1
+      temp2 = spl%fs1(spl%ix+1,1:spl%nqty)*z
+      temp3 = temp3 + ((d*z)*z1)*(temp1 - temp2)
+      spl%f = temp3
+!       spl%f=spl%fs(spl%ix,1:spl%nqty)*z1*z1*(three-two*z1)
+!      $     +spl%fs(spl%ix+1,1:spl%nqty)*z*z*(three-two*z)
+!      $     +d*z*z1*(spl%fs1(spl%ix,1:spl%nqty)*z1
+!      $     -spl%fs1(spl%ix+1,1:spl%nqty)*z)
 c-----------------------------------------------------------------------
 c     evaluate first derivatives.
 c-----------------------------------------------------------------------
       IF(mode > 0)THEN
-         spl%f1=6*(spl%fs(spl%ix+1,1:spl%nqty)
+         spl%f1=six*(spl%fs(spl%ix+1,1:spl%nqty)
      $        -spl%fs(spl%ix,1:spl%nqty))*z*z1/d
-     $        +spl%fs1(spl%ix,1:spl%nqty)*z1*(3*z1-2)
-     $        +spl%fs1(spl%ix+1,1:spl%nqty)*z*(3*z-2)
+     $        +spl%fs1(spl%ix,1:spl%nqty)*z1*(three*z1-two)
+     $        +spl%fs1(spl%ix+1,1:spl%nqty)*z*(three*z-two)
       ENDIF
 c-----------------------------------------------------------------------
 c     evaluate second derivatives.
 c-----------------------------------------------------------------------
       IF(mode > 1)THEN
-         spl%f2=(6*(spl%fs(spl%ix+1,1:spl%nqty)
+         spl%f2=(six*(spl%fs(spl%ix+1,1:spl%nqty)
      $        -spl%fs(spl%ix,1:spl%nqty))*(z1-z)/d
-     $        -spl%fs1(spl%ix,1:spl%nqty)*(6*z1-2)
-     $        +spl%fs1(spl%ix+1,1:spl%nqty)*(6*z-2))/d
+     $        -spl%fs1(spl%ix,1:spl%nqty)*(six*z1-two)
+     $        +spl%fs1(spl%ix+1,1:spl%nqty)*(six*z-two))/d
       ENDIF
 c-----------------------------------------------------------------------
 c     evaluate third derivatives.
 c-----------------------------------------------------------------------
       IF(mode > 2)THEN
-         spl%f3=(12*(spl%fs(spl%ix,1:spl%nqty)
+         spl%f3=(twelve*(spl%fs(spl%ix,1:spl%nqty)
      $        -spl%fs(spl%ix+1,1:spl%nqty))/d
-     $        +6*(spl%fs1(spl%ix,1:spl%nqty)
+     $        +six*(spl%fs1(spl%ix,1:spl%nqty)
      $        +spl%fs1(spl%ix+1,1:spl%nqty)))/(d*d)
       ENDIF
 c-----------------------------------------------------------------------
@@ -855,11 +866,11 @@ c-----------------------------------------------------------------------
             IF(mode > 0)g1=(spl%f1(iqty)+spl%f(iqty)
      $           *spl%xpower(iside,iqty)/dx)*xfac
             IF(mode > 1)g2=(spl%f2(iqty)+spl%xpower(iside,iqty)/dx
-     $           *(2*spl%f1(iqty)+(spl%xpower(iside,iqty)-1)
+     $           *(two*spl%f1(iqty)+(spl%xpower(iside,iqty)-1)
      $           *spl%f(iqty)/dx))*xfac
             IF(mode > 2)g3=(spl%f3(iqty)+spl%xpower(iside,iqty)/dx
-     $           *(3*spl%f2(iqty)+(spl%xpower(iside,iqty)-1)/dx
-     $           *(3*spl%f1(iqty)+(spl%xpower(iside,iqty)-2)/dx
+     $           *(three*spl%f2(iqty)+(spl%xpower(iside,iqty)-1)/dx
+     $           *(three*spl%f1(iqty)+(spl%xpower(iside,iqty)-two)/dx
      $           *spl%f(iqty))))*xfac
             spl%f(iqty)=g
             IF(mode > 0)spl%f1(iqty)=g1
@@ -1360,14 +1371,16 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(-1:,:), INTENT(IN) :: a
       REAL(r8), DIMENSION(:,:), INTENT(INOUT) :: x
 
-      INTEGER :: i,j,n
+      INTEGER :: i,j,k,n
 c-----------------------------------------------------------------------
 c     down sweep.
 c-----------------------------------------------------------------------
       n=SIZE(a,2)
       DO i=1,n
          DO j=MAX(1-i,-1),-1
-            x(i,:)=x(i,:)-a(j,i)*x(i+j,:)
+            DO k=1,SIZE(x,2)
+               x(i,k)=x(i,k)-a(j,i)*x(i+j,k)
+            ENDDO
          ENDDO
       ENDDO
 c-----------------------------------------------------------------------
@@ -1375,9 +1388,13 @@ c     up sweep.
 c-----------------------------------------------------------------------
       DO i=n,1,-1
          DO j=1,MIN(n-i,1)
-            x(i,:)=x(i,:)-a(j,i)*x(i+j,:)
+            DO k=1,SIZE(x,2)
+               x(i,k)=x(i,k)-a(j,i)*x(i+j,k)
+            ENDDO
          ENDDO
-         x(i,:)=x(i,:)*a(0,i)
+         DO k=1,SIZE(x,2)
+            x(i,k)=x(i,k)*a(0,i)
+         ENDDO
       ENDDO
 c-----------------------------------------------------------------------
 c     terminate.

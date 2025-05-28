@@ -634,7 +634,6 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,2*mpert,2,0:k), INTENT(INOUT) :: vmat
 
       INTEGER :: l,isol
-      REAL(r8), PARAMETER :: two=2
       COMPLEX(r8) :: det
       COMPLEX(r8), DIMENSION(2,2) :: a
       COMPLEX(r8), DIMENSION(2) :: x
