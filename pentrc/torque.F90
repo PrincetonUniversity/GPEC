@@ -27,7 +27,7 @@ module torque
     use utilities, only : get_free_file_unit, check, median, append_2d, &
         ri, btoi, itob
     use special, only : ellipk,ellipe
-    use grid, only : powspace_sub,linspace_sub
+    use grid_mod, only : powspace_sub,linspace_sub
     ! use lsode_mod just a subroutine in the lsode directory...
     use spline_mod, only :  spline_type,spline_eval,spline_alloc,spline_dealloc,&
                             spline_fit,spline_int,spline_write1,spline_eval_external,&

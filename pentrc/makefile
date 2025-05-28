@@ -43,7 +43,6 @@ OBJS = \
 	lsode1.o \
 	lsode2.o \
 	special.o \
-    grid.o \
     inputs.o \
 	energy.o \
     pitch.o \
@@ -93,7 +92,6 @@ pentrc: $(OBJS)
 lsode1.o: ../lsode/lsode.o
 lsode2.o: ../lsode/lsode.o
 params.o: version.inc ../equil/local_mod.mod
-grid.o: 
 utilities.o: params.o
 special.o: params.o utilities.o
 dcon_interface.o: params.o utilities.o ../equil/spline_mod.mod ../equil/fspline_mod.mod ../equil/cspline_mod.mod ../equil/bicube_mod.mod
