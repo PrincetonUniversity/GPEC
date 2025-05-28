@@ -11,7 +11,7 @@ endif
 
 include ../install/DEFAULTS.inc
 
-IFLAGS = -I../globals -I../equil -I../vacuum -I../harvest -I../pentrc -I../coil -I../slayer -I$(MATHINC) -I$(NETCDFINC)
+IFLAGS = -I../equil -I../vacuum -I../harvest -I../pentrc -I../coil -I../slayer -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS) $(RECURSFLAG)
 export FFLAGS # for sub-makes
 
@@ -31,7 +31,6 @@ LIBS = \
 	-lharvest \
 	-lslayer \
 	-lcoil \
-	-lglobals \
 
 OBJS = \
 	gpglobal.o \
@@ -87,8 +86,8 @@ clean:
 
 # dependencies
 
-gpglobal.o: ../globals/fspline_mod.mod ../globals/bicube_mod.mod
-ismath.o: gpglobal.o  ../globals/local_mod.mod
+gpglobal.o: ../equil/fspline_mod.mod ../equil/bicube_mod.mod
+ismath.o: gpglobal.o  ../equil/local_mod.mod
 idcon.o: gpglobal.o ismath.o
 rdcon.o: gpglobal.o ismath.o idcon.o
 gpeq.o: idcon.o ismath.o

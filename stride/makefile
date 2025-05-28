@@ -5,17 +5,20 @@
 
 ifneq (,$(findstring ifort,$(FC)))
     RECURSFLAG=-recursive
+	LEGACYFLAG=
 else ifneq (,$(findstring ifx,$(FC)))
 	RECURSFLAG=-recursive
+	LEGACYFLAG=
 else
     RECURSFLAG=-frecursive
+	LEGACYFLAG=-std=legacy
 endif
 
 include ../install/DEFAULTS.inc
 
 # flags unique to stride (not to be clobbered by top level install/makefile options)
-IFLAGS = -I../globals -I../equil -I../vacuum -I$(MATHINC) -I$(NETCDFINC)
-F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS) $(RECURSFLAG)
+IFLAGS = -I../equil -I../vacuum -I$(MATHINC) -I$(NETCDFINC)
+F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS) $(RECURSFLAG) $(LEGACYFLAG)
 
 .f.o:
 	$(F90) -c $*.f
@@ -32,7 +35,6 @@ LIBS = \
 	-llsode \
 	-lequil \
 	-lvac \
-	-lglobals \
 	-L$(MATHDIR) \
 	$(MATHLIBS)
 
@@ -92,11 +94,11 @@ clean:
 
 # dependencies
 
-dcon_mod.o: ../globals/spline_mod.mod ../equil/global_mod.mod \
+dcon_mod.o: ../equil/spline_mod.mod ../equil/global_mod.mod \
 	../equil/equil_mod.mod ../equil/equil_out_mod.mod version.inc
 mercier.o: dcon_mod.o
 bal.o: dcon_mod.o
-fourfit.o: ../globals/fspline_mod.mod dcon_mod.o
+fourfit.o: ../equil/fspline_mod.mod dcon_mod.o
 sing.o: fourfit.o
 zvode1.o: ../zvode/zvode.o ../zlange/zlange.o
 riccati.o: sing.o

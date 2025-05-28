@@ -4,16 +4,16 @@
 # If using ifort, the proper syntax is -recursive.
 
 ifneq (,$(findstring ifort,$(FC)))
-    RECURSFLAG=-recursive
+    EXTRAFLAGS=-recursive
 else ifneq (,$(findstring ifx,$(FC)))
-	RECURSFLAG=-recursive
+	EXTRAFLAGS=-recursive
 else
-    RECURSFLAG=-frecursive
+    EXTRAFLAGS=-frecursive -std=legacy
 endif
 
 include ../install/DEFAULTS.inc
 
-F90 = $(FC) $(FFLAGS) $(RECURSFLAG) -I../globals
+F90 = $(FC) $(FFLAGS) $(EXTRAFLAGS) -I../equil
 
 .f.o:
 	$(F90) -c $*.f

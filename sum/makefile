@@ -1,7 +1,7 @@
 
 include ../install/DEFAULTS.inc
 
-F90 = $(FC) $(FFLAGS) -I../globals 
+F90 = $(FC) $(FFLAGS) -I../equil 
 
 .f.o:
 	$(F90) -c $*.f
@@ -13,7 +13,7 @@ OBJS = \
 LIBDIR = ../lib
 
 LIBS = \
-	-lglobals
+	-lequil \
 
 
 sum: $(OBJS)
@@ -25,7 +25,7 @@ sum: $(OBJS)
 
 local.o: io.o
 utils.o: local.o
-sum.o: ../globals/utils.o ../globals/local_mod.mod
+sum.o: ../equil/utils.o ../equil/local_mod.mod
 
 clean:
 	rm -f *.o *.mod *.out *.bin sum *~ *.original

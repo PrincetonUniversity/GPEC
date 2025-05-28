@@ -1663,24 +1663,24 @@ c     factor out sqrt(s) from m-odd coefficients
 c      
       DO is=1,ns-1
          jds=REAL(is,r8)/ns
-       jds=SQRT(jds)
-       DO ipol=0,mpol
-          IF (MOD(ipol,2) == 0) CYCLE
-          rmncc(is,ipol) = rmncc(is,ipol)/jds
-          zmnsc(is,ipol) = zmnsc(is,ipol)/jds
-          IF (lasym) THEN
-             rmnsc(is,ipol) = rmnsc(is,ipol)/jds
-             zmncc(is,ipol) = zmncc(is,ipol)/jds
-          END IF
-       END DO
-       IF (is == 1) THEN
-           rmncc(0,1) = rmncc(1,1)
-           zmnsc(0,1) = zmnsc(1,1)
-           IF (lasym) THEN
-              rmnsc(0,1) = rmnsc(1,1)
-              zmncc(0,1) = zmncc(1,1)
-           END IF
-       END IF
+         jds=SQRT(jds)
+         DO ipol=0,mpol
+            IF (MOD(ipol,2) == 0) CYCLE
+            rmncc(is,ipol) = rmncc(is,ipol)/jds
+            zmnsc(is,ipol) = zmnsc(is,ipol)/jds
+            IF (lasym) THEN
+               rmnsc(is,ipol) = rmnsc(is,ipol)/jds
+               zmncc(is,ipol) = zmncc(is,ipol)/jds
+            END IF
+         END DO
+         IF (is == 1) THEN
+            rmncc(0,1) = rmncc(1,1)
+            zmnsc(0,1) = zmnsc(1,1)
+            IF (lasym) THEN
+               rmnsc(0,1) = rmnsc(1,1)
+               zmncc(0,1) = zmncc(1,1)
+            END IF
+         END IF
       END DO
       
       DO is=0,ns-1

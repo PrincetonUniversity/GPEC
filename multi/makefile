@@ -1,8 +1,8 @@
 
-F90 = $(FC) $(FFLAGS) -I../globals
+F90 = $(FC) $(FFLAGS)
 
 .f.o:
-	$(F90) -c $*.f 
+	$(F90) -c $*.f -I../equil
 
 OBJS = \
 	io.o \
@@ -11,7 +11,7 @@ OBJS = \
 LIBDIR = ../lib
 
 LIBS = \
-	-lglobals
+	-lequil \
 
 multi: $(OBJS)
 	$(F90) -o multi $(OBJS) -L$(LIBDIR) $(LIBS) 
@@ -21,7 +21,7 @@ multi: $(OBJS)
 # dependencies
 
 local.o: io.o
-multi.o: ../globals/local_mod.mod
+multi.o: ../equil/local_mod.mod
 
 clean:
 	rm -f *.o *.mod *.out *.bin multi *~ *.original

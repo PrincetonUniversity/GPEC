@@ -14,11 +14,11 @@ export LDFLAGS
 
 .IGNORE:
 
-all: v harvest globals lsode zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
+all: v harvest equil lsode zlange zvode  orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum xdraw slayer coil gpec stride mkbin
 
 # fortran only
-allf: v harvest globals lsode zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
+allf: v harvest equil lsode zlange zvode  orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum slayer coil gpec stride mkbin
 
 
@@ -29,9 +29,6 @@ harvest:
 	cd ../harvest; make FC='$(FC)' CC='$(CC)' GACODE_ROOT= -f Makefile libharvest.a
 	mkdir -p ../lib
 	cp -f ../harvest/libharvest.a ../lib/
-
-globals:
-	cd ../globals; make libglobals
 
 xdraw:
 	cd ../xdraw;  make
@@ -129,7 +126,6 @@ endif
 
 clean:
 	cd ../harvest; make clean
-	cd ../globals; make clean
 	cd ../zlange;  make clean
 	cd ../zvode;  make clean
 	cd ../xdraw;  make clean

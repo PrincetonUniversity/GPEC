@@ -9,12 +9,25 @@ else
     RECURSFLAG=-frecursive
 endif
 
-F90 = $(FC) $(FFLAGS) $(RECURSFLAG) -I../globals
+F90 = $(FC) $(FFLAGS) $(RECURSFLAG)
 
 .f.o:
 	$(F90) -c $*.f
 
+%.o: %.f90
+	$(F90) -c $<
+
+
 OBJS = \
+	io.o \
+	local.o \
+	utils.o \
+	spline.o \
+	grid.o \
+	bicube.o \
+	cspline.o \
+	fft.o \
+	fspline.o \
 	global.o \
 	inverse.o \
 	direct.o \
@@ -38,8 +51,16 @@ clean:
 
 # dependencies
 
-global.o: ../globals/bicube.o ../globals/cspline.o
-inverse.o: global.o ../globals/utils.o
+local.o: io.o
+utils.o: local.o
+spline.o: local.o
+grid.o: local.o spline.o
+bicube.o: spline.o
+cspline.o: local.o
+fft.o: local.o
+fspline.o: local.o spline.o cspline.o utils.o fft.o
+global.o: bicube.o cspline.o
+inverse.o: global.o utils.o grid.o
 direct.o: global.o
 read_eq.o: inverse.o direct.o
 lar.o: inverse.o

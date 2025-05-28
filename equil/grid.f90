@@ -1,4 +1,4 @@
-!@PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE
+!@GENERAL PERTURBED EQUILIBRIUM CODE
 
     module grid_mod
     !----------------------------------------------------------------------- 

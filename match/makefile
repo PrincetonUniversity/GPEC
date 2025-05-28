@@ -11,7 +11,7 @@ endif
 
 include ../install/DEFAULTS.inc
 
-IFLAGS = -I../equil -I../globals
+IFLAGS = -I../equil
 F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS) $(RECURSFLAG)
 export FFLAGS # for sub-makes
 
@@ -24,7 +24,6 @@ LIBDIR = ../lib
 LIBS = \
 	-lequil \
 	-llsode \
-	-lglobals \
 
 OBJS = \
 	qsort.o \
@@ -53,11 +52,11 @@ match: $(OBJS)
 
 # dependencies
 
-debug.o: ../globals/local_mod.mod
-gamma.o: ../globals/local_mod.mod
+debug.o: ../equil/local_mod.mod
+gamma.o: ../equil/local_mod.mod
 deltar.o: gamma.o
-root.o: ../globals/local_mod.mod
-match_mod.o: deltar.o root.o ../globals/utils_mod.mod
+root.o: ../equil/local_mod.mod
+match_mod.o: deltar.o root.o ../equil/utils_mod.mod
 ideal.o: match_mod.o
 matrix.o: match_mod.o debug.o
 resist.o: matrix.o

@@ -2,7 +2,7 @@
 
 include ../install/DEFAULTS.inc
 
-F90 = $(FC) $(FFLAGS) -I../globals
+F90 = $(FC) $(FFLAGS) -I../equil
 
 .f.o:
 	$(F90) -c $*.f
