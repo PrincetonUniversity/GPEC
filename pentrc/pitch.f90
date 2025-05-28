@@ -172,8 +172,8 @@ module pitch_integration
         integer  iopt, istate, itask, itol, mf, iflag, neqarray(1), &
             neq, liw, lrw
         integer, dimension(:), allocatable :: iwork
-        real*8 :: x,xout
-        real*8, dimension(:), allocatable ::  atol,rtol,rwork,y,dky
+        real(r8) :: x,xout
+        real(r8), dimension(:), allocatable ::  atol,rtol,rwork,y,dky
 
         ! set lsode options - see lsode package for documentation
         neq = 2*(flambda%nqty-2)
@@ -330,7 +330,7 @@ module pitch_integration
     !-----------------------------------------------------------------------
         implicit none
         integer ::  neq
-        real*8 x, y(neq), ydot(neq)
+        real(r8) x, y(neq), ydot(neq)
     
         integer :: i,ix
         real(r8) :: wd,wb,lnq,fl,nueff
@@ -433,7 +433,7 @@ module pitch_integration
     !-----------------------------------------------------------------------
         implicit none
         integer  neq, ml, mu, nrpd
-        real*8  t, y, pd(nrpd,2)
+        real(r8)  t, y, pd(nrpd,2)
         ! null result
         pd(:,:) = 0
         return

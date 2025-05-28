@@ -1,8 +1,18 @@
+# If using gfortran, the proper syntax is -frecursive.
+# If using ifort, the proper syntax is -recursive.
+
+ifneq (,$(findstring ifort,$(FC)))
+    RECURSFLAG=-recursive
+else ifneq (,$(findstring ifx,$(FC)))
+	RECURSFLAG=-recursive
+else
+    RECURSFLAG=-frecursive
+endif
 
 include ../install/DEFAULTS.inc
 
 IFLAGS = -I../equil
-F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
+F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS) $(RECURSFLAG)
 export FFLAGS # for sub-makes
 
 
@@ -13,7 +23,7 @@ LIBDIR = ../lib
 
 LIBS = \
 	-lequil \
-	-llsode
+	-llsode \
 
 OBJS = \
 	qsort.o \
@@ -36,7 +46,7 @@ equil:
 	cd ../equil; make
 
 match: $(OBJS)
-	$(F90) -o match $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS)
+	$(F90) -o match $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS) $(LDFLAGS)
 	mkdir -p ../bin
 	cp -f match ../bin
 
@@ -53,4 +63,4 @@ resist.o: matrix.o
 match.o: ideal.o resist.o
 
 clean:
-	rm -f *.o *.mod *.out *.bin match
+	rm -f *.o *.mod *.out *.bin match *.original

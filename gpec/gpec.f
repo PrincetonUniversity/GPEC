@@ -70,7 +70,7 @@ c-----------------------------------------------------------------------
      $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout,filter_flag,
      $     netcdf_flag,ascii_flag,singthresh_flag,
      $     singthresh_callen_flag,singthresh_slayer_flag,
-     $     singthresh_slayer_inpr
+     $     singthresh_slayer_inpr,out_ahg2msc
       NAMELIST/gpec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,jacfac_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
@@ -126,6 +126,8 @@ c-----------------------------------------------------------------------
       nchr=20
       nchz=20
 
+      out_ahg2msc=.TRUE.
+      vac_memory=.FALSE.
       jsurf_out=0
       tmag_out=1
       mlim_out=64
@@ -224,6 +226,7 @@ c-----------------------------------------------------------------------
       CALL ascii_close(in_unit)
       galsol%gal_flag=gal_flag
       IF(timeit) CALL gpec_timer(0)
+
 c-----------------------------------------------------------------------
 c     deprecated variable errors
 c-----------------------------------------------------------------------
@@ -252,6 +255,17 @@ c-----------------------------------------------------------------------
          ENDIF
        PRINT *,"!! WARNING: ivacuumfile is deprecated and will be"//
      $         " ignored."
+      ENDIF
+      IF (out_ahg2msc) THEN
+         IF(.not. warnings_needed)THEN
+           PRINT *, "..."
+           warnings_needed = .true.
+         ENDIF
+         PRINT *, "!! WARNING: ahg2msc.out is deprecated and will be "//
+     $        "removed in a future version."
+         vac_memory=.FALSE.
+      ELSE
+         vac_memory=.TRUE.
       ENDIF
       IF(warnings_needed) PRINT *, "..."
 c-----------------------------------------------------------------------

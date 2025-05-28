@@ -31,6 +31,7 @@ c-----------------------------------------------------------------------
       USE sing_mod
       USE zvode1_mod
       USE riccati_mod
+      USE omp_lib
       IMPLICIT NONE
 
       REAL(r8), PARAMETER, PRIVATE :: eps=1e-10
@@ -193,6 +194,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     proceed to integration.
 c-----------------------------------------------------------------------
+#ifdef _OPENMP
          IF (integrate_riccati) THEN
             print *,"Using Riccati for non-parallel integration..."
             CALL OMP_SET_NUM_THREADS(1) !Riccati must not be run in ||.
@@ -207,6 +209,8 @@ c-----------------------------------------------------------------------
             ENDIF
             IF(nThreads>0) CALL OMP_SET_NUM_THREADS(nThreads)
          ENDIF
+#endif
+
 !$OMP PARALLEL DEFAULT(NONE)
 !.......................................................................
 !$OMP& SHARED(nIntervals,psiPoints,psiInters,psiDirs,sing,axisPsi,
@@ -625,7 +629,8 @@ c-----------------------------------------------------------------------
                ENDDO
                ! then, start breaking up the longest intervals
                IF(j<0)THEN
-                  j = MAXLOC(aT(1:nIntervals), DIM=1, MASK=aMask)
+                  j = MAXLOC(aT(1:nIntervals), DIM=1, 
+     $                                       MASK=aMask(1:nIntervals))
                ENDIF
                psiPoints(j+2:nIntervals+1,:)=psiPoints(j+1:nIntervals,:)
                psiInters(j+2:nIntervals+1,:)=psiInters(j+1:nIntervals,:)
@@ -1409,7 +1414,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE ode_nojac(neq_jac, t, y, ml, mu, pd, nrpd)
          INTEGER  neq_jac, ml, mu, nrpd
-         REAL*8  t, y, pd(nrpd,2)
+         REAL(r8)  t, y, pd(nrpd,2)
          pd(:,:) = 0
 c-----------------------------------------------------------------------
 c     terminate.

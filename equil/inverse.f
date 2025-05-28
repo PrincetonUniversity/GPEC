@@ -20,6 +20,7 @@ c-----------------------------------------------------------------------
       MODULE inverse_mod
       USE global_mod
       USE utils_mod
+      USE grid_mod
       IMPLICIT NONE
 
       TYPE(bicube_type) :: rz_in

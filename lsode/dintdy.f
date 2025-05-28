@@ -1,9 +1,11 @@
       SUBROUTINE DINTDY (T, K, YH, NYH, DKY, IFLAG)
+      USE local_mod, ONLY: r8
+     
 C***BEGIN PROLOGUE  DINTDY
 C***SUBSIDIARY
 C***PURPOSE  Interpolate solution derivatives.
 C***LIBRARY   MATHLIB (ODEPACK)
-C***TYPE      REAL*8 (SINTDY-S, DINTDY-D)
+C***TYPE      REAL(r8) (SINTDY-S, DINTDY-D)
 C***AUTHOR  Hindmarsh, Alan C., (LLNL)
 C***DESCRIPTION
 C
@@ -33,7 +35,7 @@ C***REVISION HISTORY  (YYMMDD)
 C   791129  DATE WRITTEN
 C   890501  Modified prologue to SLATEC/LDOC format.  (FNF)
 C   890503  Minor cosmetic changes.  (FNF)
-C   930809  Renamed to allow single/real*8 versions. (ACH)
+C   930809  Renamed to allow single/real(r8) versions. (ACH)
 C***END PROLOGUE  DINTDY
 C**End
       INTEGER K, NYH, IFLAG
@@ -41,10 +43,10 @@ C**End
      1   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L, METH, MITER,
      2   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
       INTEGER I, IC, J, JB, JB2, JJ, JJ1, JP1
-      REAL*8 T, YH, DKY
-      REAL*8 ROWNS,
+      REAL(r8) T, YH, DKY
+      REAL(r8) ROWNS,
      1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND
-      REAL*8 C, R, S, TP
+      REAL(r8) C, R, S, TP
       CHARACTER*80 MSG
       DIMENSION YH(NYH,*), DKY(*)
       COMMON /DLS001/ ROWNS(209),
@@ -64,10 +66,12 @@ C
       IF (K .EQ. 0) GO TO 15
       JJ1 = L - K
       DO 10 JJ = JJ1,NQ
- 10     IC = IC*JJ
+        IC = IC*JJ
+ 10     CONTINUE
  15   C = IC
       DO 20 I = 1,N
- 20     DKY(I) = C*YH(I,L)
+        DKY(I) = C*YH(I,L)
+ 20     CONTINUE
       IF (K .EQ. NQ) GO TO 55
       JB2 = NQ - K
       DO 50 JB = 1,JB2
@@ -77,23 +81,26 @@ C
         IF (K .EQ. 0) GO TO 35
         JJ1 = JP1 - K
         DO 30 JJ = JJ1,J
- 30       IC = IC*JJ
+          IC = IC*JJ
+ 30       CONTINUE
  35     C = IC
         DO 40 I = 1,N
- 40       DKY(I) = C*YH(I,JP1) + S*DKY(I)
+          DKY(I) = C*YH(I,JP1) + S*DKY(I)
+ 40       CONTINUE
  50     CONTINUE
       IF (K .EQ. 0) RETURN
  55   R = H**(-K)
       DO 60 I = 1,N
- 60     DKY(I) = R*DKY(I)
+        DKY(I) = R*DKY(I)
+ 60     CONTINUE
       RETURN
 C
  80   MSG = 'DINTDY-  K (=I1) illegal      '
-      CALL XERRWD (MSG, 30, 51, 0, 1, K, 0, 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 30, 51, 0, 1, K, 0, 0, 0.0d0, 0.0d0)
       IFLAG = -1
       RETURN
  90   MSG = 'DINTDY-  T (=R1) illegal      '
-      CALL XERRWD (MSG, 30, 52, 0, 0, 0, 0, 1, T, 0.0)
+      CALL XERRWD (MSG, 30, 52, 0, 0, 0, 0, 1, T, 0.0d0)
       MSG='      T not in interval TCUR - HU (= R1) to TCUR (=R2)      '
       CALL XERRWD (MSG, 60, 52, 0, 0, 0, 0, 2, TP, TN)
       IFLAG = -2

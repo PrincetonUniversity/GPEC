@@ -37,19 +37,21 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine vaccal
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      USE local_mod, ONLY: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       real nq
       integer tmth
 
-      REAL(8), DIMENSION(2) :: summ
-      REAL(8), DIMENSION(nfm) :: work0
-      REAL(8), DIMENSION(nfmsq) :: vacpstr,vacpsti,work,work1
-      REAL(8), DIMENSION(nfm,nfm) :: vacmti,wrkvr,wrkvi
-      REAL(8), DIMENSION(mtot,mtot) :: ajll,rmatr,rmati
+      REAL(r8), DIMENSION(2) :: summ
+      REAL(r8), DIMENSION(nfm) :: work0
+      REAL(r8), DIMENSION(nfmsq) :: vacpstr,vacpsti,work,work1
+      REAL(r8), DIMENSION(nfm,nfm) :: vacmti,wrkvr,wrkvi
+      REAL(r8), DIMENSION(mtot,mtot) :: ajll,rmatr,rmati
+      REAL(r8), DIMENSION(nths2,nfm2) :: dummy
 
-      REAL(8), DIMENSION(:,:), POINTER :: grdgre,arr,aii,ari,air
+      REAL(r8), DIMENSION(:,:), POINTER :: grdgre,arr,aii,ari,air
 c-----------------------------------------------------------------------
 c     interface block.
 c-----------------------------------------------------------------------
@@ -57,9 +59,9 @@ c-----------------------------------------------------------------------
          SUBROUTINE kernel(xobs,zobs,xsce,zsce,grdgre,gren,
      $        j1,j2,isgn,iopw,iops,ischk)
          USE vglobal_mod
-         REAL(8), DIMENSION(:), INTENT(IN) :: xobs,zobs,xsce,zsce
-         REAL(8), DIMENSION(:,:), INTENT(OUT) :: grdgre
-         REAL(8), DIMENSION(:,:), INTENT(OUT), TARGET :: gren
+         REAL(r8), DIMENSION(:), INTENT(IN) :: xobs,zobs,xsce,zsce
+         REAL(r8), DIMENSION(:,:), INTENT(OUT) :: grdgre
+         REAL(r8), DIMENSION(:,:), INTENT(OUT), TARGET :: gren
          INTEGER, INTENT(IN) :: j1,j2,isgn,iopw,iops,ischk
          INTEGER :: sTime, fTime, cr
          END SUBROUTINE kernel
@@ -90,6 +92,7 @@ c-----------------------------------------------------------------------
       ajll=0
       rmatr=0
       rmati=0
+      dummy=0
 c-----------------------------------------------------------------------
 c     computations.
 c-----------------------------------------------------------------------
@@ -615,11 +618,12 @@ c-----------------------------------------------------------------------
       SUBROUTINE kernel(xobs,zobs,xsce,zsce,grdgre,gren,
      $     j1,j2,isgn,iopw,iops,ischk)
       USE vglobal_mod
+      USE local_mod, ONLY: r8
       IMPLICIT NONE
 
-      REAL(8), DIMENSION(:), INTENT(IN) :: xobs,zobs,xsce,zsce
-      REAL(8), DIMENSION(:,:), INTENT(OUT) :: grdgre
-      REAL(8), DIMENSION(:,:), INTENT(OUT), TARGET :: gren
+      REAL(r8), DIMENSION(:), INTENT(IN) :: xobs,zobs,xsce,zsce
+      REAL(r8), DIMENSION(:,:), INTENT(OUT) :: grdgre
+      REAL(r8), DIMENSION(:,:), INTENT(OUT), TARGET :: gren
       INTEGER, INTENT(IN) :: j1,j2,isgn,iopw,iops,ischk
 
       INTEGER  :: i,ic,iend,ig,ilr,isph,istart,j,j1j2,jres,js1,js2,
@@ -627,23 +631,23 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(2) :: iop
       INTEGER :: sTime, fTime, cr
 
-      REAL(8) :: a0,ak0i,alg,alg0,alg1,alg2,algdth,am,amm,ap,app,
+      REAL(r8) :: a0,ak0i,alg,alg0,alg1,alg2,algdth,am,amm,ap,app,
      $     aval1,resdg,residu,resk0,slog0,slog1m,slog1p,tdth,
      $     thes,theta,third,wgbg,wsimpa,wsimpa1,wsimpa2,wsimpa4,wsimpb,
      $     wsimpb1,wsimpb2,wsimpb4,xl,xu
-      REAL(8), DIMENSION(3) :: tab
-      REAL(8), DIMENSION(nths) :: the,xpp,zpp,work,ww1,ww2,ww3,xpr,zpr
+      REAL(r8), DIMENSION(3) :: tab
+      REAL(r8), DIMENSION(nths) :: the,xpp,zpp,work,ww1,ww2,ww3,xpr,zpr
 c-----------------------------------------------------------------------
 c     declarations of Gaussian quadrature quantities.
 c-----------------------------------------------------------------------
-      REAL(8) :: tgaus0,agaus,bgaus,pgaus,pgaus2
-      REAL(8), DIMENSION(8) :: tgaus
-      REAL(8), DIMENSION(8), PARAMETER :: wgaus=(/
+      REAL(r8) :: tgaus0,agaus,bgaus,pgaus,pgaus2
+      REAL(r8), DIMENSION(8) :: tgaus
+      REAL(r8), DIMENSION(8), PARAMETER :: wgaus=(/
      $     0.101228536290376_8,0.222381034453374_8,
      $     0.313706645877887_8,0.362683783378362_8,
      $     0.362683783378362_8,0.313706645877887_8,
      $     0.222381034453374_8,0.101228536290376_8/)
-      REAL(8), DIMENSION(8), PARAMETER :: xgaus=(/
+      REAL(r8), DIMENSION(8), PARAMETER :: xgaus=(/
      $     -0.960289856497536_8,-0.796666477413627_8,
      $     -0.525532409916329_8,-0.183434642495650_8,
      $     0.183434642495650_8,0.525532409916329_8,
@@ -651,12 +655,14 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     initialize.
 c-----------------------------------------------------------------------
-      xpp(1)=0
-      zpp(1)=0
-      tab(1)=0
-      ww1(1)=0
-      ww2(1)=0
-      ww3(1)=0
+      DO i=1,nths
+         xpp(i)=0
+         zpp(i)=0
+         ww1(i)=0
+         ww2(i)=0
+         ww3(i)=0
+      ENDDO
+      tab(1:3)=0
       ak0i=0
       jres=1
       isph = 0
@@ -872,7 +878,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine mateig ( zvec, work, work1 )
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      USE local_mod, ONLY: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       dimension zvec(nfm,nfm), work(*), work1(*)
@@ -918,7 +925,8 @@ c-----------------------------------------------------------------------
       subroutine mateig2 ( zvec, nd,msiz, zwk,work0,work,work1, l1,l2,
      $     ff1,lcone, jobid1, nout1 )
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      USE local_mod, ONLY: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       character(*) jobid1
@@ -975,7 +983,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine arrays
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       real nq
@@ -1061,14 +1069,16 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine wwall(nqnqnq,xwal1,zwal1)
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      USE local_mod, ONLY: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       INTEGER:: npots0,npots
       logical lfix, insect
-      REAL*8 :: csmin
-      REAL*8, DIMENSION(:),POINTER :: thetatmp,xwaltmp,xpptmp,
-     $            ww1tmp,ww2tmp,ww3tmp,tabtmp,zwaltmp,rioptmp
+      REAL(r8) :: csmin
+      REAL(r8), DIMENSION(:),POINTER :: thetatmp,xwaltmp,xpptmp,
+     $            ww1tmp,ww2tmp,ww3tmp,tabtmp,zwaltmp
+      INTEGER, DIMENSION(:),POINTER :: rioptmp
       dimension xwal1(*), zwal1(*)
       dimension iop(2),xpp(nths),zpp(nths),ww1(nths),ww2(nths),
      $    ww3(nths),thet(nths),tabx(3),tabz(3)
@@ -1641,7 +1651,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine d3dwall ( xwall, ywall, mthh, iomod, iotty1 )
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      USE local_mod, ONLY: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       integer, parameter :: ncdf=26
@@ -1698,7 +1709,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine d3dvesl(r0,z0,a0,e0,ar,az,nval,zst,r,z,npts,ier)
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      USE local_mod, ONLY: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       dimension ar(nval),az(nval)
@@ -1780,7 +1792,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine eqarcw ( xin, zin, xout, zout, ell, thgr, thlag, mw1 )
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      USE local_mod, ONLY: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       dimension xin(*), xout(*), zin(*), zout(*),
@@ -1829,7 +1842,8 @@ c-----------------------------------------------------------------------
       subroutine gatonorm ( vacin, gatovac_, nd, rgato_,mfel_,mth_,
      $     qa1_,twopi_ )
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      USE local_mod, ONLY: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       dimension  vacin(nd,nd), gatovac_(nd,nd)
@@ -1862,7 +1876,8 @@ c-----------------------------------------------------------------------
       subroutine adjustb(betin,betout,a_,bw_,cw_,dw_,xmaj_,plrad_,
      $   ishape_)
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      USE local_mod, ONLY: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 c-----------------------------------------------------------------------
 c     computations.
@@ -1891,12 +1906,13 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine fouran ( gij, gil, cs, m00,l00 )
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      USE local_mod, ONLY: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
-      REAL(8), DIMENSION(nths,nths) :: gij
-      REAL(8), DIMENSION(nths2,nfm2) :: gil
-      REAL(8), DIMENSION(nths,nfm) :: cs
+      REAL(r8), DIMENSION(nths,nths) :: gij
+      REAL(r8), DIMENSION(nths2,nfm2) :: gil
+      REAL(r8), DIMENSION(nths,nfm) :: cs
 c-----------------------------------------------------------------------
 c     computations.
 c-----------------------------------------------------------------------
@@ -1929,7 +1945,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine foranv ( gil, gll, cs, m00,l00 )
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      USE local_mod, ONLY: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       dimension gil(nths2,nfm2), gll(nfm,nfm), cs(nths,nfm)
@@ -1964,7 +1981,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine foura2 ( gij,m01,m02, gil, m00 )
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      USE local_mod, ONLY: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       real nq
@@ -2010,7 +2028,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine fanal ( fth, nt, flc,fls, l1,l2, pi,ddt )
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      USE local_mod, ONLY: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       dimension fth(*), flc(*), fls(*)
@@ -2047,7 +2066,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine fanal1 ( gi,ndi1,ndi2,mi1, gor,goi,ndo1,ndo2 )
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      USE local_mod, ONLY: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       real nq
@@ -2094,7 +2114,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine felang ( gij, gil, cs, m00,l00 )
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      USE local_mod, ONLY: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       data izcal / 0 /
@@ -2163,7 +2184,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine felanv ( gil, gll, cs, m00,l00 )
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      USE local_mod, ONLY: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       data izcal / 0 /
@@ -2236,7 +2258,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine fotofi ( vin,vout, scnlth, wrk1, wrk2, iopsc )
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      USE local_mod, ONLY: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       dimension vin(nfm,nfm), vout(nfm,nfm), scnlth(nths,nfm),
@@ -2263,7 +2286,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine orchek ( wrkr, wrki, wrkrt, wrkit, wrko1,wrko2 )
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      USE local_mod, ONLY: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       dimension  wrkr(nfm,nfm), wrki(nfm,nfm),
@@ -2319,7 +2343,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine tmat ( sil, tll, iop )
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      USE local_mod, ONLY: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       dimension sil(nths,nfm), tll(nfm,nfm)
@@ -2395,7 +2420,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine wtopest ( vacpstr, vacpsti, xwal_, zwal_ )
             USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       dimension vacpstr(*), vacpsti(*), xwal_(*), zwal_(*)
@@ -2414,9 +2439,9 @@ c-----------------------------------------------------------------------
       lmx = lmax(1)
       lgivup = 1
       nadres = 1
-      call zwr(iovac,lmn,1,nadres,lgivup,999)
+      call zwr(iovac,real(lmn,8),1,nadres,lgivup,999)
       nadres = nadres + 1
-      call zwr(iovac,lmx,1,nadres,lgivup,999)
+      call zwr(iovac,real(lmn,8),1,nadres,lgivup,999)
       nadres = nadres + 1
       call trans ( xwal_,mth, xjdtxj,mthin )
       call zwr(iovac,xjdtxj(1),mthin2,nadres,lgivup,999)
@@ -2450,12 +2475,12 @@ c     declarations.
 c-----------------------------------------------------------------------
       USE vglobal_mod
       !implicit none
-      IMPLICIT REAL*8 (a-h,o-z)
+      IMPLICIT REAL(r8) (a-h,o-z)
 
-      real*8 :: wcentr
+      real(r8) :: wcentr
       dimension xwal1(*), zwal1(*)
       INTEGER :: firstpos, i
-      real*8 :: thwal0,thwal1
+      real(r8) :: thwal0,thwal1
       logical :: retro
 c-----------------------------------------------------------------------
 c     computations.

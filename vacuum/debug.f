@@ -10,7 +10,7 @@ c-----------------------------------------------------------------------
 
       CHARACTER(*) :: name
       INTEGER, INTENT(IN) :: l,m,n,iunit
-      REAL(8), DIMENSION(l,n), INTENT(IN) :: a
+      REAL(r8), DIMENSION(l,n), INTENT(IN) :: a
 
       INTEGER :: i,j
 c-----------------------------------------------------------------------

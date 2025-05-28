@@ -67,7 +67,13 @@ c-----------------------------------------------------------------------
 
       INTEGER, INTENT(IN) :: mx,nqty
       TYPE(spline_type), INTENT(INOUT) :: spl
-      IF(spl%allocated) CALL spline_dealloc(spl)
+      ! IF(spl%allocated) CALL spline_dealloc(spl)
+c-----------------------------------------------------------------------
+c     safety check.
+c-----------------------------------------------------------------------
+      IF(spl%allocated)
+     $   CALL program_stop("spline_alloc: spline already allocated")
+      
 c-----------------------------------------------------------------------
 c     set scalars.
 c-----------------------------------------------------------------------
@@ -105,6 +111,11 @@ c-----------------------------------------------------------------------
       SUBROUTINE spline_dealloc(spl)
 
       TYPE(spline_type), INTENT(INOUT) :: spl
+c-----------------------------------------------------------------------
+c     safety check.
+c-----------------------------------------------------------------------
+      IF(.NOT.spl%allocated)
+     $   CALL program_stop("spline_dealloc: spline not allocated")
 c-----------------------------------------------------------------------
 c     deallocate space.
 c-----------------------------------------------------------------------

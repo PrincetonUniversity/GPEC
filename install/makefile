@@ -8,16 +8,17 @@ CFLAGS ?= -g
 export FFLAGS
 export CFLAGS
 export OMPFLAG
+export LDFLAGS
 
 # compile package
 
 .IGNORE:
 
-all: v harvest lsode zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
+all: v harvest equil lsode zlange zvode  orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum xdraw slayer coil gpec stride mkbin
 
 # fortran only
-allf: v harvest lsode zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
+allf: v harvest equil lsode zlange zvode  orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum slayer coil gpec stride mkbin
 
 
@@ -125,6 +126,8 @@ endif
 
 clean:
 	cd ../harvest; make clean
+	cd ../zlange;  make clean
+	cd ../zvode;  make clean
 	cd ../xdraw;  make clean
 	cd ../lsode;  make clean
 	cd ../equil;  make clean

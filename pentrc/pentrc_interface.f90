@@ -39,22 +39,22 @@ module pentrc_interface
     use spline_mod, only: use_classic_splines
 
     use energy_integration, only: &
-        output_energy_netcdf,output_energy_ascii,&  ! subroutine
-        xatol,xrtol,xmax,ximag,xnufac, &            ! real
-        xnutype,xf0type,&                           ! character
-        qt,xdebug                                   ! logical
+        output_energy_netcdf,output_energy_ascii,&       ! subroutine
+        xatol,xrtol,xmax,ximag,xnufac, &                 ! real
+        xnutype,xf0type,&                                ! character
+        qt,xdebug                                        ! logical
     use pitch_integration, only: &
-        output_pitch_netcdf,output_pitch_ascii,&                       ! subroutines
-        lambdaatol,lambdartol,&                     ! real
-        lambdadebug                                 ! logical
+        output_pitch_netcdf,output_pitch_ascii,&         ! subroutines
+        lambdaatol,lambdartol,&                          ! real
+        lambdadebug                                      ! logical
     use torque, only : &
-        tintgrl_lsode,tintgrl_grid,tpsi,&           ! functions
+        tintgrl_lsode,tintgrl_grid,&                     ! functions
         output_orbit_ascii,&
-        output_orbit_netcdf,output_torque_netcdf,&  ! subroutines
-        ntheta,nlmda,nthetafuns,&                   ! integers
-        atol_psi,rtol_psi,&                         ! real
-        tdebug,output_ascii,output_netcdf,&         ! logical
-        mpert,mfac                                  !! hacked for test writing
+        output_orbit_netcdf,tpsi,output_torque_netcdf,&  ! subroutines
+        ntheta,nlmda,nthetafuns,&                        ! integers
+        atol_psi,rtol_psi,&                              ! real
+        tdebug,output_ascii,output_netcdf,&              ! logical
+        mpert,mfac                                       !! hacked for test writing
 
     implicit none
 
@@ -213,7 +213,7 @@ module pentrc_interface
         if(all(psi_out==-1)) psi_out = (/(i,i=1,30)/)/30.6 ! even spread if user doesn't pick any
 
         ! warnings if using deprecated inputs
-        if(openmp_threads>0) print *,"!! WARNING: openmp_threads has been deprecated. Use pentrc_threads or OMP_NUM_THREADS env variable."
+        if(openmp_threads>0) print *,"!! WARNING: openmp_threads is deprecated. Use pentrc_threads or OMP_NUM_THREADS env variable."
         if(eq_out) print *, "!! WARNING: eq_out has been deprecated. Behavior is always true."
         if(eqpsi_out) print *, "!! WARNING: eqpsi_out has been deprecated. Use equil_grid."
         if(term_flag) print *, "!! WARNING: term_flag has been deprecated. Use verbose."

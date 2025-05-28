@@ -1,6 +1,6 @@
 include ../install/DEFAULTS.inc
 
-IFLAGS = -I../equil -I$(MATHINC) -I$(NETCDFINC)
+IFLAGS = -I../equil -I../vacuum -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
 export FFLAGS # for sub-makes
 
@@ -13,7 +13,7 @@ LIBS = \
 	-lpthread \
 	-llsode \
 	-lequil \
-	-lvac
+	-lvac \
 
 OBJS = \
 	debug.o \
@@ -46,7 +46,7 @@ vacuum:
 	cd ../vacuum; make
 
 rdcon: $(OBJS)
-	$(F90) -o rdcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS)
+	$(F90) -o rdcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS) $(LDFLAGS)
 	mkdir -p ../bin
 	cp -f rdcon ../bin
 
@@ -66,7 +66,7 @@ endif
 force:
 
 clean:
-	rm -f *.o *.mod *.out *.bin sum.dat *~ *.diff rdcon
+	rm -f *.o *.mod *.out *.bin sum.dat *~ *.diff rdcon *.original
 
 rclean: clean
 	cd ../equil; make clean
@@ -88,5 +88,5 @@ dcon_netcdf.o: dcon_mod.o
 free.o: ode.o dcon_netcdf.o
 resist.o: dcon_mod.o toolbox.o
 gal.o: jacobi.o sing.o free.o
-lib_interface.o: ../equil/local.o ../equil/global.o ../equil/utils.o ../equil/inverse.o
+lib_interface.o: ../equil/local_mod.mod ../equil/global.o ../equil/utils.o ../equil/inverse.o
 dcon.o: bal.o mercier.o ode.o resist.o gal.o lib_interface.o

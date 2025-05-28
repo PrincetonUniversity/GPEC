@@ -1,6 +1,6 @@
 !@PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE
 
-module utilities
+    module utilities
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
     !   Collection of utility procedures for general fortran needs.
@@ -17,7 +17,7 @@ module utilities
     ! AUTHOR: Logan
     ! EMAIL: nlogan@pppl.gov
     !-----------------------------------------------------------------------
-    use params, only: r8,twopi
+    use params, only: r4,r8,twopi
     use netcdf
     
     implicit none
@@ -216,8 +216,8 @@ module utilities
         integer, intent(in) :: mode
         integer, intent(in), optional :: unit
     
-        real(4) :: time
-        real(4), save :: seconds
+        real(r4) :: time
+        real(r4), save :: seconds
         integer :: hrs,mins,secs
 
         ! get current time

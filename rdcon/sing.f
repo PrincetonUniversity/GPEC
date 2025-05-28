@@ -74,7 +74,7 @@ c-----------------------------------------------------------------------
          WRITE(debug_unit)mpert,msing
          DO ising=1,msing
             singp => sing(ising)
-            WRITE(debug_unit)sing%order,singp%alpha,singp%psifac,
+            WRITE(debug_unit)singp%order,singp%alpha,singp%psifac,
      $           singp%q,singp%r1,singp%r2
             WRITE(debug_unit)singp%vmatl,singp%vmatr
          ENDDO

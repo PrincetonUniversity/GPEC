@@ -5,6 +5,7 @@ c-----------------------------------------------------------------------
       MODULE gpglobal_mod
       USE bicube_mod
       USE fspline_mod
+      USE local_mod, ONLY: r8, r4
       USE omp_lib
 c-----------------------------------------------------------------------
 c     declarations.
@@ -48,6 +49,8 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(-hmnum:hmnum) :: cosmn
 
       INTEGER, DIMENSION(8) :: values
+
+      LOGICAL :: out_ahg2msc, vac_memory
 
       LOGICAL, DIMENSION(:), ALLOCATABLE :: sing_flag
       INTEGER, DIMENSION(:), ALLOCATABLE :: fixstep,mfac,lmfac
@@ -194,7 +197,7 @@ c-----------------------------------------------------------------------
 
       CHARACTER(*), INTENT(IN) :: message
       INTEGER :: hrs,mins,secs,cpuhrs,cpumins,cpusecs
-      REAL(4) :: cpu_time
+      real(r4) :: cpu_time
 
       cpu_time = 0
       CALL gpec_timer(-2,cpu_time)
@@ -267,11 +270,11 @@ c-----------------------------------------------------------------------
       SUBROUTINE gpec_timer(mode,timeout,opunit)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: mode
-      REAL(4), INTENT(OUT), OPTIONAL :: timeout
+      REAL(r4), INTENT(OUT), OPTIONAL :: timeout
       INTEGER, INTENT(IN), OPTIONAL :: opunit
 
-      REAL(4) :: time
-      REAL(4), SAVE :: start,split
+      REAL(r4) :: time
+      REAL(r4), SAVE :: start,split
       INTEGER :: hrs,mins,secs,msec
 
       ! get time

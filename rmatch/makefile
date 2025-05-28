@@ -1,7 +1,18 @@
+ifneq (,$(findstring ifort,$(FC)))
+    RECURSFLAG=-recursive
+	LEGACYFLAG=
+else ifneq (,$(findstring ifx,$(FC)))
+	RECURSFLAG=-recursive
+	LEGACYFLAG=
+else
+    RECURSFLAG=-frecursive
+	LEGACYFLAG=-std=legacy
+endif
+
 include ../install/DEFAULTS.inc
 
 IFLAGS = -I../equil -I$(MATHINC)
-F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
+F90 = $(FC) $(FFLAGS) $(RECURSFLAG) $(LEGACYFLAG) $(OMPFLAG) $(IFLAGS)
 export FFLAGS # for sub-makes
 
 .f.o:
@@ -11,7 +22,7 @@ LIBDIR = ../lib
 
 LIBS = \
 	-llsode \
-	-lequil
+	-lequil \
 
 OBJS = \
 	gamma.o \
@@ -30,20 +41,20 @@ equil:
 	cd ../equil; make
 
 rmatch: $(OBJS)
-	$(F90) -o rmatch $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS)
+	$(F90) -o rmatch $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS) $(LDFLAGS)
 	mkdir -p ../bin
 	cp -f rmatch ../bin
 
 # dependencies
 
-msing.o: ../equil/local.o
-gamma.o: ../equil/local.o
+msing.o: ../equil/local_mod.mod
+gamma.o: ../equil/local_mod.mod
 deltar.o: gamma.o
-inps.o:  ../equil/local.o ../equil/utils.o
+inps.o:  ../equil/local_mod.mod ../equil/utils.o
 inpso.o: inps.o
 deltac.o: jacobi.o inpso.o
-inner.o: deltac.o
+inner.o: deltac.o ../equil/local_mod.mod
 match.o: deltar.o deltac.o inner.o msing.o
 
 clean:
-	rm -f *.o *.mod *.out  *~ match
+	rm -f *.o *.mod *.out  *~ match *.original
