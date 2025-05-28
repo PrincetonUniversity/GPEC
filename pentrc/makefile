@@ -16,7 +16,7 @@ endif
 
 include ../install/DEFAULTS.inc
 
-IFLAGS = -I../equil -I../harvest -I$(MATHINC) -I$(NETCDFINC)
+IFLAGS = -I../equil -I../harvest -I$(MATHINC) -I$(NETCDFINC) -I$(CRLIBMINC)
 F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS) $(RECURSFLAG)
 export FFLAGS
 
@@ -35,6 +35,7 @@ LIBS = \
 	-llsode \
 	-lequil \
 	-lharvest \
+	-lcrmath \
 
 OBJS = \
     params.o \
@@ -81,7 +82,7 @@ endif
 force:
 
 pentrc: $(OBJS)
-	$(F90) -o pentrc $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS)
+	$(F90) -o pentrc $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS) -L$(CRLIBMDIR) $(CRLIBMLIBS) $(NETCDF_EXTRA_LIBS)
 	mkdir -p ../lib
 	ar -r ../lib/libpentrc.a *.o
 	mkdir -p ../bin

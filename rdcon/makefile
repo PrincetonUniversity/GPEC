@@ -1,6 +1,6 @@
 include ../install/DEFAULTS.inc
 
-IFLAGS = -I../equil -I../vacuum -I$(MATHINC) -I$(NETCDFINC)
+IFLAGS = -I../equil -I../vacuum -I$(MATHINC) -I$(NETCDFINC) -I$(CRLIBMINC)
 F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
 export FFLAGS # for sub-makes
 
@@ -14,6 +14,7 @@ LIBS = \
 	-llsode \
 	-lequil \
 	-lvac \
+	-lcrmath \
 
 OBJS = \
 	debug.o \
@@ -46,7 +47,7 @@ vacuum:
 	cd ../vacuum; make
 
 rdcon: $(OBJS)
-	$(F90) -o rdcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS) $(LDFLAGS)
+	$(F90) -o rdcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(CRLIBMDIR) $(CRLIBMLIBS) $(NETCDF_EXTRA_LIBS) $(LDFLAGS)
 	mkdir -p ../bin
 	cp -f rdcon ../bin
 

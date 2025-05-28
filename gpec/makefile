@@ -11,7 +11,7 @@ endif
 
 include ../install/DEFAULTS.inc
 
-IFLAGS = -I../equil -I../vacuum -I../harvest -I../pentrc -I../coil -I../slayer -I$(MATHINC) -I$(NETCDFINC)
+IFLAGS = -I../equil -I../vacuum -I../harvest -I../pentrc -I../coil -I../slayer -I$(MATHINC) -I$(NETCDFINC) -I$(CRLIBMINC)
 F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS) $(RECURSFLAG)
 export FFLAGS # for sub-makes
 
@@ -31,6 +31,7 @@ LIBS = \
 	-lharvest \
 	-lslayer \
 	-lcoil \
+	-lcrmath
 
 OBJS = \
 	gpglobal.o \
@@ -75,7 +76,7 @@ endif
 force:
 
 gpec: $(OBJS)
-	$(F90) -o gpec $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS) $(LDFLAGS)
+	$(F90) -o gpec $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(CRLIBMDIR) $(CRLIBMLIBS) $(NETCDF_EXTRA_LIBS) $(LDFLAGS)
 	mkdir -p ../lib
 	ar -r ../lib/libgpec.a *.o
 	mkdir -p ../bin

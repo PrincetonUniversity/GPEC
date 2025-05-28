@@ -17,7 +17,7 @@ endif
 include ../install/DEFAULTS.inc
 
 # flags unique to stride (not to be clobbered by top level install/makefile options)
-IFLAGS = -I../equil -I../vacuum -I$(MATHINC) -I$(NETCDFINC)
+IFLAGS = -I../equil -I../vacuum -I$(MATHINC) -I$(NETCDFINC) -I$(CRLIBMINC)
 F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS) $(RECURSFLAG) $(LEGACYFLAG)
 
 .f.o:
@@ -35,8 +35,8 @@ LIBS = \
 	-llsode \
 	-lequil \
 	-lvac \
-	-L$(MATHDIR) \
-	$(MATHLIBS)
+	-lcrmath \
+	-lnetcdf \
 
 OBJS = \
 	debug.o \
@@ -72,7 +72,7 @@ vacuum:
 	cd ../vacuum; make
 
 stride: $(OBJS)
-	$(F90) -o stride $(OBJS) $(LIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS)
+	$(F90) -o stride $(OBJS) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS) -L$(CRLIBMDIR) $(CRLIBMLIBS)
 
 ifeq ($(wildcard version.inc),)
 version.inc: force

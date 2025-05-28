@@ -14,11 +14,11 @@ export LDFLAGS
 
 .IGNORE:
 
-all: v harvest equil lsode zlange zvode  orbit vacuum pentrc dcon match rdcon rmatch \
+all: v harvest crmath equil lsode zlange zvode  orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum xdraw slayer coil gpec stride mkbin
 
 # fortran only
-allf: v harvest equil lsode zlange zvode  orbit vacuum pentrc dcon match rdcon rmatch \
+allf: v harvest crmath equil lsode zlange zvode  orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum slayer coil gpec stride mkbin
 
 
@@ -29,6 +29,9 @@ harvest:
 	cd ../harvest; make FC='$(FC)' CC='$(CC)' GACODE_ROOT= -f Makefile libharvest.a
 	mkdir -p ../lib
 	cp -f ../harvest/libharvest.a ../lib/
+
+crmath:
+	cd ../crmath; make libcrmath
 
 xdraw:
 	cd ../xdraw;  make
@@ -111,10 +114,15 @@ v:
 	@echo "   and netcdf libraries $(NETCDFLIBS) $(NETCDF_C_LIBS)"
 	@echo "   from $(NETCDFDIR) $(NETCDF_C_DIR)"
 	@echo "   including $(NETCDFINC)"
+	@echo "   and correct rounding math libraries $(CRLIBMLIBS)"
+	@echo "   from $(CRLIBMDIR)"
+	@echo "   including $(CRLIBMINC)"
 	@echo "   and compiler libraries $(FCLIBS)"
 	@echo "   from $(FCDIR)"
 	@echo "   including $(FCINC)"
-	@echo "   and using OMPFLAG $(OMPFLAG)"
+	@echo "   using OMPFLAG $(OMPFLAG)"
+	@echo "   using LDFLAGS $(LDFLAGS)"
+	@echo "   using FFLAGS $(FFLAGS)"
 	@echo
 	@echo "Set environment FC,LAPACKHOME,NETCDFHOME to change these"
 ifeq ("$(PLATFORM)","portal")
@@ -126,6 +134,7 @@ endif
 
 clean:
 	cd ../harvest; make clean
+	cd ../crmath; make clean
 	cd ../zlange;  make clean
 	cd ../zvode;  make clean
 	cd ../xdraw;  make clean

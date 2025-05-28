@@ -51,7 +51,7 @@ clean:
 
 # dependencies
 
-local.o: io.o
+local.o: io.o ../crmath/crmath.o
 utils.o: local.o
 spline.o: local.o
 grid.o: local.o spline.o

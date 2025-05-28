@@ -1,7 +1,7 @@
 
 include ../install/DEFAULTS.inc
 
-IFLAGS = -I../equil -I$(MATHINC) -I$(NETCDFINC)
+IFLAGS = -I../equil -I$(MATHINC) -I$(NETCDFINC) -I$(CRLIBMINC)
 F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
 export FFLAGS
 
@@ -13,6 +13,7 @@ LIBDIR = ../lib
 LIBS = \
 	-llsode \
 	-lequil \
+	-lcrmath \
 
 OBJS = \
        sglobal.o \
@@ -27,7 +28,7 @@ lsode:
 	cd ../lsode; make
 
 slayer: $(OBJS)
-	$(F90) -o slayer $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS) $(LDFLAGS)
+	$(F90) -o slayer $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(CRLIBMDIR) $(CRLIBMLIBS) $(NETCDF_EXTRA_LIBS) $(LDFLAGS)
 	mkdir -p ../lib/
 	ar -r ../lib/libslayer.a *.o
 	mkdir -p ../bin
