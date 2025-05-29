@@ -2441,7 +2441,7 @@ c-----------------------------------------------------------------------
       nadres = 1
       call zwr(iovac,real(lmn,8),1,nadres,lgivup,999)
       nadres = nadres + 1
-      call zwr(iovac,real(lmn,8),1,nadres,lgivup,999)
+      call zwr(iovac,real(lmx,8),1,nadres,lgivup,999)
       nadres = nadres + 1
       call trans ( xwal_,mth, xjdtxj,mthin )
       call zwr(iovac,xjdtxj(1),mthin2,nadres,lgivup,999)
