@@ -28,7 +28,7 @@ c-----------------------------------------------------------------------
       LOGICAL, PARAMETER :: rewind_namel=.false.,single_pr=.false.
       INTEGER, PARAMETER ::
      $     r4=SELECTED_REAL_KIND(6,37),
-     $     r8=SELECTED_REAL_KIND(13,307)
+     $     r8=SELECTED_REAL_KIND(15,307)
       REAL(r8), PARAMETER :: pi=3.1415926535897932385_r8,
      $     twopi=2*pi,pisq=pi*pi,mu0=4e-7_r8*pi,
      $     rtod=180/pi,dtor=pi/180,alog10=2.3025850929940459_r8

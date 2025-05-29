@@ -18,10 +18,7 @@ OBJS = \
 F90 = $(FC) -O2 -fPIC $(STANDARDFLAG) $(IFLAGS)
 
 %.o: %.f90
-	$(F90) -c $<
-
-%.o: %.F90
-	$(F90) -c $<
+	$(F90) -c $< -L$(CRLIBMDIR) $(CRLIBMLIBS)
 
 all : libcrmath
 

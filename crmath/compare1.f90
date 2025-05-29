@@ -1,7 +1,7 @@
 program compare_1
     use crmath
 
-    integer, parameter :: r8 = selected_real_kind(13, 307)
+    integer, parameter :: r8 = selected_real_kind(15, 307)
 
     real(r8) :: eta = 2.1127504979480101_r8
     real(r8) :: coseta
