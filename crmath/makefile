@@ -10,14 +10,12 @@ else
 	STANDARDFLAG=-std=f2008
 endif
 
+IFLAGS = -I$(CRLIBMINC)
+
 OBJS = \
 	crmath.o \
-	crmath_r_sp.o \
-	crmath_c_sp.o \
-	crmath_r_dp.o \
-	crmath_c_dp.o \
 
-F90 = $(FC) -O2 -fPIC $(STANDARDFLAG)
+F90 = $(FC) -O2 -fPIC $(STANDARDFLAG) $(IFLAGS)
 
 %.o: %.f90
 	$(F90) -c $<
