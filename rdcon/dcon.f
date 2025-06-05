@@ -71,6 +71,7 @@ c-----------------------------------------------------------------------
          ENDDO
          DEALLOCATE(sing)
       ENDIF
+      IF(ALLOCATED(delta)) DEALLOCATE(delta)
       IF(ode_flag.AND.ASSOCIATED(u)) DEALLOCATE(u,du,u_save)
 c-----------------------------------------------------------------------
 c     terminate.
@@ -220,7 +221,7 @@ c-----------------------------------------------------------------------
      $     tol_nr,tol_r,crossover,ucrit,singfac_min,singfac_max,
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,sort_type,
      $     gal_flag,regrid_flag,sing1_flag,
-     $     sing_order_ceiling,degen_tol
+     $     sing_order_ceiling,degen_tol,coil
       NAMELIST/rdcon_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
