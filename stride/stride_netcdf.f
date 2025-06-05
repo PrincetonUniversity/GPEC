@@ -15,7 +15,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE stride_netcdf_mod
-      USE dcon_mod
+      USE stride_dcon_mod
       USE netcdf
       IMPLICIT NONE
 

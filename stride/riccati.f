@@ -25,7 +25,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE riccati_mod
-      USE sing_mod
+      USE stride_sing_mod
       USE zvode1_mod
       IMPLICIT NONE
 
