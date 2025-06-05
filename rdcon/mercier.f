@@ -5,17 +5,17 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. mercier_mod.
+c     0. rdcon_mercier_mod.
 c     1. mercier_scan.
 c-----------------------------------------------------------------------
-c     subprogram 0. mercier_mod.
+c     subprogram 0. rdcon_mercier_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE mercier_mod
-      USE dcon_mod
+      MODULE rdcon_mercier_mod
+      USE rdcon_mod
       IMPLICIT NONE
 
       CONTAINS
@@ -103,4 +103,4 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE mercier_scan
-      END MODULE mercier_mod
+      END MODULE rdcon_mercier_mod

@@ -3,13 +3,13 @@ c     file dcon_mod.f.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
-c     subprogram 0. dcon_mod.
+c     subprogram 0. rdcon_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE dcon_mod
+      MODULE rdcon_mod
       USE spline_mod
       USE global_mod
       USE equil_mod
@@ -117,4 +117,4 @@ c-----------------------------------------------------------------------
 
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: delta
 
-      END MODULE dcon_mod
+      END MODULE rdcon_mod

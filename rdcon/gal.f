@@ -40,9 +40,9 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE gal_mod
-      USE free_mod
+      USE rdcon_free_mod
       USE jacobi_mod
-      USE sing_mod
+      USE rdcon_sing_mod
       IMPLICIT NONE
 
       TYPE :: hermite2_type
@@ -74,11 +74,6 @@ c-----------------------------------------------------------------------
       TYPE(jacobi_type) :: quad
       TYPE(hermite2_type) :: hermite
       END TYPE gal_type
-
-      TYPE :: coil_type
-      LOGICAL :: rpec_flag=.FALSE.
-      INTEGER :: mcoil,m1,m2
-      END TYPE coil_type
       
       LOGICAL, PRIVATE :: diagnose_map=.FALSE.,diagnose_grid=.FALSE.,
      $     diagnose_lsode=.FALSE.,diagnose_integrand=.FALSE.,

@@ -20,9 +20,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE ode_output_mod
-      USE sing_mod
-      USE dcon_mod, ONLY : shotnum,shottime
+      MODULE rdcon_ode_output_mod
+      USE rdcon_sing_mod
+      USE rdcon_mod, ONLY : shotnum,shottime
       IMPLICIT NONE
 
       CHARACTER(6), DIMENSION(:), POINTER :: name
@@ -542,4 +542,4 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ode_output_sol
-      END MODULE ode_output_mod
+      END MODULE rdcon_ode_output_mod
