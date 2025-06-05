@@ -97,7 +97,6 @@ c-----------------------------------------------------------------------
       LOGICAL :: gal_xmin_flag = .FALSE.
       REAL(r8), DIMENSION(0:2) :: gal_eps_xmin = (/1e-2,1e-6,5e-7/)
       TYPE(cell_type), POINTER, PRIVATE :: cell
-      TYPE(coil_type), SAVE, PRIVATE :: coil
       CONTAINS
 c-----------------------------------------------------------------------
 c     subprogram 1. gal_alloc.
@@ -1374,7 +1373,6 @@ c-----------------------------------------------------------------------
       SUBROUTINE gal_solve
 
       INTEGER :: info,isol,jsol,imap,ising,ix,msol_old
-      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: delta
       TYPE(gal_type) :: gal
 c-----------------------------------------------------------------------
 c     allocate and compute arrays.
@@ -1405,6 +1403,10 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute and write delta from small resonant coefficients.
 c-----------------------------------------------------------------------
+      IF (ALLOCATED(delta))THEN
+         WRITE(*,*)"ERROR: delta array already allocated."
+         CALL program_stop("gal_solve: delta array already allocated.")
+      ENDIF
       ALLOCATE (delta(gal%nsol,2*msing))
       DO isol=1,gal%nsol
          jsol=0
@@ -1426,7 +1428,6 @@ c-----------------------------------------------------------------------
 c     deallocate arrays and finish.
 c-----------------------------------------------------------------------
       CALL gal_dealloc(gal)
-      DEALLOCATE (delta)
       msol=msol_old
       WRITE(*,*)"Finished Galerkin method"
 c-----------------------------------------------------------------------
@@ -1694,7 +1695,7 @@ c-----------------------------------------------------------------------
      $     diagnose_mat,gal_tol,dx1dx2_flag,cutoff,prefac,dpsi_intvl,
      $     dpsi1_intvl,gal_xmin_flag,gal_eps_xmin
       NAMELIST /gal_output/interp_np,restore_uh,restore_us,
-     $     restore_ul,bin_delmatch,out_galsol,bin_galsol,b_flag,coil,
+     $     restore_ul,bin_delmatch,out_galsol,bin_galsol,b_flag,
      $     bin_coilsol
 c-----------------------------------------------------------------------
 c     read input.
