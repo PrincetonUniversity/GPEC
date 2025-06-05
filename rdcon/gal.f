@@ -1399,8 +1399,8 @@ c-----------------------------------------------------------------------
 c     compute and write delta from small resonant coefficients.
 c-----------------------------------------------------------------------
       IF (ALLOCATED(delta))THEN
-         WRITE(*,*)"ERROR: delta array already allocated."
-         CALL program_stop("gal_solve: delta array already allocated.")
+         WRITE(*,*)"WARNING: delta array already allocated."
+         DEALLOCATE(delta)
       ENDIF
       ALLOCATE (delta(gal%nsol,2*msing))
       DO isol=1,gal%nsol

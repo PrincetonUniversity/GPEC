@@ -63,13 +63,9 @@ c-----------------------------------------------------------------------
      $    lp_dim, lp_id, r_dim, r_id, rp_dim, rp_id, pr_id, qr_id,
      $    dp_id, ap_id, bp_id, gp_id, dpp_id, lrc_dim, lrc_id
 
-      ! INTEGER :: ep_dim, pd_dim, pd_id, df_id, ep_id, ew_id, eq_id
-      ! ^^^ Used in DCON but not RDCON ^^^
       REAL(r4) :: cpusec, wallsec
       CHARACTER(2) :: sn
       CHARACTER(64) :: ncfile
-
-      
 
       INTEGER :: ising,jsing
       COMPLEX(r8), DIMENSION(msing,msing) :: ap,bp,gammap,deltap
@@ -200,22 +196,6 @@ c-----------------------------------------------------------------------
          ENDIF
 
       ENDIF
-!       IF(size_edge > 0)THEN
-!          CALL check( nf90_def_dim(ncid, "psi_n_edge", size_edge,ep_dim))
-!          CALL check( nf90_def_var(ncid, "psi_n_edge", nf90_double,
-!      $       ep_dim, ep_id))
-!          CALL check( nf90_put_att(ncid,ep_id,"long_name",
-!      $       "Normalized Poloidal Flux") )
-!       ENDIF
-!       IF(ALLOCATED(sing_detf))THEN
-!          CALL check( nf90_def_dim(ncid, "psi_n_detf", 
-!      $       SIZE(sing_detf, 2), pd_dim) )
-!          CALL check( nf90_def_var(ncid, "psi_n_detf", nf90_double, 
-!      $       pd_dim, pd_id))
-!          CALL check( nf90_put_att(ncid,pd_id,"long_name",
-!      $       "Normalized Poloidal Flux") )
-!       ENDIF
-      ! define variables
       CALL check( nf90_def_var(ncid, "f", nf90_double, p_dim, f_id) )
       CALL check( nf90_def_var(ncid, "mu0p", nf90_double, p_dim, mu_id))
       CALL check( nf90_def_var(ncid, "dvdpsi", nf90_double,p_dim,dv_id))
@@ -253,24 +233,6 @@ c-----------------------------------------------------------------------
      $    (/m_dim, mo_dim, i_dim/), wt0_id) )
       CALL check( nf90_put_att(ncid,wt0_id,"long_name",
      $    "Total Energy Matrix") )
-!       IF(size_edge > 0)THEN
-!          CALL check( nf90_def_var(ncid, "dW_edge", nf90_double,
-!      $       (/ep_dim, i_dim/), ew_id) )
-!          CALL check( nf90_put_att(ncid,ew_id,"long_name",
-!      $       "Least Stable Total Energy Eigenvalues") )
-!          CALL check( nf90_def_var(ncid, "q_edge", nf90_double,
-!      $       ep_dim, eq_id) )
-!          CALL check( nf90_put_att(ncid,eq_id,"long_name",
-!      $       "Safety Factor") )
-!       ENDIF
-!       IF(ALLOCATED(sing_detf))THEN
-!          CALL check( nf90_def_var(ncid, "detF", nf90_double,
-!      $       (/pd_dim, i_dim/), df_id) )
-!       ENDIF
-      WRITE(*,*) "msing = ", msing
-      WRITE(*,*) "coil%mcoil = ", coil%mcoil
-      WRITE(*,*) "coil%rpec_flag = ", coil%rpec_flag
-      WRITE(*,*) "ALLOCATED(delta) = ", ALLOCATED(delta)
       IF(msing>0 .AND. ALLOCATED(delta))THEN
          CALL check( nf90_def_var(ncid, "Delta", nf90_double,
      $       (/l_dim, lp_dim, i_dim/), dp_id) )
@@ -308,9 +270,6 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,m_id, (/(i+mlow, i=0,mpert-1)/)) )
       CALL check( nf90_put_var(ncid,mo_id, (/(i, i=1,mpert)/)) )
       CALL check( nf90_put_var(ncid,p_id, sq%xs(:)))
-      ! IF(size_edge > 0)THEN
-      !    CALL check( nf90_put_var(ncid,ep_id, psi_edge))
-      ! ENDIF
       IF(msing>0)THEN
          CALL check( nf90_put_var(ncid,l_id, (/(i,i=1,2*msing)/)) )
          CALL check( nf90_put_var(ncid,lp_id, (/(i,i=1,2*msing)/)) )
@@ -336,11 +295,6 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,di_id, locstab%fs(:,1)/sq%xs(:)))
       CALL check( nf90_put_var(ncid,dr_id, locstab%fs(:,2)/sq%xs(:)))
       CALL check( nf90_put_var(ncid,ca_id, locstab%fs(:,4)))
-!       IF(size_edge > 0)THEN
-!          CALL check( nf90_put_var(ncid,ew_id, RESHAPE((/REAL(dw_edge),
-!      $             AIMAG(dw_edge)/),(/size_edge,2/))) )
-!          CALL check( nf90_put_var(ncid,eq_id, q_edge))
-!       ENDIF
 
       IF(debug_flag) PRINT *," - Putting matrix variables in netcdf"
       CALL check( nf90_put_var(ncid,wp_id,RESHAPE((/REAL(wp),
@@ -357,12 +311,7 @@ c-----------------------------------------------------------------------
      $             AIMAG(et)/),(/mpert,2/))) )
       CALL check( nf90_put_var(ncid,wt0_id,RESHAPE((/REAL(wt0),
      $             AIMAG(wt0)/),(/mpert,mpert,2/))) )
-!       IF(ALLOCATED(sing_detf))THEN
-!          CALL check( nf90_put_var(ncid,pd_id, REAL(sing_detf(1,:))) )
-!          CALL check( nf90_put_var(ncid,df_id,RESHAPE(
-!      $               (/REAL(sing_detf(2,:)), AIMAG(sing_detf(2,:))/),
-!      $               (/SIZE(sing_detf,2),2/))) )
-!       ENDIF
+
 
       IF(msing>0 .AND. ALLOCATED(delta))THEN
          ! construct PEST3 matching data
