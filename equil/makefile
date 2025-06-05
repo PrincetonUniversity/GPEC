@@ -36,7 +36,8 @@ OBJS = \
 	gsec.o \
 	sol.o \
 	equil.o \
-	equil_out.o
+	equil_out.o \
+	jacobi.o
 
 # targets
 
