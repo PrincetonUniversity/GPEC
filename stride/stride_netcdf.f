@@ -153,17 +153,29 @@ c-----------------------------------------------------------------------
       IF(msing>0)THEN
          CALL check( nf90_def_dim(ncid,"lr_index",2*msing,l_dim) )
          CALL check( nf90_def_var(ncid,"lr_index",nf90_int,l_dim,l_id))
+         CALL check( nf90_put_att(ncid,l_dim,"long_name",
+     $       "Left and Right of Rational Surfaces Index") )
          CALL check( nf90_def_dim(ncid,"lr_prime",2*msing,lp_dim) )
          CALL check( nf90_def_var(ncid,"lr_prime",nf90_int,lp_dim,
      $                            lp_id) )
+         CALL check( nf90_put_att(ncid,lp_id,"long_name",
+     $       "Left and Right of Rational Surfaces Prime Index") )
          CALL check( nf90_def_dim(ncid,"r",msing,r_dim) )
          CALL check( nf90_def_var(ncid,"r",nf90_int,r_dim,r_id))
+         CALL check( nf90_put_att(ncid,r_id,"long_name",
+     $       "Rational Surface Index") )
          CALL check( nf90_def_dim(ncid,"r_prime",msing,rp_dim) )
          CALL check( nf90_def_var(ncid,"r_prime",nf90_int,rp_dim,rp_id))
+         CALL check( nf90_put_att(ncid,rp_id,"long_name",
+     $       "Rational Surface Prime Index") )
          CALL check( nf90_def_var(ncid,"psi_n_rational",nf90_double,
      $                            r_dim,pr_id) )
+         CALL check( nf90_put_att(ncid,pr_id,"long_name",
+     $       "Normalized Poloidal Flux at Rational Surfaces") )   
          CALL check( nf90_def_var(ncid,"q_rational",nf90_double,
      $                            r_dim,qr_id) )
+         CALL check( nf90_put_att(ncid,qr_id,"long_name",
+     $       "Safety Factor at Rational Surfaces") )    
       ENDIF
       ! define variables
       IF(debug_flag) PRINT *," - Defining variables in netcdf"
@@ -189,6 +201,8 @@ c-----------------------------------------------------------------------
       IF(msing>0 .AND. ALLOCATED(dp))THEN
          CALL check( nf90_def_var(ncid, "Delta", nf90_double,
      $       (/l_dim, lp_dim, i_dim/), dp_id) )
+         CALL check( nf90_put_att(ncid,dp_id,"long_name",
+     $      "Left and right of singular surface Delta matching matrix"))
          CALL check( nf90_def_var(ncid, "A_prime", nf90_double,
      $       (/r_dim, rp_dim, i_dim/), ap_id) )
          CALL check( nf90_def_var(ncid, "B_prime", nf90_double,
@@ -197,6 +211,8 @@ c-----------------------------------------------------------------------
      $       (/r_dim, rp_dim, i_dim/), gp_id) )
          CALL check( nf90_def_var(ncid, "Delta_prime", nf90_double,
      $       (/r_dim, rp_dim, i_dim/), dpp_id) )
+         CALL check( nf90_put_att(ncid,dp_id,"long_name",
+     $     "PEST3 Delta Prime Matrix"))
       ENDIF
       ! end definitions
       CALL check( nf90_enddef(ncid) )
