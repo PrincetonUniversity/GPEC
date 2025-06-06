@@ -1,4 +1,4 @@
-name: Build with gfortran/ifort on ubuntu with compiled netcdff, using OpenBLAS/MKL
+name: Build GPEC
 
 on:
   workflow_dispatch:
