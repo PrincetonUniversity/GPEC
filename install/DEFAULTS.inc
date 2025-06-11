@@ -346,6 +346,9 @@ endif
 ifdef MKLROOT
     MATHHOME = $(MKLROOT)
   	MATHLIBS = -lmkl_rt
+else ifdef OPENBLASHOME
+    MATHHOME = $(OPENBLASHOME)
+    MATHLIBS = -lopenblas
 else ifdef LAPACKHOME
     MATHHOME = $(LAPACKHOME)
     MATHLIBS = -llapack -lblas
@@ -353,7 +356,7 @@ else ifdef ACML_HOME
     MATHHOME = $(ACML_HOME)
     MATHLIBS = -lacml
 else
-    $(info "Math libraries require MKLROOT, LAPACKHOME, or ACML_HOME")
+    $(info "Math libraries require MKLROOT, LAPACKHOME, OPENBLASHOME, or ACML_HOME")
 endif
 
 # specifics of which libraries are used
