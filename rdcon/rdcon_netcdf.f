@@ -256,7 +256,7 @@ c-----------------------------------------------------------------------
             CALL check( nf90_def_var(ncid, "Delta_coil", nf90_double,
      $         (/coil_dim, lp_dim, i_dim/), dpc_id) )
             CALL check( nf90_put_att(ncid,dpc_id,"long_name",
-     $         "Galerkin Solution Delta Matrix Coil Matching Terms"))
+     $      "Galerkin Solution Delta Matrix Coil Matching Terms Only"))
          ENDIF
       ENDIF
 
