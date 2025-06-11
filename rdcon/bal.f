@@ -5,21 +5,21 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. bal_mod.
+c     0. rdcon_bal_mod.
 c     1. bal_scan.
 c     2. bal_prep.
 c     3. bal_der.
 c     4. bal_int.
 c     5. bal_pse.
 c-----------------------------------------------------------------------
-c     subprogram 0. bal_mod.
+c     subprogram 0. rdcon_bal_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE bal_mod
-      USE dcon_mod
+      MODULE rdcon_bal_mod
+      USE rdcon_mod
       IMPLICIT NONE
 
       INTEGER, PRIVATE :: ipsi
@@ -537,4 +537,4 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE bal_pse
-      END MODULE bal_mod
+      END MODULE rdcon_bal_mod

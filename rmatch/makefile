@@ -28,9 +28,8 @@ OBJS = \
 	gamma.o \
 	deltar.o \
 	inner.o  \
-	jacobi.o \
-        inps.o \
-        inpso.o \
+	inps.o \
+	inpso.o \
 	deltac.o \
 	msing.o \
 	match.o
@@ -52,7 +51,7 @@ gamma.o: ../equil/local_mod.mod
 deltar.o: gamma.o
 inps.o:  ../equil/local_mod.mod ../equil/utils.o
 inpso.o: inps.o
-deltac.o: jacobi.o inpso.o
+deltac.o: ../equil/jacobi.o inpso.o
 inner.o: deltac.o ../equil/local_mod.mod
 match.o: deltar.o deltac.o inner.o msing.o
 

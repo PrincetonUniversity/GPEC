@@ -5,23 +5,23 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. free_mod.
+c     0. rdcon_free_mod.
 c     1. free_run.
 c     2. free_write_msc.
 c     3. free_ahb_prep.
 c     4. free_ahb_write.
 c     5. free_get_wvac
 c-----------------------------------------------------------------------
-c     subprogram 0. free_mod.
+c     subprogram 0. rdcon_free_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE free_mod
+      MODULE rdcon_free_mod
       USE vacuum_mod, ONLY: mscvac
-      USE ode_mod
-      USE dcon_netcdf_mod
+      USE rdcon_ode_mod
+      USE rdcon_netcdf_mod
       IMPLICIT NONE
 
       INTEGER :: msol_ahb=-1
@@ -315,7 +315,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     optionally write netcdf file.
 c-----------------------------------------------------------------------
-      IF(netcdf_out) CALL dcon_netcdf_out(wp,wv,wt,wt0,ep,ev,et)
+      IF(netcdf_out) CALL rdcon_netcdf_out(wp,wv,wt,wt0,ep,ev,et)
 c-----------------------------------------------------------------------
 c     deallocate.
 c-----------------------------------------------------------------------
@@ -705,4 +705,4 @@ c     terminate.
 c-----------------------------------------------------------------------      
       RETURN
       END SUBROUTINE free_get_wvac
-      END MODULE free_mod
+      END MODULE rdcon_free_mod
