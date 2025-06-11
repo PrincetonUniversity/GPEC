@@ -3,13 +3,13 @@ c     file dcon_mod.f.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
-c     subprogram 0. dcon_mod.
+c     subprogram 0. stride_dcon_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE dcon_mod
+      MODULE stride_dcon_mod
       USE spline_mod
       USE global_mod
       USE equil_mod
@@ -69,6 +69,9 @@ c-----------------------------------------------------------------------
       LOGICAL :: ahb_flag=.FALSE.
       LOGICAL :: netcdf_out=.TRUE.
 
+      LOGICAL :: out_ahg2msc=.TRUE.
+      LOGICAL :: stride_vac_memory=.FALSE.
+
       INTEGER, PARAMETER :: sol_base=50
       INTEGER :: mlow,mhigh,mpert,mband,nn,nstep=HUGE(0),bin_sol_min,
      $     bin_sol_max,euler_stride=1,mthvac=480,ksing=-1,delta_mlow=0,
@@ -106,4 +109,4 @@ c-----------------------------------------------------------------------
       LOGICAL :: verbose_riccati_output, verbose_performance_output,
      $     riccati_bounce,riccati_match_hamiltonian_evals
 
-      END MODULE dcon_mod
+      END MODULE stride_dcon_mod

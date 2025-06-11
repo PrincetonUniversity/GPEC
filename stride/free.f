@@ -5,7 +5,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. free_mod.
+c     0. stride_free_mod.
 c     1. free_calc_wp.
 c     2. free_calc_wv.
 c     3. free_run.
@@ -19,8 +19,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE free_mod
-      USE ode_mod
+      MODULE stride_free_mod
+      USE vacuum_mod, ONLY: mscvac, mscfld
+      USE stride_ode_mod
       USE stride_netcdf_mod
       IMPLICIT NONE
 
@@ -106,6 +107,9 @@ c-----------------------------------------------------------------------
       INTEGER :: ipert, sTime, fTime, cr
       LOGICAL, PARAMETER :: complex_flag=.FALSE.
       REAL(r8), DIMENSION(:,:), POINTER :: grri,xzpts
+      CHARACTER(128) :: ahg_file
+
+      ahg_file="ahg2msc_stride.out"
 c-----------------------------------------------------------------------
 c     initialize.
 c-----------------------------------------------------------------------
@@ -125,9 +129,9 @@ c-----------------------------------------------------------------------
       ALLOCATE(wv(1:mpert,1:mpert))
       ALLOCATE(grri(2*(mthvac+5),mpert*2),xzpts(mthvac+5,4))
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,1.0_r8,
-     $     .FALSE.,.FALSE.,grri,xzpts)
+     $     .FALSE.,.FALSE.,grri,xzpts,ahg_file)
       DEALLOCATE(grri,xzpts)
-      CALL system("rm -f ahg2msc.out")
+      IF(stride_vac_memory)CALL unset_dcon_params()
       singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
       DO ipert=1,mpert
          wv(ipert,:)=wv(ipert,:)*singfac
@@ -340,36 +344,44 @@ c-----------------------------------------------------------------------
          n=-n
       ENDIF
 c-----------------------------------------------------------------------
+c     pass all values in memory instead of over ascii io (faster).
+c-----------------------------------------------------------------------
+      IF(stride_vac_memory) THEN
+         CALL set_dcon_params(mtheta,mlow,mhigh,n,qa,r(mtheta:0:-1),
+     $                         z(mtheta:0:-1),delta(mtheta:0:-1))
+      ELSE
+c-----------------------------------------------------------------------
 c     write scalars.
 c-----------------------------------------------------------------------
-      CALL ascii_open(bin_unit,'ahg2msc.out',"UNKNOWN")
-      WRITE(bin_unit,'(i4,a)')mtheta,tab//tab//"mtheta"//tab//"mthin"
-     $     //tab//"Number of poloidal nodes"
-      WRITE(bin_unit,'(i4,a)')mlow,tab//tab//"mlow"//tab//"lmin"//tab
-     $     //"Lowest poloidal harmonic"
-      WRITE(bin_unit,'(i4,a,a)')mhigh,tab//tab//"mhigh"//tab//"lmax"
-     $     //tab//"Highest poloidal harmonic"
-      WRITE(bin_unit,'(i4,a)')n,tab//tab//"nn"//tab//"nadj"//tab
-     $     //"Toroidal harmonic"
-      WRITE(bin_unit,'(f13.10,a)')qa,tab//"qa"//tab//"qa1"//tab
-     $     //"Safety factor at plasma edge"
+         CALL ascii_open(bin_unit,'ahg2msc_stride.out',"UNKNOWN")
+         WRITE(bin_unit,'(i4,a)')mtheta,tab//tab//"mtheta"//tab//"mthin"
+     $        //tab//"Number of poloidal nodes"
+         WRITE(bin_unit,'(i4,a)')mlow,tab//tab//"mlow"//tab//"lmin"//tab
+     $        //"Lowest poloidal harmonic"
+         WRITE(bin_unit,'(i4,a,a)')mhigh,tab//tab//"mhigh"//tab//"lmax"
+     $        //tab//"Highest poloidal harmonic"
+         WRITE(bin_unit,'(i4,a)')n,tab//tab//"nn"//tab//"nadj"//tab
+     $        //"Toroidal harmonic"
+         WRITE(bin_unit,'(f13.10,a)')qa,tab//"qa"//tab//"qa1"//tab
+     $        //"Safety factor at plasma edge"
 c-----------------------------------------------------------------------
 c     write arrays.
 c-----------------------------------------------------------------------
-      WRITE(bin_unit,'(/a/)')"Poloidal Coordinate Theta:"
-      WRITE(bin_unit,'(1p,4e18.10)')(1-theta(itheta),
-     $     itheta=mtheta,0,-1)
-      WRITE(bin_unit,'(/a/)')"Polar Angle Eta:"
-      WRITE(bin_unit,'(1p,4e18.10)')(twopi-angle(itheta),
-     $     itheta=mtheta,0,-1)
-      WRITE(bin_unit,'(/a/)')"Radial Coordinate X:"
-      WRITE(bin_unit,'(1p,4e18.10)')(r(itheta),itheta=mtheta,0,-1)
-      WRITE(bin_unit,'(/a/)')"Axial Coordinate Z:"
-      WRITE(bin_unit,'(1p,4e18.10)')(z(itheta),itheta=mtheta,0,-1)
-      WRITE(bin_unit,'(/a/)')"Toroidal Angle Difference Delta:"
-      WRITE(bin_unit,'(1p,4e18.10)')(delta(itheta),
-     $     itheta=mtheta,0,-1)
-      CALL ascii_close(bin_unit)
+         WRITE(bin_unit,'(/a/)')"Poloidal Coordinate Theta:"
+         WRITE(bin_unit,'(1p,4e18.10)')(1-theta(itheta),
+     $        itheta=mtheta,0,-1)
+         WRITE(bin_unit,'(/a/)')"Polar Angle Eta:"
+         WRITE(bin_unit,'(1p,4e18.10)')(twopi-angle(itheta),
+     $        itheta=mtheta,0,-1)
+         WRITE(bin_unit,'(/a/)')"Radial Coordinate X:"
+         WRITE(bin_unit,'(1p,4e18.10)')(r(itheta),itheta=mtheta,0,-1)
+         WRITE(bin_unit,'(/a/)')"Axial Coordinate Z:"
+         WRITE(bin_unit,'(1p,4e18.10)')(z(itheta),itheta=mtheta,0,-1)
+         WRITE(bin_unit,'(/a/)')"Toroidal Angle Difference Delta:"
+         WRITE(bin_unit,'(1p,4e18.10)')(delta(itheta),
+     $        itheta=mtheta,0,-1)
+         CALL ascii_close(bin_unit)
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -607,4 +619,4 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE free_ahb_write
-      END MODULE free_mod
+      END MODULE stride_free_mod

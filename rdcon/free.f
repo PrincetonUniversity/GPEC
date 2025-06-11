@@ -5,22 +5,23 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. free_mod.
+c     0. rdcon_free_mod.
 c     1. free_run.
 c     2. free_write_msc.
 c     3. free_ahb_prep.
 c     4. free_ahb_write.
 c     5. free_get_wvac
 c-----------------------------------------------------------------------
-c     subprogram 0. free_mod.
+c     subprogram 0. rdcon_free_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE free_mod
-      USE ode_mod
-      USE dcon_netcdf_mod
+      MODULE rdcon_free_mod
+      USE vacuum_mod, ONLY: mscvac
+      USE rdcon_ode_mod
+      USE rdcon_netcdf_mod
       IMPLICIT NONE
 
       INTEGER :: msol_ahb=-1
@@ -73,6 +74,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: kernelsignin
       INTEGER :: vac_unit
       REAL(r8), DIMENSION(:,:), POINTER :: grri,xzpts
+      CHARACTER(128) :: ahg_file
 c-----------------------------------------------------------------------
 c     write formats.
 c-----------------------------------------------------------------------
@@ -89,6 +91,11 @@ c-----------------------------------------------------------------------
  80   FORMAT(/3x,"isol",3x,"plasma",5x,"vacuum"/)
  90   FORMAT(i6,1p,2e11.3)
 c-----------------------------------------------------------------------
+c     Basic parameters at this psi
+c-----------------------------------------------------------------------
+      CALL spline_eval(sq,psilim,0)
+      v1=sq%f(3)
+c-----------------------------------------------------------------------
 c     compute plasma response matrix.
 c-----------------------------------------------------------------------
       IF(ode_flag)THEN
@@ -102,12 +109,13 @@ c-----------------------------------------------------------------------
          wp=0
       ENDIF
 c-----------------------------------------------------------------------
-c     calculate vacuum response matrix.
+c     write file for mscvac, prepare input for ahb (deallocate moved to end).
 c-----------------------------------------------------------------------
-      CALL free_write_msc
-      IF(ahb_flag)CALL free_ahb_prep(wp,nmat,smat)
-      CALL spline_eval(sq,psilim,0)
-      v1=sq%f(3)
+      ahg_file="ahg2msc_rdcon.out"
+      CALL free_write_msc(psilim, vac_memory)
+      IF(ahb_flag)THEN
+         CALL free_ahb_prep(wp,nmat,smat)
+      ENDIF
 c-----------------------------------------------------------------------
 c     compute vacuum response matrix.
 c-----------------------------------------------------------------------
@@ -116,7 +124,7 @@ c-----------------------------------------------------------------------
       kernelsignin=-1.0
       ALLOCATE(grri(2*(mthvac+5),mpert*2),xzpts(mthvac+5,4))
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
-     $     wall_flag,farwal_flag,grri,xzpts)
+     $     wall_flag,farwal_flag,grri,xzpts,ahg_file)
       IF(bin_vac)THEN
          WRITE(*,*) "!! WARNING: Use of vacuum.bin is deprecated in"//
      $     " GPEC. Set bin_vac = f in dcon.in to reduce file IO."
@@ -126,7 +134,7 @@ c-----------------------------------------------------------------------
 
       kernelsignin=1.0
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
-     $     wall_flag,farwal_flag,grri,xzpts)
+     $     wall_flag,farwal_flag,grri,xzpts,ahg_file)
       IF(bin_vac)THEN
          WRITE(vac_unit)grri
       ENDIF
@@ -137,13 +145,13 @@ c-----------------------------------------------------------------------
       farwal_flag=.FALSE. ! self-inductance with the wall.
       kernelsignin=-1.0
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
-     $     wall_flag,farwal_flag,grri,xzpts)
+     $     wall_flag,farwal_flag,grri,xzpts,ahg_file)
       IF(bin_vac)THEN
          WRITE(vac_unit)grri
       ENDIF
       kernelsignin=1.0
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
-     $     wall_flag,farwal_flag,grri,xzpts)
+     $     wall_flag,farwal_flag,grri,xzpts,ahg_file)
       IF(bin_vac)THEN
          WRITE(vac_unit)grri
          WRITE(vac_unit)xzpts
@@ -151,7 +159,9 @@ c-----------------------------------------------------------------------
          CALL bin_close(vac_unit)
       ENDIF
 
+      !CALL system("rm -f ahg2msc.out")
       DEALLOCATE(grri,xzpts)
+      IF(vac_memory)CALL unset_dcon_params()
       singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
       DO ipert=1,mpert
          wv(ipert,:)=wv(ipert,:)*singfac
@@ -305,7 +315,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     optionally write netcdf file.
 c-----------------------------------------------------------------------
-      IF(netcdf_out) CALL dcon_netcdf_out(wp,wv,wt,wt0,ep,ev,et)
+      IF(netcdf_out) CALL rdcon_netcdf_out(wp,wv,wt,wt0,ep,ev,et)
 c-----------------------------------------------------------------------
 c     deallocate.
 c-----------------------------------------------------------------------
@@ -322,21 +332,43 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE free_write_msc
+      SUBROUTINE free_write_msc(psifac, inmemory_op, ahgstr_op)
+
+      REAL(r8), INTENT(IN) :: psifac
+      LOGICAL, OPTIONAL :: inmemory_op
+      LOGICAL :: inmemory
 
       CHARACTER(1), PARAMETER :: tab=CHAR(9)
       INTEGER :: itheta,n
       REAL(r8) :: qa
       REAL(r8), DIMENSION(0:mtheta) :: angle,r,z,delta,rfac,theta
+      CHARACTER(128) :: ahgstr
+      CHARACTER(128), optional :: ahgstr_op
+
+      IF(PRESENT(inmemory_op))THEN
+         inmemory = inmemory_op
+      ELSE
+         inmemory = .FALSE.
+      ENDIF
+   
+      IF(PRESENT(ahgstr_op))THEN
+         ahgstr = ahgstr_op
+      ELSE
+         ahgstr = "ahg2msc_rdcon.out"
+      ENDIF
+   
 c-----------------------------------------------------------------------
 c     compute output.
 c-----------------------------------------------------------------------
+      CALL spline_eval(sq,psifac,1)
+      qa=sq%f(4)
+
       theta=rzphi%ys
       DO itheta=0,mtheta
-         CALL bicube_eval(rzphi,psilim,theta(itheta),0)
+         CALL bicube_eval(rzphi,psifac,theta(itheta),0)
          rfac(itheta)=SQRT(rzphi%f(1))
          angle(itheta)=twopi*(theta(itheta)+rzphi%f(2))
-         delta(itheta)=-rzphi%f(3)/qlim
+         delta(itheta)=-rzphi%f(3)/qa
       ENDDO
       r=ro+rfac*COS(angle)
       z=zo+rfac*SIN(angle)
@@ -344,43 +376,50 @@ c-----------------------------------------------------------------------
 c     invert values for nn < 0.
 c-----------------------------------------------------------------------
       n=nn
-      qa=qlim
       IF(nn < 0)THEN
          qa=-qa
          delta=-delta
          n=-n
       ENDIF
 c-----------------------------------------------------------------------
+c     pass all values in memory instead of over ascii io (faster).
+c-----------------------------------------------------------------------
+      IF(inmemory)THEN
+         CALL set_dcon_params(mtheta,mlow,mhigh,n,qa,r(mtheta:0:-1),
+     $                        z(mtheta:0:-1),delta(mtheta:0:-1))
+      ELSE
+c-----------------------------------------------------------------------
 c     write scalars.
 c-----------------------------------------------------------------------
-      CALL ascii_open(bin_unit,'ahg2msc.out',"UNKNOWN")
-      WRITE(bin_unit,'(i4,a)')mtheta,tab//tab//"mtheta"//tab//"mthin"
-     $     //tab//"Number of poloidal nodes"
-      WRITE(bin_unit,'(i4,a)')mlow,tab//tab//"mlow"//tab//"lmin"//tab
-     $     //"Lowest poloidal harmonic"
-      WRITE(bin_unit,'(i4,a,a)')mhigh,tab//tab//"mhigh"//tab//"lmax"
-     $     //tab//"Highest poloidal harmonic"
-      WRITE(bin_unit,'(i4,a)')n,tab//tab//"nn"//tab//"nadj"//tab
-     $     //"Toroidal harmonic"
-      WRITE(bin_unit,'(f13.10,a)')qa,tab//"qa"//tab//"qa1"//tab
-     $     //"Safety factor at plasma edge"
+         CALL ascii_open(bin_unit,ahgstr,"UNKNOWN")
+         WRITE(bin_unit,'(i4,a)')mtheta,tab//tab//"mtheta"//tab//"mthin"
+     $        //tab//"Number of poloidal nodes"
+         WRITE(bin_unit,'(i4,a)')mlow,tab//tab//"mlow"//tab//"lmin"//tab
+     $        //"Lowest poloidal harmonic"
+         WRITE(bin_unit,'(i4,a,a)')mhigh,tab//tab//"mhigh"//tab//"lmax"
+     $        //tab//"Highest poloidal harmonic"
+         WRITE(bin_unit,'(i4,a)')n,tab//tab//"nn"//tab//"nadj"//tab
+     $        //"Toroidal harmonic"
+         WRITE(bin_unit,'(f13.10,a)')qa,tab//"qa"//tab//"qa1"//tab
+     $        //"Safety factor at plasma edge"
 c-----------------------------------------------------------------------
 c     write arrays.
 c-----------------------------------------------------------------------
-      WRITE(bin_unit,'(/a/)')"Poloidal Coordinate Theta:"
-      WRITE(bin_unit,'(1p,4e18.10)')(1-theta(itheta),
-     $     itheta=mtheta,0,-1)
-      WRITE(bin_unit,'(/a/)')"Polar Angle Eta:"
-      WRITE(bin_unit,'(1p,4e18.10)')(twopi-angle(itheta),
-     $     itheta=mtheta,0,-1)
-      WRITE(bin_unit,'(/a/)')"Radial Coordinate X:"
-      WRITE(bin_unit,'(1p,4e18.10)')(r(itheta),itheta=mtheta,0,-1)
-      WRITE(bin_unit,'(/a/)')"Axial Coordinate Z:"
-      WRITE(bin_unit,'(1p,4e18.10)')(z(itheta),itheta=mtheta,0,-1)
-      WRITE(bin_unit,'(/a/)')"Toroidal Angle Difference Delta:"
-      WRITE(bin_unit,'(1p,4e18.10)')(delta(itheta),
-     $     itheta=mtheta,0,-1)
-      CALL ascii_close(bin_unit)
+         WRITE(bin_unit,'(/a/)')"Poloidal Coordinate Theta:"
+         WRITE(bin_unit,'(1p,4e18.10)')(1-theta(itheta),
+     $        itheta=mtheta,0,-1)
+         WRITE(bin_unit,'(/a/)')"Polar Angle Eta:"
+         WRITE(bin_unit,'(1p,4e18.10)')(twopi-angle(itheta),
+     $        itheta=mtheta,0,-1)
+         WRITE(bin_unit,'(/a/)')"Radial Coordinate X:"
+         WRITE(bin_unit,'(1p,4e18.10)')(r(itheta),itheta=mtheta,0,-1)
+         WRITE(bin_unit,'(/a/)')"Axial Coordinate Z:"
+         WRITE(bin_unit,'(1p,4e18.10)')(z(itheta),itheta=mtheta,0,-1)
+         WRITE(bin_unit,'(/a/)')"Toroidal Angle Difference Delta:"
+         WRITE(bin_unit,'(1p,4e18.10)')(delta(itheta),
+     $        itheta=mtheta,0,-1)
+         CALL ascii_close(bin_unit)
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -635,6 +674,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(mpert) :: singfac
       REAL(r8), DIMENSION(:,:), POINTER :: grri,xzpts
       LOGICAL :: wall_flag=.FALSE., farwal_flag=.FALSE.
+      CHARACTER(128) :: ahgstr
 
 c-----------------------------------------------------------------------
 c     allocate vacuum matrix.
@@ -644,17 +684,17 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write file for mscvac, prepare input for ahb, and deallocate.
 c-----------------------------------------------------------------------
-      CALL free_write_msc
+      CALL free_write_msc(psilim, vac_memory)
 c-----------------------------------------------------------------------
 c     compute vacuum response matrix.
 c-----------------------------------------------------------------------
       kernelsignin=1.0
       ALLOCATE(grri(2*(mthvac+5),mpert*2),xzpts(mthvac+5,4))
       CALL mscvac(wvac,mpert,mtheta,mthvac,complex_flag,kernelsignin,
-     $     wall_flag,farwal_flag,grri,xzpts)
+     $     wall_flag,farwal_flag,grri,xzpts,ahgstr)
       DEALLOCATE(grri,xzpts)
+      IF(vac_memory)CALL unset_dcon_params()
 
-      CALL system("rm -f ahg2msc.out")
       singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
       DO ipert=1,mpert
          wvac(ipert,:)=wvac(ipert,:)*singfac
@@ -665,4 +705,4 @@ c     terminate.
 c-----------------------------------------------------------------------      
       RETURN
       END SUBROUTINE free_get_wvac
-      END MODULE free_mod
+      END MODULE rdcon_free_mod

@@ -5,17 +5,17 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. resist_mod.
+c     0. rdcon_resist_mod.
 c     1. resist_eval.
 c-----------------------------------------------------------------------
-c     subprogram 0. resist_mod.
+c     subprogram 0. rdcon_resist_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE resist_mod
-      USE dcon_mod
+      MODULE rdcon_resist_mod
+      USE rdcon_mod
       USE toolbox_mod
 
       IMPLICIT NONE
@@ -171,4 +171,4 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE resist_eval
-      END MODULE resist_mod
+      END MODULE rdcon_resist_mod

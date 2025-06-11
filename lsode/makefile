@@ -1,7 +1,19 @@
 
+ifneq (,$(findstring ifort,$(FC)))
+    EXTRAFLAGS=-recursive
+else ifneq (,$(findstring ifx,$(FC)))
+	EXTRAFLAGS=-recursive
+else
+    EXTRAFLAGS=-frecursive -std=legacy
+endif
+
 include ../install/DEFAULTS.inc
 
-F90 = $(FC) $(FFLAGS) $(OMPFLAG)
+F90 = $(FC) $(FFLAGS) $(EXTRAFLAGS) $(OMPFLAG) -I../equil
+
+LIBDIR = ../lib
+LIBS = \
+	-lequil \
 
 .f.o: 
 	$(F90) -c $*.f
@@ -37,4 +49,4 @@ liblsode: $(OBJS)
 	ar -r ../lib/liblsode.a *.o
 
 clean:
-	rm -f *.o *.a
+	rm -f *.o *.a *.original

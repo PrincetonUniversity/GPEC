@@ -1,4 +1,5 @@
       MODULE sglobal_mod
+      USE local_mod, ONLY: r8
 
       IMPLICIT NONE
       INTEGER :: mm,nn

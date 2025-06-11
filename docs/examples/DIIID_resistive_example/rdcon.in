@@ -19,7 +19,6 @@
     out_galsol=f         ! Output Galerkin solution in ascii files
     bin_galsol=f         ! Output Galerkin solution in binary files
     b_flag=f             ! Output the perturbation of radial b field
-    coil%rpec_flag=t     ! Resistive perturbed equilibrium computation
     bin_coilsol=f        ! Output binary files for every unit-m driven solution
 /
 &RDCON_CONTROL
@@ -28,6 +27,7 @@
     ode_flag=t           ! Integrate ODE's for determining stability of internal long-wavelength mode (must be true for GPEC)
     vac_flag=t           ! Compute plasma, vacuum, and total energies for free-boundary modes
     gal_flag=t           ! Compute outer regime using resonant Galerkin method
+    coil%rpec_flag=t     ! Resistive perturbed equilibrium computation
 
     sas_flag=t           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
     dmlim=0.15            ! See sas_flag
@@ -56,6 +56,8 @@
 /
 
 &RDCON_OUTPUT
+    out_ahg2msc=f        ! Output deprecated ahg2msc.out files. This is used to communicate with vacuum, but is now done through memory.
+
     crit_break=t         ! Color of the crit curve changes when crossing a singular surface
 
     ahb_flag=f           ! Output normal magnetic field eigenvalues and eigenfunctons at plasma-vacuum interface (must be false for GPEC)

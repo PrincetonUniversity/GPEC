@@ -71,7 +71,10 @@ c-----------------------------------------------------------------------
      $     dx,dy,dz
 
       REAL(r8), DIMENSION(4) :: crzphi_f, crzphi_fx, crzphi_fy
-
+      
+      ! splines are 0:cmtheta, but aspl_f_arr can be 1:cmtheta because
+      ! we are repeating the first and last points to
+      ! make the spline periodic
       REAL(r8), DIMENSION(cmtheta) :: aspl_f_arr
 
       TYPE(spline_type) :: aspl
@@ -109,7 +112,7 @@ c-----------------------------------------------------------------------
 
 #ifdef _OPENMP
       num_threads = OMP_GET_MAX_THREADS()
-      IF(verbose) WRITE(*,'(1x,a,i4,a)'),
+      IF(verbose) WRITE(*,'(1x,a,i4,a)')
      $                "  > Running with ",num_threads," OMP threads"
 #endif
 
@@ -123,7 +126,7 @@ c-----------------------------------------------------------------------
      $        dy(coil(i)%ncoil,coil(i)%s,nseg),
      $        dz(coil(i)%ncoil,coil(i)%s,nseg))
 
-      IF(verbose) WRITE(*,'(1x,a,i6,a,i3,a,i3,a)'),"  >> Mapping ",
+      IF(verbose) WRITE(*,'(1x,a,i6,a,i3,a,i3,a)') "  >> Mapping ",
      $      coil(i)%ncoil*coil(i)%s*nseg,
      $      " filaments from the coil "//
      $      TRIM(coil(i)%coil_name)//
@@ -328,7 +331,7 @@ c-----------------------------------------------------------------------
 
 #ifdef _OPENMP
       num_threads = OMP_GET_MAX_THREADS()
-      IF(verbose) WRITE(*,'(1x,a,i4,a)'),
+      IF(verbose) WRITE(*,'(1x,a,i4,a)')
      $                "  > Running with ",num_threads," OMP threads"
 #endif
 
@@ -342,7 +345,7 @@ c-----------------------------------------------------------------------
      $        dy(coil(i)%ncoil,coil(i)%s,nseg),
      $        dz(coil(i)%ncoil,coil(i)%s,nseg))
          
-         IF(verbose) WRITE(*,'(1x,a,i6,a,i4,a,i4,a,i4,a)'),"  >"//
+         IF(verbose) WRITE(*,'(1x,a,i6,a,i4,a,i4,a,i4,a)') "  >"//
      $      "Mapping ", coil(i)%ncoil*coil(i)%s*nseg,
      $      "filaments from the coil "
      $      //TRIM(coil(i)%coil_name)//

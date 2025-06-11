@@ -5,28 +5,28 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. dcon_run_mod.
+c     0. rdcon_run_mod.
 c     1. dcon_dealloc.
 c     2. dcon_regrid.
 c     3. dcon_qpack.
 c     4. dcon_run.
 c     5. dcon_main
 c-----------------------------------------------------------------------
-c     subprogram 0. dcon_run_mod.
+c     subprogram 0. rdcon_run_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE dcon_run_mod
+      MODULE rdcon_run_mod
 
       USE equil_mod
       USE equil_out_mod
-      USE bal_mod
-      USE mercier_mod
-      USE ode_mod
-      USE free_mod
-      USE resist_mod
+      USE rdcon_bal_mod
+      USE rdcon_mercier_mod
+      USE rdcon_ode_mod
+      USE rdcon_free_mod
+      USE rdcon_resist_mod
       USE gal_mod
 
       IMPLICIT NONE
@@ -71,6 +71,7 @@ c-----------------------------------------------------------------------
          ENDDO
          DEALLOCATE(sing)
       ENDIF
+      IF(ALLOCATED(delta)) DEALLOCATE(delta)
       IF(ode_flag.AND.ASSOCIATED(u)) DEALLOCATE(u,du,u_save)
 c-----------------------------------------------------------------------
 c     terminate.
@@ -220,13 +221,14 @@ c-----------------------------------------------------------------------
      $     tol_nr,tol_r,crossover,ucrit,singfac_min,singfac_max,
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,sort_type,
      $     gal_flag,regrid_flag,sing1_flag,
-     $     sing_order_ceiling,degen_tol
+     $     sing_order_ceiling,degen_tol,coil
       NAMELIST/rdcon_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
      $     out_fl,bin_fl,out_evals,bin_evals,bin_euler,euler_stride,
-     $     bin_vac,ahb_flag,mthsurf0,msol_ahb,diagnose_fixup,verbose
+     $     bin_vac,ahb_flag,mthsurf0,msol_ahb,diagnose_fixup,verbose,
+     $     out_ahg2msc
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -253,6 +255,16 @@ c-----------------------------------------------------------------------
          CALL gal_read_input
       ENDIF
       CALL ascii_close(in_unit)
+
+      IF (out_ahg2msc) THEN
+         WRITE(*,*) "WARNING: ahg2msc.out is deprecated and will be " //
+     $        "removed in a future version. Set out_ahg2msc = .FALSE."
+         WRITE(*,*) "         to disable this warning."
+         vac_memory=.FALSE.
+      ELSE
+         vac_memory=.TRUE.
+      ENDIF
+
 c-----------------------------------------------------------------------
 c     open output files, read, process, and diagnose equilibrium.
 c-----------------------------------------------------------------------
@@ -373,6 +385,10 @@ c-----------------------------------------------------------------------
       ENDIF
       DEALLOCATE(ud)
 c-----------------------------------------------------------------------
+c     galerkin method.
+c-----------------------------------------------------------------------
+      IF(gal_flag)CALL gal_solve
+c-----------------------------------------------------------------------
 c     compute free boundary energies.
 c-----------------------------------------------------------------------
       IF(vac_flag .AND. .NOT.
@@ -405,10 +421,6 @@ c-----------------------------------------------------------------------
      $           "All free-boundary modes stable for nn = ",nn
          ENDIF
       ENDIF
-c-----------------------------------------------------------------------
-c     galerkin method.
-c-----------------------------------------------------------------------
-      IF(gal_flag)CALL gal_solve
       CALL dcon_dealloc(0)
 c-----------------------------------------------------------------------
 c     save output in sum1.bin.
@@ -430,7 +442,7 @@ c-----------------------------------------------------------------------
       CALL program_stop("Normal termination.")
       END SUBROUTINE dcon_run
 
-      END MODULE dcon_run_mod
+      END MODULE rdcon_run_mod
 c-----------------------------------------------------------------------
 c     subprogram 5. dcon_main.
 c     trivial main program.
@@ -438,8 +450,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      PROGRAM dcon_main
-      USE dcon_run_mod
+      PROGRAM rdcon_main
+      USE rdcon_run_mod
       USE lib_interface_mod
       IMPLICIT NONE
 c-----------------------------------------------------------------------
@@ -450,11 +462,11 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       CALL program_stop("Normal termination.")
-      END PROGRAM dcon_main
+      END PROGRAM rdcon_main
 
       SUBROUTINE dcon_interface_run(eqin)
          USE lib_interface_mod
-         USE dcon_run_mod
+         USE rdcon_run_mod
          TYPE(transpeq) :: eqin
          teq=eqin
          CALL lib_interface_init

@@ -43,13 +43,15 @@ pentrc:
 	cd ../pentrc; make pentrc
 
 slayer: $(OBJS)
-	$(F90) -o slayer $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS)
+	$(F90) -o slayer $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS) $(LDFLAGS)
 	mkdir -p ../lib/
 	ar -r ../lib/libslayer.a *.o
 	mkdir -p ../bin
 	cp -f slayer ../bin
 
 # dependencies
+
+sglobal.o: ../equil/local_mod.mod
 params.o : sglobal.o
 delta.o : sglobal.o
 gslayer.o : sglobal.o delta.o
@@ -57,5 +59,4 @@ slayer.o : sglobal.o params.o delta.o ../pentrc/grid.mod ../equil/spline_mod.mod
 slayer_netcdf.o : sglobal.o
 
 clean:
-	rm -f *.o *.mod *.out *.bin slayers
-
+	rm -f *.o *.mod *.out *.bin slayer *.original

@@ -1,10 +1,12 @@
-      real*8 function ddot(n,dx,incx,dy,incy)
+      real(r8) function ddot(n,dx,incx,dy,incy)
+      USE local_mod, ONLY: r8
+
 c
 c     forms the dot product of two vectors.
 c     uses unrolled loops for increments equal to one.
 c     jack dongarra, linpack, 3/11/78.
 c
-      real*8 dx(1),dy(1),dtemp
+      real(r8) dx(1),dy(1),dtemp
       integer i,incx,incy,ix,iy,m,mp1,n
 c
       ddot = 0.0

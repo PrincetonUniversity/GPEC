@@ -97,7 +97,7 @@ c-----------------------------------------------------------------------
 c     write equilibrium and jacobian data.
 c-----------------------------------------------------------------------
       IF(.NOT. PRESENT(op_psihigh))THEN  ! only need this once
-        IF(verbose) WRITE(*,'(1x,a)'), "Forming the equilibirum"
+        IF(verbose) WRITE(*,'(1x,a)') "Forming the equilibirum"
         IF(verbose) WRITE(*,'(3x,4a/3x,2a,3(a,i1))')
      $       "Equilibrium: ",TRIM(eq_filename),", Type: ",TRIM(eq_type),
      $       "Jac_type = ",TRIM(jac_type),", power_bp = ",power_bp,

@@ -5,7 +5,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. sing_mod.
+c     0. rdcon_sing_mod.
 c     1. sing_scan.
 c     2. sing_find.
 c     3. sing_lim.
@@ -22,14 +22,14 @@ c     13. sing_matvec.
 c     14. sing_log.
 c     15. sing_ua_diagnose.
 c-----------------------------------------------------------------------
-c     subprogram 0. sing_mod.
+c     subprogram 0. rdcon_sing_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE sing_mod
-      USE sing1_mod
+      MODULE rdcon_sing_mod
+      USE rdcon_sing1_mod
       IMPLICIT NONE
 
       LOGICAL :: vmat_bin_write=.TRUE.
@@ -74,7 +74,7 @@ c-----------------------------------------------------------------------
          WRITE(debug_unit)mpert,msing
          DO ising=1,msing
             singp => sing(ising)
-            WRITE(debug_unit)sing%order,singp%alpha,singp%psifac,
+            WRITE(debug_unit)singp%order,singp%alpha,singp%psifac,
      $           singp%q,singp%r1,singp%r2
             WRITE(debug_unit)singp%vmatl,singp%vmatr
          ENDDO
@@ -1280,4 +1280,4 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE sing_get_ua_cut
 
-      END MODULE sing_mod
+      END MODULE rdcon_sing_mod

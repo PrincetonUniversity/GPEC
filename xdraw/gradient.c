@@ -80,6 +80,8 @@ extern unsigned int xscreen, yscreen;
 extern int ftype;
 extern int ntime;
 extern float data_limits;
+extern void get_world_coordinates(int, int, double *, double *, char *);
+
 
 extern Window zoomwin;
 

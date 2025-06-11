@@ -70,7 +70,7 @@ c-----------------------------------------------------------------------
      $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout,filter_flag,
      $     netcdf_flag,ascii_flag,singthresh_flag,
      $     singthresh_callen_flag,singthresh_slayer_flag,
-     $     singthresh_slayer_inpr
+     $     singthresh_slayer_inpr,out_ahg2msc
       NAMELIST/gpec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,jacfac_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
@@ -126,6 +126,8 @@ c-----------------------------------------------------------------------
       nchr=20
       nchz=20
 
+      out_ahg2msc=.TRUE.
+      vac_memory=.FALSE.
       jsurf_out=0
       tmag_out=1
       mlim_out=64
@@ -224,6 +226,7 @@ c-----------------------------------------------------------------------
       CALL ascii_close(in_unit)
       galsol%gal_flag=gal_flag
       IF(timeit) CALL gpec_timer(0)
+
 c-----------------------------------------------------------------------
 c     deprecated variable errors
 c-----------------------------------------------------------------------
@@ -252,6 +255,17 @@ c-----------------------------------------------------------------------
          ENDIF
        PRINT *,"!! WARNING: ivacuumfile is deprecated and will be"//
      $         " ignored."
+      ENDIF
+      IF (out_ahg2msc) THEN
+         IF(.not. warnings_needed)THEN
+           PRINT *, "..."
+           warnings_needed = .true.
+         ENDIF
+         PRINT *, "!! WARNING: ahg2msc.out is deprecated and will be "//
+     $        "removed in a future version."
+         vac_memory=.FALSE.
+      ELSE
+         vac_memory=.TRUE.
       ENDIF
       IF(warnings_needed) PRINT *, "..."
 c-----------------------------------------------------------------------
@@ -412,16 +426,17 @@ c-----------------------------------------------------------------------
       IF(bt_direction=="negative")btd=-1.0
       helicity=ipd*btd
       IF (coil_flag) THEN
+                
          IF(verbose) WRITE(*,*)
-     $     "Calculating field on the boundary from coils"
+     $            "Calculating field on the boundary from coils"
          CALL coil_read(idconfile)
          ALLOCATE(coilmn(cmpert,coil_num))
          ALLOCATE(coil_indmat(mpert,coil_num))
          coilmn=0
          coil_indmat=0
          DO j=1,coil_num
-            CALL field_bs_psi(psilim,coilmn(:,j),1,op_start=j,op_stop=j,
-     $                        op_verbose=.TRUE.)
+            CALL field_bs_psi(psilim,coilmn(:,j),1,op_start=j,
+     $                        op_stop=j,op_verbose=.TRUE.)
             DO i=1,cmpert
                IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
                   coil_indmat(cmlow-mlow+i,j)=coilmn(i,j)
@@ -429,6 +444,11 @@ c-----------------------------------------------------------------------
                ENDIF
             ENDDO
          ENDDO
+         IF (coil_num <= 0) THEN
+            WRITE(*,*) "!! WARNING: coil_flag is enabled but no coils"//
+     $              " are defined. Disabling coil_flag."
+               coil_flag = .FALSE.
+         ENDIF
          IF(timeit) CALL gpec_timer(2)
       ENDIF
 c-----------------------------------------------------------------------
