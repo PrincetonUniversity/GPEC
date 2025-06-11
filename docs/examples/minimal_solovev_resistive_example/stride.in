@@ -1,0 +1,75 @@
+&stride_control
+    bal_flag=t           ! Ideal MHD ballooning criterion for short wavelengths
+    mat_flag=t           ! Construct coefficient matrices for diagnostic purposes
+    ode_flag=t           ! Integrate ODE's for determining stability of internal long-wavelength mode (must be true for GPEC)
+    vac_flag=t           ! Compute plasma, vacuum, and total energies for free-boundary modes
+    mer_flag=t           ! Evaluate the Mercier criterian
+
+    sas_flag=t           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
+    dmlim=0.2            ! See sas_flag
+    qlow=1.02            ! Integration initiated at q determined by minimum of qlow and q0 from equil
+    qhigh=1e3            ! Integration terminated at q limit determined by minimum of qhigh and qa from equil
+    sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
+
+    nn=1                 ! Toroidal mode number
+    delta_mlow=8         ! Expands lower bound of Fourier harmonics
+    delta_mhigh=8        ! Expands upper bound of  Fourier harmonics
+    delta_mband=0        ! Integration keeps only this wide a band of solutions along the diagonal in m,m'
+    mthvac=512           ! Number of points used in splines over poloidal angle at plasma-vacuum interface. Overrides vac.in mth.
+    thmax0=1             ! Linear multiplier on the automatic choice of theta integration bounds for high-n ideal ballooning stability computation (strictly, -inf to -inf)
+
+    tol_nr=1e-8          ! Relative tolerance of dynamic integration steps away from rationals.
+    tol_r=1e-8           ! Relative tolerance of dynamic integration steps near rationals
+    crossover=1e-2       ! Fractional distance from rational q at which tolerance is switched to tol_r
+    singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
+    ucrit=1e4            ! Maximum fraction of solutions allowed before re-normalized
+    sing_order=6         ! The highest order of power series to be retained near singular surfaces
+
+    use_classic_splines=f  ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
+    use_notaknot_splines=f ! Use not-a-knot boundary instead of either "extrap" spline extrapolation
+/
+
+&stride_output
+    out_ahg2msc=f        ! Output deprecated ahg2msc.out files. This is used to communicate with vacuum, but is now done through memory.
+
+    crit_break=t         ! Color of the crit curve changes when crossing a singular surface
+
+    ahb_flag=f           ! Output normal magnetic field eigenvalues and eigenfunctons at plasma-vacuum interface (must be false for GPEC)
+    msol_ahb=1           ! Number of eigenfunctions output by ahb_flag=t ?
+    mthsurf0=1           ! Linear multiplier on number of boundary points used to display surface eigenfunctions for ahgb_flag=t
+
+    bin_euler=f          ! **DUMMY VARIABLE** Currently does nothing
+    euler_stride=1       ! **DUMMY VARIABLE** Currently does nothing
+
+    out_bal1=f           ! Ascii output for bal_flag poloidal functions
+    bin_bal1=f           ! Binary output for bal_flag poloidal functions
+    out_bal2=f           ! Ascii output for bal_flag functions
+    bin_bal2=f           ! Binary output for bal_flag functions
+
+    netcdf_out=t         ! Replicate ascii stride.out and delta_prime.out information in a netcdf file
+/
+
+&stride_params
+    nThreads=32                         ! Number of threads used to calculate intervals in parallel
+    fourfit_metric_parallel=f           ! Compute equilibrium metric tensor components in parallel
+    vac_parallel=t                      ! Doubles the number of main level threads, creating more threads than processors
+
+    nIntervalsTot=33                    ! Number of radial intervals calculated in separately and recombined at end
+    grid_packing="singularities"        ! Choose from "singularities" and "naive"
+    axis_mid_pt_skew=12.0               ! Skews the distribution of intervals between psilow and psihigh
+    asymp_at_sing=t                     ! Use asymptotic expansions at singular surfaces
+    kill_big_soln_for_ideal_dW=f        ! Explicitly remove the big solution
+
+    calc_delta_prime=t                  ! When false, sing_order=2 is better for speed, (with less accuracy).
+    calc_dp_with_vac=t                  ! When vac_flag=t, this will use vacuum edge conditions to calculate delta prime.
+    big_soln_err_tol=1e-7               ! Threshold error for correct solution to the delta prime bvp.
+
+    integrate_riccati=f                 ! Use Riccati integration for dW. Cannot calculate delta_prime.
+    riccati_bounce=t                    ! Toggle integration mode to control growth of matrix
+    riccati_match_hamiltonian_evals=f   !
+    verbose_riccati_output=t            ! Creates peig and Psize output files
+    ric_dt=1e-8                         ! Initial step size of Riccati integration
+    ric_tol=1e-6                        ! Relative tolerance of Riccati integration
+
+    verbose_performance_output=f        ! Print detailed timing information to terminal
+/

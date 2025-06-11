@@ -1,0 +1,62 @@
+&DCON_CONTROL
+    bal_flag=f           ! Ideal MHD ballooning criterion for short wavelengths
+    mat_flag=t           ! Construct coefficient matrices for diagnostic purposes
+    ode_flag=t           ! Integrate ODE's for determining stability of internal long-wavelength mode (must be true for GPEC)
+    vac_flag=t           ! Compute plasma, vacuum, and total energies for free-boundary modes
+    mer_flag=t           ! Evaluate the Mercier criterian
+
+    sas_flag=f           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
+    dmlim=0.2            ! See sas_flag
+    qlow=1.02            ! Integration initiated at q determined by minimum of qlow and q0 from equil
+    qhigh=1e3            ! Integration terminated at q limit determined by minimum of qhigh and qa from equil
+    sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
+
+    nn=1                 ! Toroidal mode number
+    delta_mlow=8         ! Expands lower bound of Fourier harmonics
+    delta_mhigh=8        ! Expands upper bound of  Fourier harmonics
+    delta_mband=0        ! Integration keeps only this wide a band of solutions along the diagonal in m,m'
+    mthvac=960           ! Number of points used in splines over poloidal angle at plasma-vacuum interface. Overrides vac.in mth.
+    thmax0=1             ! Linear multiplier on the automatic choice of theta integration bounds for high-n ideal ballooning stability computation (strictly, -inf to -inf)
+
+    kin_flag = f         ! Kinetic EL equation (default: false)
+    con_flag = f         ! Continue integration through layers (default: false)
+    kinfac1 = 1.0        ! Scale factor for energy contribution (default : 1.0)
+    kinfac2 = 1.0        ! Scale factor for torque contribution (default : 1.0)
+    kingridtype = 0      ! Regular grid method (default : 0)
+    passing_flag = f     ! Includes passing particle effects (default: false)
+    ktanh_flag = t       ! Ignore kinetic effects in the core smoothly (default: false)
+    ktc = 0.1            ! Parameter activated by ktanh_flag: roughly corresponds to core width ignored (default: 0.1)
+    ktw = 50.0           ! Parameter activated by ktanh_flag: width of hyper-tangential functions (default: 50.0)
+    ion_flag = t         ! Include ion dW_k when kin_flag is true (summed with electron contribution if electron_flag true)
+    electron_flag = f    ! Include electron dW_k when kin_flag is true (summed with ion contribution if ion_flag true)
+
+    tol_nr=1e-6          ! Relative tolerance of dynamic integration steps away from rationals
+    tol_r=1e-7           ! Relative tolerance of dynamic integration steps near rationals
+    crossover=1e-2       ! Fractional distance from rational q at which tolerance is switched to tol_r
+    singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
+    ucrit=1e3            ! Maximum fraction of solutions allowed before re-normalized
+
+    termbycross_flag = f ! Terminate ODE solver in the event of a zero crossing
+
+    use_classic_splines = f ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
+/
+&DCON_OUTPUT
+    out_ahg2msc=f        ! Output deprecated ahg2msc.out files. This is used to communicate with vacuum, but is now done through memory.
+
+    crit_break=t         ! Color of the crit curve changes when crossing a singular surface
+
+    ahb_flag=f           ! Output normal magnetic field eigenvalues and eigenfunctons at plasma-vacuum interface (must be false for GPEC)
+    msol_ahb=1           ! Number of eigenfunctions output by ahb_flag=t ?
+    mthsurf0=1           ! Linear multiplier on number of boundary points used to display surface eigenfunctions for ahgb_flag=t
+
+    bin_euler=t          ! Output M psi-by-M euler-lagrange solutions to binary file euler.bin
+    bin_vac=f            ! Output deprecated binary vacuum.bin containing vacuum energy matrices
+    euler_stride=1       ! Output only every euler_stride'th psi step to binary file
+
+    out_bal1=f           ! Ascii output for bal_flag poloidal functions
+    bin_bal1=f           ! Binary output for bal_flag poloidal functions
+    out_bal2=f           ! Ascii output for bal_flag functions
+    bin_bal2=f           ! Binary output for bal_flag functions
+
+    netcdf_out=t         ! Replicate ascii dcon.out information in a netcdf file
+/
