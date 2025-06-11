@@ -8,7 +8,7 @@
     zi = 1                              ! Main ion charge (e)
     mimp = 12                           ! Impurity mass (u)
     zimp = 6                            ! Impurity charge (e)
-    nl = 6                              ! Bounce harmonic range (-nl to nl)
+    nl = 0                              ! Bounce harmonic range (-nl to nl)
     electron = .false.                  ! Calculate all results for electrons INSTEAD OF ions (only one species per PENTRC run)
     nutype = "harmonic"                 ! Collision operator: "zero", "krook", "harmonic"
     f0type = "maxwellian"               ! Distribution function: "maxwellian"

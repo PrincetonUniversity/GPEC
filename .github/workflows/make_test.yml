@@ -173,25 +173,23 @@ jobs:
           export FFLAGS='-fallow-argument-mismatch -O0 -Wall -Wextra -fcheck=all,no-array-temps -fbacktrace -finit-real=snan -finit-integer=-9999 -fstack-protector-all -fsanitize=bounds -Wno-array-temporaries -Wno-unused-variable -Wno-unused-dummy-argument -Wno-compare-reals -Wno-unused-parameter -Wno-unused-label -fno-omit-frame-pointer -frecord-marker=4 -gdwarf-4 -ffloat-store -fbounds-check'
           make
 
-      - name: Run DIIID ideal example
+      - name: Run Soloviev ideal example
         run: |
-          sed -i 's/^\( *nThreads *= *\).*/\1 1/' docs/examples/DIIID_ideal_example/stride.in
-          sed -i -E 's/^( *delta_mlow *= *)[0-9]+/\10/; s/^( *delta_mhigh *= *)[0-9]+/\10/' docs/examples/DIIID_ideal_example/stride.in
-          sed -i -E 's/^( *delta_mlow *= *)[0-9]+/\10/; s/^( *delta_mhigh *= *)[0-9]+/\10/' docs/examples/DIIID_ideal_example/dcon.in
-          sed -i -E 's/^( *xbnormal_flag *= *)t/\1f/' docs/examples/DIIID_ideal_example/gpec.in
           export LD_LIBRARY_PATH=$PREFIX/lib:$LD_LIBRARY_PATH
-          cd docs/examples/DIIID_ideal_example
+          cd docs/examples/minimal_solovev_ideal_example
           ulimit -s unlimited
           ../../../bin/dcon && ../../../bin/gpec && ../../../bin/stride && ../../../bin/pentrc
 
-      - name: Run DIIID resistive example
+      - name: Run Soloviev kinetic example
         run: |
-          sed -i 's/^\( *nThreads *= *\).*/\1 1/' docs/examples/DIIID_resistive_example/stride.in
-          sed -i -E 's/^( *delta_mlow *= *)[0-9]+/\10/; s/^( *delta_mhigh *= *)[0-9]+/\10/' docs/examples/DIIID_resistive_example/stride.in
-          sed -i -E 's/^( *delta_mlow *= *)[0-9]+/\10/; s/^( *delta_mhigh *= *)[0-9]+/\10/' docs/examples/DIIID_resistive_example/rdcon.in
-          sed -i -E 's/^( *xbnormal_flag *= *)t/\1f/' docs/examples/DIIID_resistive_example/gpec.in
           export LD_LIBRARY_PATH=$PREFIX/lib:$LD_LIBRARY_PATH
-          cd docs/examples/DIIID_resistive_example
+          cd docs/examples/minimal_solovev_kinetic_example
+          ulimit -s unlimited
+          ../../../bin/dcon && ../../../bin/gpec && ../../../bin/pentrc
+      - name: Run Soloviev resistive example
+        run: |
+          export LD_LIBRARY_PATH=$PREFIX/lib:$LD_LIBRARY_PATH
+          cd docs/examples/minimal_solovev_resistive_example
           ulimit -s unlimited
           ../../../bin/rdcon && ../../../bin/rmatch && ../../../bin/gpec && ../../../bin/stride
 
@@ -247,28 +245,28 @@ jobs:
           export FFLAGS='-O0 -warn all -check all -check noarg_temp_created -traceback -fpe3 -fstack-protector -fopenmp'
           make
 
-      - name: Run DIIID ideal example
+      - name: Run Soloviev ideal example
         run: |
-          sed -i 's/^\( *nThreads *= *\).*/\1 2/' docs/examples/DIIID_ideal_example/stride.in
-          sed -i -E 's/^( *delta_mlow *= *)[0-9]+/\10/; s/^( *delta_mhigh *= *)[0-9]+/\10/' docs/examples/DIIID_ideal_example/stride.in
-          sed -i -E 's/^( *delta_mlow *= *)[0-9]+/\10/; s/^( *delta_mhigh *= *)[0-9]+/\10/' docs/examples/DIIID_ideal_example/dcon.in
-          sed -i -E 's/^( *xbnormal_flag *= *)t/\1f/' docs/examples/DIIID_ideal_example/gpec.in
           source /opt/intel/oneapi/setvars.sh
           export LD_LIBRARY_PATH=$PREFIX/lib:$LD_LIBRARY_PATH
           export FOR_DISABLE_STACK_TRACE=TRUE
-          cd docs/examples/DIIID_ideal_example
+          cd docs/examples/minimal_solovev_ideal_example
           ulimit -s unlimited
           ../../../bin/dcon && ../../../bin/gpec && ../../../bin/stride && ../../../bin/pentrc
 
-      - name: Run DIIID resistive example
+      - name: Run Soloviev kinetic example
         run: |
-          sed -i 's/^\( *nThreads *= *\).*/\1 2/' docs/examples/DIIID_resistive_example/stride.in
-          sed -i -E 's/^( *delta_mlow *= *)[0-9]+/\10/; s/^( *delta_mhigh *= *)[0-9]+/\10/' docs/examples/DIIID_resistive_example/stride.in
-          sed -i -E 's/^( *delta_mlow *= *)[0-9]+/\10/; s/^( *delta_mhigh *= *)[0-9]+/\10/' docs/examples/DIIID_resistive_example/rdcon.in
-          sed -i -E 's/^( *xbnormal_flag *= *)t/\1f/' docs/examples/DIIID_resistive_example/gpec.in
           source /opt/intel/oneapi/setvars.sh
           export LD_LIBRARY_PATH=$PREFIX/lib:$LD_LIBRARY_PATH
           export FOR_DISABLE_STACK_TRACE=TRUE
-          cd docs/examples/DIIID_resistive_example
+          cd docs/examples/minimal_solovev_kinetic_example
+          ulimit -s unlimited
+          ../../../bin/dcon && ../../../bin/gpec && ../../../bin/pentrc
+      - name: Run Soloviev resistive example
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          export LD_LIBRARY_PATH=$PREFIX/lib:$LD_LIBRARY_PATH
+          export FOR_DISABLE_STACK_TRACE=TRUE
+          cd docs/examples/minimal_solovev_resistive_example
           ulimit -s unlimited
           ../../../bin/rdcon && ../../../bin/rmatch && ../../../bin/gpec && ../../../bin/stride

@@ -33,10 +33,10 @@
     sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
 
     nn=1                 ! Toroidal mode number
-    delta_mlow=8         ! Expands lower bound of Fourier harmonics
-    delta_mhigh=8        ! Expands upper bound of  Fourier harmonics
+    delta_mlow=0         ! Expands lower bound of Fourier harmonics
+    delta_mhigh=0        ! Expands upper bound of  Fourier harmonics
     delta_mband=0        ! Integration keeps only this wide a band of solutions along the diagonal in m,m'
-    mthvac=960           ! Number of points used in splines over poloidal angle at plasma-vacuum interface. Overrides vac.in mth.
+    mthvac=64           ! Number of points used in splines over poloidal angle at plasma-vacuum interface. Overrides vac.in mth.
     thmax0=1             ! Linear multiplier on the automatic choice of theta integration bounds for high-n ideal ballooning stability computation (strictly, -inf to -inf)
 
     tol_nr=1e-6          ! Relative tolerance of dynamic integration steps away from rationals
