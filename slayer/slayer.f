@@ -446,8 +446,8 @@ c-----------------------------------------------------------------------
 
          DO k=1,n_k
             WRITE(*,*)
-            WRITE(*,'(A,I0,A)') 'Calculating growth rates on q = ',
-     $       qval_arr(k),' rational surface'
+            WRITE(*,'(A,I0,A)') 'Calculating growth rate on q = ',
+     $       qval_arr(k),' rational surface:'
             Q_e = Q_e_arr(k)
             Q_i = Q_i_arr(k)
             P_perp = P_perp_arr(k)

@@ -73,8 +73,8 @@ c-----------------------------------------------------------------------
 
       ! note Q depends on Qconv even if omega is fixed.     
       Q=Qconv*omega
-      Q_e=Qconv*omega_e
-      Q_i=Qconv*omega_i
+      Q_e=-Qconv*omega_e
+      Q_i=-Qconv*omega_i
       
       ! This is the most critical parameter
       ds=lu**(1.0/3.0)*rho_s/rs ! conversion based on Cole.
