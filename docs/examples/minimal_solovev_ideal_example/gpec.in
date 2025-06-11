@@ -68,7 +68,7 @@
    vvbrzphi_flag=t          ! Outputs field on regular (r,z) grid due to external perturbation surface current (not a real field)
    vsbrzphi_flag=t          ! Outputs the field on regular (r,z) grid due to singular surface currents
    ss_flag(3)=f             ! Outputs the field on regular (r,z) grid due to the 3rd singular surface current, etc.
-   xbrzphifun_flag=f=t        ! Outputs r,z, and perturbation vectors on psi,theta grid
+   xbrzphifun_flag=t        ! Outputs r,z, and perturbation vectors on psi,theta grid
    arzphifun_flag=t         ! Outputs r,z, and vector potential on psi,theta grid
 
    nr = 3                  ! Number of radial grid points in rzphi outputs

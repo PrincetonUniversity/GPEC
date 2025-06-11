@@ -20,6 +20,7 @@
     bin_galsol=f         ! Output Galerkin solution in binary files
     b_flag=f             ! Output the perturbation of radial b field
     coil%rpec_flag=t     ! Resistive perturbed equilibrium computation
+    bin_coilsol=f        ! Output binary files for every unit-m driven solution
 /
 &rdcon_control
     bal_flag=f           ! Ideal MHD ballooning criterion for short wavelengths

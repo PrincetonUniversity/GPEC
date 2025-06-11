@@ -11,7 +11,7 @@
    tmag_in =0               ! True(1) if external perturbation has toroidal angle defined by jac_in. False(0) if machine angle.
    mthsurf =0               ! Number of poloidal angle gridpoints. Minimum of twice the Nyquist condition from DCON m limits is enforced.
 
-   coil_flag=f              ! Calculate external perturbation from coils in coil.in
+   coil_flag=t              ! Calculate external perturbation from coils in coil.in
 
    data_flag=f              ! Apply perturbation from thrid party code output
    data_type="surfmn"       ! Name of said code. Choose: surfmn,??
