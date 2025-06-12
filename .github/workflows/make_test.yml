@@ -101,6 +101,7 @@ jobs:
         shell: bash
         run: |
           source /opt/intel/oneapi/setvars.sh
+          echo "Which icx: $(which icx)"
           echo "Which ifort: $(which ifort)"
           ifort --version
 
@@ -231,8 +232,8 @@ jobs:
         shell: bash
         run: |
           source /opt/intel/oneapi/setvars.sh
-          echo "Which ifort: $(which ifort)"
           echo "Which icx: $(which icx)"
+          echo "Which ifort: $(which ifort)"
           ifort --version
 
       - name: Rewrite .gitmodules to use HTTPS
