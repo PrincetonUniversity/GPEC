@@ -5,7 +5,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. free_mod.
+c     0. stride_free_mod.
 c     1. free_calc_wp.
 c     2. free_calc_wv.
 c     3. free_run.
@@ -19,9 +19,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE free_mod
+      MODULE stride_free_mod
       USE vacuum_mod, ONLY: mscvac, mscfld
-      USE ode_mod
+      USE stride_ode_mod
       USE stride_netcdf_mod
       IMPLICIT NONE
 
@@ -619,4 +619,4 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE free_ahb_write
-      END MODULE free_mod
+      END MODULE stride_free_mod

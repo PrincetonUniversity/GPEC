@@ -17,10 +17,10 @@ c-----------------------------------------------------------------------
       PROGRAM stride
       USE equil_mod
       USE equil_out_mod
-      USE bal_mod
-      USE mercier_mod
-      USE ode_mod
-      USE free_mod
+      USE stride_bal_mod
+      USE stride_mercier_mod
+      USE stride_ode_mod
+      USE stride_free_mod
       USE omp_lib
       IMPLICIT NONE
 
@@ -392,7 +392,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE stride_dealloc
-      USE ode_mod
+      USE stride_ode_mod
       IMPLICIT NONE
 
 c-----------------------------------------------------------------------

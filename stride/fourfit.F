@@ -5,7 +5,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. fourfit_mod.
+c     0. stride_fourfit_mod.
 c     1. fourfit_make_metric.
 c     2. fourfit_make_matrix.
 c     3. fourfit_write_metric.
@@ -18,9 +18,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE fourfit_mod
+      MODULE stride_fourfit_mod
       USE fspline_mod
-      USE dcon_mod
+      USE stride_dcon_mod
       USE omp_lib
 
       IMPLICIT NONE
@@ -626,4 +626,4 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE fourfit_evals
 
-      END MODULE fourfit_mod
+      END MODULE stride_fourfit_mod

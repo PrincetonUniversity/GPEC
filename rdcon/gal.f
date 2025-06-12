@@ -40,9 +40,9 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE gal_mod
-      USE free_mod
+      USE rdcon_free_mod
       USE jacobi_mod
-      USE sing_mod
+      USE rdcon_sing_mod
       IMPLICIT NONE
 
       TYPE :: hermite2_type
@@ -74,11 +74,6 @@ c-----------------------------------------------------------------------
       TYPE(jacobi_type) :: quad
       TYPE(hermite2_type) :: hermite
       END TYPE gal_type
-
-      TYPE :: coil_type
-      LOGICAL :: rpec_flag=.FALSE.
-      INTEGER :: mcoil,m1,m2
-      END TYPE coil_type
       
       LOGICAL, PRIVATE :: diagnose_map=.FALSE.,diagnose_grid=.FALSE.,
      $     diagnose_lsode=.FALSE.,diagnose_integrand=.FALSE.,
@@ -97,7 +92,6 @@ c-----------------------------------------------------------------------
       LOGICAL :: gal_xmin_flag = .FALSE.
       REAL(r8), DIMENSION(0:2) :: gal_eps_xmin = (/1e-2,1e-6,5e-7/)
       TYPE(cell_type), POINTER, PRIVATE :: cell
-      TYPE(coil_type), SAVE, PRIVATE :: coil
       CONTAINS
 c-----------------------------------------------------------------------
 c     subprogram 1. gal_alloc.
@@ -1374,7 +1368,6 @@ c-----------------------------------------------------------------------
       SUBROUTINE gal_solve
 
       INTEGER :: info,isol,jsol,imap,ising,ix,msol_old
-      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: delta
       TYPE(gal_type) :: gal
 c-----------------------------------------------------------------------
 c     allocate and compute arrays.
@@ -1405,6 +1398,10 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute and write delta from small resonant coefficients.
 c-----------------------------------------------------------------------
+      IF (ALLOCATED(delta))THEN
+         WRITE(*,*)"WARNING: delta array already allocated."
+         DEALLOCATE(delta)
+      ENDIF
       ALLOCATE (delta(gal%nsol,2*msing))
       DO isol=1,gal%nsol
          jsol=0
@@ -1426,7 +1423,6 @@ c-----------------------------------------------------------------------
 c     deallocate arrays and finish.
 c-----------------------------------------------------------------------
       CALL gal_dealloc(gal)
-      DEALLOCATE (delta)
       msol=msol_old
       WRITE(*,*)"Finished Galerkin method"
 c-----------------------------------------------------------------------
@@ -1694,7 +1690,7 @@ c-----------------------------------------------------------------------
      $     diagnose_mat,gal_tol,dx1dx2_flag,cutoff,prefac,dpsi_intvl,
      $     dpsi1_intvl,gal_xmin_flag,gal_eps_xmin
       NAMELIST /gal_output/interp_np,restore_uh,restore_us,
-     $     restore_ul,bin_delmatch,out_galsol,bin_galsol,b_flag,coil,
+     $     restore_ul,bin_delmatch,out_galsol,bin_galsol,b_flag,
      $     bin_coilsol
 c-----------------------------------------------------------------------
 c     read input.
