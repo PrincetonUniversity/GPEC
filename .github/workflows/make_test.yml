@@ -101,9 +101,8 @@ jobs:
         shell: bash
         run: |
           source /opt/intel/oneapi/setvars.sh
-          echo "Which icx: $(which icx)"
-          echo "Which ifort: $(which ifort)"
-          ifort --version
+          /opt/intel/oneapi/compiler/2022.2.1/linux/bin/intel64/ifort --version
+
 
       - name: Build NetCDF-Fortran 4.6.1 with ifort
         if: steps.netcdf-cache.outputs.cache-hit != 'true'
@@ -232,9 +231,7 @@ jobs:
         shell: bash
         run: |
           source /opt/intel/oneapi/setvars.sh
-          echo "Which icx: $(which icx)"
-          echo "Which ifort: $(which ifort)"
-          ifort --version
+          /opt/intel/oneapi/compiler/2022.2.1/linux/bin/intel64/ifort --version
 
       - name: Rewrite .gitmodules to use HTTPS
         run: |
@@ -250,7 +247,7 @@ jobs:
           export NETCDF_FORTRAN_HOME=$PREFIX
           export MKLROOT=/opt/intel/oneapi/mkl/2022.2.1
           export FC=/opt/intel/oneapi/compiler/2022.2.1/linux/bin/intel64/ifort
-          export CC=/opt/intel/oneapi/compiler/2022.2.1/linux/bin/icx
+          export CC=/usr/bin/gcc
           export FFLAGS='-O0 -warn all -check all -check noarg_temp_created -traceback -fpe3 -fstack-protector -fopenmp'
           make
 
