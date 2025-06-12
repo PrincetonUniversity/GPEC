@@ -43,7 +43,7 @@
     tgar_flag = .true.                  ! Trapped general aspect ratio calculation
     pgar_flag = .false.                 ! Passing general aspect ratio calculation
     clar_flag = .false.                 ! Circular large aspect ratio calculation
-    rlar_flag = .true.                  ! Reduced large aspect ratio calculation
+    rlar_flag = .false.                 ! Reduced large aspect ratio calculation
     fcgl_flag = .false.                 ! Fluid Chew-Goldberger-Low limit
     wxyz_flag = .false.                 ! Euler-lagrange equation matrix output at psiout
     fkmm_flag = .false.                 ! Full euler-lagrange matrix calculation (t,p also available)
