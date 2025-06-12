@@ -85,30 +85,27 @@ jobs:
       - name: Install Intel oneAPI + deps
         if: steps.netcdf-cache.outputs.cache-hit != 'true'
         run: |
-          mkdir -p $PREFIX/src
-          mkdir -p $PREFIX/deb
-          cd $PREFIX/deb
           sudo rm /var/lib/man-db/auto-update
           wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
           echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
           sudo apt update
-          apt-get download intel-oneapi-common-licensing-2022.2.1 intel-oneapi-common-licensing-2023.1.0 intel-oneapi-common-licensing-2023.2.0 intel-oneapi-common-licensing-2025.1 intel-oneapi-common-vars intel-oneapi-common-oneapi-vars-2025.1 intel-oneapi-compiler-cpp-eclipse-cfg intel-oneapi-compiler-cpp-eclipse-cfg-2025.1 intel-oneapi-compiler-dpcpp-cpp-classic-fortran-shared-runtime-2022.2.1 intel-oneapi-compiler-dpcpp-cpp-common-2022.2.1 intel-oneapi-compiler-dpcpp-cpp-runtime-2022.2.1 intel-oneapi-compiler-dpcpp-eclipse-cfg intel-oneapi-compiler-dpcpp-eclipse-cfg-2025.1 intel-oneapi-compiler-fortran-common-2022.2.1 intel-oneapi-compiler-fortran-runtime-2022.2.1 intel-oneapi-compiler-fortran-2022.2.1 intel-oneapi-compiler-shared-2022.2.1 intel-oneapi-compiler-shared-common-2022.2.1 intel-oneapi-compiler-shared-runtime-2022.2.1 intel-oneapi-condaindex intel-oneapi-dev-utilities-2021.7.1 intel-oneapi-dev-utilities-eclipse-cfg intel-oneapi-dpcpp-debugger-2021.7.1 intel-oneapi-dpcpp-debugger-eclipse-cfg intel-oneapi-icc-eclipse-plugin-cpp-2022.2.1 intel-oneapi-mkl-common-2022.2.1 intel-oneapi-mpi-2021.7.1 intel-oneapi-openmp-2022.2.1 intel-oneapi-openmp-common-2022.2.1 intel-oneapi-tbb-2021.7.1 intel-oneapi-tbb-common-2021.7.1 intel-oneapi-tbb-common-devel-2021.7.1 intel-oneapi-tbb-devel-2021.7.1
           sudo apt install -y curl gnupg lsb-release build-essential m4 curl libhdf5-dev libnetcdf-dev
-          sudo dpkg -i *.deb
+          sudo apt install -y intel-oneapi-compiler-fortran-2022.2.1
 
       - name: Source oneAPI and check ifort
         if: steps.netcdf-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
           source /opt/intel/oneapi/setvars.sh
-          /opt/intel/oneapi/compiler/2022.2.1/linux/bin/intel64/ifort --version
-
+          echo "Which ifort: $(which ifort)"
+          ifort --version
 
       - name: Build NetCDF-Fortran 4.6.1 with ifort
         if: steps.netcdf-cache.outputs.cache-hit != 'true'
         run: |
           source /opt/intel/oneapi/setvars.sh
           
+          mkdir -p $PREFIX/src
           cd $PREFIX/src
           curl -L -o netcdf-fortran.tar.gz https://github.com/Unidata/netcdf-fortran/archive/refs/tags/v4.6.1.tar.gz
           tar xf netcdf-fortran.tar.gz
@@ -225,13 +222,14 @@ jobs:
           echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
           sudo apt update
           sudo apt install -y curl gnupg lsb-release build-essential m4 curl libhdf5-dev libnetcdf-dev
-          cd $PREFIX/deb
-          sudo dpkg -i *.deb
+          sudo apt install -y intel-oneapi-compiler-fortran-2022.2.1 intel-oneapi-mkl-2022.2.1 libx11-dev libnetcdf-dev
+
       - name: Source oneAPI and check ifort and icx
         shell: bash
         run: |
           source /opt/intel/oneapi/setvars.sh
-          /opt/intel/oneapi/compiler/2022.2.1/linux/bin/intel64/ifort --version
+          echo "Which ifort: $(which ifort)"
+          ifort --version
 
       - name: Rewrite .gitmodules to use HTTPS
         run: |
