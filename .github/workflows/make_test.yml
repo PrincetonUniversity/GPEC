@@ -26,6 +26,7 @@ jobs:
       - name: Install dependencies
         if: steps.netcdf-cache.outputs.cache-hit != 'true'
         run: |
+          sudo rm /var/lib/man-db/auto-update
           sudo apt update
           sudo apt install -y build-essential gfortran m4 curl libhdf5-dev libnetcdf-dev
 
@@ -87,6 +88,7 @@ jobs:
           mkdir -p $PREFIX/src
           mkdir -p $PREFIX/deb
           cd $PREFIX/deb
+          sudo rm /var/lib/man-db/auto-update
           wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
           echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
           sudo apt update
@@ -161,6 +163,7 @@ jobs:
           
       - name: Install Dependencies
         run: |
+          sudo rm /var/lib/man-db/auto-update
           sudo apt update
           sudo apt install -y gfortran libopenblas-dev libx11-dev libnetcdf-dev
 
@@ -217,6 +220,7 @@ jobs:
 
       - name: Install Intel oneAPI + deps
         run: |
+          sudo rm /var/lib/man-db/auto-update
           wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
           echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
           sudo apt update
