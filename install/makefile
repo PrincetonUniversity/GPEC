@@ -1,5 +1,12 @@
+HOST := $(shell hostname)
 
-include DEFAULTS.inc
+ifneq (,$(findstring flux,$(HOST)))
+#    include /p/transpusers/mgorelen/transp_main/environs/ppplflux/gnu/13.2.0/environ
+    include /p/transpusers/mgorelen/transp_main/environs/ppplflux/gnu/13.2.0/makefile.mk
+else
+	include DEFAULTS.inc
+endif
+
 
 # extend these variables to sub-makes (?= sets a default if user doesn't specify options)
 FFLAGS ?= -g
@@ -9,7 +16,10 @@ export FFLAGS
 export CFLAGS
 export OMPFLAG
 export LDFLAGS
-
+ifneq (,$(findstring flux,$(HOST)))
+	FFLAGS := $(filter-out -c,$(FFLAGS))
+endif
+FFLAGS := $(filter-out -c,$(FFLAGS))
 # compile package
 
 .IGNORE:

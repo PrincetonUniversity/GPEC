@@ -1975,7 +1975,8 @@ c-----------------------------------------------------------------------
          aq(ising) = singtype(ising)%q
          asingflx(ising) = ABS(singflx_mn(resnum(ising),ising))
       ENDDO
-      ierr=set_harvest_payload_dbl_array(hlog,"q"//nul,aq,msing)
+      ierr=set_harvest_payload_dbl_array(hlog,"q"//nul,
+     $     aq,msing)
       ierr=set_harvest_payload_dbl_array(hlog,"singcur"//nul,
      $     ABS(singcur),msing)
       ierr=set_harvest_payload_dbl_array(hlog,"singflx"//nul,
@@ -5610,6 +5611,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
+      USE, INTRINSIC :: ieee_arithmetic
       INTEGER, INTENT(IN) :: fmodes,rout,bpout,bout,rcout,tout,mode
       CHARACTER(len=*), INTENT(IN) :: ftypes
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: finmn,foutmn
@@ -5765,7 +5767,20 @@ c-----------------------------------------------------------------------
       DO i=1,mpert
          tempm = wvecs(:,i)
          avals(i) = 0.5*REAL(DOT_PRODUCT(tempm,MATMUL(mat,tempm)))
-         avals(i) = avals(i)/wvals(i)
+
+         ! Temporary safeguard against division by zero or invalid
+         ! values (may cause SIGFPE)
+         !avals(i) = avals(i)/wvals(i)
+         IF (abs(wvals(i)) > 1.0e-12 .AND. ieee_is_finite(wvals(i)))
+     $   THEN
+            avals(i) = avals(i) / wvals(i)
+         ELSE
+            avals(i) = 0.0_r8
+            ! NOTE: Temporary fix – wvals(i) is zero or NaN/Inf;
+            ! skipping division to prevent crash
+            PRINT *, 'WARNING: Skipping division by wvals(', i, ') = ',
+     $       wvals(i)
+         END IF
       ENDDO
       aindx = (/(i,i=1,mpert)/)
       CALL isbubble(avals,aindx,1,mpert)
