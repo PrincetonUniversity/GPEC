@@ -179,7 +179,7 @@ jobs:
         run: |
           export GPECHOME=$(pwd)
           export LD_LIBRARY_PATH=$PREFIX/lib:$LD_LIBRARY_PATH
-          cd docs/examples/minimal_solovev_ideal_example
+          cd docs/examples/regression_solovev_ideal_example
           ulimit -s unlimited
           ../../../bin/dcon && ../../../bin/gpec && ../../../bin/stride && ../../../bin/pentrc
 
@@ -187,14 +187,14 @@ jobs:
         run: |
           export GPECHOME=$(pwd)
           export LD_LIBRARY_PATH=$PREFIX/lib:$LD_LIBRARY_PATH
-          cd docs/examples/minimal_solovev_kinetic_example
+          cd docs/examples/regression_solovev_kinetic_example
           ulimit -s unlimited
           ../../../bin/dcon && ../../../bin/gpec && ../../../bin/pentrc
       - name: Run Soloviev resistive example
         run: |
           export GPECHOME=$(pwd)
           export LD_LIBRARY_PATH=$PREFIX/lib:$LD_LIBRARY_PATH
-          cd docs/examples/minimal_solovev_resistive_example
+          cd docs/examples/regression_solovev_resistive_example
           ulimit -s unlimited
           ../../../bin/rdcon && ../../../bin/rmatch && ../../../bin/gpec && ../../../bin/stride
 
@@ -255,7 +255,7 @@ jobs:
           export GPECHOME=$(pwd)
           export LD_LIBRARY_PATH=$PREFIX/lib:$LD_LIBRARY_PATH
           export FOR_DISABLE_STACK_TRACE=TRUE
-          cd docs/examples/minimal_solovev_ideal_example
+          cd docs/examples/regression_solovev_ideal_example
           ulimit -s unlimited
           ../../../bin/dcon && ../../../bin/gpec && ../../../bin/stride && ../../../bin/pentrc
 
@@ -265,7 +265,7 @@ jobs:
           export GPECHOME=$(pwd)
           export LD_LIBRARY_PATH=$PREFIX/lib:$LD_LIBRARY_PATH
           export FOR_DISABLE_STACK_TRACE=TRUE
-          cd docs/examples/minimal_solovev_kinetic_example
+          cd docs/examples/regression_solovev_kinetic_example
           ulimit -s unlimited
           ../../../bin/dcon && ../../../bin/gpec && ../../../bin/pentrc
       - name: Run Soloviev resistive example
@@ -274,6 +274,6 @@ jobs:
           export GPECHOME=$(pwd)
           export LD_LIBRARY_PATH=$PREFIX/lib:$LD_LIBRARY_PATH
           export FOR_DISABLE_STACK_TRACE=TRUE
-          cd docs/examples/minimal_solovev_resistive_example
+          cd docs/examples/regression_solovev_resistive_example
           ulimit -s unlimited
           ../../../bin/rdcon && ../../../bin/rmatch && ../../../bin/gpec && ../../../bin/stride
