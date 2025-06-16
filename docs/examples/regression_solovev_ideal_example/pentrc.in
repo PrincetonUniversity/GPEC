@@ -8,7 +8,7 @@
     zi = 1                              ! Main ion charge (e)
     mimp = 12                           ! Impurity mass (u)
     zimp = 6                            ! Impurity charge (e)
-    nl = 0                              ! Bounce harmonic range (-nl to nl)
+    nl = 1                              ! Bounce harmonic range (-nl to nl)
     electron = .false.                  ! Calculate all results for electrons INSTEAD OF ions (only one species per PENTRC run)
     nutype = "harmonic"                 ! Collision operator: "zero", "krook", "harmonic"
     f0type = "maxwellian"               ! Distribution function: "maxwellian"
@@ -26,7 +26,7 @@
     force_xialpha = .false.             ! Calculates tangential displacement from radial displacement and toroidal force balance (overwrites peq_file values)
 
     atol_xlmda = 1e-9                   ! Absolute tolerance in energy and pitch integration
-    rtol_xlmda = 1e-6                   ! Relative tolerance in energy and pitch integration
+    rtol_xlmda = 1e-5                   ! Relative tolerance in energy and pitch integration
     atol_psi = 1e-9                     ! Absolute tolerance in psi_n integration
     rtol_psi = 1e-4                     ! Relative tolerance in psi_n integration
     ntheta = 128                        ! Poloidal angle grid for bounce integration
@@ -40,7 +40,7 @@
     moment = "pressure"                 ! Use 'pressure' for torque and particle transport, 'heat' for heat transport
 
     fgar_flag = .true.                  ! Full    general aspect ratio calculation
-    tgar_flag = .true.                  ! Trapped general aspect ratio calculation
+    tgar_flag = .false.                 ! Trapped general aspect ratio calculation
     pgar_flag = .false.                 ! Passing general aspect ratio calculation
     clar_flag = .false.                 ! Circular large aspect ratio calculation
     rlar_flag = .false.                 ! Reduced large aspect ratio calculation

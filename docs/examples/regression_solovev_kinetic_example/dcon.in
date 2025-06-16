@@ -11,10 +11,10 @@
     sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
 
     nn=1                 ! Toroidal mode number
-    delta_mlow=0        ! Expands lower bound of Fourier harmonics
-    delta_mhigh=0       ! Expands upper bound of  Fourier harmonics
+    delta_mlow=0         ! Expands lower bound of Fourier harmonics
+    delta_mhigh=0        ! Expands upper bound of  Fourier harmonics
     delta_mband=0        ! Integration keeps only this wide a band of solutions along the diagonal in m,m'
-    mthvac=64           ! Number of points used in splines over poloidal angle at plasma-vacuum interface. Overrides vac.in mth.
+    mthvac=64            ! Number of points used in splines over poloidal angle at plasma-vacuum interface. Overrides vac.in mth.
     thmax0=1             ! Linear multiplier on the automatic choice of theta integration bounds for high-n ideal ballooning stability computation (strictly, -inf to -inf)
 
     kin_flag = t         ! Kinetic EL equation (default: false)
@@ -35,7 +35,7 @@
     crossover=1e-2       ! Fractional distance from rational q at which tolerance is switched to tol_r
     singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
     ucrit=1e4            ! Maximum fraction of solutions allowed before re-normalized
-	dcon_kin_threads=0  ! Parallel calculations of the kinetic matrix components (parallel execution of mpsi*(2*nl+1) calculations where mpsi is set in equil.in and nl in pentrc.in). Setting to <= 0 uses OMP_NUM_THREADS env variable.
+	dcon_kin_threads=0   ! Parallel calculations of the kinetic matrix components (parallel execution of mpsi*(2*nl+1) calculations where mpsi is set in equil.in and nl in pentrc.in). Setting to <= 0 uses OMP_NUM_THREADS env variable.
 
     termbycross_flag = f ! Terminate ODE solver in the event of a zero crossing
 
