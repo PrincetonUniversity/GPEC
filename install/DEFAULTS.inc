@@ -466,10 +466,27 @@ endif
 #Common compiler flags for OpenMP
 ifeq ($(findstring ifort,$(FC)),ifort)
 	OMPFLAG ?= -qopenmp
+    ZEROFLAG ?= -zero
+    RECURSFLAG ?= -recursive
+    LEGACYFLAG ?=
+else ifeq ($(findstring ifort,$(FC)),ifx)
+	OMPFLAG ?= -qopenmp
+    ZEROFLAG ?= -zero
+    RECURSFLAG ?= -recursive
+    LEGACYFLAG ?=
 else ifeq ($(findstring gfortran,$(FC)),gfortran)
 	OMPFLAG ?= -fopenmp
+    ZEROFLAG ?= -finit-local-zero
+    RECURSFLAG ?= -frecursive
+    LEGACYFLAG ?= -std=legacy
 else ifeq ($(findstring pgfortran,$(FC)),pgfortran)
 	OMPFLAG ?= -mp
+    ZEROFLAG ?= -zeroinit
+    RECURSFLAG ?= -Mrecursive
+    LEGACYFLAG ?= -std=legacy
 else
+    ZEROFLAG ?= -zero
 	OMPFLAG ?= -openmp
+    RECURSFLAG ?= -recursive
+    LEGACYFLAG ?= -std=legacy
 endif

@@ -14,11 +14,11 @@ export LDFLAGS
 
 .IGNORE:
 
-all: v harvest equil lsode zlange zvode  orbit vacuum pentrc dcon match rdcon rmatch \
+all: v harvest equil lsode zlange zvode orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum xdraw slayer coil gpec stride mkbin
 
 # fortran only
-allf: v harvest equil lsode zlange zvode  orbit vacuum pentrc dcon match rdcon rmatch \
+allf: v harvest equil lsode zlange zvode orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum slayer coil gpec stride mkbin
 
 
