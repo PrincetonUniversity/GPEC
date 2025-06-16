@@ -87,7 +87,7 @@ c     print timer.
 c-----------------------------------------------------------------------
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
-         print*,"*** wp-calc time=",REAL(fTime-sTime,8)/REAL(cr,8)
+         print*,"*** wp-calc time=",REAL(fTime-sTime,r8)/REAL(cr,r8)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -142,7 +142,7 @@ c     print timer.
 c-----------------------------------------------------------------------
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
-         print*,"*** wv-calc time=",REAL(fTime-sTime,8)/REAL(cr,8)
+         print*,"*** wv-calc time=",REAL(fTime-sTime,r8)/REAL(cr,r8)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
