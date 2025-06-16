@@ -1300,7 +1300,7 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psifac
       COMPLEX(r8) :: det
 
-      INTEGER :: ipert,jpert,iqty,isol,m1,m2,dm
+      INTEGER :: ipert,jpert,m1,m2
       INTEGER :: ldab,kl,ku,info,m,n,i
 
       REAL(r8) :: q,nq,singfac1,singfac2,chi1
