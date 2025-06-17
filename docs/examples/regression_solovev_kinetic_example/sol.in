@@ -1,0 +1,14 @@
+! Construct Soloviev equilibrium
+&SOL_INPUT
+   mr = 128      ! number of radial grid zones
+   mz = 128      ! number of axial grid zones
+   ma = 128      ! number of flux grid zones
+   e = 1.6       ! elongation
+   a = 0.33      ! minor radius
+   r0 = 1.0      ! major radius
+   q0 = 1.9      ! safety factor at the o-point
+   p0fac=1       ! scale on-axis pressure (P-> P+P0*p0fac. beta changes. Phi,q constant)
+   b0fac=1       ! scale toroidal field at constant beta (s*Phi,s*f,s^2*P. bt changes. Shape,beta constant)
+   f0fac=1       ! scale toroidal field at constant pressure (s*f. beta,q changes. Phi,p,bp constant)
+/
+

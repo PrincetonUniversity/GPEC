@@ -608,7 +608,7 @@ c     re-initialize.
 c-----------------------------------------------------------------------
       psi_old=psifac
       ipert0=NINT(nn*kinsing(ising)%q)-mlow+1
-      iperts=MAXLOC(ABS(u(:,index(1),1)))
+      iperts=MAXLOC(ABS(u(:,index(1),1)),dim=1)
       ipert1=iperts(1)
       dpsi=kinsing(ising)%psifac-psifac
 
