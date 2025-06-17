@@ -968,9 +968,8 @@ c-----------------------------------------------------------------------
       ENDIF
       ALLOCATE(kwmatls(mpert,mpert,6,0:mpsi,-nl:nl),
      $         ktmatls(mpert,mpert,6,0:mpsi,-nl:nl))
-      kwmatls=0
-      ktmatls=0
-
+      kwmatls(:,:,:,:,:)=0
+      ktmatls(:,:,:,:,:)=0
 c-----------------------------------------------------------------------
 c     Original approach using eqgrid loop to calculate kinetic matrices
 c-----------------------------------------------------------------------
