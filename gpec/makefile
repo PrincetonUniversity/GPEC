@@ -1,18 +1,8 @@
-# If using gfortran, the proper syntax is -frecursive.
-# If using ifort, the proper syntax is -recursive.
-
-ifneq (,$(findstring ifort,$(FC)))
-    RECURSFLAG=-recursive
-else ifneq (,$(findstring ifx,$(FC)))
-	RECURSFLAG=-recursive
-else
-    RECURSFLAG=-frecursive
-endif
 
 include ../install/DEFAULTS.inc
 
 IFLAGS = -I../equil -I../vacuum -I../harvest -I../pentrc -I../coil -I../slayer -I$(MATHINC) -I$(NETCDFINC)
-F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS) $(RECURSFLAG)
+F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS) $(RECURSFLAG) $(LEGACYFLAG)
 export FFLAGS # for sub-makes
 
 .f.o:

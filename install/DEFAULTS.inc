@@ -463,13 +463,30 @@ ifdef X11_HOME
     X11_LIB_DIR = -L$(X11_HOME)/lib
 endif
 
-#Common compiler flags for OpenMP
+#Different flags for different compilers
 ifeq ($(findstring ifort,$(FC)),ifort)
 	OMPFLAG ?= -qopenmp
+    ZEROFLAG ?= -zero
+    RECURSFLAG ?= -recursive
+    LEGACYFLAG ?=
+else ifeq ($(findstring ifx,$(FC)),ifx)
+	OMPFLAG ?= -qopenmp
+    ZEROFLAG ?= -zero
+    RECURSFLAG ?= -recursive
+    LEGACYFLAG ?=
 else ifeq ($(findstring gfortran,$(FC)),gfortran)
 	OMPFLAG ?= -fopenmp
+    ZEROFLAG ?= -finit-local-zero
+    RECURSFLAG ?= -frecursive
+    LEGACYFLAG ?= -std=legacy
 else ifeq ($(findstring pgfortran,$(FC)),pgfortran)
 	OMPFLAG ?= -mp
+    ZEROFLAG ?= -zeroinit
+    RECURSFLAG ?= -Mrecursive
+    LEGACYFLAG ?= -std=legacy
 else
+    ZEROFLAG ?= -zero
 	OMPFLAG ?= -openmp
+    RECURSFLAG ?= -recursive
+    LEGACYFLAG ?= -std=legacy
 endif

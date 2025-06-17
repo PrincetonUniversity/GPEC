@@ -1,13 +1,3 @@
-ifneq (,$(findstring ifort,$(FC)))
-    RECURSFLAG=-recursive
-	LEGACYFLAG=
-else ifneq (,$(findstring ifx,$(FC)))
-	RECURSFLAG=-recursive
-	LEGACYFLAG=
-else
-    RECURSFLAG=-frecursive
-	LEGACYFLAG=-std=legacy
-endif
 
 include ../install/DEFAULTS.inc
 

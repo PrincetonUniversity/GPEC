@@ -321,7 +321,7 @@ c-----------------------------------------------------------------------
          r=0
          lgivup=1
          nadres = 1
-         call zrd(iomode,real(ntitle(1),8),43,nadres,lgivup,999)
+         call zrd(iomode,real(ntitle(1),r8),43,nadres,lgivup,999)
          write ( outmod, 9000 )   ntitle,dat
          lj = 0
          zma = 0.0
