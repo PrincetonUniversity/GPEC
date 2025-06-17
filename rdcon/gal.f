@@ -141,6 +141,14 @@ c-----------------------------------------------------------------------
          ENDDO
          CALL gal_make_grid(ising,nx,dx0,dx1,dx2,pfac,intvl)
       ENDDO
+      ALLOCATE(cellinfos%icell(nx*(msing+1)))
+      ALLOCATE(cellinfos%iintvl(nx*(msing+1)))
+      ALLOCATE(cellinfos%etypes(nx*(msing+1)))
+      ALLOCATE(cellinfos%etypes_int(nx*(msing+1)))
+      ALLOCATE(cellinfos%x1(nx*(msing+1)))
+      ALLOCATE(cellinfos%x2(nx*(msing+1)))
+      cellinfos%ncell=nx*(msing+1)
+      cellinfos%nintvl=msing+1
 c-----------------------------------------------------------------------
 c     resistive perturbed equilibrium solution.
 c-----------------------------------------------------------------------
@@ -1973,6 +1981,23 @@ c-----------------------------------------------------------------------
          DO icell=1,gal%nx
             cell=>gal%intvl(iintvl)%cell(icell)
             psi(ip:ip+interp_np-1)=cell%x(1)+(cell%x(2)-cell%x(1))*xvar
+            cellinfos%etypes(iintvl*gal%nx+icell)=cell%etype
+            SELECT CASE(cell%etype)
+            CASE("res")
+               cellinfos%etypes_int(iintvl*gal%nx+icell)=1
+            CASE("ext")
+               cellinfos%etypes_int(iintvl*gal%nx+icell)=2
+            CASE("ext1")
+               cellinfos%etypes_int(iintvl*gal%nx+icell)=3
+            CASE("ext2")
+               cellinfos%etypes_int(iintvl*gal%nx+icell)=4
+            CASE("none")
+               cellinfos%etypes_int(iintvl*gal%nx+icell)=0
+            END SELECT
+            cellinfos%icell(iintvl*gal%nx+icell)=icell
+            cellinfos%iintvl(iintvl*gal%nx+icell)=iintvl
+            cellinfos%x1(iintvl*gal%nx+icell)=cell%x(1)
+            cellinfos%x2(iintvl*gal%nx+icell)=cell%x(2)
             IF (cell%extra=="right".AND.cell%etype=="res") 
      $         issing(ip)=.TRUE.
             ip=ip+interp_np
