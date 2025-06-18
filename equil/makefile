@@ -56,9 +56,11 @@ local.o: io.o
 utils.o: local.o
 spline.o: local.o
 grid.o: local.o spline.o
-bicube.o: spline.o
+bicube.o: local.o spline.o
 cspline.o: local.o
 fft.o: local.o
+jacobi.o: local.o
+cspline.o: local.o spline.o
 fspline.o: local.o spline.o cspline.o utils.o fft.o
 global.o: bicube.o cspline.o
 inverse.o: global.o utils.o grid.o

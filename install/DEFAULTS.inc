@@ -485,5 +485,12 @@ else
 	OMPFLAG ?= -openmp
 endif
 
+ifeq ($(findstring icx,$(CC)),icx)
+    CFLAGS ?= "-Wno-all -Wno-absolute-value -Wno-pointer-sign -Wno-deprecated-non-prototype"
+else ifeq ($(findstring icc,$(CC)),icc)
+    CFLAGS ?= "-Wno-all -Wno-absolute-value -Wno-pointer-sign -Wno-deprecated-non-prototype"
+endif
+
+
 
 

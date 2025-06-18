@@ -1,7 +1,8 @@
 # This is the makefile for XDRAW on Linux computers.
 include ../install/DEFAULTS.inc
 
-CFLAGS = -DUNIX -O2 $(X11_INC_DIR)
+CFLAGS ?=
+CFLAGS += -DUNIX -O2 $(X11_INC_DIR)
 CC += $(CFLAGS)
 
 .c.o:
