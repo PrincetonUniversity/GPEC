@@ -3438,7 +3438,7 @@ c-----------------------------------------------------------------------
          rss=CMPLX(rs,rs)+xnofuns*rvecs
          zss=CMPLX(zs,zs)+xnofuns*zvecs
          DO itheta=0,mthsurf
-            psis(:,itheta)=psifac(:)
+            psis(:,itheta)=psifac(1:mstep)
          ENDDO
 
          CALL bin_open(bin_2d_unit,

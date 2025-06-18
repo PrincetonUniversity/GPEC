@@ -1,17 +1,4 @@
 # This is the makefile for ZLANGE.
-# If using gfortran, the proper syntax is -frecursive.
-# If using ifort, the proper syntax is -recursive.
-
-ifneq (,$(findstring ifort,$(FC)))
-    RECURSFLAG=-recursive
-    LEGACYFLAG=
-else ifneq (,$(findstring ifx,$(FC)))
-    RECURSFLAG=-recursive
-    LEGACYFLAG=
-else
-    RECURSFLAG=-frecursive
-    LEGACYFLAG=-std=legacy
-endif
 
 include ../install/DEFAULTS.inc
 

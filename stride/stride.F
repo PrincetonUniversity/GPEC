@@ -171,7 +171,8 @@ c-----------------------------------------------------------------------
       IF(direct_flag)CALL bicube_dealloc(psi_in)
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
-         print *,"*** equil-input time=",REAL(fTime-sTime,8)/REAL(cr,8)
+         print *,"*** equil-input time=",
+     $                REAL(fTime-sTime,r8)/REAL(cr,r8)
       ENDIF
       use_classic_splines = use_classic_splines_for_stride  ! optionaly different from equil
 c-----------------------------------------------------------------------
@@ -194,7 +195,7 @@ c-----------------------------------------------------------------------
       CALL spline_fit(locstab,spline_str)
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
-         print *,"*** locstab time=",REAL(fTime-sTime,8)/REAL(cr,8)
+         print *,"*** locstab time=",REAL(fTime-sTime,r8)/REAL(cr,r8)
       ENDIF
 c-----------------------------------------------------------------------
 c     define poloidal mode numbers.
@@ -221,7 +222,7 @@ c-----------------------------------------------------------------------
       mband=MIN(MAX(mband,0),mpert-1)
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
-         print *,"*** sing time=",REAL(fTime-sTime,8)/REAL(cr,8)
+         print *,"*** sing time=",REAL(fTime-sTime,r8)/REAL(cr,r8)
       ENDIF
 c-----------------------------------------------------------------------
 c     fit equilibrium quantities to Fourier-spline functions.
@@ -240,7 +241,7 @@ c-----------------------------------------------------------------------
          CALL SYSTEM_CLOCK(COUNT=fTime)
          IF (verbose_performance_output) THEN
             print *,"*** fourfit-mid time=",
-     $           REAL(fTime-sTime,8)/REAL(cr,8)
+     $           REAL(fTime-sTime,r8)/REAL(cr,r8)
          ENDIF
          CALL fourfit_make_matrix
          WRITE(out_unit,30)mlow,mhigh,mpert,mband,nn,sas_flag,dmlim,
@@ -248,7 +249,8 @@ c-----------------------------------------------------------------------
       ENDIF
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
-         print *,"*** fourfit-tot time=",REAL(fTime-sTime,8)/REAL(cr,8)
+         print *,"*** fourfit-tot time=",
+     $                REAL(fTime-sTime,r8)/REAL(cr,r8)
       ENDIF
 c-----------------------------------------------------------------------
 c     prepare code to split: [vac][all else]
@@ -279,7 +281,8 @@ c-----------------------------------------------------------------------
 
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
-         print *,"*** thread-alloc time=",REAL(fTime-sTime,8)/REAL(cr,8)
+         print *,"*** thread-alloc time=",
+     $             REAL(fTime-sTime,r8)/REAL(cr,r8)
       ENDIF
 c-----------------------------------------------------------------------
 c     split code.
@@ -329,7 +332,8 @@ c-----------------------------------------------------------------------
 !$OMP END PARALLEL
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
-         print*,"*** tot-parallel time=",REAL(fTime-sTime,8)/REAL(cr,8)
+         print*,"*** tot-parallel time=",
+     $                   REAL(fTime-sTime,r8)/REAL(cr,r8)
       ENDIF
       IF (ode_flag .AND. calc_delta_prime .AND. calc_dp_with_vac) THEN
 c-----------------------------------------------------------------------
@@ -355,7 +359,7 @@ c-----------------------------------------------------------------------
       IF(mat_flag .OR. ode_flag)DEALLOCATE(amat,bmat,cmat,ipiva,jmat)
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
-         print *,"*** free-run time=",REAL(fTime-sTime,8)/REAL(cr,8)
+         print *,"*** free-run time=",REAL(fTime-sTime,r8)/REAL(cr,r8)
       ENDIF
 c-----------------------------------------------------------------------
 c     the bottom line.
@@ -380,7 +384,7 @@ c-----------------------------------------------------------------------
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
          print *,"*** complete-run time=",
-     $        REAL(fTime-s0Time,8)/REAL(cr,8)
+     $        REAL(fTime-s0Time,r8)/REAL(cr,r8)
       ENDIF
       CALL program_stop("Normal termination.")
       END PROGRAM stride

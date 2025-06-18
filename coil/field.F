@@ -383,7 +383,7 @@ c-----------------------------------------------------------------------
             DO iz=0,nz
                DO ip=0,np
 
-                  phi=ip/REAL(np,8)
+                  phi=ip/REAL(np,r8)
                   xobs(ir,iz,ip)=gdr(ir,iz)*COS(twopi*phi)
                   yobs(ir,iz,ip)=gdr(ir,iz)*SIN(twopi*phi)
                   zobs(ir,iz,ip)=gdz(ir,iz)
@@ -433,7 +433,7 @@ c-----------------------------------------------------------------------
             DO iz=0,nz
                CALL cspline_alloc(bspl,np,3)
                DO ip=0,np
-                  phi=ip/REAL(np,8)
+                  phi=ip/REAL(np,r8)
                   bspl%xs(ip)=phi
                   bspl%fs(ip,1)=br(ir,iz,ip)*EXP(twopi*ifac*cnn*phi)
                   bspl%fs(ip,2)=bz(ir,iz,ip)*EXP(twopi*ifac*cnn*phi)

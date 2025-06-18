@@ -145,7 +145,7 @@ c-----------------------------------------------------------------------
          CALL SYSTEM_CLOCK(COUNT=fTime)
          IF (verbose_performance_output) THEN
             print *,"*** asymp time #",ising,"=",
-     $           REAL(fTime-sTime,8)/REAL(cr,8)
+     $           REAL(fTime-sTime,r8)/REAL(cr,r8)
          ENDIF
       ENDDO
 !$OMP END DO
@@ -168,7 +168,7 @@ c     timer.
 c-----------------------------------------------------------------------
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
-         print *,"*** asymp time=",REAL(fTime-sTime,8)/REAL(cr,8)
+         print *,"*** asymp time=",REAL(fTime-sTime,r8)/REAL(cr,r8)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.

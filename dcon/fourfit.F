@@ -968,6 +968,8 @@ c-----------------------------------------------------------------------
       ENDIF
       ALLOCATE(kwmatls(mpert,mpert,6,0:mpsi,-nl:nl),
      $         ktmatls(mpert,mpert,6,0:mpsi,-nl:nl))
+      kwmatls(:,:,:,:,:)=0
+      ktmatls(:,:,:,:,:)=0
 c-----------------------------------------------------------------------
 c     Original approach using eqgrid loop to calculate kinetic matrices
 c-----------------------------------------------------------------------
@@ -1089,7 +1091,7 @@ c!!!!!!...from dcon_interface.f90
 !$OMP END CRITICAL
             IF(debug_omp)THEN
                CALL SYSTEM_CLOCK(COUNT=t_end)
-               t_sec = REAL(t_end-t_start,8)/REAL(cr,8)
+               t_sec = REAL(t_end-t_start,r8)/REAL(cr,r8)
                WRITE(*,'(1x,a5,i3,a6,es16.8,a8)')
      $            "ipsi=",ipsi," took ",t_sec," seconds"
             ENDIF
@@ -1301,8 +1303,8 @@ c-----------------------------------------------------------------------
             ktmats(i)%xs=rzphi%xs
          ENDDO         
          DO ipsi=0,mpsi
-            iindex = FLOOR(REAL(ipsi+1,8)/FLOOR((mpsi+1)/10.0))*10
-            ileft = REAL(ipsi+1,8)/FLOOR((mpsi+1)/10.0)*10-iindex
+            iindex = FLOOR(REAL(ipsi+1,r8)/FLOOR((mpsi+1)/10.0))*10
+            ileft = REAL(ipsi+1,r8)/FLOOR((mpsi+1)/10.0)*10-iindex
             IF ((ipsi /= 0) .AND. (ileft == 0) .AND. verbose)
      $           WRITE(*,*)"  ...",iindex,"% of kinetic computations"
             kwmat = 0
