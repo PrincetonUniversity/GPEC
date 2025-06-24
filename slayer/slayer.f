@@ -490,11 +490,11 @@ c-----------------------------------------------------------------------
             IF (fitz_flag) THEN
                re_trace = re_trace/tauk
                im_trace = im_trace/tauk
-               gamma_sol_arr(k) = g_r/tauk
+               gamma_sol_arr(k) = g_r!/tauk THIS IS FOR PLOT
             ELSE
                re_trace = re_trace/tauk
                im_trace = -im_trace/tauk
-               gamma_sol_arr(k) = -g_r/tauk
+               gamma_sol_arr(k) = -g_r!/tauk THIS IS FOR PLOT
             END IF
          ENDDO 
 

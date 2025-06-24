@@ -17,8 +17,6 @@
 
       USE slayer_netcdf_mod
 
-      USE grid, ONLY : powspace,linspace
-
       IMPLICIT NONE
 
       CONTAINS
@@ -380,7 +378,7 @@ c     Adapted from
       
       REAL(r8), PARAMETER :: Eps = 1.0e-12    ! Tolerance PARAMETER
       REAL(r8), PARAMETER :: Smin = 1.0e-07   ! Min step size
-      REAL(r8), PARAMETER :: Smax = 0.05     ! Max step size
+      REAL(r8), PARAMETER :: Smax = 0.02     ! Max step size
       INTEGER, PARAMETER :: MaxIter = 100             ! Maximum iterations
       
       iter = 0
@@ -450,7 +448,7 @@ c-----------------------------------------------------------------------
       INTEGER :: i
       
       REAL(r8), PARAMETER :: Smin = 1.0d-10   ! Min step size
-      REAL(r8), PARAMETER :: Smax = 0.05     ! Max step size
+      REAL(r8), PARAMETER :: Smax = 0.02     ! Max step size
       REAL(r8), PARAMETER :: alpha = 1.0d-4   ! Line search PARAMETER
       INTEGER, PARAMETER :: Maxiter = 100     ! Maximum iterations
       

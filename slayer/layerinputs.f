@@ -3,13 +3,13 @@
       USE inputs, ONLY : read_kin,read_equil,kin,chi1
       USE spline_mod, ONLY : spline_alloc,spline_eval,spline_type,
      $                       spline_dealloc,spline_int,spline_fit
-      USE sglobal_mod, ONLY: m_p, chag, lnLamb,
-     $   Q_e,Q_i,pr,pe,c_beta,ds,d_beta,d_i,tau,r8,mu0,pi,out_unit, ! NOT out_unit
-     $   eta,visc,rho_s,lu,omega_e,omega_i,delta_n,Q
+      USE sglobal_mod!, ONLY: m_p, chag, lnLamb,
+c     $   Q_e,Q_i,pr,pe,c_beta,ds,d_beta,d_i,tau,r8,mu0,pi,out_unit, ! NOT out_unit
+c     $   eta,visc,rho_s,lu,omega_e,omega_i,delta_n,Q,eps0,m_e
       USE netcdf
       USE equil_mod, ONLY: equil_read,rzphi,twopi,ro,zo,sq
       USE bicube_mod, ONLY: bicube_eval_external,bicube_type
-      USE slayer_netcdf_mod!, ONLY: slayer_netcdf_inputs
+      USE slayer_netcdf_mod
 
       IMPLICIT NONE
 

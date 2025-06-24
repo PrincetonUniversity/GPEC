@@ -5,7 +5,7 @@
       INTEGER :: mm,nn
       INTEGER :: in_unit,out_unit,out2_unit,out3_unit,
      $     bin_unit,bin_2d_unit,input_unit,n_trace
-      INTEGER, PARAMETER :: r8=SELECTED_REAL_KIND(13,307)
+c      INTEGER, PARAMETER :: r8=SELECTED_REAL_KIND(13,307)
 
       REAL(r8) :: mr,nr
       REAL(r8) :: Q_e,Q_i,pr,pe,c_beta,ds,tau,d_i,
