@@ -5,6 +5,8 @@
 	ideal_flag=t
 	contour_flag=t
 
+	sol_num=1
+
 	res_flag=f
 	ff0=1e6
 	ff1=1e6
