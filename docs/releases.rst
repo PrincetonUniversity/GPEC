@@ -10,6 +10,14 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.5.6
+===========
+
+Fixes
+------
+- EQUIL - Fixes bug in the reading of the f profile from chease2 equilibrium files
+
+
 GPEC v1.5.5
 ===========
 
