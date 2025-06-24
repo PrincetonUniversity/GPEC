@@ -2,16 +2,16 @@
 
     !!! FOR READING IN ASCII TABLE, SET INPUT_FLAG
     input_flag=f         ! reads profile quantities (n_e, t_e, etc.) from an ascii table
-    infile='/fusion/projects/codes/gpec/GPEC-1.5/docs/examples/a10_ideal_example/a10_prof1.txt'  ! Path to ascii table of profile quantities read when using input_flag
-
+    infile=''  ! Path to ascii table of profile quantities read when using input_flag
+    ncfile=''  ! Path to netCDF file of STRIDE outputs
     !!! FOR MANUALLY ENTERING KINETIC QUANTITIES @ RATIONAL SURFACE, SET PARAMS_FLAG
-    params_flag=t        ! calculates normalized parameters from profile quantities
+    params_flag=f        ! calculates normalized parameters from profile quantities
     mm=2                 ! poloidal mode number
     nn=1                 ! toroidal mode number
     n_e=7.77E+17         ! electron density [m^-3]
     t_e=25.8             ! electron temperature [eV]
     t_i=25.8             ! ion temperature [eV]
-    sval=729.0           ! magnetic shear at the layer
+    sval=2.0             ! magnetic shear at the layer
     bt=1.0               ! toroidal field [T]
     rs=0.17              ! minor radius of resonant surface [m]
     R0=2.0               ! major radius of magnetic axis [m]
@@ -21,7 +21,7 @@
     qval=2.0             ! q of resonant surface
     mu_i=2.0             ! ion mass ratio to proton ??
     zeff=2.0             ! plasma Z_effective
-    inpr=0.0001          ! Prantdl number
+    inpr=0.1             ! Prantdl number
     inpe=0.0             ! Electron viscosity
 
     !!! IF INPUT_FLAG & PARAMS_FLAG ARE FALSE, MANUALLY ENTER DIMENSIONLESS QUANTITIES @ RATIONAL SURFACE
@@ -56,7 +56,8 @@
     bin_flag=t           ! writes results to binary files
     netcdf_flag=f        ! writes results to netcdf files
     stability_flag=f     ! calculate delta dependence on complex Q
-    bal_flag=t           ! calculate the resonant field penetration threshold from torque balance
+    growthrates_flag=t   ! Calculate growthrates on each rational surface
+    !bal_flag=f           ! calculate the resonant field penetration threshold from torque balance
 /
 &SLAYER_DIAGNOSE
     riccati_out=f        ! writes LSDOE Riccati integration to an ascii file
