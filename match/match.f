@@ -29,7 +29,7 @@ c-----------------------------------------------------------------------
      $     big,small,ns,root,scan_flag,root_flag,contour_flag,full,
      $     z_level_type,phi_level,transform_flag,poly_form_type,
      $     poly_test_type,scan0,scan1,nscan,delta0,delta1,condense,
-     $     ripple_flag,mripple
+     $     ripple_flag,mripple,sol_num
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -55,8 +55,8 @@ c     reconstruct most unstable ideal solution.
 c-----------------------------------------------------------------------
       IF(ideal_flag)THEN
          CALL ideal_transform
-         CALL ideal_build
-         CALL ideal_write
+         CALL ideal_build(sol_num)
+         CALL ideal_write(sol_num)
          CALL ideal_chord
          IF(contour_flag)CALL ideal_contour
       ENDIF
