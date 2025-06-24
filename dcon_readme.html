@@ -1,17 +1,19 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>DCON README &#8212; GPEC 1.5.0 documentation</title>
+    <title>DCON README &#8212; GPEC 1.5.5 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css" />
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
 <meta charset='utf-8'>
@@ -119,10 +121,10 @@
     <div class="body col-md-12 content" role="main">
       
   <section id="dcon-readme">
-<span id="dcon"></span><h1>DCON README<a class="headerlink" href="#dcon-readme" title="Permalink to this headline">¶</a></h1>
+<span id="dcon"></span><h1>DCON README<a class="headerlink" href="#dcon-readme" title="Permalink to this heading">¶</a></h1>
 <p>Download a pdf copy of the <a class="reference download internal" download="" href="_downloads/c79dc3c78a23034f3db87c07c8671d70/dcon_readme.pdf"><code class="xref download docutils literal notranslate"><span class="pre">DCON</span> <span class="pre">readme</span></code></a>.</p>
 <section id="determining-the-mhd-stability-of-axisymmetric-toroidal-plasmas">
-<h2>Determining the MHD Stability of Axisymmetric Toroidal Plasmas<a class="headerlink" href="#determining-the-mhd-stability-of-axisymmetric-toroidal-plasmas" title="Permalink to this headline">¶</a></h2>
+<h2>Determining the MHD Stability of Axisymmetric Toroidal Plasmas<a class="headerlink" href="#determining-the-mhd-stability-of-axisymmetric-toroidal-plasmas" title="Permalink to this heading">¶</a></h2>
 <dl class="field-list simple">
 <dt class="field-odd">Version</dt>
 <dd class="field-odd"><p>3.60, September 5, 2002</p>
@@ -141,7 +143,7 @@
 </dd>
 </dl>
 <section id="section-1-introduction">
-<h3>Section 1. Introduction<a class="headerlink" href="#section-1-introduction" title="Permalink to this headline">¶</a></h3>
+<h3>Section 1. Introduction<a class="headerlink" href="#section-1-introduction" title="Permalink to this heading">¶</a></h3>
 <p>DCON is a code for determining the MHD stability of static
 axisymmetric toroidal plasma.  It uses a very efficient algorithm,
 originally developed by Newcomb [W. A. Newcomb, Ann. Phys. 10, 232
@@ -201,7 +203,7 @@ Window system.</p>
 and interpreting their output.</p>
 </section>
 <section id="section-2-straight-fieldline-coordinates">
-<h3>Section 2. Straight-Fieldline Coordinates<a class="headerlink" href="#section-2-straight-fieldline-coordinates" title="Permalink to this headline">¶</a></h3>
+<h3>Section 2. Straight-Fieldline Coordinates<a class="headerlink" href="#section-2-straight-fieldline-coordinates" title="Permalink to this heading">¶</a></h3>
 <p>A major new feature of dcon_3.50 is the use of generalized
 straight-fieldline (SFL) coordinates.  Previous versions have used only
 one type of these, Hamada coordinates.</p>
@@ -283,7 +285,7 @@ proceed with caution, increase the number of Fourier components, and
 monitor the convergence.</p>
 </section>
 <section id="section-3-installation">
-<h3>Section 3. Installation<a class="headerlink" href="#section-3-installation" title="Permalink to this headline">¶</a></h3>
+<h3>Section 3. Installation<a class="headerlink" href="#section-3-installation" title="Permalink to this heading">¶</a></h3>
 <p>The easiest way to unpack dcon_3.50.tar.gz is:</p>
 <p>gzip -cd dcon_3.50.tar.gz | tar -xvf -</p>
 <p>It will create a subdirectory ./dcon_3.50 and place its files there.
@@ -363,7 +365,7 @@ links to existing LAPACK, BLAS, and X11 libraries.  Then type “make”
 while in ./dcon_3.50.</p>
 </section>
 <section id="section-4-equil-input">
-<h3>Section 4. EQUIL Input<a class="headerlink" href="#section-4-equil-input" title="Permalink to this headline">¶</a></h3>
+<h3>Section 4. EQUIL Input<a class="headerlink" href="#section-4-equil-input" title="Permalink to this heading">¶</a></h3>
 <p>Both DCON and ORBIT use EQUIL to process the equilibrium data.
 EQUIL is controlled primarily by equil.in.  It contains two Fortran 90
 namelists: equil_control and equil_output.  The equil_control namelist
@@ -593,42 +595,11 @@ and eq_filename=”lar.in”.  This allows the user to construct a
 large-aspect-ratio, circular-cross-section equilibrium, using the
 Shafranov expansion to second order, specifying minor radius a, major
 radius r0, central pressure ratio beta0, and central safety factor q0.
-The pressure profile is given by p0*(1-(r/a))**p_pres, and the profile
-of sigma=J.B/B^2 is given by sigma0*(1-(r/a))**p_pres.  Changing these
-to something more interesting would be very simple.  Here are sample
-input parameters:</p>
-<table class="docutils align-default">
-<colgroup>
-<col style="width: 22%" />
-<col style="width: 78%" />
-</colgroup>
-<tbody>
-<tr class="row-odd"><td><p>ma=64</p></td>
-<td><p>number of radial grid points</p></td>
-</tr>
-<tr class="row-even"><td><p>mtau=64</p></td>
-<td><p>number of azimuthal grid points</p></td>
-</tr>
-<tr class="row-odd"><td><p>lar_r0=10</p></td>
-<td><p>major radium</p></td>
-</tr>
-<tr class="row-even"><td><p>lar_a=1</p></td>
-<td><p>minor radius</p></td>
-</tr>
-<tr class="row-odd"><td><p>beta0=0</p></td>
-<td><p>value of beta (pressure ratio) on axis</p></td>
-</tr>
-<tr class="row-even"><td><p>q0=3.2</p></td>
-<td><p>value of q (safety factor) on axis</p></td>
-</tr>
-<tr class="row-odd"><td><p>p_pres=2</p></td>
-<td><p>power used in specifying pressure profile</p></td>
-</tr>
-<tr class="row-even"><td><p>p_sig=2</p></td>
-<td><p>power used in specifying current profile</p></td>
-</tr>
-</tbody>
-</table>
+The pressure profile is given by p0*(1-(r/a)**2)**p_pres, and the default
+profile of sigma=J.B/B^2 is sigma0/(1+(r/a))**(2*p_sig))**(1+1/p_sig).
+Specifying sigma_type=”wesson” changes the functional form of sigma to a
+simpler “Wesson-like” sigma0*(1-(r/a)**2)**p_sig. Additional profiles
+would be simple to add. Here are sample input parameters:</p>
 <p>The sol_input namelist of equil.in is used when
 eq_type=”soloviev” and eq_filename=”sol.in”.  See Berger et al
 [D. Berger,L.C. Bernard, R. Gruber,and 6. Troyon, J. Appl. Math.
@@ -665,7 +636,7 @@ equilibrium.  Here are input parameters:</p>
 </table>
 </section>
 <section id="section-5-dcon-input">
-<h3>Section 5. DCON Input<a class="headerlink" href="#section-5-dcon-input" title="Permalink to this headline">¶</a></h3>
+<h3>Section 5. DCON Input<a class="headerlink" href="#section-5-dcon-input" title="Permalink to this heading">¶</a></h3>
 <p>The stability operations of DCON are controlled by the file
 dcon.in, containing two namelists, dcon_control and dcon_output.  The
 first begins with a set of flags which determine which features of DCON
@@ -824,7 +795,7 @@ increases linearly with mthsurf0</p></td>
 </table>
 </section>
 <section id="section-6-vacuum-input">
-<h3>Section 6. VACUUM Input<a class="headerlink" href="#section-6-vacuum-input" title="Permalink to this headline">¶</a></h3>
+<h3>Section 6. VACUUM Input<a class="headerlink" href="#section-6-vacuum-input" title="Permalink to this heading">¶</a></h3>
 <p>Computation of perturbed vacuum potential energy is performed
 with Morrell Chance’s VACUUM code.  This is controlled by the file
 vac.in, formerly named modivmc.  It is safest to leave the variables in
@@ -839,7 +810,7 @@ and code description.  Subdirectory ./tex/vacuum of this directory
 contains a complete description of the input.  Use LaTeX.</p>
 </section>
 <section id="section-7-dcon-output">
-<h3>Section 7. DCON Output<a class="headerlink" href="#section-7-dcon-output" title="Permalink to this headline">¶</a></h3>
+<h3>Section 7. DCON Output<a class="headerlink" href="#section-7-dcon-output" title="Permalink to this heading">¶</a></h3>
 <p>During the running of DCON, the code writes terse messages to
 the screen to inform the user of its progress.  Here is the output of a
 typical run:</p>
@@ -926,7 +897,7 @@ plot can be seen with “xdraw gsec”.  The latter two require additional
 input files, obtainable by “cp ../../draw/drawgse*.in .”.</p>
 </section>
 <section id="section-8-orbit-input">
-<h3>Section 8. ORBIT Input<a class="headerlink" href="#section-8-orbit-input" title="Permalink to this headline">¶</a></h3>
+<h3>Section 8. ORBIT Input<a class="headerlink" href="#section-8-orbit-input" title="Permalink to this heading">¶</a></h3>
 <p>This section describes input for controlling the ORBIT code for
 following guiding-center or full-orbit trajectories of charged
 particles, both inside and outside the separatrix.</p>
@@ -1054,7 +1025,7 @@ very useful and is time-consuming.  Setting orbit_bin=f causes the
 graphical output to be suppressed.</p>
 </section>
 <section id="section-9-orbit-input">
-<h3>Section 9. ORBIT Input<a class="headerlink" href="#section-9-orbit-input" title="Permalink to this headline">¶</a></h3>
+<h3>Section 9. ORBIT Input<a class="headerlink" href="#section-9-orbit-input" title="Permalink to this heading">¶</a></h3>
 <p>This section describes output for the ORBIT code for following
 full-orbit trajectories of charged particles, both inside and outside
 the separatrix.</p>
@@ -1080,7 +1051,7 @@ produces 9 graphs:</p>
 <p>The color changes each time the particle crosses the separatrix.</p>
 </section>
 <section id="section-10-other-documentation">
-<h3>Section 10. Other documentation<a class="headerlink" href="#section-10-other-documentation" title="Permalink to this headline">¶</a></h3>
+<h3>Section 10. Other documentation<a class="headerlink" href="#section-10-other-documentation" title="Permalink to this heading">¶</a></h3>
 <p>There is a subdirectory ./tex containing miscellaneous
 documentation.  Here is a brief description.</p>
 <ol class="arabic simple">
@@ -1123,7 +1094,7 @@ metric.tex      Expressions for the metric tensor</p>
     </p>
     <p>
         &copy; Copyright 2015, PPPL.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.3.0.<br/>
     </p>
   </div>
 </footer>

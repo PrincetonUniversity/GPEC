@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pypec.modplot &#8212; GPEC 1.5.0 documentation</title>
+    <title>pypec.modplot &#8212; GPEC 1.5.5 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/bootstrap-sphinx.css" />
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
 <meta charset='utf-8'>
@@ -199,7 +201,7 @@
 <span class="c1">########################################### default colormaps</span>
 
 <div class="viewcode-block" id="png_to_gif"><a class="viewcode-back" href="../../source_documentation.html#pypec.modplot.png_to_gif">[docs]</a><span class="k">def</span> <span class="nf">png_to_gif</span><span class="p">(</span><span class="n">files</span><span class="p">,</span><span class="n">gif_file</span><span class="p">,</span><span class="n">delay</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span><span class="n">loop</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">clean</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;gif_file should end in .gif&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;gif_file should end in .gif&quot;&quot;&quot;</span>
     <span class="n">gif_file</span> <span class="o">=</span> <span class="n">gif_file</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;.gif&#39;</span><span class="p">)</span>
     <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s1">&#39;convert -delay </span><span class="si">{d}</span><span class="s1"> -loop </span><span class="si">{l}</span><span class="s1"> </span><span class="si">{i}</span><span class="s1"> </span><span class="si">{o}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">d</span><span class="o">=</span><span class="n">delay</span><span class="p">,</span><span class="n">l</span><span class="o">=</span><span class="n">loop</span><span class="p">,</span><span class="n">i</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">files</span><span class="p">),</span><span class="n">o</span><span class="o">=</span><span class="n">gif_file</span><span class="o">+</span><span class="s1">&#39;.gif&#39;</span><span class="p">))</span>
     <span class="k">if</span> <span class="n">clean</span><span class="p">:</span>
@@ -211,7 +213,7 @@
 <span class="c1">########################################### Custom Styles</span>
 
 <div class="viewcode-block" id="set_style"><a class="viewcode-back" href="../../source_documentation.html#pypec.modplot.set_style">[docs]</a><span class="k">def</span> <span class="nf">set_style</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">rc</span><span class="o">=</span><span class="p">{}):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Seaborn set_style with additional &#39;thick&#39;,</span>
 <span class="sd">    </span>
 <span class="sd">    Thick (thin) style multiplies rcParams axes.linewidth, lines.linewidth,</span>
@@ -251,7 +253,7 @@
 <div class="viewcode-block" id="subplots"><a class="viewcode-back" href="../../source_documentation.html#pypec.modplot.subplots">[docs]</a><span class="k">def</span> <span class="nf">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">squeeze</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autosize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
              <span class="n">subplot_kw</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">powerlim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">useOffset</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">nybins</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nxbins</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
              <span class="o">**</span><span class="n">fig_kw</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Matplotlib subplots with default figsize = rcp_size*[ncols,nrows]</span>
 <span class="sd">    fig_kw.setdefault(&#39;figsize&#39;,figsize). </span>
 
@@ -286,7 +288,7 @@
     <span class="k">return</span> <span class="n">f</span></div>
 
 <div class="viewcode-block" id="colorbar"><a class="viewcode-back" href="../../source_documentation.html#pypec.modplot.colorbar">[docs]</a><span class="k">def</span> <span class="nf">colorbar</span><span class="p">(</span><span class="n">mappable</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_gridspec</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="o">**</span><span class="n">kw</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Modified pyplot colorbar for default use_gridspec=True.</span>
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -302,7 +304,7 @@
 
 <span class="c1"># internal function to apply customizations post initialization</span>
 <span class="k">def</span> <span class="nf">_modfigure</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Modplot figure object modifications. These include:</span>
 <span class="sd">        1) canvas connection to modplot.key_press event funtion</span>
 
@@ -348,7 +350,7 @@
 
 <span class="c1"># new method to print text file of lines in figure</span>
 <div class="viewcode-block" id="printlines"><a class="viewcode-back" href="../../source_documentation.html#pypec.modplot.printlines">[docs]</a><span class="k">def</span> <span class="nf">printlines</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">labeled_only</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">squeeze</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Print all data in line plot(s) to text file.The x values </span>
 <span class="sd">    will be taken from the line with the greatest number of</span>
 <span class="sd">    points in the (first) axis, and other lines are interpolated</span>
@@ -449,7 +451,7 @@
 
 <span class="c1"># internal function to apply customizations post initialization</span>
 <span class="k">def</span> <span class="nf">_modaxes</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span><span class="n">useOffset</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Modplot axis object modifications. These include:</span>
 <span class="sd">        1) Optional offset</span>
 <span class="sd">        2) Ticker format power lims (-3,3)</span>
@@ -476,7 +478,7 @@
 
 <span class="c1"># down sample all lines in axes</span>
 <span class="k">def</span> <span class="nf">_axes_downsample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ax</span><span class="p">,</span><span class="n">npts</span><span class="o">=</span><span class="mi">10000</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Attempt to down sample original data in</span>
 <span class="sd">    each Line2D object in lines.</span>
 
@@ -498,7 +500,7 @@
 
 <span class="c1"># complex value plotting</span>
 <span class="k">def</span> <span class="nf">_axes_plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Modified axes line plotting, with suport for complex plotting.</span>
 <span class="sd">    Original matplotlib Axes plot method now located at _orig_plot.</span>
 <span class="sd">    All original plot args and kwargs accepted.</span>
@@ -563,7 +565,7 @@
 
 <span class="c1"># downsample data from the full set used to initialize the line</span>
 <div class="viewcode-block" id="line_downsample"><a class="viewcode-back" href="../../source_documentation.html#pypec.modplot.line_downsample">[docs]</a><span class="k">def</span> <span class="nf">line_downsample</span><span class="p">(</span><span class="n">line</span><span class="p">,</span><span class="n">npts</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Downsample line data for increased plotting speed.</span>
 
 <span class="sd">    Key Word Arguments: </span>
@@ -590,7 +592,7 @@
 <span class="c1">########################################### my own functions</span>
 
 <div class="viewcode-block" id="add_inset_axes"><a class="viewcode-back" href="../../source_documentation.html#pypec.modplot.add_inset_axes">[docs]</a><span class="k">def</span> <span class="nf">add_inset_axes</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span><span class="n">rect</span><span class="p">,</span><span class="n">axisbg</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span><span class="n">polar</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Add a axes inset in another axes.</span>
 <span class="sd">    Unlike the native matplotlib inset_axes, here the inset axes can be a polar axes.</span>
 
@@ -628,7 +630,7 @@
     <span class="k">return</span> <span class="n">subax</span></div>
 
 <div class="viewcode-block" id="shiftedColorMap"><a class="viewcode-back" href="../../source_documentation.html#pypec.modplot.shiftedColorMap">[docs]</a><span class="k">def</span> <span class="nf">shiftedColorMap</span><span class="p">(</span><span class="n">cmap</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">midpoint</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;shiftedcmap&#39;</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Function to offset the &quot;center&quot; of a colormap. Useful for</span>
 <span class="sd">    data with a negative min and positive max and you want the</span>
 <span class="sd">    middle of the colormap&#39;s dynamic range to be at zero.</span>
@@ -681,11 +683,11 @@
 
 
 <div class="viewcode-block" id="MidPointNorm"><a class="viewcode-back" href="../../source_documentation.html#pypec.modplot.MidPointNorm">[docs]</a><span class="k">class</span> <span class="nc">MidPointNorm</span><span class="p">(</span><span class="n">Normalize</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Taken from http://stackoverflow.com/questions/7404116/defining-the-midpoint-of-a-colormap-in-matplotlib</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">midpoint</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">clip</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        A Normalize subclass that, when used, will stretch a colormap out such that the</span>
 <span class="sd">        dynamic range has (vmin, midpoint, vmax) even if midpoint is not half way between the ends.</span>
 
@@ -770,7 +772,7 @@
 
 
 <div class="viewcode-block" id="plot_axes"><a class="viewcode-back" href="../../source_documentation.html#pypec.modplot.plot_axes">[docs]</a><span class="k">def</span> <span class="nf">plot_axes</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Re-create a given axis in a new figure. This allows, for instance,</span>
 <span class="sd">    a subplot to be moved to its own figure where it can be manipulated</span>
 <span class="sd">    and/or saved independent of the original.</span>
@@ -806,7 +808,7 @@
     <span class="k">return</span> <span class="n">fig</span></div>
 
 <div class="viewcode-block" id="xyaxes"><a class="viewcode-back" href="../../source_documentation.html#pypec.modplot.xyaxes">[docs]</a><span class="k">def</span> <span class="nf">xyaxes</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span><span class="n">x</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Plot hline and vline through (0,0).</span>
 <span class="sd">    </span>
 <span class="sd">    **Arguments:**</span>
@@ -833,7 +835,7 @@
     <span class="k">return</span> <span class="kc">True</span></div>
 
 <div class="viewcode-block" id="set_linearray"><a class="viewcode-back" href="../../source_documentation.html#pypec.modplot.set_linearray">[docs]</a><span class="k">def</span> <span class="nf">set_linearray</span><span class="p">(</span><span class="n">lines</span><span class="p">,</span><span class="n">values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">cmap</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">vmin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">vmax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Set colors of lines to colormaping of values.</span>
 <span class="sd">    </span>
 <span class="sd">    Other good sequential colormaps are YlOrBr and autumn.</span>
@@ -864,7 +866,7 @@
     <span class="k">return</span> <span class="n">sm</span></div>
 
 <div class="viewcode-block" id="onkey"><a class="viewcode-back" href="../../source_documentation.html#pypec.modplot.onkey">[docs]</a><span class="k">def</span> <span class="nf">onkey</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Function to connect key_press_event events from matplotlib</span>
 <span class="sd">    to custom functions.</span>
 
@@ -920,7 +922,7 @@
     </p>
     <p>
         &copy; Copyright 2015, PPPL.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.3.0.<br/>
     </p>
   </div>
 </footer>

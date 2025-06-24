@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pypec.namelist &#8212; GPEC 1.5.0 documentation</title>
+    <title>pypec.namelist &#8212; GPEC 1.5.5 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/bootstrap-sphinx.css" />
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
 <meta charset='utf-8'>
@@ -157,12 +159,12 @@
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
 
 <div class="viewcode-block" id="Objectify"><a class="viewcode-back" href="../../source_documentation.html#pypec.namelist.Objectify">[docs]</a><span class="k">class</span> <span class="nc">Objectify</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Class base to convert iterable to instance.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Recursively convert iterable to instance.</span>
 
 <span class="sd">        :param d: iterable. Dictionary that will be converted.</span>
@@ -175,7 +177,7 @@
                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">Objectify</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="n">b</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_todict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            Converts instance back to dictionary.</span>
 
 <span class="sd">            &quot;&quot;&quot;</span>
@@ -192,7 +194,7 @@
 
 
 <span class="k">def</span> <span class="nf">_string_to_type</span><span class="p">(</span><span class="nb">str</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Convert a string representing a fortran namelist value</span>
 <span class="sd">    to the appropriate python type object.</span>
 <span class="sd">    </span>
@@ -233,7 +235,7 @@
 
 
 <div class="viewcode-block" id="read"><a class="viewcode-back" href="../../source_documentation.html#pypec.namelist.read">[docs]</a><span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">out_type</span><span class="o">=</span><span class="s1">&#39;dict&#39;</span><span class="p">,</span><span class="n">comment</span><span class="o">=</span><span class="s1">&#39;!&#39;</span><span class="p">,</span><span class="n">old</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Read in a file. Must have namelists in series, not embedded.</span>
 <span class="sd">    Assumes name of list preceded by &#39;&amp;&#39; and list ends with a single backslash.</span>
 <span class="sd">    </span>
@@ -316,7 +318,7 @@
 
 
 <div class="viewcode-block" id="write"><a class="viewcode-back" href="../../source_documentation.html#pypec.namelist.write">[docs]</a><span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="n">nl</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">old</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Write namelist object to file for fortran interface.</span>
 
 <span class="sd">    :param nl: object. namelist object from read(). Can be dictionary or Objectify type class.</span>
@@ -361,7 +363,7 @@
 
 
 <span class="k">def</span> <span class="nf">_write_rst</span><span class="p">(</span><span class="n">nl</span><span class="p">,</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;namelist.rst&#39;</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Write namelist object to rst file for sphinx documentation</span>
 <span class="sd">    including tooltips.</span>
 
@@ -422,7 +424,7 @@
     </p>
     <p>
         &copy; Copyright 2015, PPPL.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.3.0.<br/>
     </p>
   </div>
 </footer>

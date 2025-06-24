@@ -1,17 +1,19 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>PYPEC Source documentation &#8212; GPEC 1.5.0 documentation</title>
+    <title>PYPEC Source documentation &#8212; GPEC 1.5.5 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css" />
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
 <meta charset='utf-8'>
@@ -90,29 +92,52 @@
               <img class="logo" src="_static/GPEC_logo.png" alt="Logo"/>
             </a></p><ul>
 <li><a class="reference internal" href="#">PYPEC Source documentation</a><ul>
-<li><a class="reference internal" href="#pypec-main-package"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pypec</span></code> – Main Package</a></li>
-<li><a class="reference internal" href="#python-at-pppl">Python at PPPL</a><ul>
-<li><a class="reference internal" href="#python-tutorials">Python Tutorials</a></li>
-<li><a class="reference internal" href="#setting-your-personal-defaults">Setting Your Personal Defaults</a></li>
-<li><a class="reference internal" href="#using-the-best-environment">Using the Best Environment</a></li>
-</ul>
-</li>
 <li><a class="reference internal" href="#pypec-data-pythonic-treatment-of-scientific-data"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pypec.data</span></code> – Pythonic Treatment of Scientific Data</a><ul>
 <li><a class="reference internal" href="#beginners">Beginners</a></li>
 <li><a class="reference internal" href="#advanced-users">Advanced Users</a></li>
 <li><a class="reference internal" href="#deprecated-ascii-interface">Deprecated ASCII Interface</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#pypec-post-post-processing-fundamental-gpec-outputs"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pypec.post</span></code> – Post-Processing Fundamental GPEC Outputs</a><ul>
+<li><a class="reference internal" href="#pypec.data.DataBase"><code class="docutils literal notranslate"><span class="pre">DataBase</span></code></a><ul>
+<li><a class="reference internal" href="#pypec.data.DataBase.interp"><code class="docutils literal notranslate"><span class="pre">DataBase.interp()</span></code></a></li>
+<li><a class="reference internal" href="#pypec.data.DataBase.plot1d"><code class="docutils literal notranslate"><span class="pre">DataBase.plot1d()</span></code></a></li>
+<li><a class="reference internal" href="#pypec.data.DataBase.plot2d"><code class="docutils literal notranslate"><span class="pre">DataBase.plot2d()</span></code></a></li>
+<li><a class="reference internal" href="#pypec.data.DataBase.plot3d"><code class="docutils literal notranslate"><span class="pre">DataBase.plot3d()</span></code></a></li>
+<li><a class="reference internal" href="#pypec.data.DataBase.scatter"><code class="docutils literal notranslate"><span class="pre">DataBase.scatter()</span></code></a></li>
+<li><a class="reference internal" href="#pypec.data.DataBase.slice"><code class="docutils literal notranslate"><span class="pre">DataBase.slice()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pypec.data.getshot"><code class="docutils literal notranslate"><span class="pre">getshot()</span></code></a></li>
+<li><a class="reference internal" href="#pypec.data.open_dataset"><code class="docutils literal notranslate"><span class="pre">open_dataset()</span></code></a></li>
+<li><a class="reference internal" href="#pypec.data.plotall"><code class="docutils literal notranslate"><span class="pre">plotall()</span></code></a></li>
+<li><a class="reference internal" href="#pypec.data.read"><code class="docutils literal notranslate"><span class="pre">read()</span></code></a></li>
+<li><a class="reference internal" href="#pypec.data.readall"><code class="docutils literal notranslate"><span class="pre">readall()</span></code></a></li>
+<li><a class="reference internal" href="#pypec.data.write"><code class="docutils literal notranslate"><span class="pre">write()</span></code></a></li>
+<li><a class="reference internal" href="#pypec-namelist-io-for-fortran-namelists"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pypec.namelist</span></code> – IO for FORTRAN Namelists</a><ul>
 <li><a class="reference internal" href="#examples">Examples</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#pypec-gpec-python-wrappers-for-fortran-codes"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pypec.gpec</span></code> – Python Wrappers for FORTRAN Codes</a></li>
-<li><a class="reference internal" href="#pypec-namelist-io-for-fortran-namelists"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pypec.namelist</span></code> – IO for FORTRAN Namelists</a><ul>
-<li><a class="reference internal" href="#id3">Examples</a></li>
+<li><a class="reference internal" href="#pypec.namelist.Objectify"><code class="docutils literal notranslate"><span class="pre">Objectify</span></code></a></li>
+<li><a class="reference internal" href="#pypec.namelist.read"><code class="docutils literal notranslate"><span class="pre">read()</span></code></a></li>
+<li><a class="reference internal" href="#pypec.namelist.write"><code class="docutils literal notranslate"><span class="pre">write()</span></code></a></li>
+<li><a class="reference internal" href="#pypec-modplot-matplotlib-customizations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pypec.modplot</span></code> – matplotlib Customizations</a></li>
+<li><a class="reference internal" href="#pypec.modplot.MidPointNorm"><code class="docutils literal notranslate"><span class="pre">MidPointNorm</span></code></a><ul>
+<li><a class="reference internal" href="#pypec.modplot.MidPointNorm.inverse"><code class="docutils literal notranslate"><span class="pre">MidPointNorm.inverse()</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#pypec-modplot-matplotlib-customizations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pypec.modplot</span></code> – matplotlib Customizations</a></li>
+<li><a class="reference internal" href="#pypec.modplot.add_inset_axes"><code class="docutils literal notranslate"><span class="pre">add_inset_axes()</span></code></a></li>
+<li><a class="reference internal" href="#pypec.modplot.colorbar"><code class="docutils literal notranslate"><span class="pre">colorbar()</span></code></a></li>
+<li><a class="reference internal" href="#pypec.modplot.figure"><code class="docutils literal notranslate"><span class="pre">figure()</span></code></a></li>
+<li><a class="reference internal" href="#pypec.modplot.line_downsample"><code class="docutils literal notranslate"><span class="pre">line_downsample()</span></code></a></li>
+<li><a class="reference internal" href="#pypec.modplot.onkey"><code class="docutils literal notranslate"><span class="pre">onkey()</span></code></a></li>
+<li><a class="reference internal" href="#pypec.modplot.plot_axes"><code class="docutils literal notranslate"><span class="pre">plot_axes()</span></code></a></li>
+<li><a class="reference internal" href="#pypec.modplot.png_to_gif"><code class="docutils literal notranslate"><span class="pre">png_to_gif()</span></code></a></li>
+<li><a class="reference internal" href="#pypec.modplot.printlines"><code class="docutils literal notranslate"><span class="pre">printlines()</span></code></a></li>
+<li><a class="reference internal" href="#pypec.modplot.set_linearray"><code class="docutils literal notranslate"><span class="pre">set_linearray()</span></code></a></li>
+<li><a class="reference internal" href="#pypec.modplot.set_style"><code class="docutils literal notranslate"><span class="pre">set_style()</span></code></a></li>
+<li><a class="reference internal" href="#pypec.modplot.shiftedColorMap"><code class="docutils literal notranslate"><span class="pre">shiftedColorMap()</span></code></a></li>
+<li><a class="reference internal" href="#pypec.modplot.subplots"><code class="docutils literal notranslate"><span class="pre">subplots()</span></code></a></li>
+<li><a class="reference internal" href="#pypec.modplot.xyaxes"><code class="docutils literal notranslate"><span class="pre">xyaxes()</span></code></a></li>
 <li><a class="reference internal" href="#regression-compare-for-comparing-restults"><code class="xref py py-mod docutils literal notranslate"><span class="pre">regression.compare</span></code> – For Comparing Restults</a><ul>
 <li><a class="reference internal" href="#interface">Interface</a></li>
 </ul>
@@ -132,102 +157,16 @@
       </div>
     <div class="body col-md-12 content" role="main">
       
-  <section id="module-pypec">
-<span id="pypec-source-documentation"></span><span id="source-documentation"></span><h1>PYPEC Source documentation<a class="headerlink" href="#module-pypec" title="Permalink to this headline">¶</a></h1>
-<section id="pypec-main-package">
-<h2><a class="reference internal" href="#module-pypec" title="pypec"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pypec</span></code></a> – Main Package<a class="headerlink" href="#pypec-main-package" title="Permalink to this headline">¶</a></h2>
-<p>Python modules for data visualization and postprocessing, 
-as well as python wrappers for GPEC and PENT.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Author</dt>
-<dd class="field-odd"><p>N.C. Logan</p>
-</dd>
-<dt class="field-even">Location</dt>
-<dd class="field-even"><p>Princeton Plasma Physics Laboratory</p>
-</dd>
-<dt class="field-odd">Email</dt>
-<dd class="field-odd"><p><a class="reference external" href="mailto:nlogan&#37;&#52;&#48;pppl&#46;gov">nlogan<span>&#64;</span>pppl<span>&#46;</span>gov</a></p>
-</dd>
-</dl>
-</section>
-<section id="python-at-pppl">
-<h2>Python at PPPL<a class="headerlink" href="#python-at-pppl" title="Permalink to this headline">¶</a></h2>
-<p>To set up python on portal at PPPL, insert the 
-following lines into your .bashrc file:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>export PYTHONPATH=$PYTHONPATH:/path/to/gpec
-module load anaconda/2.3.0
-</pre></div>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Anaconda is the most complete and current python distribution
-available at pppl. Users can also use locally built python/2.7.2, but
-will loose 3D plotting capabilities and may experience problems reading
-large data files.</p>
-</div>
-<p>Obviously, “/path/to/gpec” needs to be replaced with the path
-to your installation of the GPEC package (containing the pypec directory).</p>
-<p>For tcsh shell users, replace export with setenv syntax
-and insert in .cshrc.</p>
-<p>To put the changes into effect:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ source ~/.bashrc
-</pre></div>
-</div>
-<p>Users are further encouraged to create a matplotlib rc file in
-user ~/.config/matplotlib similar to /u/nlogan/.config/matplotlib/matplotlibrc.
-This file sets a number of plotting defaults.</p>
-<section id="python-tutorials">
-<h3>Python Tutorials<a class="headerlink" href="#python-tutorials" title="Permalink to this headline">¶</a></h3>
-<p>The 3 workhorse modules for scientific programming
-in python are numpy, scipy and matplotlib (although
-the third is really a personal preference). Tutorials
-for each can be found at</p>
-<p><a class="reference external" href="http://wiki.scipy.org/Tentative_NumPy_Tutorial">numpy tutorial</a></p>
-<p><a class="reference external" href="http://docs.scipy.org/doc/scipy/reference/tutorial/">scipy tutorial</a></p>
-<p><a class="reference external" href="http://matplotlib.org/users/pyplot_tutorial.html">matplotlib tutorial</a></p>
-</section>
-<section id="setting-your-personal-defaults">
-<h3>Setting Your Personal Defaults<a class="headerlink" href="#setting-your-personal-defaults" title="Permalink to this headline">¶</a></h3>
-<p>To set personal defaults for runs, edit the _defaults_.py file in
-this directory. Some of these (like email) should be obvious, others
-you may not understand until becoming more familiar with the package.
-Do not worry if these are confusing, and feel free to skip them for now.</p>
-</section>
-<section id="using-the-best-environment">
-<h3>Using the Best Environment<a class="headerlink" href="#using-the-best-environment" title="Permalink to this headline">¶</a></h3>
-<p>The ipython (interactive) environment is recommended for commandline
-data analysis. To start, it is easiest to auto-import a number of 
-basic mathematics and visualization modules and use an enhanced
-interactivity for displaying figures. To do this enter:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ ipython
-In [1]: import mayavi
-In [2]: %pylab
-</pre></div>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Mayavi’s API settings will still conflict with matplotlib if
-it is not imported in the above order! For this reason, we cannot use
-the –pylab call option with ipython.</p>
-</div>
-<p>Look into online tutorial on numpy and matplotlib. Advanced users 
-are recommended to edit ~/.matplotlib/matplotlibrc and
-~/.ipython/profile_default/startup/autoimports.ipy files.</p>
-<p>Now in the ipython environment, type</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pypec</span> <span class="kn">import</span> <span class="n">gpec</span><span class="p">,</span><span class="n">data</span> 
-</pre></div>
-</div>
-<p>There may be a few warnings/hints… take them or leave them.</p>
-</section>
-</section>
-<span class="target" id="module-pypec.data"></span><section id="pypec-data-pythonic-treatment-of-scientific-data">
-<h2><a class="reference internal" href="#module-pypec.data" title="pypec.data"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pypec.data</span></code></a> – Pythonic Treatment of Scientific Data<a class="headerlink" href="#pypec-data-pythonic-treatment-of-scientific-data" title="Permalink to this headline">¶</a></h2>
+  <section id="module-pypec.data">
+<span id="pypec-source-documentation"></span><span id="source-documentation"></span><h1>PYPEC Source documentation<a class="headerlink" href="#module-pypec.data" title="Permalink to this heading">¶</a></h1>
+<section id="pypec-data-pythonic-treatment-of-scientific-data">
+<h2><a class="reference internal" href="#module-pypec.data" title="pypec.data"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pypec.data</span></code></a> – Pythonic Treatment of Scientific Data<a class="headerlink" href="#pypec-data-pythonic-treatment-of-scientific-data" title="Permalink to this heading">¶</a></h2>
 <p>The data module is a very generalized tool for visualizing and manipulating scientific data from netcdf and ascii files.</p>
 <p>GPEC data is migrating to netcdf, and this module uses the xarray module for its python netcdf interface. The xarray module is very powerful and well documented <a class="reference external" href="http://xarray.readthedocs.org/">here</a>.</p>
 <p>Previous GPEC results and some current outputs are still writen to ascii. This module contains a custom I/O for converting ascii data to python objects. A custom Data object was created for this purpose, and conversion to the xarray Dataset is automated in the open_dataset function to facilitate migration to netcdf. The only requirement for creating a data object from an ascii file is that the file have one or more tables of data, with appropriate labels in a header line directly above the data.</p>
 <p>Here, we show some examples using common outputs from both GPEC and PENT.</p>
 <section id="beginners">
-<h3>Beginners<a class="headerlink" href="#beginners" title="Permalink to this headline">¶</a></h3>
+<h3>Beginners<a class="headerlink" href="#beginners" title="Permalink to this heading">¶</a></h3>
 <p>First, add your release of GPEC to your PYTHONPATH environment variable.</p>
 <p>In an open ipython session, import the data module</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pypec</span> <span class="kn">import</span> <span class="n">data</span>
@@ -321,13 +260,13 @@ are recommended to edit ~/.matplotlib/matplotlibrc and
 <span class="gp">&gt;&gt;&gt; </span><span class="n">f1</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;examples/figures/example_eigenvalues.png&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<a class="reference internal image-reference" href="_images/example_eigenvalues.png"><img alt="_images/example_eigenvalues.png" src="_images/example_eigenvalues.png" style="width: 600px;" /></a>
+<a class="reference internal image-reference" href="examples/figures/example_eigenvalues.png"><img alt="examples/figures/example_eigenvalues.png" src="examples/figures/example_eigenvalues.png" style="width: 600px;" /></a>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">f2</span><span class="p">,</span><span class="n">a2</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">l2</span> <span class="o">=</span> <span class="n">xplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;W_EDX&#39;</span><span class="p">])</span> <span class="c1"># This is 2D, returns Quadmesh</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">f2</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;examples/figures/example_eigenvectors.png&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<a class="reference internal image-reference" href="_images/example_eigenvectors.png"><img alt="_images/example_eigenvectors.png" src="_images/example_eigenvectors.png" style="width: 600px;" /></a>
+<a class="reference internal image-reference" href="examples/figures/example_eigenvectors.png"><img alt="examples/figures/example_eigenvectors.png" src="examples/figures/example_eigenvectors.png" style="width: 600px;" /></a>
 <p>Note this uses matplotlib, and the plots are fully interactive. Navigate and zoom using the toolbar below plots.</p>
 <p>This is not the recommended way to display detailed studies using GPEC data, however. It is
 recommended that the user familiarise themselves with matplotlib (there are many great online
@@ -353,7 +292,7 @@ should be done with a little care to look right. Lets look at b_z for example,</
 <span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;examples/figures/example_pbrzphi.png&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<a class="reference internal image-reference" href="_images/example_pbrzphi.png"><img alt="_images/example_pbrzphi.png" src="_images/example_pbrzphi.png" style="width: 600px;" /></a>
+<a class="reference internal image-reference" href="examples/figures/example_pbrzphi.png"><img alt="examples/figures/example_pbrzphi.png" src="examples/figures/example_pbrzphi.png" style="width: 600px;" /></a>
 <p>There we go. That looks publication ready!</p>
 <p>Another common plot of GPEC outputs is the (psi,m) spectrogram plot. Lets quickly make a
 nice one,</p>
@@ -372,7 +311,7 @@ nice one,</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;examples/figures/example_xispectrogram.png&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<a class="reference internal image-reference" href="_images/example_xispectrogram.png"><img alt="_images/example_xispectrogram.png" src="_images/example_xispectrogram.png" style="width: 600px;" /></a>
+<a class="reference internal image-reference" href="examples/figures/example_xispectrogram.png"><img alt="examples/figures/example_xispectrogram.png" src="examples/figures/example_xispectrogram.png" style="width: 600px;" /></a>
 <p>Note that the choice of interpolation resulted in discrete bands in m, which is true
 to the the discrete fourier decomposition used in the codes and provides a more intuitive
 connection between what the user sees and what the code is calculating.</p>
@@ -391,7 +330,7 @@ write line plots to tables. Lets look at a 1D mode spectrum plot for example,</p
 <span class="go">True</span>
 </pre></div>
 </div>
-<a class="reference internal image-reference" href="_images/example_xim.png"><img alt="_images/example_xim.png" src="_images/example_xim.png" style="width: 600px;" /></a>
+<a class="reference internal image-reference" href="examples/figures/example_xim.png"><img alt="examples/figures/example_xim.png" src="examples/figures/example_xim.png" style="width: 600px;" /></a>
 <p>That’s it! Read the table with your favorite editor. It will probably need a little
 cleaning at the top since it tries to use the lengthy legend labels as column headers.</p>
 <p>At this point we have outlined the basics. Using this module and similar commands
@@ -399,7 +338,7 @@ to those used here the user should be able to fully interact with and visually
 explore the GPEC output.</p>
 </section>
 <section id="advanced-users">
-<h3>Advanced Users<a class="headerlink" href="#advanced-users" title="Permalink to this headline">¶</a></h3>
+<h3>Advanced Users<a class="headerlink" href="#advanced-users" title="Permalink to this heading">¶</a></h3>
 <p>In this section, we will assume you have a pretty good hold on both python and the basic ploting functions of these modules.</p>
 <p>Now that you use this module regularly, save yourself some time by placing the line:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pypec</span> <span class="kn">import</span> <span class="o">*</span>
@@ -411,7 +350,7 @@ explore the GPEC output.</p>
 </div>
 </section>
 <section id="deprecated-ascii-interface">
-<h3>Deprecated ASCII Interface<a class="headerlink" href="#deprecated-ascii-interface" title="Permalink to this headline">¶</a></h3>
+<h3>Deprecated ASCII Interface<a class="headerlink" href="#deprecated-ascii-interface" title="Permalink to this heading">¶</a></h3>
 <p>As mentioned above, GPEC has moved the vast majority of its I/O to netcdf, and open_dataset should
 be used to create xarray Dataset objects whenever possible. This section describes the deprecated
 ascii interface for context, and motivates the move to netcdf.</p>
@@ -441,7 +380,7 @@ ascii interface for context, and motivates the move to netcdf.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;examples/figures/example_profiles.png&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<a class="reference internal image-reference" href="_images/example_profiles.png"><img alt="_images/example_profiles.png" src="_images/example_profiles.png" style="width: 600px;" /></a>
+<a class="reference internal image-reference" href="examples/figures/example_profiles.png"><img alt="examples/figures/example_profiles.png" src="examples/figures/example_profiles.png" style="width: 600px;" /></a>
 <p>Interpolation returns a new Data object of the desired data, which can be one, multiple, or all of the dependent variables found in y.</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">myinterp</span> <span class="o">=</span> <span class="n">mydata</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">0.1</span><span class="p">),[</span><span class="s1">&#39;nim^3&#39;</span><span class="p">,</span><span class="s1">&#39;tieV&#39;</span><span class="p">])</span>
 <span class="go">Forming interpolator for nim^3.</span>
@@ -453,7 +392,7 @@ ascii interface for context, and motivates the move to netcdf.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;examples/figures/example_profiles2.png&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<a class="reference internal image-reference" href="_images/example_profiles2.png"><img alt="_images/example_profiles2.png" src="_images/example_profiles2.png" style="width: 400px;" /></a>
+<a class="reference internal image-reference" href="examples/figures/example_profiles2.png"><img alt="examples/figures/example_profiles2.png" src="examples/figures/example_profiles2.png" style="width: 400px;" /></a>
 <p>Note that the interpolator initialized the interpolation function on the first call, this is saved internally for subsequent calls.</p>
 <p>One common need is to look at spectra. For this we want to utilize
 the full functionality of the data instances’ plot1d function.</p>
@@ -463,7 +402,7 @@ the full functionality of the data instances’ plot1d function.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;examples/figures/example_spectrum.png&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<a class="reference internal image-reference" href="_images/example_spectrum.png"><img alt="_images/example_spectrum.png" src="_images/example_spectrum.png" style="width: 600px;" /></a>
+<a class="reference internal image-reference" href="examples/figures/example_spectrum.png"><img alt="examples/figures/example_spectrum.png" src="examples/figures/example_spectrum.png" style="width: 600px;" /></a>
 <p>We knew it was one table, so we used the “,” to automatically
 unpack returned list. We were then so familiar with the args and
 kwargs of the plotting function that we did not bother typing the names.
@@ -479,10 +418,12 @@ in this directory as follows:</p>
 <p>In [2]: doctest.testmod(data,verbose=True)</p>
 </div></blockquote>
 </div>
+</section>
+</section>
 <dl class="py class">
 <dt class="sig sig-object py" id="pypec.data.DataBase">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pypec.data.</span></span><span class="sig-name descname"><span class="pre">DataBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fromtxt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preamble</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forcex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forcedim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxlength</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">auto_complex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quiet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pypec/data.html#DataBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pypec.data.DataBase" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>An emtpy class object with the following operations overloaded:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">+</span><span class="p">,</span><span class="o">-</span><span class="p">,</span><span class="o">*</span><span class="p">,</span><span class="o">/</span><span class="p">,</span><span class="o">**</span>
 </pre></div>
@@ -871,492 +812,12 @@ as will some column label symbols in the use of genfromtxt.</p>
 </dl>
 </dd></dl>
 
-</section>
-</section>
-<span class="target" id="module-pypec.post"></span><section id="pypec-post-post-processing-fundamental-gpec-outputs">
-<h2><a class="reference internal" href="#module-pypec.post" title="pypec.post"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pypec.post</span></code></a> – Post-Processing Fundamental GPEC Outputs<a class="headerlink" href="#pypec-post-post-processing-fundamental-gpec-outputs" title="Permalink to this headline">¶</a></h2>
-<p>The post module is a repository of basic post-processing functions for expanding,
-manipulating, and visualizing fundamental gpec output. This is not an exhaustive
-list of post-processing procedures. The focus is on a) transforming between
-coordinate systems and b) matrix optimizations.</p>
-<p>Here, we show some examples using common outputs.</p>
-<section id="examples">
-<h3>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h3>
-<p>First, add your release of GPEC to your PYTHONPATH environment variable.</p>
-<p>In an open ipython session, import the data module</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pypec</span> <span class="kn">import</span> <span class="n">data</span><span class="p">,</span> <span class="n">post</span>
-</pre></div>
-</div>
-<p>To get a typical GPEC output into python, use the open_dataset function.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">con</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="s1">&#39;examples/DIIID_ideal_example/gpec_control_output_n1.nc&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">prof</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="s1">&#39;examples/DIIID_ideal_example/gpec_profile_output_n1.nc&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>First, 3D equilibrium calculations lend themselves naturally to 3D figures. This module
-has a helpful function for forming the necessary x,y,z meshes from the 2D boundary.
-After adding the requisite geometry to the control surface output,</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">con</span> <span class="o">=</span> <span class="n">add_3dsurface</span><span class="p">(</span><span class="n">con</span><span class="p">,</span> <span class="n">phi_lim</span><span class="o">=</span><span class="n">pi</span> <span class="o">*</span> <span class="mf">1.5</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>it is easy to make 3D surface plots using mayavi,</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span> <span class="o">=</span> <span class="n">con</span><span class="p">[</span><span class="s1">&#39;x_surf&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;y_surf&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;z_surf&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">b_n_3d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;b_n_fun&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;phase_surf&#39;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">fig</span> <span class="o">=</span> <span class="n">mmlab</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">bgcolor</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span><span class="n">fgcolor</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">600</span><span class="p">,</span><span class="mi">600</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mesh</span> <span class="o">=</span> <span class="n">mmlab</span><span class="o">.</span><span class="n">mesh</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">,</span><span class="n">scalars</span><span class="o">=</span><span class="n">b_n_3d</span><span class="p">,</span><span class="n">colormap</span><span class="o">=</span><span class="s1">&#39;RdBu&#39;</span><span class="p">,</span><span class="n">vmin</span><span class="o">=-</span><span class="mf">2e-3</span><span class="p">,</span><span class="n">vmax</span><span class="o">=</span><span class="mf">2e-3</span><span class="p">,</span><span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>Note that mayavi explicitly requires numpy.ndarray objects so we had to
-use the values of each xarray DataArray.</p>
-<p>Now, lets cap the ends with our full profile information. This is a little
-more involved. For the toroidal angle of each end, we need to rotate the
-2D arrays for the mesh and the field values.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">phi</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mi">3</span><span class="o">/</span><span class="mi">2</span><span class="p">]:</span>
-<span class="gp">... </span>    <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">prof</span><span class="p">[</span><span class="s1">&#39;b_n_fun&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span><span class="o">*</span><span class="mi">1</span><span class="o">*</span><span class="n">phi</span><span class="p">))</span> <span class="c1"># poloidal cross section at phi</span>
-<span class="gp">... </span>    <span class="n">xy</span> <span class="o">=</span> <span class="n">prof</span><span class="p">[</span><span class="s1">&#39;R&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span><span class="o">*</span><span class="n">phi</span><span class="p">)</span> <span class="c1"># rotate the plane</span>
-<span class="gp">... </span>    <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">xy</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">imag</span><span class="p">(</span><span class="n">xy</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">prof</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">])</span>
-<span class="gp">... </span>    <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">,</span><span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">,</span><span class="n">b</span><span class="p">])[:,:,::</span><span class="mi">10</span><span class="p">]</span> <span class="c1"># downsample psi by 10 to speed up mayavi</span>
-<span class="gp">... </span>    <span class="n">cap</span> <span class="o">=</span> <span class="n">mmlab</span><span class="o">.</span><span class="n">mesh</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">,</span><span class="n">scalars</span><span class="o">=</span><span class="n">b</span><span class="p">,</span><span class="n">colormap</span><span class="o">=</span><span class="s1">&#39;RdBu&#39;</span><span class="p">,</span><span class="n">vmin</span><span class="o">=-</span><span class="mf">2e-3</span><span class="p">,</span><span class="n">vmax</span><span class="o">=</span><span class="mf">2e-3</span><span class="p">,</span><span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mmlab</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;examples/figures/example_bn_3d_capped.png&#39;</span><span class="p">,</span><span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">)</span>
-</pre></div>
-</div>
-<a class="reference internal image-reference" href="_images/example_bn_3d_capped.png"><img alt="_images/example_bn_3d_capped.png" src="_images/example_bn_3d_capped.png" style="width: 600px;" /></a>
-<p>That looks awesome!</p>
-<p>There are, of course, plenty more outputs and important ways of visualizing
-them intuitively. See, for example, the 2D plots in the add_3dsurface
-function’s documentation. At this point we have outlined the basics. Using
-this module and similar commands to those used here, the user should be able
-to do all sorts of post-processing tasks.</p>
-<dl class="py function">
-<dt class="sig sig-object py" id="pypec.post.add_3dsurface">
-<span class="sig-prename descclassname"><span class="pre">pypec.post.</span></span><span class="sig-name descname"><span class="pre">add_3dsurface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">control_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi_lim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6.283185307179586</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nphi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">180</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pypec/post.html#add_3dsurface"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pypec.post.add_3dsurface" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add 3D geometric dimensions to dataset from gpec_control_output_n#.nc.</p>
-<p>Note, this surface uses the machine toroidal angle. It should only by used
-with functions that do the same (tmag_out=0).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>control_output</strong> – Dataset. xarray Dataset opened from gpec_control_output_n#.nc</p></li>
-<li><p><strong>phi_lim</strong> – float. Toroidal angle extended from 0 to phi_lim radians.</p></li>
-<li><p><strong>nphi</strong> – int. Length of toroidal angle dimension array.</p></li>
-<li><p><strong>overwrite</strong> – bool. Overwrite geometric quantities if they already exist.</p></li>
-<li><p><strong>inplace</strong> – bool. Modify dataset inplace. Otherwise, return a new dataset.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Dataset. New dataset with additional dimensions.</p>
-</dd>
-<dt class="field-odd">Examples</dt>
-<dd class="field-odd"><p></p></dd>
-</dl>
-<p>After opening, adding geometry and confirming the functional forms
-are using the machine angle,</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">con</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="s1">&#39;examples/DIIID_ideal_example/gpec_control_output_n1.nc&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">con</span> <span class="o">=</span> <span class="n">add_3dsurface</span><span class="p">(</span><span class="n">con</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">con</span> <span class="o">=</span> <span class="n">add_fun</span><span class="p">(</span><span class="n">con</span><span class="p">,</span><span class="n">tmag</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>it is easy to make 3D surface plots using mayavi,</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fig</span> <span class="o">=</span> <span class="n">mmlab</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">bgcolor</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">fgcolor</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">600</span><span class="p">,</span> <span class="mi">600</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mesh</span> <span class="o">=</span> <span class="n">mmlab</span><span class="o">.</span><span class="n">mesh</span><span class="p">(</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;x_surf&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;y_surf&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;z_surf&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-<span class="gp">... </span>                  <span class="n">scalars</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;b_n_fun&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">con</span><span class="p">[</span><span class="s1">&#39;phase_surf&#39;</span><span class="p">]),</span> <span class="n">colormap</span><span class="o">=</span><span class="s1">&#39;RdBu&#39;</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mmlab</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;examples/figures/example_bn_3d.png&#39;</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">)</span>
-</pre></div>
-</div>
-<a class="reference internal image-reference" href="_images/example_bn_3d.png"><img alt="_images/example_bn_3d.png" src="_images/example_bn_3d.png" style="width: 600px;" /></a>
-<p>Make 2D perturbed last-closed-flux-surface plots quickly using,</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fac</span> <span class="o">=</span> <span class="mf">1e-1</span> <span class="c1"># good for DIII-D unit eigenmodes</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="p">,</span><span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s1">&#39;equal&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">l</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;R&#39;</span><span class="p">],</span> <span class="n">con</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span> <span class="c1"># most and least stable modes</span>
-<span class="gp">... </span>    <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;R_xe_eigenvector_fun&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">fac</span><span class="p">)</span>
-<span class="gp">... </span>    <span class="n">l</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;R&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">v</span> <span class="o">*</span> <span class="n">con</span><span class="p">[</span><span class="s1">&#39;R_n&#39;</span><span class="p">],</span> <span class="n">con</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">v</span> <span class="o">*</span> <span class="n">con</span><span class="p">[</span><span class="s1">&#39;z_n&#39;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">sm</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">set_linearray</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">lines</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:],</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;viridis&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">cb</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">sm</span><span class="p">,</span> <span class="n">ticks</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">cb</span><span class="o">.</span><span class="n">set_label</span><span class="p">(</span><span class="s1">&#39;Mode Index&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">xtl</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mf">1.7</span><span class="p">,</span> <span class="mf">2.4</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">txt</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;R (m)&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">txt</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;z (m)&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;examples/figures/example_boundary_wiggle.png&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<a class="reference internal image-reference" href="_images/example_boundary_wiggle.png"><img alt="_images/example_boundary_wiggle.png" src="_images/example_boundary_wiggle.png" style="width: 600px;" /></a>
-<p>Combining these two concepts, we can even plot a 3D perturbed surface distorted
-by the normal displacements and colored to show the normal field.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fig</span> <span class="o">=</span> <span class="n">mmlab</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">bgcolor</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">fgcolor</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">600</span><span class="p">,</span> <span class="mi">600</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">xinorm</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">con</span><span class="p">[</span><span class="s1">&#39;phase_surf&#39;</span><span class="p">]</span> <span class="c1"># good for ~cm displacements</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;x_surf&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">+</span> <span class="n">con</span><span class="p">[</span><span class="s1">&#39;xi_n_fun&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">xinorm</span> <span class="o">*</span> <span class="n">con</span><span class="p">[</span><span class="s1">&#39;x_surf_n&#39;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;y_surf&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">+</span> <span class="n">con</span><span class="p">[</span><span class="s1">&#39;xi_n_fun&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">xinorm</span> <span class="o">*</span> <span class="n">con</span><span class="p">[</span><span class="s1">&#39;y_surf_n&#39;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;z_surf&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">+</span> <span class="n">con</span><span class="p">[</span><span class="s1">&#39;xi_n_fun&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">xinorm</span> <span class="o">*</span> <span class="n">con</span><span class="p">[</span><span class="s1">&#39;z_surf_n&#39;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;b_n_fun&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">con</span><span class="p">[</span><span class="s1">&#39;phase_surf&#39;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mesh</span> <span class="o">=</span> <span class="n">mmlab</span><span class="o">.</span><span class="n">mesh</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">,</span><span class="n">scalars</span><span class="o">=</span><span class="n">s</span><span class="p">,</span> <span class="n">colormap</span><span class="o">=</span><span class="s1">&#39;RdBu&#39;</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mmlab</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;examples/figures/example_bn_xin_3d.png&#39;</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">)</span>
-</pre></div>
-</div>
-<a class="reference internal image-reference" href="_images/example_bn_xin_3d.png"><img alt="_images/example_bn_xin_3d.png" src="_images/example_bn_xin_3d.png" style="width: 600px;" /></a>
-<p>Fancy!</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pypec.post.add_fun">
-<span class="sig-prename descclassname"><span class="pre">pypec.post.</span></span><span class="sig-name descname"><span class="pre">add_fun</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">control_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tmag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pypec/post.html#add_fun"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pypec.post.add_fun" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add real space functions of theta calculated from the spectral outputs.
-This is helpful when analyzing a GPEC run for which fun_flag was off
-for speed/efficiency.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>control_output</strong> – Dataset. xarray Dataset opened from gpec_control_output_n#.nc</p></li>
-<li><p><strong>keys</strong> – iterable. List of keys for which &lt;key&gt;_fun will be added. Default is all spectral variables.</p></li>
-<li><p><strong>tmag</strong> – bool. Keep the magnetic coordinate angle (default is machine angle).</p></li>
-<li><p><strong>inplace</strong> – bool. Add to dataset. Otherwise, make a new dataset object.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Dataset. New dataset with real space functions of theta.</p>
-</dd>
-<dt class="field-odd">Example</dt>
-<dd class="field-odd"><p></p></dd>
-</dl>
-<p>You can check this against fun_flag outputs,</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">con</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="s1">&#39;examples/DIIID_kinetic_example/gpec_control_output_n1.nc&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">con_mag</span> <span class="o">=</span> <span class="n">post</span><span class="o">.</span><span class="n">add_fun</span><span class="p">(</span><span class="n">con</span><span class="p">,</span> <span class="n">tmag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">con_mac</span> <span class="o">=</span> <span class="n">post</span><span class="o">.</span><span class="n">add_fun</span><span class="p">(</span><span class="n">con</span><span class="p">,</span> <span class="n">tmag</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="p">,</span><span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">l</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;theta&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;xi_n_fun&#39;</span><span class="p">]),</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;fun_flag Output&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">l</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;theta&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">con_mag</span><span class="p">[</span><span class="s1">&#39;xi_n_fun&#39;</span><span class="p">]),</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Magnetic Angle&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">l</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;theta&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">con_mac</span><span class="p">[</span><span class="s1">&#39;xi_n_fun&#39;</span><span class="p">]),</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Machine Angle&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">leg</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">txt</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Normal Displacement&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">txt</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Amplitude&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">l</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;theta&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;xi_n_fun&#39;</span><span class="p">]),</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;fun_flag Output&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">l</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;theta&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">con_mag</span><span class="p">[</span><span class="s1">&#39;xi_n_fun&#39;</span><span class="p">]),</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Magnetic Angle&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">l</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;theta&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">con_mac</span><span class="p">[</span><span class="s1">&#39;xi_n_fun&#39;</span><span class="p">]),</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Machine Angle&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">txt</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Phase&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">txt</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;theta&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;examples/figures/example_add_fun.png&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<a class="reference internal image-reference" href="_images/example_add_fun.png"><img alt="_images/example_add_fun.png" src="_images/example_add_fun.png" style="width: 600px;" /></a>
-<p>To see the function is properly recovered. Note that the fun_flag outputs are
-on the machine coordinate.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pypec.post.optimize_torque">
-<span class="sig-prename descclassname"><span class="pre">pypec.post.</span></span><span class="sig-name descname"><span class="pre">optimize_torque</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matrixprofile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psilow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psihigh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minimize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pypec/post.html#optimize_torque"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pypec.post.optimize_torque" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate the eigenvalue and eigenvector corresponding to maximum the torque
-within the specified range of normalized poloidal flux.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>matrixprofile</strong> – DataArray. T_x or T_coil from gpec_profile_output_n#.nc.</p></li>
-<li><p><strong>psilow</strong> – float. Lower limit of normalized poloidal flux.</p></li>
-<li><p><strong>psihigh</strong> – float. Upper limit of normalized poloidal flux.</p></li>
-<li><p><strong>normalize</strong> – bool. Optimize value within psi range normalized to the total.</p></li>
-<li><p><strong>energy</strong> – bool. Optimize 2ndW (default is torque).</p></li>
-<li><p><strong>minimize</strong> – bool. FInd the minimum (default is maximum).</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>w,v. Eigenvalue, eigenvector of optimum.</p>
-</dd>
-<dt class="field-odd">Note</dt>
-<dd class="field-odd"><p></p></dd>
-</dl>
-<p>The matrix order will be forced to end in the primed dimension, i.e. (‘psi_n’, ‘m’, ‘m_prime’)
-or (‘psi_n’, ‘coil_index’, ‘coil_index_prime’).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Examples</dt>
-<dd class="field-odd"><p></p></dd>
-</dl>
-<p>With the output of a kinetic GPEC run in hand,</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">con</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="s1">&#39;examples/DIIID_kinetic_example/gpec_control_output_n1.nc&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">prof</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="s1">&#39;examples/DIIID_kinetic_example/gpec_profile_output_n1.nc&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>This function provides the spectrum that optimizes the integral torque
-and the corresponding profile is easily obtained.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">w</span><span class="p">,</span><span class="n">v</span> <span class="o">=</span> <span class="n">optimize_torque</span><span class="p">(</span><span class="n">prof</span><span class="p">[</span><span class="s1">&#39;T_xe&#39;</span><span class="p">])</span> <span class="c1"># handles any order of dims</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">T_mat</span> <span class="o">=</span> <span class="n">prof</span><span class="p">[</span><span class="s1">&#39;T_xe&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="s1">&#39;psi_n&#39;</span><span class="p">,</span> <span class="s1">&#39;m&#39;</span><span class="p">,</span> <span class="s1">&#39;m_prime&#39;</span><span class="p">)</span> <span class="c1"># order matters in  dot products</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">T_opt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">conj</span><span class="p">(),</span> <span class="n">T_mat</span><span class="p">),</span> <span class="n">v</span><span class="p">))</span><span class="o">/</span><span class="mi">2</span> <span class="c1"># 0.5 for quadratic fourier analysis</span>
-</pre></div>
-</div>
-<p>We can then compare the spectrum and torque from our GPEC perturbed equilibrium to
-the theoretical optima,</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="p">,</span><span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">input_power</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;Phi_xe&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">conj</span><span class="p">(),</span> <span class="n">con</span><span class="p">[</span><span class="s1">&#39;Phi_xe&#39;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">l</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;Phi_xe&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Input&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">l</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;m&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">input_power</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Optimum Torque&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">leg</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">l</span> <span class="o">=</span> <span class="n">prof</span><span class="p">[</span><span class="s1">&#39;T&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">real</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Input&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">l</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">prof</span><span class="p">[</span><span class="s1">&#39;psi_n&#39;</span><span class="p">],</span> <span class="n">T_opt</span><span class="o">*</span><span class="n">input_power</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Optimized Torque&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">leg</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
-</pre></div>
-</div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;examples/figures/example_optimize_torque.png&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<a class="reference internal image-reference" href="_images/example_optimize_torque.png"><img alt="_images/example_optimize_torque.png" src="_images/example_optimize_torque.png" style="width: 600px;" /></a>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pypec.post.update_name_conventions">
-<span class="sig-prename descclassname"><span class="pre">pypec.post.</span></span><span class="sig-name descname"><span class="pre">update_name_conventions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pypec/post.html#update_name_conventions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pypec.post.update_name_conventions" title="Permalink to this definition">¶</a></dt>
-<dd><p>Update the naming conventions in a dataset to the latest conventions.</p>
-<p>Use this to avoid lots of if statements in cross-checking versions.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dataset</strong> – </p></li>
-<li><p><strong>version</strong> – str. Override version attribute.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p></p>
-</dd>
-</dl>
-</dd></dl>
-
-</section>
-</section>
-<span class="target" id="module-pypec.gpec"></span><section id="pypec-gpec-python-wrappers-for-fortran-codes">
-<h2><a class="reference internal" href="#module-pypec.gpec" title="pypec.gpec"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pypec.gpec</span></code></a> – Python Wrappers for FORTRAN Codes<a class="headerlink" href="#pypec-gpec-python-wrappers-for-fortran-codes" title="Permalink to this headline">¶</a></h2>
-<p>This is a collection of wrapper functions for running DCON, GPEC, and PENT.</p>
-<p>If run from the command line, this module will call an associated GUI.</p>
-<p>This module is for more advanced operators who want to control/run 
-the fortran package for DCON, GPEC, and PENT. To get started, lets
-explore the package</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">gpec</span><span class="o">.</span>
-<span class="go">gpec.InputSet       gpec.join           gpec.optimize       gpec.run</span>
-<span class="go">gpec.bashjob        gpec.namelist       gpec.optntv         gpec.subprocess</span>
-<span class="go">gpec.data           gpec.np             gpec.os             gpec.sys</span>
-<span class="go">gpec.default        gpec.ntv_dominantm  gpec.packagedir     gpec.time</span>
-</pre></div>
-</div>
-<p>many of these are simply standard python modules imported by gpec
-lets submit a full run in just 4 lines:
-steal the settings from a previous run (leaving run director as deafult)</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">new_inputs</span> <span class="o">=</span> <span class="n">gpec</span><span class="o">.</span><span class="n">InputSet</span><span class="p">(</span><span class="n">indir</span><span class="o">=</span><span class="s1">&#39;/p/gpec/users/nlogan/data/d3d/ipecout/145117/ico3_n3/&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>change what we want to</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">new_inputs</span><span class="p">[</span><span class="s1">&#39;dcon&#39;</span><span class="p">][</span><span class="s1">&#39;DCON_CONTROL&#39;</span><span class="p">][</span><span class="s1">&#39;nn&#39;</span><span class="p">]</span><span class="o">=</span><span class="mi">2</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">new_dir</span> <span class="o">=</span> <span class="n">new_inputs</span><span class="o">.</span><span class="n">indir</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;2&#39;</span>
-</pre></div>
-</div>
-<p><em>Double check that all inputs are what you expect</em> (not shown here)
-and submit the job to the cluster.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">gpec</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">new_dir</span><span class="p">,</span><span class="o">**</span><span class="n">new_inputs</span><span class="o">.</span><span class="n">infiles</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>Running the package using this module will</p>
-<ol class="arabic simple">
-<li><p>Create the new location (if not already existing), and cd to it</p></li>
-<li><p>rm all .out, .dat, and .bin files already in the directory (not dcon ones if rundcon=False, not pent ones for runpent=False, etc).</p></li>
-<li><p>cp all .dat and .in files from the run directoy to the new location</p></li>
-<li><p>Write all namelists supplied in kwargs to file (overwriting)</p></li>
-<li><p>Write a unique bash script for the run, and submit it OR run each fortran routine from the commandline.</p></li>
-<li><p>Remove all .dat and xdraw files from the directory</p></li>
-</ol>
-<p>You will not that there is significant oportunity for overwriting files,
-and the user must be responsible for double checking that all inputs 
-are correct and will not result in life crushing disaster for themselves
-or a friend when that super special file gets over-written.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="pypec.gpec.InputSet">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pypec.gpec.</span></span><span class="sig-name descname"><span class="pre">InputSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rundir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/p/gpec/users/nlogan/gpec/bin'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/p/gpec/users/nlogan/gpec/input'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pypec/gpec.html#InputSet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pypec.gpec.InputSet" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
-<p>Class designed to hold the standard inputs for a run.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Attributes</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p>rundir: str. Location of executables, .dat files, and extra .in files.</p></li>
-<li><p>indir: str. Location of .in files read in and stored here</p></li>
-<li><p>infiles: dict. Tree like storage of namelist objects.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pypec.gpec.nustarscan">
-<span class="sig-prename descclassname"><span class="pre">pypec.gpec.</span></span><span class="sig-name descname"><span class="pre">nustarscan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0.1,</span> <span class="pre">1.0,</span> <span class="pre">10.0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pentfile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pent.in'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scalen</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scalet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pypec/gpec.html#nustarscan"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pypec.gpec.nustarscan" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run pent for series of <em>approximately</em> scaled collisionality values.
-Default scaling holds P=NT constant (NTV~P), but this is broken using
-scalen or scalet (scalet=False, for example, scales only density).</p>
-<p>User may want to include a non-zero ximag if going to low collisionality.</p>
-<p>User must specify full path to all files named in the pent input.</p>
-<p>Kinetic file must have header with ‘n’ and ‘i’ in the ion density label
-but no other label, both ‘t’ and ‘e’ in only the electron temperature label,
-‘omega’ omega_EXB label, etc.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Approximate scaling ignores log-Lambda dependence, and uses
-nu_star ~ nu/v_th ~ (NT^-3/2)/(T^1/2) ~ N/T^2.</p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>base</strong> – str. Top level directory containing dcon and gpec runs. Must contain euler.bin and vacuum.bin file.</p></li>
-<li><p><strong>scale</strong> – ndarray. The scale factors iterated over.</p></li>
-<li><p><strong>pentfile</strong> – str. Original input file.</p></li>
-<li><p><strong>scalen</strong> – bool.Use density scaling to change nu_star.</p></li>
-<li><p><strong>scalet</strong> – bool.Use temperature scaling to change nu_star.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>bool. True.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pypec.gpec.omegascan">
-<span class="sig-prename descclassname"><span class="pre">pypec.gpec.</span></span><span class="sig-name descname"><span class="pre">omegascan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">omega</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'wp'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(-</span> <span class="pre">2,</span> <span class="pre">-</span> <span class="pre">1,</span> <span class="pre">-</span> <span class="pre">0.5,</span> <span class="pre">0.5,</span> <span class="pre">1,</span> <span class="pre">2)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pentrcfile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pentrc.in'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pypec/gpec.html#omegascan"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pypec.gpec.omegascan" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run pent for series of scaled nu/omega_phi/omega_E/omega_D/gamma_damp values. 
-User must specify full path to all files named in pent.in input file
-located in the base directory.
-Note that the rotation profile is scaled by manipulating omega_E
-on each surface to obtain the scaled rotation.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>omega</strong> – str. Choose from nu, wp, we, wd, or ga</p></li>
-<li><p><strong>base</strong> – str. Top level directory containing dcon and gpec runs. Must contain euler.bin and vacuum.bin file.</p></li>
-<li><p><strong>scale</strong> – ndarray. The scale factors iterated over.</p></li>
-<li><p><strong>pentfile</strong> – str. Original input file.</p></li>
-<li><p><strong>rundcon</strong> – bool. Set true if using hybrid kinetic MHD DCON. Will also attempt GPEC + PENT.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>bool. True.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pypec.gpec.optntv">
-<span class="sig-prename descclassname"><span class="pre">pypec.gpec.</span></span><span class="sig-name descname"><span class="pre">optntv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mlist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxiter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rundir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/p/gpec/users/nlogan/gpec/bin/'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pypec/gpec.html#optntv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pypec.gpec.optntv" title="Permalink to this definition">¶</a></dt>
-<dd><p>Python wrapper for running gpec package multiple times in
-a search for the normalized spectrum that maximizes NTV.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>mlist</strong> – list. Integer poloidal modes included on plasma surface.</p></li>
-<li><p><strong>maxiter</strong> – int.Maximum number of iterations.</p></li>
-<li><p><strong>loc</strong> – str. Directory location for run.</p></li>
-<li><p><strong>rundir</strong> – str. GPEC package directory with executables and .dat files.</p></li>
-<li><p><strong>kwargs</strong> – <p>dict. namelist instance(s) written to &lt;kwarg&gt;.in file(s).</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Namelists taken from (in order of priority):
-1) Key word arguments 
-2) .in files from loc
-3) .in files from rundir</p>
-</div>
-</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>bool. True.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pypec.gpec.optpentrc">
-<span class="sig-prename descclassname"><span class="pre">pypec.gpec.</span></span><span class="sig-name descname"><span class="pre">optpentrc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">range(-</span> <span class="pre">5,</span> <span class="pre">25)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ttype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'tgar'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tfac</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">perp1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qsub</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Powell'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxiter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rundir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/p/gpec/users/nlogan/gpec/bin/'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pypec/gpec.html#optpentrc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pypec.gpec.optpentrc" title="Permalink to this definition">¶</a></dt>
-<dd><p>Python wrapper for running gpec packages multiple times in
-a search for the normalized spectrum that maximizes NTV.</p>
-<p>Approach is as follows:
-1) Run DCON and GPEC in base directory with singcoup_flag True
-2) Run GPEC twice for each m, creating new subdirectories cosmn* and sinmn*
-3) Optimize a functional wrapper for PENTRC using optimize.fmin_slsqp
-- Spectra constrained to have 1 Gm^2 norm
-- wrapper uses data package to linearly combine gpec_xclebsch outputs
-- Initial guess is the first singcoup_svd mode from GPEC</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>ms</strong> – list. Integer poloidal modes included on plasma surface.</p></li>
-<li><p><strong>ttype</strong> – str.PENTRC_OUTPUT flag (fgar,tgar,rlar,etc).</p></li>
-<li><p><strong>tfac</strong> – int.Optimization minimizes tfac*|T_phi|. Negative values maximize applied NTV.</p></li>
-<li><p><strong>perp1</strong> – bool.Optimizes in space perpendicular to 1st GPEC SVD mode.</p></li>
-<li><p><strong>norm</strong> – float.Amplitude of applied area normalized spectrum Phi_x (Tesla meter^2).</p></li>
-<li><p><strong>qsub</strong> – bool.Submits individual jobs to cluster. Use gpec.run for qsub overall optimizer.</p></li>
-<li><p><strong>method</strong> – str.Method used in scipy.optimize.minimize.</p></li>
-<li><p><strong>maxiter</strong> – int.Maximum number of iterations.</p></li>
-<li><p><strong>loc</strong> – str. Directory location for run.</p></li>
-<li><p><strong>rundir</strong> – str. GPEC package directory with executables and .dat files.</p></li>
-<li><p><strong>kwargs</strong> – <p>dict. namelist instance(s) written to &lt;kwarg&gt;.in file(s).</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Namelists taken from (in order of priority):
-1) Key word arguments 
-2) .in files from loc
-3) .in files from rundir</p>
-</div>
-</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>bool. True.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pypec.gpec.run">
-<span class="sig-prename descclassname"><span class="pre">pypec.gpec.</span></span><span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rundir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/p/gpec/users/nlogan/gpec/bin/'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">submit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_on_complete</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rerun</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rundcon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rungpec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">runpentrc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">runrdcon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">runstride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cleandcon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1.3'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mailon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'NONE'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">email</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hours</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">36</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">partition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'general'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">runipec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qsub</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pypec/gpec.html#run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pypec.gpec.run" title="Permalink to this definition">¶</a></dt>
-<dd><p>Python wrapper for running gpec package.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>loc</strong> – str. Directory location for run.</p></li>
-<li><p><strong>rundir</strong> – str. GPEC package directory with executables and .dat files.</p></li>
-<li><p><strong>submit</strong> – bool. Submit job to cluster.</p></li>
-<li><p><strong>return_on_complete</strong> – bool. Return only after job is finished on cluster (irrelevant if qsub=False).</p></li>
-<li><p><strong>rerun</strong> – bool. Does not delete existing .out files.</p></li>
-<li><p><strong>rundcon</strong> – bool. Run dcon.</p></li>
-<li><p><strong>runipec</strong> – bool. Run ipec.</p></li>
-<li><p><strong>rungpec</strong> – bool. Run gpec.</p></li>
-<li><p><strong>runpentrc</strong> – bool. Run pentrc.</p></li>
-<li><p><strong>runrdcon</strong> – bool. Run rdcon and rmatch.</p></li>
-<li><p><strong>runstride</strong> – bool. Run stride.</p></li>
-<li><p><strong>cleandcon</strong> – bool. Remove euler.bin file after run is complete.</p></li>
-<li><p><strong>fill_inputs</strong> – bool. Use inputs from rundir (see kwargs).</p></li>
-<li><p><strong>version</strong> – str. Version of GPEC loaded (may set compilers if 1.2 or later)</p></li>
-<li><p><strong>mailon</strong> – str. Choose from NONE, BEGIN, END, FAIL, REQUEUE, or ALL.</p></li>
-<li><p><strong>email</strong> – str. Email address (default is submitting user).</p></li>
-<li><p><strong>mem</strong> – floatMemory request of q-submission in megabytes (converted to integer).</p></li>
-<li><p><strong>hours</strong> – int. Number of hours requested from job manager.</p></li>
-<li><p><strong>partition</strong> – str. Specify a specific computing queue.</p></li>
-<li><p><strong>kwargs</strong> – dict. namelist instance(s) written to &lt;kwarg&gt;.in file(s).</p></li>
-</ul>
-</dd>
-</dl>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Namelists taken from (in order of priority): 
-1) Key word arguments 
-2) .in files from loc
-3) .in files from rundir</p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>bool. True.</p>
-</dd>
-</dl>
-</dd></dl>
-
-</section>
 <span class="target" id="module-pypec.namelist"></span><section id="pypec-namelist-io-for-fortran-namelists">
-<h2><a class="reference internal" href="#module-pypec.namelist" title="pypec.namelist"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pypec.namelist</span></code></a> – IO for FORTRAN Namelists<a class="headerlink" href="#pypec-namelist-io-for-fortran-namelists" title="Permalink to this headline">¶</a></h2>
+<h2><a class="reference internal" href="#module-pypec.namelist" title="pypec.namelist"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pypec.namelist</span></code></a> – IO for FORTRAN Namelists<a class="headerlink" href="#pypec-namelist-io-for-fortran-namelists" title="Permalink to this heading">¶</a></h2>
 <p>This module provides pythonic tools for reading and writing 
 fortran namelists.</p>
-<section id="id3">
-<h3>Examples<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<section id="examples">
+<h3>Examples<a class="headerlink" href="#examples" title="Permalink to this heading">¶</a></h3>
 <p>This module can be used to convert FORTRAN namelist files into 
 python ordered dictionary type objects. The individual namelists are 
 capitalized and their paramters are left as written. The actual
@@ -1395,10 +856,12 @@ for use with the FORTAN codes.</p>
 <p>In [2]: doctest.testmod(pypec.namelist,verbose=True)</p>
 </div></blockquote>
 </div>
+</section>
+</section>
 <dl class="py class">
 <dt class="sig sig-object py" id="pypec.namelist.Objectify">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pypec.namelist.</span></span><span class="sig-name descname"><span class="pre">Objectify</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pypec/namelist.html#Objectify"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pypec.namelist.Objectify" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Class base to convert iterable to instance.</p>
 </dd></dl>
 
@@ -1444,10 +907,8 @@ un-ordered.</p>
 </dl>
 </dd></dl>
 
-</section>
-</section>
 <span class="target" id="module-pypec.modplot"></span><section id="pypec-modplot-matplotlib-customizations">
-<h2><a class="reference internal" href="#module-pypec.modplot" title="pypec.modplot"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pypec.modplot</span></code></a> – matplotlib Customizations<a class="headerlink" href="#pypec-modplot-matplotlib-customizations" title="Permalink to this headline">¶</a></h2>
+<h2><a class="reference internal" href="#module-pypec.modplot" title="pypec.modplot"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pypec.modplot</span></code></a> – matplotlib Customizations<a class="headerlink" href="#pypec-modplot-matplotlib-customizations" title="Permalink to this heading">¶</a></h2>
 <p>Collection of modified matplotlib functions and objects.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Examples</dt>
@@ -1475,10 +936,11 @@ in will provide you with new points and increased detail until the
 window samples fewer than that many points in the orginal data. The
 first two lines, for instance, contain only their original 10 points
 (not 1000 interpolated points).</p>
+</section>
 <dl class="py class">
 <dt class="sig sig-object py" id="pypec.modplot.MidPointNorm">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pypec.modplot.</span></span><span class="sig-name descname"><span class="pre">MidPointNorm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">midpoint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pypec/modplot.html#MidPointNorm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pypec.modplot.MidPointNorm" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib.colors.Normalize</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Normalize</span></code></p>
 <p>Taken from <a class="reference external" href="http://stackoverflow.com/questions/7404116/defining-the-midpoint-of-a-colormap-in-matplotlib">http://stackoverflow.com/questions/7404116/defining-the-midpoint-of-a-colormap-in-matplotlib</a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pypec.modplot.MidPointNorm.inverse">
@@ -1519,14 +981,8 @@ The inset axes will not track the original if it is moved.</p>
 <p>ORIGINAL DOCUMENTATION</p>
 </div></blockquote>
 <p>Add a colorbar to a plot.</p>
-<p>Function signatures for the <code class="xref py py-mod docutils literal notranslate"><span class="pre">pyplot</span></code> interface; all
-but the first are also method signatures for the <cite>~.Figure.colorbar</cite> method:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">colorbar</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<span class="n">colorbar</span><span class="p">(</span><span class="n">mappable</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<span class="n">colorbar</span><span class="p">(</span><span class="n">mappable</span><span class="p">,</span> <span class="n">cax</span><span class="o">=</span><span class="n">cax</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<span class="n">colorbar</span><span class="p">(</span><span class="n">mappable</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</pre></div>
-</div>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this heading">¶</a></h2>
 <dl>
 <dt>mappable</dt><dd><p>The <cite>matplotlib.cm.ScalarMappable</cite> (i.e., <cite>~matplotlib.image.AxesImage</cite>,
 <cite>~matplotlib.contour.ContourSet</cite>, etc.) described by this colorbar.
@@ -1541,24 +997,37 @@ colorbars not attached to a previously drawn artist, e.g.</p>
 </dd>
 <dt>cax<span class="classifier"><cite>~matplotlib.axes.Axes</cite>, optional</span></dt><dd><p>Axes into which the colorbar will be drawn.</p>
 </dd>
-<dt>ax<span class="classifier"><cite>~matplotlib.axes.Axes</cite>, list of Axes, optional</span></dt><dd><p>Parent axes from which space for a new colorbar axes will be stolen.
-If a list of axes is given they will all be resized to make room for the
-colorbar axes.</p>
+<dt>ax<span class="classifier"><cite>~matplotlib.axes.Axes</cite>, list of Axes, optional</span></dt><dd><p>One or more parent axes from which space for a new colorbar axes will be
+stolen, if <em>cax</em> is None.  This has no effect if <em>cax</em> is set.</p>
 </dd>
 <dt>use_gridspec<span class="classifier">bool, optional</span></dt><dd><p>If <em>cax</em> is <code class="docutils literal notranslate"><span class="pre">None</span></code>, a new <em>cax</em> is created as an instance of Axes.  If
 <em>ax</em> is an instance of Subplot and <em>use_gridspec</em> is <code class="docutils literal notranslate"><span class="pre">True</span></code>, <em>cax</em> is
 created as an instance of Subplot using the <code class="xref py py-mod docutils literal notranslate"><span class="pre">gridspec</span></code> module.</p>
 </dd>
 </dl>
-<dl>
-<dt>colorbar<span class="classifier"><cite>~matplotlib.colorbar.Colorbar</cite></span></dt><dd><p>See also its base class, <cite>~matplotlib.colorbar.ColorbarBase</cite>.</p>
-</dd>
-</dl>
+</section>
+<section id="returns">
+<h2>Returns<a class="headerlink" href="#returns" title="Permalink to this heading">¶</a></h2>
+<p>colorbar : <cite>~matplotlib.colorbar.Colorbar</cite></p>
+</section>
+<section id="notes">
+<h2>Notes<a class="headerlink" href="#notes" title="Permalink to this heading">¶</a></h2>
 <p>Additional keyword arguments are of two kinds:</p>
 <blockquote>
 <div><p>axes properties:</p>
 <blockquote>
 <div><dl>
+<dt>location<span class="classifier">None or {‘left’, ‘right’, ‘top’, ‘bottom’}</span></dt><dd><p>The location, relative to the parent axes, where the colorbar axes
+is created.  It also determines the <em>orientation</em> of the colorbar
+(colorbars on the left and right are vertical, colorbars at the top
+and bottom are horizontal).  If None, the location will come from the
+<em>orientation</em> if it is set (vertical colorbars on the right, horizontal
+ones at the bottom), or default to ‘right’ if <em>orientation</em> is unset.</p>
+</dd>
+<dt>orientation<span class="classifier">None or {‘vertical’, ‘horizontal’}</span></dt><dd><p>The orientation of the colorbar.  It is preferable to set the <em>location</em>
+of the colorbar, as that also determines the <em>orientation</em>; passing
+incompatible values for <em>location</em> and <em>orientation</em> raises an exception.</p>
+</dd>
 <dt>fraction<span class="classifier">float, default: 0.15</span></dt><dd><p>Fraction of original axes to use for colorbar.</p>
 </dd>
 <dt>shrink<span class="classifier">float, default: 1.0</span></dt><dd><p>Fraction by which to multiply the size of the colorbar.</p>
@@ -1667,7 +1136,7 @@ or other unusual circumstances.</p>
 <td><p>None or a sequence which must be of length 1 less
 than the sequence of <em>boundaries</em>. For each region
 delimited by adjacent entries in <em>boundaries</em>, the
-color mapped to the corresponding value in values
+colormapped to the corresponding value in values
 will be used.</p></td>
 </tr>
 </tbody>
@@ -1694,6 +1163,7 @@ segments:</p>
 <p>However this has negative consequences in other circumstances, e.g. with
 semi-transparent images (alpha &lt; 1) and colorbar extensions; therefore, this
 workaround is not used by default (see issue #1188).</p>
+</section>
 </dd></dl>
 
 <dl class="py function">
@@ -1855,7 +1325,7 @@ name: str. Added to the name of cmap when creating the new colormap.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pypec.modplot.subplots">
-<span class="sig-prename descclassname"><span class="pre">pypec.modplot.</span></span><span class="sig-name descname"><span class="pre">subplots</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nrows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ncols</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sharex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sharey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">autosize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subplot_kw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">powerlim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(-</span> <span class="pre">3,</span> <span class="pre">3)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useOffset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nybins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nxbins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">fig_kw</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pypec/modplot.html#subplots"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pypec.modplot.subplots" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pypec.modplot.</span></span><span class="sig-name descname"><span class="pre">subplots</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nrows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ncols</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sharex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sharey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">autosize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subplot_kw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">powerlim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(-3,</span> <span class="pre">3)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useOffset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nybins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nxbins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">fig_kw</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pypec/modplot.html#subplots"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pypec.modplot.subplots" title="Permalink to this definition">¶</a></dt>
 <dd><p>Matplotlib subplots with default figsize = rcp_size*[ncols,nrows]
 fig_kw.setdefault(‘figsize’,figsize).</p>
 <dl class="simple">
@@ -1872,6 +1342,8 @@ fig_kw.setdefault(‘figsize’,figsize).</p>
 <p>Create a figure and a set of subplots.</p>
 <p>This utility wrapper makes it convenient to create common layouts of
 subplots, including the enclosing figure object, in a single call.</p>
+<section id="id3">
+<h2>Parameters<a class="headerlink" href="#id3" title="Permalink to this heading">¶</a></h2>
 <dl>
 <dt>nrows, ncols<span class="classifier">int, default: 1</span></dt><dd><p>Number of rows/columns of the subplot grid.</p>
 </dd>
@@ -1888,6 +1360,9 @@ labels of the bottom subplot are created. Similarly, when subplots
 have a shared y-axis along a row, only the y tick labels of the first
 column subplot are created. To later turn other subplots’ ticklabels
 on, use <cite>~matplotlib.axes.Axes.tick_params</cite>.</p>
+<p>When subplots have a shared axis that has units, calling
+<cite>~matplotlib.axis.Axis.set_units</cite> will update each axis with the
+new units.</p>
 </dd>
 <dt>squeeze<span class="classifier">bool, default: True</span></dt><dd><ul class="simple">
 <li><p>If True, extra dimensions are squeezed out from the returned
@@ -1916,6 +1391,9 @@ constructor used to create the grid the subplots are placed on.</p>
 <cite>.pyplot.figure</cite> call.</p>
 </dd>
 </dl>
+</section>
+<section id="id6">
+<h2>Returns<a class="headerlink" href="#id6" title="Permalink to this heading">¶</a></h2>
 <p>fig : <cite>~.figure.Figure</cite></p>
 <dl>
 <dt>ax<span class="classifier"><cite>.axes.Axes</cite> or array of Axes</span></dt><dd><p><em>ax</em> can be either a single <cite>~matplotlib.axes.Axes</cite> object or an
@@ -1930,8 +1408,8 @@ keyword, see above.</p>
 <span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 
 <span class="c1"># using tuple unpacking for multiple Axes</span>
-<span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-<span class="n">fig</span><span class="p">,</span> <span class="p">((</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">),</span> <span class="p">(</span><span class="n">ax3</span><span class="p">,</span> <span class="n">ax4</span><span class="p">))</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">fig</span><span class="p">,</span> <span class="p">((</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">),</span> <span class="p">(</span><span class="n">ax3</span><span class="p">,</span> <span class="n">ax4</span><span class="p">))</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The names <code class="docutils literal notranslate"><span class="pre">ax</span></code> and pluralized <code class="docutils literal notranslate"><span class="pre">axs</span></code> are preferred over <code class="docutils literal notranslate"><span class="pre">axes</span></code>
@@ -1939,11 +1417,17 @@ because for the latter it’s not clear if it refers to a single
 <cite>~.axes.Axes</cite> instance or a collection of these.</p>
 </dd>
 </dl>
+</section>
+<section id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this heading">¶</a></h2>
 <p>.pyplot.figure
 .pyplot.subplot
 .pyplot.axes
 .Figure.subplots
 .Figure.add_subplot</p>
+</section>
+<section id="id7">
+<h2>Examples<a class="headerlink" href="#id7" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># First create some toy data:</span>
 <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">400</span><span class="p">)</span>
 <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
@@ -1960,7 +1444,7 @@ because for the latter it’s not clear if it refers to a single
 <span class="n">ax2</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 
 <span class="c1"># Create four polar axes and access them through the returned array</span>
-<span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">subplot_kw</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">polar</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">subplot_kw</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">projection</span><span class="o">=</span><span class="s2">&quot;polar&quot;</span><span class="p">))</span>
 <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 
@@ -1981,6 +1465,7 @@ because for the latter it’s not clear if it refers to a single
 <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">num</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">clear</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
+</section>
 </dd></dl>
 
 <dl class="py function">
@@ -2005,9 +1490,8 @@ because for the latter it’s not clear if it refers to a single
 <p>All other kwargs passed to hlines and vlines functions.</p>
 </dd></dl>
 
-</section>
 <span class="target" id="module-regression"></span><span class="target" id="module-regression.compare"></span><section id="regression-compare-for-comparing-restults">
-<h2><a class="reference internal" href="#module-regression.compare" title="regression.compare"><code class="xref py py-mod docutils literal notranslate"><span class="pre">regression.compare</span></code></a> – For Comparing Restults<a class="headerlink" href="#regression-compare-for-comparing-restults" title="Permalink to this headline">¶</a></h2>
+<h2><a class="reference internal" href="#module-regression.compare" title="regression.compare"><code class="xref py py-mod docutils literal notranslate"><span class="pre">regression.compare</span></code></a> – For Comparing Restults<a class="headerlink" href="#regression-compare-for-comparing-restults" title="Permalink to this heading">¶</a></h2>
 <p>Python modules for regression testing and benchmarking GPEC
 code developments.</p>
 <dl class="field-list simple">
@@ -2022,13 +1506,13 @@ code developments.</p>
 </dd>
 </dl>
 <section id="interface">
-<h3>Interface<a class="headerlink" href="#interface" title="Permalink to this headline">¶</a></h3>
+<h3>Interface<a class="headerlink" href="#interface" title="Permalink to this heading">¶</a></h3>
 <p>The compare submodules can be run as an executable from a linux terminal, and take one or more directory paths as arguments. Each check function will be called for the directories and the plots displayed. Be warned, this may create a large number of plots.</p>
 <p>For example,</p>
 <blockquote>
 <div><p>$ ./compare_dcons.py /p/gpec/GPEC-0.4/docs/examples/DIIID_example /p/gpec/GPEC-1.0/docs/examples/DIIID_ideal_example</p>
 </div></blockquote>
-<p>Individual checks can be called from an interactive python environment (see <a class="reference internal" href="#module-pypec" title="pypec"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pypec</span></code></a>).</p>
+<p>Individual checks can be called from an interactive python environment (see <code class="xref py py-mod docutils literal notranslate"><span class="pre">pypec</span></code>).</p>
 <p>For example,</p>
 <blockquote>
 <div><p>$ ipython –pylab</p>
@@ -2069,7 +1553,7 @@ code developments.</p>
     </p>
     <p>
         &copy; Copyright 2015, PPPL.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.3.0.<br/>
     </p>
   </div>
 </footer>
