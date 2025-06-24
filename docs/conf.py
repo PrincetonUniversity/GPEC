@@ -53,7 +53,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'GPEC'
-copyright = u'2015, PPPL'
+copyright = u'2007 The Trustees of Princeton University'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
