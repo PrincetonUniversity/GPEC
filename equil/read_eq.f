@@ -432,7 +432,7 @@ c-----------------------------------------------------------------------
       CALL spline_alloc(sq_in,ma,4)
       psio=zpsi(npsi1)-zpsi(1)
       sq_in%xs=(zpsi(1:npsi1)-zpsi(1))/psio
-      sq_in%fs(:,1)=ztmf(1:npsi1)
+      sq_in%fs(:,1)=zq(1:npsi1)*zfb(1:npsi1)
       sq_in%fs(:,2)=zcppr(1:npsi1)
       sq_in%fs(:,3)=zq(1:npsi1)
       CALL spline_fit(sq_in,"extrap")
