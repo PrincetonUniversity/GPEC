@@ -42,6 +42,8 @@
     use_classic_splines = f ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
 /
 &DCON_OUTPUT
+    out_ahg2msc=f        ! Output deprecated ahg2msc.out files. This is used to communicate with vacuum, but is now done through memory.
+
     crit_break=t         ! Color of the crit curve changes when crossing a singular surface
 
     ahb_flag=f           ! Output normal magnetic field eigenvalues and eigenfunctons at plasma-vacuum interface (must be false for GPEC)
@@ -49,6 +51,7 @@
     mthsurf0=1           ! Linear multiplier on number of boundary points used to display surface eigenfunctions for ahgb_flag=t
 
     bin_euler=t          ! Output M psi-by-M euler-lagrange solutions to binary file euler.bin
+    bin_vac=f            ! Output deprecated binary vacuum.bin containing vacuum energy matrices
     euler_stride=1       ! Output only every euler_stride'th psi step to binary file
 
     out_bal1=f           ! Ascii output for bal_flag poloidal functions

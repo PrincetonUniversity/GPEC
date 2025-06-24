@@ -2,7 +2,6 @@
    dcon_dir   = ""                   ! Path to DCON outputs. Individual file paths are appended to this
    idconfile  = "euler.bin"          ! Eigenfunctions output by DCON run
    ieqfile    = "psi_in.bin"         ! Flux surfaces output by DCON run
-   ivacuumfile= "vacuum.bin"         ! Vacuum info output by DCON run
    rdconfile  = "gal_solution.bin"   ! Galerkin eigenfunctions output by resistive DCON run
 
    jac_in=""                ! Coordinate system of external perturbation (affects data_flag and harmonic_flag). Options include: pest,boozer,hamada
@@ -79,6 +78,7 @@
    max_linesout=0           ! Maximum length of ascii data tables enforced by increasing radial step size (iff .gt. 0).
    bin_flag=t               ! Write binary outputs for use with xdraw
    bin_2d_flag=f            ! Write 2D binary outputs for use with xdraw
+   out_ahg2msc=f            ! Output deprecated ahg2msc.out files. This is used to communicate with vacuum, but is now done through memory.
 
    verbose=t                ! Print run log to terminal
 /

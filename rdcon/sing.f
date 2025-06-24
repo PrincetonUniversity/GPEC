@@ -5,7 +5,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. sing_mod.
+c     0. rdcon_sing_mod.
 c     1. sing_scan.
 c     2. sing_find.
 c     3. sing_lim.
@@ -22,14 +22,14 @@ c     13. sing_matvec.
 c     14. sing_log.
 c     15. sing_ua_diagnose.
 c-----------------------------------------------------------------------
-c     subprogram 0. sing_mod.
+c     subprogram 0. rdcon_sing_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE sing_mod
-      USE sing1_mod
+      MODULE rdcon_sing_mod
+      USE rdcon_sing1_mod
       IMPLICIT NONE
 
       LOGICAL :: vmat_bin_write=.TRUE.
@@ -74,7 +74,7 @@ c-----------------------------------------------------------------------
          WRITE(debug_unit)mpert,msing
          DO ising=1,msing
             singp => sing(ising)
-            WRITE(debug_unit)sing%order,singp%alpha,singp%psifac,
+            WRITE(debug_unit)singp%order,singp%alpha,singp%psifac,
      $           singp%q,singp%r1,singp%r2
             WRITE(debug_unit)singp%vmatl,singp%vmatr
          ENDDO
@@ -253,6 +253,7 @@ c-----------------------------------------------------------------------
 c     zero di if out of range.
 c-----------------------------------------------------------------------
       ipert0=NINT(nn*singp%q)-mlow+1
+      q=singp%q
       IF(ipert0 <= 0 .OR. mlow > nn*q .OR. mhigh < nn*q)THEN
          singp%di=0
          RETURN
@@ -261,7 +262,6 @@ c-----------------------------------------------------------------------
 c     allocate and compute ranges.
 c-----------------------------------------------------------------------
       ALLOCATE(sing(ising)%n1(mpert-1),sing(ising)%n2(2*mpert-2))
-      q=singp%q
       singp%r1=(/ipert0/)
       singp%r2=(/ipert0,ipert0+mpert/)
       singp%n1=(/(ipert,ipert=1,ipert0-1),(ipert,ipert=ipert0+1,mpert)/)
@@ -285,7 +285,7 @@ c-----------------------------------------------------------------------
       CALL sing_mmat(ising)
       m0mat=TRANSPOSE(singp%mmatr(r1(1),r2,:,0))
       di=m0mat(1,1)*m0mat(2,2)-m0mat(2,1)*m0mat(1,2)
-      WRITE(*,'(1x,a4,es10.3E2,a9,I4)') "di =",di,
+      WRITE(*,'(3x,a4,es10.3E2,a9,I4)') "di =",di,
      $     ", ising =",ising
       singp%di=di
       singp%alpha=SQRT(-CMPLX(singp%di))
@@ -1280,4 +1280,4 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE sing_get_ua_cut
 
-      END MODULE sing_mod
+      END MODULE rdcon_sing_mod

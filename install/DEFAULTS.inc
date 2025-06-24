@@ -7,7 +7,7 @@
 # required only default user path libraries.
 #
 # With the release of 1.2, the options restricted to more modern compilers
-# compatible wth openmpi.
+# compatible wth openmp.
 # Machine specific instructions are below.
 #
 # Note that GPEC uses git to fetch/update the harvest repository as well as
@@ -20,9 +20,9 @@
 #   Developers may want to load the development branch module to get the latest compiler settings if they've changed since the last release
 #     $ module load mod_gpec gpec/0.0
 #   Alternatively, we can manually load the 2018 intel compiler with supporting libraries,
-#     $ module load intel/2018.u1 openmpi netcdf-fortran/4.4.4 acml/5.3.1/ifort64 git
+#     $ module load intel/2018.u1 netcdf-fortran/4.4.4 acml/5.3.1/ifort64 git
 #   Note that before the netcdf module was properly set up, we had to manually load supporting modules
-#     $ module load intel/2018.u1 openmpi szip hdf hdf5-parallel/1.10.2 curl netcdf-c/4.6.0 netcdf-fortran/4.4.4 acml/5.3.1/ifort64 git
+#     $ module load intel/2018.u1 szip hdf hdf5-parallel/1.10.2 curl netcdf-c/4.6.0 netcdf-fortran/4.4.4 acml/5.3.1/ifort64 git
 #   Any of these should properly set up your LD_LIBRARY_PATH and PATH. Executing,
 #     $ make v
 #   in this install directory should produce the following verbose message,
@@ -49,7 +49,7 @@
 #   Should set all the right flags and run through.
 #
 #   Developers can also load the default intel/11.0.081 and associated libraries,
-#     $ module load intel openmpi netcdf acml/5.3.1/ifort64 git
+#     $ module load intel netcdf acml/5.3.1/ifort64 git
 #   This should properly set up your LD_LIBRARY_PATH and PATH. Executing,
 #     $ make v
 #   in this install directory should produce the following verbose message.
@@ -99,7 +99,7 @@
 #   ------------------------------------------------------------
 #
 #   Now compile using
-#    $ make FFLAGS="-qopenmp" 2>&1 | tee make.log
+#    $ make OMPFLAG="-qopenmp" 2>&1 | tee make.log
 #
 # On iris.gat.com
 #   Developers should use the ifort compiler and associated netcdf module
@@ -174,7 +174,6 @@
 #     $ export LAPACKHOME=/usr/lib/x86_64-linux-gnu/
 #     $ export NETCDFHOME=/usr/lib/x86_64-linux-gnu/
 #     $ export NETCDFINC=/usr/include
-#     $ export OMPFLAG=''  # should be -fopenmp for gnu compiler, but it raises errors that intel does not
 #   Executing,
 #     $ make v
 #   in this install directory should produce the following verbose message.
@@ -196,8 +195,7 @@
 #   ------------------------------------------------------------
 #
 #   Now compile using
-#     $ make OMPFLAG='' FFLAGS='' 2>&1 | tee make.log
-#   Note, due to the gfortran -fopenmp incompatibility, STRIDE will fail to compile
+#     $ make FFLAGS='' 2>&1 | tee make.log
 #
 # On NERSC Permutter
 #   GPEC is installed at /global/common/software/m3739/perlmutter/
@@ -225,11 +223,10 @@
 #   ------------------------------------------------------------
 #
 #   Now compile using
-#     $ make OMPFLAG='' FFLAGS='-fallow-argument-mismatch' 2>&1 | tee make.log
-#   Note, due to the gfortran -fopenmp incompatibility, STRIDE will fail to compile
+#     $ make FFLAGS='-fallow-argument-mismatch' 2>&1 | tee make.log
+#   
 #
-#
-# On mac OSX
+# On intel mac OSX
 #   If one has installed the free gfortran compiler and built netcdf and lapack,
 #   a typical set of paths looks like the following.
 #     $ make v
@@ -250,8 +247,41 @@
 #   --------------------------------------------------------------
 #
 #   Now compile using
-#     $ make OMPFLAG='' FFLAGS='-fallow-argument-mismatch' 2>&1 | tee make.log
+#     $ make FFLAGS='-fallow-argument-mismatch' 2>&1 | tee make.log
 #
+#
+#   On ARM mac OSX using Apple's optimized accelerate library
+#   The accelerate framework contains the necessary math libraries from
+#   BLAS and LAPACK, so you should compile netcdf-c and netcdf-fortran
+#   locally (or install them via homebrew). 
+#   If you install netcdf-c & -fortran using homebrew, you  
+#   can do `echo $HOMEBREW_PREFIX` to get the appropriate NETCDFHOME
+#   variable, as it has changed recently. Example with:
+#   CC = /opt/homebrew/bin/gcc-14
+#   FC = /opt/homebrew/bin/gfortran-14
+#   NETCDFHOME = /opt/homebrew
+#   LAPACKHOME = /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/
+#   
+#   $ make v
+#   ------------------------------------------------------------
+#   Defaults tailored for 
+#   Compiling with FC = /opt/homebrew/bin/gfortran-14
+#      using math libraries -llapack -lblas
+#      from /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/
+#      including /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/
+#      and netcdf libraries -lnetcdff -lnetcdf
+#      from /opt/homebrew/lib /opt/homebrew/lib
+#      including /opt/homebrew/include
+#      and compiler libraries 
+#      from .
+#      including .
+#      and using OMPFLAG -fopenmp
+#   
+#   Set environment FC,LAPACKHOME,NETCDFHOME to change these
+#   ------------------------------------------------------------
+#   
+#   Now compile using
+#     $ make FFLAGS='-fallow-argument-mismatch' 2>&1 | tee make.log
 #
 # Some common modifications of the above settings might include,
 #     $ make FFLAGS="-qopt-report -g -O0 -check all"  # for debugging
@@ -259,6 +289,11 @@
 #     $ make FFLAGS="-xHost -O3 -qopt-zmm-usage=high -ipo"  # for old STRIDE options
 # When using modern gfortran, some additional flags needed may include
 #     $ make FFLAGS="-fallow-argument-mismatch"  # to pass over old, inconsistent portions of code
+#
+# On macs using gfortran, one may need to add links to X11 in xdraw/makefile for xdraw to compile properly:
+#     CFLAGS += -I/opt/X11/include
+#     LDFLAGS += -L/opt/X11/lib
+#     LIBS += -lX11
 #
 # If your platform is not properly included in this make file
 # contact nlogan@pppl.gov with your operating system, compiler, and
@@ -268,7 +303,7 @@
 # On SNU PLARE's Linux machine
 #   Developers can use intel compilers with the following modules
 #   module load git compiler-rt/latest mkl/latest 
-#   module load netcdf-fortran/intel/4.5.2 openmpi/intel/4.1.1
+#   module load netcdf-fortran/intel/4.5.2
 #   And Set environment variables manually as:
 #     $ export /APP/enhpc/compiler/intel/oneapi/intelpython/python3.7/lib:/APP/netcdf-fortran-4.5.2_gnu/lib64:/usr/local/lib:/APP/MATLAB/R2020a/bin/glnxa64:$LD_LIBRARY_PATH
 #  Executing,
@@ -311,6 +346,9 @@ endif
 ifdef MKLROOT
     MATHHOME = $(MKLROOT)
   	MATHLIBS = -lmkl_rt
+else ifdef OPENBLASHOME
+    MATHHOME = $(OPENBLASHOME)
+    MATHLIBS = -lopenblas
 else ifdef LAPACKHOME
     MATHHOME = $(LAPACKHOME)
     MATHLIBS = -llapack -lblas
@@ -318,7 +356,7 @@ else ifdef ACML_HOME
     MATHHOME = $(ACML_HOME)
     MATHLIBS = -lacml
 else
-    $(info "Math libraries require MKLROOT, LAPACKHOME, or ACML_HOME")
+    $(info "Math libraries require MKLROOT, LAPACKHOME, OPENBLASHOME, or ACML_HOME")
 endif
 
 # specifics of which libraries are used
@@ -329,6 +367,8 @@ ifneq ($(wildcard $(MATHHOME)/lib/intel64/.),)
     MATHDIR = $(MATHHOME)/lib/intel64
 else ifneq ($(wildcard $(MATHHOME)/lib/.),)
     MATHDIR = $(MATHHOME)/lib
+else ifneq ($(wildcard $(MATHHOME)/lib64/.),)
+    MATHDIR = $(MATHHOME)/lib64
 else
     MATHDIR = $(MATHHOME)
 endif
@@ -423,13 +463,30 @@ ifdef X11_HOME
     X11_LIB_DIR = -L$(X11_HOME)/lib
 endif
 
-#Common compiler flags for OpenMP
+#Different flags for different compilers
 ifeq ($(findstring ifort,$(FC)),ifort)
 	OMPFLAG ?= -qopenmp
+    ZEROFLAG ?= -zero
+    RECURSFLAG ?= -recursive
+    LEGACYFLAG ?=
+else ifeq ($(findstring ifx,$(FC)),ifx)
+	OMPFLAG ?= -qopenmp
+    ZEROFLAG ?= -zero
+    RECURSFLAG ?= -recursive
+    LEGACYFLAG ?=
 else ifeq ($(findstring gfortran,$(FC)),gfortran)
 	OMPFLAG ?= -fopenmp
+    ZEROFLAG ?= -finit-local-zero
+    RECURSFLAG ?= -frecursive
+    LEGACYFLAG ?= -std=legacy
 else ifeq ($(findstring pgfortran,$(FC)),pgfortran)
 	OMPFLAG ?= -mp
+    ZEROFLAG ?= -zeroinit
+    RECURSFLAG ?= -Mrecursive
+    LEGACYFLAG ?= -std=legacy
 else
+    ZEROFLAG ?= -zero
 	OMPFLAG ?= -openmp
+    RECURSFLAG ?= -recursive
+    LEGACYFLAG ?= -std=legacy
 endif

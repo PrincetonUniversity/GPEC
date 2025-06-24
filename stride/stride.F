@@ -17,10 +17,11 @@ c-----------------------------------------------------------------------
       PROGRAM stride
       USE equil_mod
       USE equil_out_mod
-      USE bal_mod
-      USE mercier_mod
-      USE ode_mod
-      USE free_mod
+      USE stride_bal_mod
+      USE stride_mercier_mod
+      USE stride_ode_mod
+      USE stride_free_mod
+      USE omp_lib
       IMPLICIT NONE
 
       LOGICAL :: cyl_flag=.FALSE., use_notaknot_splines=.TRUE.,
@@ -48,7 +49,7 @@ c-----------------------------------------------------------------------
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
      $     out_fl,bin_fl,out_evals,bin_evals,bin_euler,euler_stride,
-     $     ahb_flag,mthsurf0,msol_ahb,netcdf_out
+     $     ahb_flag,mthsurf0,msol_ahb,netcdf_out,out_ahg2msc
       NAMELIST/stride_params/grid_packing,asymp_at_sing,
      $     integrate_riccati,calc_delta_prime,calc_dp_with_vac,
      $     axis_mid_pt_skew,
@@ -82,6 +83,16 @@ c-----------------------------------------------------------------------
       REWIND(UNIT=in_unit)
       READ(UNIT=in_unit,NML=stride_params)
       CALL ascii_close(in_unit)
+
+      IF (out_ahg2msc) THEN
+         WRITE(*,*) "WARNING: ahg2msc.out is deprecated and will be " //
+     $          "removed in a future version. Set out_ahg2msc = .FALSE."
+         WRITE(*,*) "         to disable this warning."
+         stride_vac_memory=.FALSE.
+      ELSE
+         stride_vac_memory=.TRUE.
+      ENDIF
+         
 c-----------------------------------------------------------------------
 c     check datatypes of command line inputs.
 c-----------------------------------------------------------------------
@@ -143,7 +154,7 @@ c-----------------------------------------------------------------------
       IF(.NOT. reform_eq_with_psilim)THEN
          PRINT *, "** STRIDE requires reformation of equil splines "//
      $            "on q-based sub-interval."
-         PRINT *, " > Forcing reform_eq_with_psilim=t"
+         PRINT *, "  > Forcing reform_eq_with_psilim=t"
       ENDIF
       IF(psilim /= psihigh .OR. psilow /= sq%xs(0))THEN
          psilow_tmp = psilow  ! if we feed psilow directly, it get's overwritten by namelist read
@@ -160,7 +171,8 @@ c-----------------------------------------------------------------------
       IF(direct_flag)CALL bicube_dealloc(psi_in)
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
-         print *,"*** equil-input time=",REAL(fTime-sTime,8)/REAL(cr,8)
+         print *,"*** equil-input time=",
+     $                REAL(fTime-sTime,r8)/REAL(cr,r8)
       ENDIF
       use_classic_splines = use_classic_splines_for_stride  ! optionaly different from equil
 c-----------------------------------------------------------------------
@@ -183,7 +195,7 @@ c-----------------------------------------------------------------------
       CALL spline_fit(locstab,spline_str)
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
-         print *,"*** locstab time=",REAL(fTime-sTime,8)/REAL(cr,8)
+         print *,"*** locstab time=",REAL(fTime-sTime,r8)/REAL(cr,r8)
       ENDIF
 c-----------------------------------------------------------------------
 c     define poloidal mode numbers.
@@ -210,26 +222,26 @@ c-----------------------------------------------------------------------
       mband=MIN(MAX(mband,0),mpert-1)
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
-         print *,"*** sing time=",REAL(fTime-sTime,8)/REAL(cr,8)
+         print *,"*** sing time=",REAL(fTime-sTime,r8)/REAL(cr,r8)
       ENDIF
 c-----------------------------------------------------------------------
 c     fit equilibrium quantities to Fourier-spline functions.
 c-----------------------------------------------------------------------
       CALL SYSTEM_CLOCK(COUNT=sTime)
       IF(mat_flag .OR. ode_flag)THEN
-         WRITE(*,'(1x,a)')"Fourier analysis of metric tensor components"
-         WRITE(*,'(1x,1p,4(a,e10.3))')"q0 = ",q0,", qmin = ",qmin,
+         WRITE(*,'(3x,1p,4(a,e10.3))')"q0 = ",q0,", qmin = ",qmin,
      $        ", qmax = ",qmax,", qa = ",qa
-         WRITE(*,'(1x,1p,3(a,e10.3))')"betat = ",betat,
+         WRITE(*,'(3x,1p,3(a,e10.3))')"betat = ",betat,
      $        ", betan = ",betan,", betaj = ",betaj
-         WRITE(*,'(1x,5(a,i3))')"nn = ",nn,", mlow = ",mlow,
+         WRITE(*,'(3x,5(a,i3))')"nn = ",nn,", mlow = ",mlow,
      $        ", mhigh = ",mhigh,", mpert = ",mpert,", mband = ",mband
+         WRITE(*,'(1x,a)')"Fourier analysis of metric tensor components"
          CALL fourfit_make_metric
          WRITE(*,*)"Computing F, G, and K Matrices"
          CALL SYSTEM_CLOCK(COUNT=fTime)
          IF (verbose_performance_output) THEN
             print *,"*** fourfit-mid time=",
-     $           REAL(fTime-sTime,8)/REAL(cr,8)
+     $           REAL(fTime-sTime,r8)/REAL(cr,r8)
          ENDIF
          CALL fourfit_make_matrix
          WRITE(out_unit,30)mlow,mhigh,mpert,mband,nn,sas_flag,dmlim,
@@ -237,16 +249,27 @@ c-----------------------------------------------------------------------
       ENDIF
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
-         print *,"*** fourfit-tot time=",REAL(fTime-sTime,8)/REAL(cr,8)
+         print *,"*** fourfit-tot time=",
+     $                REAL(fTime-sTime,r8)/REAL(cr,r8)
       ENDIF
 c-----------------------------------------------------------------------
 c     prepare code to split: [vac][all else]
 c-----------------------------------------------------------------------
       CALL SYSTEM_CLOCK(COUNT=sTime)
+
+#ifdef _OPENMP
+
+#else
+      nThreads = 0
+      mainlevelThreads = 1
+#endif
+
       !Note: nThreads+1 code is faster than nThreads.  It allows other
       !      modules to spawn nThreads, despite vac_parallel using 1!
       !      Even if nThread+1 > nProc, experiments suggest it's faster.
       CALL sing_parallel_alloc(nThreads+1)
+
+#ifdef _OPENMP
       CALL OMP_SET_NESTED(.TRUE.)
       IF (vac_parallel .AND. nThreads > 1) THEN
          mainlevelThreads = 2
@@ -254,9 +277,12 @@ c-----------------------------------------------------------------------
          mainlevelThreads = 1
       ENDIF
       CALL OMP_SET_NUM_THREADS(mainlevelThreads)
+#endif
+
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
-         print *,"*** thread-alloc time=",REAL(fTime-sTime,8)/REAL(cr,8)
+         print *,"*** thread-alloc time=",
+     $             REAL(fTime-sTime,r8)/REAL(cr,r8)
       ENDIF
 c-----------------------------------------------------------------------
 c     split code.
@@ -306,7 +332,8 @@ c-----------------------------------------------------------------------
 !$OMP END PARALLEL
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
-         print*,"*** tot-parallel time=",REAL(fTime-sTime,8)/REAL(cr,8)
+         print*,"*** tot-parallel time=",
+     $                   REAL(fTime-sTime,r8)/REAL(cr,r8)
       ENDIF
       IF (ode_flag .AND. calc_delta_prime .AND. calc_dp_with_vac) THEN
 c-----------------------------------------------------------------------
@@ -332,7 +359,7 @@ c-----------------------------------------------------------------------
       IF(mat_flag .OR. ode_flag)DEALLOCATE(amat,bmat,cmat,ipiva,jmat)
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
-         print *,"*** free-run time=",REAL(fTime-sTime,8)/REAL(cr,8)
+         print *,"*** free-run time=",REAL(fTime-sTime,r8)/REAL(cr,r8)
       ENDIF
 c-----------------------------------------------------------------------
 c     the bottom line.
@@ -357,7 +384,7 @@ c-----------------------------------------------------------------------
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
          print *,"*** complete-run time=",
-     $        REAL(fTime-s0Time,8)/REAL(cr,8)
+     $        REAL(fTime-s0Time,r8)/REAL(cr,r8)
       ENDIF
       CALL program_stop("Normal termination.")
       END PROGRAM stride
@@ -369,7 +396,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE stride_dealloc
-      USE ode_mod
+      USE stride_ode_mod
       IMPLICIT NONE
 
 c-----------------------------------------------------------------------

@@ -16,6 +16,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE vglobal_mod
+      USE local_mod, ONLY: r8
       IMPLICIT NONE
 
       LOGICAL :: lsymz,check1,check2,lanal,lkdis,lpest1,lpless,wall,
@@ -27,6 +28,7 @@ c-----------------------------------------------------------------------
       CHARACTER(8) :: jobid
       CHARACTER(60) :: seps
       CHARACTER(128) :: ahgdir = "."
+      CHARACTER(128) :: ahgfile = "ahg2msc.out"
       CHARACTER(nccl3) :: dskout,cdfin,cdfout
       CHARACTER(maxc1) :: ctitle
       CHARACTER(maxa1) :: astrng
@@ -49,54 +51,54 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(20) :: ntitle
       INTEGER, DIMENSION(:), POINTER :: lmax,lmin,lfm
 
-      REAL(8) :: alx,alz,betag,betai,betap,betav,bit,ctroy,dat,date0,
+      REAL(r8) :: alx,alz,betag,betai,betap,betav,bit,ctroy,dat,date0,
      $     datem,datev,datime,dth,dthin,eqdr,eqdt,eqpi,fa1,five,
      $     four,ga1,gp0,half,one,p0,psilim,psimin,psipls,pye,qa1,
      $     r2,r4,r6,rgato,seven,three,time0,timem,timev,two,twopi,
      $     twopi2,upsiln,x000,xma,xzero,z47,z48,z49,z54,z55,z56,z57,
      $     zero,zma,n,no2pi,no2pi2,aval0
-      REAL(8) :: a,abulg,aloop,apl,aval,aw,b,bbulg,bloop,bpl,bval,bw,
+      REAL(r8) :: a,abulg,aloop,apl,aval,aw,b,bbulg,bloop,bpl,bval,bw,
      $     civ,cn0,cw,delfac,delg,deloop,delx,delz,dloop,dpl,dw,epsq,
      $     ff,qain,rloop,sp2sgn1,sp2sgn2,sp2sgn3,sp2sgn4,sp2sgn5,
      $     sp3sgn1,sp3sgn2,sp3sgn3,sp3sgn4,sp3sgn5,tbulg,tw,xofsl,xpl,
      $     xs,xt,xtp,zs,zt,ztp,
      $     epslp,xlpmin,xlpmax,zlpmin,zlpmax,plrad,xmaj,zmxp
 
-      REAL(8) :: kernelsign
-      REAL(8), DIMENSION(numvar) :: vn,vrnat,vrtype
-      REAL(8), DIMENSION(numvar,ndima) :: vvdims
-      REAL(8), DIMENSION(ndima) :: count,start,vdims,vindx
-      REAL(8), DIMENSION(ndim0) :: dimsiz
+      REAL(r8) :: kernelsign
+      REAL(r8), DIMENSION(numvar) :: vn,vrnat,vrtype
+      REAL(r8), DIMENSION(numvar,ndima) :: vvdims
+      REAL(r8), DIMENSION(ndima) :: count,start,vdims,vindx
+      REAL(r8), DIMENSION(ndim0) :: dimsiz
 
-      REAL(8), DIMENSION(9) :: xiin=(/0,0,0,0,0,0,0,1,0/)
-      REAL(8), DIMENSION(100) :: eigval
-      REAL(8), DIMENSION(:), POINTER :: xirc,xirs,xiic,xiis,
+      REAL(r8), DIMENSION(9) :: xiin=(/0,0,0,0,0,0,0,1,0/)
+      REAL(r8), DIMENSION(100) :: eigval
+      REAL(r8), DIMENSION(:), POINTER :: xirc,xirs,xiic,xiis,
      $     grpssq,xsq,gpsdth,xsqdth,xjacob,delta,xjdtxj,xsdtxs,
      $     gpdtgp,slngth,xinf,zinf,xplap,zplap,fv,val0,
      $     xobp,zobp,xloop,zloop
-      REAL(8), DIMENSION(:,:), POINTER :: vacmat,vacmatu,vacmtiu,vals
+      REAL(r8), DIMENSION(:,:), POINTER :: vacmat,vacmatu,vacmtiu,vals
 
-      REAL(8), DIMENSION(:), POINTER :: xwal,zwal,xwalp,zwalp,cnqd,snqd
-      REAL(8), DIMENSION(:,:), POINTER :: coslt,cplai,cplar,cpwi,cpwr,
+      REAL(r8), DIMENSION(:), POINTER :: xwal,zwal,xwalp,zwalp,cnqd,snqd
+      REAL(r8), DIMENSION(:,:), POINTER :: coslt,cplai,cplar,cpwi,cpwr,
      $     cslth,cwali,cwalli,cwallr,cwalr,cwpti,cwptr,cwwti,cwwtr,
      $     sinlt,snlth,wrktr1,wrktr2,gatovac
 
       LOGICAL :: farwal = .false.
       INTEGER :: mw,jtop,jbot
-      REAL(8), DIMENSION(:), POINTER :: xpass,zpass,xpla,zpla
-      REAL(8), DIMENSION(:,:), POINTER :: grwp,grri,chiwc,chiws
+      REAL(r8), DIMENSION(:), POINTER :: xpass,zpass,xpla,zpla
+      REAL(r8), DIMENSION(:,:), POINTER :: grwp,grri,chiwc,chiws
 
-      REAL(8), DIMENSION(:), POINTER :: bxpwtr,bxpwti,bzpwtr,bzpwti,
+      REAL(r8), DIMENSION(:), POINTER :: bxpwtr,bxpwti,bzpwtr,bzpwti,
      $     bnpwtr,bnpwti,bnlr,bnli,xilr,xili,xigr,xigi,bnkr,bnki,
      $     bthpr,bthpi,gpsjp,bnpptr,bnppti,chipr,chipi
-      REAL(8), DIMENSION(:,:), POINTER :: bxpwr,bxpwi,bzpwr,bzpwi,
+      REAL(r8), DIMENSION(:,:), POINTER :: bxpwr,bxpwi,bzpwr,bzpwi,
      $     bnpwr,bnpwi
 
       ! dcon interface
       LOGICAL :: dcon_set = .FALSE.
       INTEGER :: mth_dcon,lmin_dcon,lmax_dcon,nn_dcon
-      REAL(8) :: qa1_dcon
-      REAL(8), DIMENSION(:), ALLOCATABLE :: x_dcon, z_dcon, delta_dcon
+      REAL(r8) :: qa1_dcon
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: x_dcon, z_dcon, delta_dcon
 
       CONTAINS
 c-----------------------------------------------------------------------
@@ -257,6 +259,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     deallocate arrays.
 c-----------------------------------------------------------------------
+      DEALLOCATE(lmax,lmin)
       DEALLOCATE(xirc,xirs,xiic,xiis,fv)
       DEALLOCATE(grpssq,xsq,gpsdth,xsqdth,xjacob,delta,xjdtxj,xsdtxs,
      $     gpdtgp,slngth,xplap,zplap,xinf,zinf)

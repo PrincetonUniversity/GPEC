@@ -3,13 +3,13 @@ c     file dcon_mod.f.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
-c     subprogram 0. dcon_mod.
+c     subprogram 0. rdcon_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE dcon_mod
+      MODULE rdcon_mod
       USE spline_mod
       USE global_mod
       USE equil_mod
@@ -51,10 +51,12 @@ c-----------------------------------------------------------------------
       LOGICAL :: feval_flag=.FALSE.
       LOGICAL :: fft_flag=.FALSE.
       LOGICAL :: bin_euler=.FALSE.
+      LOGICAL :: bin_vac=.FALSE.
       LOGICAL :: out_evals=.FALSE.
       LOGICAL :: bin_evals=.FALSE.
       LOGICAL :: out_sol=.FALSE.
       LOGICAL :: bin_sol=.FALSE.
+      LOGICAL :: netcdf_out=.TRUE.
 
       LOGICAL :: bal_flag=.FALSE.
       LOGICAL :: mat_flag=.FALSE.
@@ -67,6 +69,8 @@ c-----------------------------------------------------------------------
       LOGICAL :: node_flag=.FALSE.
       LOGICAL :: res_flag=.FALSE.
       LOGICAL :: ahb_flag=.FALSE.
+      LOGICAL :: out_ahg2msc=.TRUE.
+      LOGICAL :: vac_memory=.FALSE.
 
       INTEGER, PARAMETER :: sol_base=50
       INTEGER :: mlow,mhigh,mpert,mband,nn,nstep=HUGE(0),bin_sol_min,
@@ -97,6 +101,13 @@ c-----------------------------------------------------------------------
       TYPE(resist_type) :: restype
       END TYPE sing_type
 
+      TYPE :: coil_type
+         LOGICAL :: rpec_flag=.FALSE.
+         INTEGER :: mcoil,m1,m2
+      END TYPE coil_type
+
+      TYPE(coil_type) :: coil
+
       INTEGER :: msing
       TYPE(sing_type), DIMENSION(:), POINTER :: sing,sing_non0,sing_0
 
@@ -104,4 +115,6 @@ c-----------------------------------------------------------------------
       EQUIVALENCE (sas_flag,lim_flag)
       REAL(r8) :: psilim,qlim,q1lim,dmlim=.5_r8
 
-      END MODULE dcon_mod
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: delta
+
+      END MODULE rdcon_mod

@@ -5,7 +5,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. ode_mod.
+c     0. rdcon_ode_mod.
 c     1. ode_run.
 c     2. ode_axis_init.
 c     3. ode_sing_init.
@@ -15,15 +15,15 @@ c     6. ode_unorm.
 c     7. ode_fixup.
 c     8. ode_test_fixup.
 c-----------------------------------------------------------------------
-c     subprogram 0. ode_mod.
+c     subprogram 0. rdcon_ode_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE ode_mod
-      USE ode_output_mod
-      USE debug_mod
+      MODULE rdcon_ode_mod
+      USE rdcon_ode_output_mod
+      USE rdcon_debug_mod
       IMPLICIT NONE
 
       LOGICAL :: new,diagnose_fixup=.FALSE.
@@ -346,7 +346,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
- 10   FORMAT(1x,a,1p,e10.3,0p,a,f6.3)
+ 10   FORMAT(1x,2x,a,1p,e10.3,0p,a,f6.3)
  20   FORMAT(/3x,"ising",3x,"psi",9x,"q",10x,"di",6x,"re alpha",
      $     3x,"im alpha"//i6,1p,5e11.3/)
  30   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
@@ -449,8 +449,11 @@ c         IF(ising > msing .OR. psilim < sing(ising)%psifac)EXIT
 c-----------------------------------------------------------------------
 c     compute conditions at next singular surface.
 c-----------------------------------------------------------------------
-C      IF(ising > msing .OR. psilim < sing(ising)%psifac)THEN
       IF(ising > msing)THEN
+         psimax=psilim*(1-eps)
+         m1=NINT(nn*qlim)+NINT(SIGN(one,nn*sq%fs1(mpsi,4)))
+         next="finish"
+      ELSE IF (psilim < sing(ising)%psifac)THEN
          psimax=psilim*(1-eps)
          m1=NINT(nn*qlim)+NINT(SIGN(one,nn*sq%fs1(mpsi,4)))
          next="finish"
@@ -861,4 +864,4 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ode_test_fixup
-      END MODULE ode_mod
+      END MODULE rdcon_ode_mod

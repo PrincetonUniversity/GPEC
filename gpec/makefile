@@ -1,12 +1,15 @@
 
 include ../install/DEFAULTS.inc
 
-IFLAGS = -I../equil -I../harvest -I../pentrc -I../coil -I../slayer -I$(MATHINC) -I$(NETCDFINC)
-F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
+IFLAGS = -I../equil -I../vacuum -I../harvest -I../pentrc -I../coil -I../slayer -I$(MATHINC) -I$(NETCDFINC)
+F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS) $(RECURSFLAG) $(LEGACYFLAG)
 export FFLAGS # for sub-makes
 
 .f.o:
 	$(F90) -c $*.f
+
+.F.o:
+	$(F90) -c $*.F
 
 LIBDIR = ../lib
 
@@ -17,7 +20,7 @@ LIBS = \
 	-lvac \
 	-lharvest \
 	-lslayer \
-	-lcoil
+	-lcoil \
 
 OBJS = \
 	gpglobal.o \
@@ -62,14 +65,14 @@ endif
 force:
 
 gpec: $(OBJS)
-	$(F90) -o gpec $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS)
+	$(F90) -o gpec $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS) $(LDFLAGS)
 	mkdir -p ../lib
 	ar -r ../lib/libgpec.a *.o
 	mkdir -p ../bin
 	cp -f gpec ../bin
 
 clean:
-	rm -f *.o *.mod *.out *.bin gpec
+	rm -f *.o *.mod *.out *.bin gpec *.original
 
 # dependencies
 

@@ -2,7 +2,6 @@
    dcon_dir   = ""                   ! Path to DCON outputs. Individual file paths are appended to this
    idconfile  = "euler.bin"          ! Eigenfunctions output by DCON run
    ieqfile    = "psi_in.bin"         ! Flux surfaces output by DCON run
-   ivacuumfile= "vacuum.bin"         ! Vacuum info output by DCON run
    rdconfile  = "globalsol.bin"      ! Galerkin eigenfunctions output by resistive DCON run
 
    gal_flag = f             ! Use the Galerkin eigenfunctions from resistive DCON instead of the ideal DCON shooting method solutions
@@ -35,7 +34,7 @@
    filter_modes = 0         ! Number of modes isolated, negative values isolate backwards from the last mode
 /
 &GPEC_CONTROL
-   resp_index=0             ! Integer 0-4, determining method of inductance matrix formation. 0 uses energy identity, and is recommended.
+   resp_index=0             ! Integer 0-4, determining method of inductance matrix formation. 0 uses energy identity, and is recommended. Use 1 when using resistive DCON.
    sing_spot=5e-4           ! Minimum distance to singular surface in (m-nq) space
    sing_npsi=100            ! Number of points between rational surfaces used for b-normal splines across sin_spot
    reg_flag=f               ! Regularize the solution near resonant surfaces
@@ -83,6 +82,7 @@
    max_linesout=0           ! Maximum length of ascii data tables enforced by increasing radial step size (iff .gt. 0).
    bin_flag=f               ! Write binary outputs for use with xdraw
    bin_2d_flag=f            ! Write 2D binary outputs for use with xdraw
+   out_ahg2msc=f            ! Output deprecated ahg2msc.out files. This is used to communicate with vacuum, but is now done through memory.
 
    verbose=t                ! Print run log to terminal
 /

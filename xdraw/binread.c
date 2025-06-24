@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #if !defined(__MACH__)
-#include <malloc.h>
+#include <stdlib.h>
 #endif
 #include <string.h>
 #include <math.h>
@@ -1040,7 +1040,7 @@ float *binread(char *fname, unsigned Long *sizep)
     multi_topology = 2;
     i_m2 = 0; i_m2_prev = -1;
     close(fd);
-    return;					// ... and return (await another call to binread)
+    return 0;					// ... and return (await another call to binread)
   }
 
   /*------ determine file size, allocate buffer, and read binary data */

@@ -1,9 +1,10 @@
       integer function idamax(n,dx,incx)
-c
+
+      USE local_mod, ONLY: r8
 c     finds the index of element having max. absolute value.
 c     jack dongarra, linpack, 3/11/78.
 c
-      real*8 dx(*),dmax
+      real(r8) dx(*),dmax
       integer i,incx,ix,n
 c
       idamax = 0

@@ -10,6 +10,7 @@ c     modules.
 c     Major changes are:
 c     - psixy=1 IF statement that optionally read psi_in.bin removed (no ieqfile)
 c     - No vacuum data read (no ivacuumfile)
+c      -- Note: ivacuumfile was removed from GPEC in 2025.
 c     - Major culling of global variables
 c      -- Explicit imports
 c      -- Local variables moved to their respective subroutines
@@ -1282,7 +1283,9 @@ c-----------------------------------------------------------------------
         ! double check that sq equilibrium spline is defined
         if(.not. sq%allocated)
      $      stop 'ERROR: Cannot define geometric splines without sq'
-
+      
+        psave = 0.
+        fsave = 0
         unitfun = 1
         call spline_alloc(geom,sq%mx,3)
 

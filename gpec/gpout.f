@@ -24,9 +24,8 @@ c     15. gpout_arzphifun
 c     16. gpout_clebsch
 c     17. gpout_control_filter
 c     18. gpout_qrv
-c     19. check
-c     20. gpout_init_netcdf
-c     21. gpout_close_netcdf
+c     19. gpout_init_netcdf
+c     20. gpout_close_netcdf
 c-----------------------------------------------------------------------
 c     subprogram 0. gpout_mod.
 c     module declarations.
@@ -46,6 +45,7 @@ c-----------------------------------------------------------------------
       USE utilities, ONLY : progressbar
       USE pentrc_interface, ONLY : zi,mi,wefac,wpfac,initialize_pentrc
       USE gslayer_mod, ONLY : gpec_slayer
+      USE idcon_mod, ONLY : check
 
       IMPLICIT NONE
 
@@ -1580,8 +1580,10 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: spot, slayer_inpr
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: i_id,q_id,m_id,p_id,c_id,w_id,k_id,n_id,d_id,a_id,
-     $           pp_id,cp_id,wp_id,np_id,dp_id,wc_id,bc_id,
+      INTEGER :: i_id,q_id,m_id,p_id,c_id,bp_id,w_id,k_id,n_id,d_id,
+     $           a_id,pp_id,cp_id,wp_id,np_id,dp_id,wc_id,bc_id,
+     $           ti_id, te_id, ni_id, ne_id, we_id, wi_id, q1_id,
+     $           rh_id, r1_id,
      $           astat
 
       INTEGER :: itheta,ising,icoup
@@ -1610,7 +1612,8 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:mthsurf) :: r_tmp
       TYPE(spline_type) :: sr
 
-      REAL(r8), DIMENSION(msing) :: b_crit
+      REAL(r8), DIMENSION(msing) :: b_crit, ti_r, te_r, ni_r, ne_r,
+     $    q1_r, we_r, wi_r, rh_r, r1_r
       REAL(r8) :: omega_i,omega_e,jxb,omega_sol,br_th
       COMPLEX(r8) :: delta_s,psi0
 
@@ -1721,13 +1724,33 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     prepare layer analysis.
 c-----------------------------------------------------------------------
+         CALL spline_eval(sr,respsi,1)
+         rh_r(ising) = sr%f(1)
+         r1_r(ising) = sr%f1(1)
          IF (callen_threshold_flag. OR. slayer_threshold_flag) THEN
             resm = mfac(resnum(ising))
-            CALL spline_eval(sr,respsi,1)
             CALL spline_eval(kin,respsi,1)
+            omega_i=-twopi*kin%f(3)*kin%f1(1)/(e*zi*chi1*kin%f(1))
+     $           -twopi*kin%f1(3)/(e*zi*chi1)
+            omega_e=twopi*kin%f(4)*kin%f1(2)/(e*chi1*kin%f(2))
+     $           +twopi*kin%f1(4)/(e*chi1)
+            ti_r(ising) = kin%f(3)/e
+            te_r(ising) = kin%f(4)/e
+            ni_r(ising) = kin%f(1)
+            ne_r(ising) = kin%f(2)
+            q1_r(ising) = sq%f1(4)
+            we_r(ising) = omega_e
+            wi_r(ising) = omega_i
          ELSE
             hw_crit(ising) = 0.0
             b_crit(ising) = 0.0
+            ti_r(ising) = 0.0
+            te_r(ising) = 0.0
+            ni_r(ising) = 0.0
+            ne_r(ising) = 0.0
+            q1_r(ising) = 0.0
+            we_r(ising) = 0.0
+            wi_r(ising) = 0.0
          ENDIF
 c-----------------------------------------------------------------------
 c     compute Callen critical island width parameter [UW-CPTC 16-4, 2016].
@@ -1754,10 +1777,6 @@ c-----------------------------------------------------------------------
 c     compute threshold by linear drift mhd with slayer module.
 c-----------------------------------------------------------------------
          IF (slayer_threshold_flag) THEN
-            omega_i=-twopi*kin%f(3)*kin%f1(1)/(e*zi*chi1*kin%f(1))
-     $           -twopi*kin%f1(3)/(e*zi*chi1)
-            omega_e=twopi*kin%f(4)*kin%f1(2)/(e*chi1*kin%f(2))
-     $           +twopi*kin%f1(4)/(e*chi1)
             CALL gpec_slayer(kin%f(2),kin%f(4)/e,kin%f(1),kin%f(3)/e,
      $           kin%f(9),kin%f(5),omega_e,omega_i,sq%f(4),sq%f1(4),
      $           bt0,sr%f1(1),ro,mi,slayer_inpr,resm,nn,ascii_flag,
@@ -1841,6 +1860,11 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(fncid, d_id, "long_name",
      $     "Unitless Resonance Parameter $\partial_\psi \frac{"//
      $     "\delta B \cdot \nabla \psi}{B \cdot \nabla \theta}$") )
+         CALL check( nf90_def_var(fncid, "B_pen", nf90_double,
+     $      (/q_id,i_id/), bp_id) )
+         CALL check( nf90_put_att(fncid, bp_id, "units", "T") )
+         CALL check( nf90_put_att(fncid, bp_id, "long_name",
+     $       "Penetrated resonant field"))
          CALL check( nf90_def_var(fncid, "I_res", nf90_double,
      $      (/q_id,i_id/), c_id) )
          CALL check( nf90_put_att(fncid, c_id, "units", "A") )
@@ -1866,6 +1890,50 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(fncid, k_id, "long_name",
      $     "Chirikov parameter of fully saturated islands") )
          astat = nf90_inq_varid(fncid, "area_rational", a_id) ! check if area already stored
+         CALL check( nf90_def_var(fncid, "T_i_rational", nf90_double,
+     $      (/q_id/), ti_id) )
+         CALL check( nf90_put_att(fncid, ti_id, "units", "eV") )
+         CALL check( nf90_put_att(fncid, ti_id, "long_name",
+     $     "Ion temperature at rational surfaces") )
+         CALL check( nf90_def_var(fncid, "T_e_rational", nf90_double,
+     $      (/q_id/), te_id) )
+         CALL check( nf90_put_att(fncid, te_id, "units", "eV") )
+         CALL check( nf90_put_att(fncid, te_id, "long_name",
+     $     "Electron temperature at rational surfaces") )
+         CALL check( nf90_def_var(fncid, "n_i_rational", nf90_double,
+     $      (/q_id/), ni_id) )
+         CALL check( nf90_put_att(fncid, ni_id, "units", "m^-3") )
+         CALL check( nf90_put_att(fncid, ni_id, "long_name",
+     $     "Ion density at rational surfaces") )
+         CALL check( nf90_def_var(fncid, "n_e_rational", nf90_double,
+     $      (/q_id/), ne_id) )
+         CALL check( nf90_put_att(fncid, ne_id, "units", "m^-3") )
+         CALL check( nf90_put_att(fncid, ne_id, "long_name",
+     $     "Electron density at rational surfaces") )
+         CALL check( nf90_def_var(fncid, "omega_E_rational",nf90_double,
+     $      (/q_id/), we_id) )
+         CALL check( nf90_put_att(fncid, we_id, "units", "rad/s") )
+         CALL check( nf90_put_att(fncid, we_id, "long_name",
+     $     "ExB rotation frequency rational surfaces") )
+         CALL check( nf90_def_var(fncid, "omega_i_rational",nf90_double,
+     $      (/q_id/), wi_id) )
+         CALL check( nf90_put_att(fncid, wi_id, "units", "rad/s") )
+         CALL check( nf90_put_att(fncid, wi_id, "long_name",
+     $     "Ion diamagnetic rotation frequency at rational surfaces") )
+         CALL check( nf90_def_var(fncid, "q1_rational", nf90_double,
+     $      (/q_id/), q1_id) )
+         CALL check( nf90_put_att(fncid, q1_id, "long_name",
+     $     "Safety factor derivative at rational surfaces") )
+         CALL check( nf90_def_var(fncid, "rho_rational", nf90_double,
+     $      (/q_id/), rh_id) )
+         CALL check( nf90_put_att(fncid, rh_id, "units", "m") )
+         CALL check( nf90_put_att(fncid, rh_id, "long_name",
+     $     "Minor radius at rational surfaces") )
+         CALL check( nf90_def_var(fncid, "rho1_rational", nf90_double,
+     $      (/q_id/), r1_id) )
+         CALL check( nf90_put_att(fncid, r1_id, "units", "m") )
+         CALL check( nf90_put_att(fncid, r1_id, "long_name",
+     $     "Minor radius psi_n derivative at rational surfaces") )
          IF(astat/=nf90_noerr)THEN
             CALL check( nf90_def_var(fncid, "area_rational",
      $         nf90_double, (/q_id/), a_id) )
@@ -1879,12 +1947,23 @@ c-----------------------------------------------------------------------
      $      RESHAPE((/REAL(singflx), AIMAG(singflx)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, d_id,
      $      RESHAPE((/REAL(delta), AIMAG(delta)/), (/msing,2/))) )
+         CALL check( nf90_put_var(fncid, bp_id,
+     $      RESHAPE((/REAL(singbwp), AIMAG(singbwp)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, c_id,
      $      RESHAPE((/REAL(singcur), AIMAG(singcur)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, w_id, 2*island_hwidth) )
          CALL check( nf90_put_var(fncid, wc_id, 2*hw_crit) )
          CALL check( nf90_put_var(fncid, bc_id, b_crit) )
          CALL check( nf90_put_var(fncid, k_id, chirikov) )
+         CALL check( nf90_put_var(fncid, ti_id, ti_r) )
+         CALL check( nf90_put_var(fncid, te_id, te_r) )
+         CALL check( nf90_put_var(fncid, ni_id, ni_r) )
+         CALL check( nf90_put_var(fncid, ne_id, ne_r) )
+         CALL check( nf90_put_var(fncid, q1_id, q1_r) )
+         CALL check( nf90_put_var(fncid, we_id, we_r) )
+         CALL check( nf90_put_var(fncid, wi_id, wi_r) )
+         CALL check( nf90_put_var(fncid, rh_id, rh_r) )
+         CALL check( nf90_put_var(fncid, r1_id, r1_r) )
          IF(astat/=nf90_noerr)THEN
             CALL check( nf90_put_var(fncid, a_id, area) )
          ENDIF
@@ -1985,12 +2064,12 @@ c-----------------------------------------------------------------------
      $         (/m_id, i_id/), d_id) )
             CALL check( nf90_put_att(mncid, d_id, "units", "untiless") )
             CALL check( nf90_put_att(mncid, d_id, "long_name",
-     $        "Extrenal Delta prime overlap") )
+     $        "External Delta prime overlap") )
             CALL check( nf90_def_var(mncid, "Delta_overlap_norm",
      $         nf90_double,(/m_id/), dp_id) )
             CALL check( nf90_put_att(mncid, dp_id, "units", "untiless"))
             CALL check( nf90_put_att(mncid, dp_id, "long_name",
-     $        "Extrenal Delta prime overlap percentage") )
+     $        "External Delta prime overlap percentage") )
             CALL check( nf90_enddef(mncid) )
             CALL check( nf90_put_var(mncid, p_id, RESHAPE((/
      $         REAL(olap(1,:)),AIMAG(olap(1,:))/), (/msing,2/))) )
@@ -2364,7 +2443,6 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: bsurfmat,dwks,dwk,
      $     gind,gindp,gres,gresp
 
-      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: coilmn
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: tmat,mmat,mdagger
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: gcoil
 
@@ -2509,17 +2587,14 @@ c----------------------------------------------------------------------
       IF (coil_flag) THEN
          ! form mutual inductance between coils and plasma surface
          ALLOCATE(mmat(mpert,coil_num),mdagger(coil_num,mpert))
-         ALLOCATE(coilmn(cmpert))
          DO j=1,coil_num
-            CALL field_bs_psi(psilim,coilmn,1,op_start=j,op_stop=j)
             DO i=1,cmpert
                IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
-                  mmat(cmlow-mlow+i,j)=coilmn(i)
+                  mmat(cmlow-mlow+i,j)=coilmn(i,j)
                ENDIF
             ENDDO
          ENDDO
          mdagger = CONJG(TRANSPOSE(mmat))
-         DEALLOCATE(coilmn)
 
          WRITE(*,*)"Build coil response matrix functions"
          ALLOCATE(gcoil(mstep,coil_num,coil_num),tmat(mpert,mpert))
@@ -3362,7 +3437,7 @@ c-----------------------------------------------------------------------
          rss=CMPLX(rs,rs)+xnofuns*rvecs
          zss=CMPLX(zs,zs)+xnofuns*zvecs
          DO itheta=0,mthsurf
-            psis(:,itheta)=psifac(:)
+            psis(:,itheta)=psifac(1:mstep)
          ENDDO
 
          CALL bin_open(bin_2d_unit,
@@ -3632,6 +3707,11 @@ c-----------------------------------------------------------------------
                ENDIF
             ENDDO
             CALL field_bs_psi(psi(ipsi),vcmn,2)
+            ! MCP: we could avoid calling this a second time by
+            !      rearranging the jacobian terms, there is nothing that
+            !      needs to be done inside the parallel loop.
+            !      Could save a lot of time for large coil sets.
+
             DO i=1,cmpert
                IF ((cmlow-lmlow+i>=1).AND.(cmlow-lmlow+i<=lmpert)) THEN
                   vwpmns(ipsi,cmlow-lmlow+i)=vcmn(i)
@@ -4007,6 +4087,8 @@ c-----------------------------------------------------------------------
       INTEGER :: r_id,z_id,i_id,xr_id,xz_id,xp_id,br_id,bz_id,bp_id,
      $   bre_id,bze_id,bpe_id,brp_id,bzp_id,bpp_id,ar_id,az_id,ap_id
 
+      INTEGER :: vcbr_id, vcbz_id, vcbp_id
+
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
       LOGICAL, PARAMETER :: complex_flag=.TRUE.      
 
@@ -4020,6 +4102,8 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), ALLOCATABLE :: chex,chey
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: chear,cheaz,
      $     chxar,chxaz
+
+
 
 c-----------------------------------------------------------------------
 c     build solutions.
@@ -4213,7 +4297,8 @@ c-----------------------------------------------------------------------
          IF (coil_flag) THEN
             IF(verbose) WRITE(*,*)"Computing vacuum fields by coils"
             np=nn*48 ! make it consistent with cmzeta later.
-            CALL field_bs_rzphi(nr,nz,np,gdr,gdz,vcbr,vcbz,vcbp)
+            CALL field_bs_rzphi(nr,nz,np,gdr,gdz,vcbr,vcbz,vcbp,
+     $                                              op_verbose=.TRUE.)
             IF (divzero_flag) THEN
                CALL gpeq_rzpdiv(nr,nz,gdr,gdz,vcbr,vcbz,vcbp)
             ENDIF
@@ -4657,6 +4742,44 @@ c-----------------------------------------------------------------------
                ENDDO
             ENDDO
             CALL ascii_close(out_unit)
+
+            CALL check( nf90_open(cncfile,nf90_write,cncid) )
+            CALL check( nf90_inq_dimid(cncid,"i",i_id) )
+            CALL check( nf90_inq_dimid(cncid,"R",r_id) )
+            CALL check( nf90_inq_dimid(cncid,"z",z_id) )
+            CALL check( nf90_redef(cncid))
+            CALL check( nf90_def_var(cncid, "b_r_vacuum", nf90_double,     
+     $               (/r_id, z_id, i_id/), vcbr_id) )
+            CALL check( nf90_put_att(cncid, vcbr_id, "long_name",
+     $               "Radial vacuum field") )
+            CALL check( nf90_put_att(cncid, vcbr_id, "units",
+     $               "Tesla") )
+            CALL check( nf90_def_var(cncid, "b_z_vacuum", nf90_double,     
+     $               (/r_id, z_id, i_id/), vcbz_id) )
+            CALL check( nf90_put_att(cncid, vcbz_id, "long_name",
+     $               "Vertical vacuum field") )
+            CALL check( nf90_put_att(cncid, vcbz_id, "units",
+     $               "Tesla") )
+            CALL check( nf90_def_var(cncid, "b_p_vacuum", nf90_double,     
+     $               (/r_id, z_id, i_id/), vcbp_id) )
+            CALL check( nf90_put_att(cncid, vcbp_id, "long_name",
+     $               "Toroidal vacuum field") )
+            CALL check( nf90_put_att(cncid, vcbp_id, "units",
+     $               "Tesla") )
+            CALL check( nf90_enddef(cncid) )
+
+            CALL check( nf90_put_var(cncid, vcbr_id,
+     $               RESHAPE((/REAL(vcbr), AIMAG(vcbr)/), 
+     $               (/nr+1, nz+1,2/))) )
+            CALL check( nf90_put_var(cncid, vcbz_id,
+     $               RESHAPE((/REAL(vcbz), AIMAG(vcbz)/), 
+     $               (/nr+1, nz+1,2/))) )
+            CALL check( nf90_put_var(cncid, vcbp_id,
+     $               RESHAPE((/REAL(vcbp), AIMAG(vcbp)/), 
+     $               (/nr+1, nz+1,2/))) )
+     
+            CALL check( nf90_close(cncid) )
+
          ENDIF
 
          IF (vbrzphi_flag) THEN
@@ -5607,6 +5730,7 @@ c-----------------------------------------------------------------------
       i = malias+1
       j = mpert-malias
       wmatt = 0
+      wvecs = 0
       ! total flux matrix
       wmatt(i:j,i:j) = 0.5*plas_indinvmats(resp_index,i:j,i:j) *2*mu0
       ! convert to external flux
@@ -6391,29 +6515,9 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_qrv
+
 c-----------------------------------------------------------------------
-c     subprogram 19. check.
-c     Check status of netcdf file.
-c-----------------------------------------------------------------------
-      SUBROUTINE check(stat)
-c-----------------------------------------------------------------------
-c     declaration.
-c-----------------------------------------------------------------------
-      INTEGER, INTENT (IN) :: stat
-c-----------------------------------------------------------------------
-c     stop if it is an error.
-c-----------------------------------------------------------------------
-      IF(stat /= nf90_noerr) THEN
-         PRINT *, TRIM(nf90_strerror(stat))
-         STOP "ERROR: failed to write/read netcdf file"
-      ENDIF
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE check
-c-----------------------------------------------------------------------
-c     subprogram 20. gpout_init_netcdf.
+c     subprogram 19. gpout_init_netcdf.
 c     Initialize the netcdf files used for module outputs.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_init_netcdf
@@ -6637,7 +6741,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_init_netcdf
 c-----------------------------------------------------------------------
-c     subprogram 21. gpout_close_netcdf.
+c     subprogram 20. gpout_close_netcdf.
 c     Close the netcdf files used for module outputs.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_close_netcdf

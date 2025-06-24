@@ -5,7 +5,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. sing_mod.
+c     0. stride_sing_mod.
 c     1. sing_parallel_alloc.
 c     2. sing_asymp.
 c     3. sing_find.
@@ -26,8 +26,10 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE sing_mod
-      USE fourfit_mod
+      MODULE stride_sing_mod
+      USE stride_fourfit_mod
+      use omp_lib
+
       IMPLICIT NONE
 
       INTEGER :: sing_order=2
@@ -74,7 +76,10 @@ c-----------------------------------------------------------------------
       IF (verbose_performance_output) THEN
          print *,"sing_parallel_alloc: #Threads=",allocThreads
       ENDIF
+
+#ifdef _OPENMP
       IF(allocThreads>0) CALL OMP_SET_NUM_THREADS(allocThreads)
+#endif
 !$OMP PARALLEL DEFAULT(NONE) SHARED(locstab,fmats,sq)
 !$OMP& COPYIN(sq_s_f,fmats_s_f,
 !$OMP& locstab_s_f,sq_s_f1,sq_s_f2,sq_s_f3,
@@ -121,7 +126,9 @@ c-----------------------------------------------------------------------
       IF (verbose_performance_output) THEN
          print *,"sing_asymp: #Threads=",nThreads
       ENDIF
+#ifdef _OPENMP
       IF(nThreads>0) CALL OMP_SET_NUM_THREADS(nThreads)
+#endif
 !$OMP PARALLEL DEFAULT(NONE)
 !$OMP& SHARED(msing,sing,sing_order,mlow,mhigh,locstab,
 !$OMP& nn,fmats,gmats,kmats,sTime,cr,mpert,mband,
@@ -138,7 +145,7 @@ c-----------------------------------------------------------------------
          CALL SYSTEM_CLOCK(COUNT=fTime)
          IF (verbose_performance_output) THEN
             print *,"*** asymp time #",ising,"=",
-     $           REAL(fTime-sTime,8)/REAL(cr,8)
+     $           REAL(fTime-sTime,r8)/REAL(cr,r8)
          ENDIF
       ENDDO
 !$OMP END DO
@@ -161,7 +168,7 @@ c     timer.
 c-----------------------------------------------------------------------
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
-         print *,"*** asymp time=",REAL(fTime-sTime,8)/REAL(cr,8)
+         print *,"*** asymp time=",REAL(fTime-sTime,r8)/REAL(cr,r8)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1246,4 +1253,4 @@ c-----------------------------------------------------------------------
       END SUBROUTINE sing_min
 
 
-      END MODULE sing_mod
+      END MODULE stride_sing_mod

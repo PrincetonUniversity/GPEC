@@ -125,6 +125,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     copy input values.
 c-----------------------------------------------------------------------
+      delta=0.0
+      fulldelta=0.0
       in%e=restype%e
       in%f=restype%f
       in%g=restype%g
@@ -165,6 +167,7 @@ c-----------------------------------------------------------------------
          WRITE(debug_unit,30)x0,q0,in%v1,xmax
          CLOSE(UNIT=debug_unit)
       endif
+
 c-----------------------------------------------------------------------
 c     set the domain to be solved
 c-----------------------------------------------------------------------
@@ -1489,10 +1492,10 @@ c-----------------------------------------------------------------------
       CALL deltac_lsode_der(neq,x0,u,u)
       u=u*deltac_tol
       DO ip=1,neq/2
-c         tmp=MAX( DABS(REAL(u(ip),8)),DABS(IMAG(u(ip),8)) )
+c         tmp=MAX( DABS(REAL(u(ip),r8)),DABS(IMAG(u(ip),r8)) )
          tmp=CDABS(u(ip))
          IF (tmp <deltac_tol) tmp=deltac_tol
-         atol(ip)=CMPLX(tmp,tmp,8)
+         atol(ip)=CMPLX(tmp,tmp,r8)
       ENDDO
       u=0
       iwork=0

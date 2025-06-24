@@ -65,20 +65,22 @@ c-----------------------------------------------------------------------
       REAL(r4) :: psilow,psihigh,amean,rmean,aratio,kappa,delta1,delta2,
      $     li1,li2,li3,ro,zo,psio,betap1,betap2,betap3,betat,betan,
      $     bt0,q0,qmin,qmax,qa,crnt,plasma1,vacuum1,total1
+      INTEGER :: sum_unit1
+      INTEGER :: sumin_unit
 c-----------------------------------------------------------------------
 c     read sum1.dat.
 c-----------------------------------------------------------------------
       filename=TRIM(dirname)//"/sum1.dat"
-      CALL bin_open(in_unit,TRIM(filename),"OLD","REWIND")
-      READ(in_unit)mpsi,mtheta,mlow,mhigh,mpert,mband,
+      CALL bin_open(sumin_unit,TRIM(filename),"OLD","REWIND","none")
+      READ(sumin_unit)mpsi,mtheta,mlow,mhigh,mpert,mband,
      $     psilow,psihigh,amean,rmean,aratio,kappa,delta1,delta2,
      $     li1,li2,li3,ro,zo,psio,betap1,betap2,betap3,betat,betan,
      $     bt0,q0,qmin,qmax,qa,crnt,plasma1,vacuum1,total1
-      CALL ascii_close(in_unit)
+      CALL ascii_close(sumin_unit)
 c-----------------------------------------------------------------------
 c     write graphics file.
 c-----------------------------------------------------------------------
-      WRITE(sum1_unit)
+      WRITE(sum_unit1)
      $     sum_log(outval,outer%type),sum_log(inval,inner%type),
      $     psilow,psihigh,amean,rmean,aratio,kappa,delta1,delta2,li1,
      $     li2,li3,ro,zo,psio,betap1,betap2,betap3,betat,betan,bt0,q0,
@@ -103,22 +105,23 @@ c-----------------------------------------------------------------------
 
       CHARACTER(128) :: filename
       INTEGER :: ising
+      INTEGER :: sumin_unit
 c-----------------------------------------------------------------------
 c     read sum2.dat.
 c-----------------------------------------------------------------------
       node%outval=outval
       node%inval=inval
       filename=TRIM(dirname)//"/sum2.dat"
-      CALL bin_open(in_unit,TRIM(filename),"OLD","REWIND")
-      READ(in_unit)node%msing
+      CALL bin_open(sumin_unit,TRIM(filename),"OLD","REWIND","none")
+      READ(sumin_unit)node%msing
       ALLOCATE(node%sing(node%msing))
-      READ(in_unit)
+      READ(sumin_unit)
      $     (node%sing(ising)%psifac,ising=1,node%msing),
      $     (node%sing(ising)%q,ising=1,node%msing),
      $     (node%sing(ising)%di,ising=1,node%msing),
      $     (node%sing(ising)%deltap1,ising=1,node%msing),
      $     (node%sing(ising)%deltap2,ising=1,node%msing)
-      CALL bin_close(in_unit)
+      CALL bin_close(sumin_unit)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -143,6 +146,7 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(:), POINTER :: index
       CHARACTER(16) :: keyname
       CHARACTER(16), DIMENSION(:), POINTER :: tempname
+      INTEGER :: dir_unit
 c-----------------------------------------------------------------------
 c     read directory.
 c-----------------------------------------------------------------------
@@ -241,6 +245,7 @@ c-----------------------------------------------------------------------
       REAL(r4), DIMENSION(nq) :: q
       TYPE(node_type), POINTER :: np
       TYPE(sing_type), POINTER :: sp
+      INTEGER :: sum_unit2
 c-----------------------------------------------------------------------
 c     preliminary computations.
 c-----------------------------------------------------------------------
@@ -270,7 +275,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write binary data.
 c-----------------------------------------------------------------------
-      CALL bin_open(sum2_unit,"sum2.bin","UNKNOWN","REWIND")
+      CALL bin_open(sum_unit2,"sum2.bin","UNKNOWN","REWIND","none")
       DO iq=1,mq
          DO i_out=0,m_out
             DO i_in=0,m_in
@@ -278,15 +283,15 @@ c-----------------------------------------------------------------------
                DO ising=1,np%msing
                   sp => np%sing(ising)
                   IF(sp%q /= q(iq))CYCLE
-                  WRITE(sum2_unit)sum_log(np%outval,outer%type),
+                  WRITE(sum_unit2)sum_log(np%outval,outer%type),
      $                 sum_log(np%inval,inner%type),sp%psifac,sp%di,
      $                 sp%deltap1,sum_asinh(sp%deltap1)
                ENDDO
             ENDDO
          ENDDO
-         WRITE(sum2_unit)
+         WRITE(sum_unit2)
       ENDDO
-      CALL bin_close(sum2_unit)
+      CALL bin_close(sum_unit2)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -410,36 +415,37 @@ c-----------------------------------------------------------------------
       INTEGER :: index_in,index_out
       CHARACTER(128) :: dirname,filename,rootname
       TYPE(node_type), DIMENSION(:,:), POINTER :: node
-      
+      INTEGER :: sumin_unit,sum_unit1,sum_unit2
+
       NAMELIST/sum_input/rootname,sum2_flag
       NAMELIST/inner_input/varname,format,type,nvalue,value0,dvalue
       NAMELIST/outer_input/varname,format,type,nvalue,value0,dvalue
 c-----------------------------------------------------------------------
 c     read sum.in.
 c-----------------------------------------------------------------------
-      CALL ascii_open(in_unit,"sum.in","OLD")
-      READ(in_unit,NML=sum_input)
-      CALL ascii_close(in_unit)
+      CALL ascii_open(sumin_unit,"sum.in","OLD")
+      READ(sumin_unit,NML=sum_input)
+      CALL ascii_close(sumin_unit)
 c-----------------------------------------------------------------------
 c     read multi.in.
 c-----------------------------------------------------------------------
       filename=TRIM(rootname)//"/multi.in"
-      CALL ascii_open(in_unit,TRIM(filename),"OLD")
-      READ(in_unit,NML=outer_input)
+      CALL ascii_open(sumin_unit,TRIM(filename),"OLD")
+      READ(sumin_unit,NML=outer_input)
       outer%varname=varname
       outer%format=format
       outer%type=type
-      READ(in_unit,NML=inner_input)
+      READ(sumin_unit,NML=inner_input)
       inner%type=type
       IF(type /= "none")THEN
          inner%varname=varname
          inner%format=format
       ENDIF
-      CALL ascii_close(in_unit)
+      CALL ascii_close(sumin_unit)
 c-----------------------------------------------------------------------
 c     open output files.
 c-----------------------------------------------------------------------
-      CALL bin_open(sum1_unit,"sum1.bin","UNKNOWN","REWIND")
+      CALL bin_open(sum_unit1,"sum1.bin","UNKNOWN","REWIND","none")
 c-----------------------------------------------------------------------
 c     start loop over outer values.
 c-----------------------------------------------------------------------
@@ -479,16 +485,16 @@ c-----------------------------------------------------------------------
      $              outer%value(index_out),inner%value(index_in),
      $              node(index_out,index_in))
             ENDDO
-            WRITE(sum1_unit)
-            WRITE(sum2_unit)
+            WRITE(sum_unit1)
+            WRITE(sum_unit2)
          ENDIF
       ENDDO
       IF(sum2_flag)CALL sum_deltap(node)
 c-----------------------------------------------------------------------
 c     close files.
 c-----------------------------------------------------------------------
-      WRITE(sum1_unit)
-      CALL bin_close(sum1_unit)
+      WRITE(sum_unit1)
+      CALL bin_close(sum_unit1)
       CALL sum_fixfiles
 c-----------------------------------------------------------------------
 c     deallocate.

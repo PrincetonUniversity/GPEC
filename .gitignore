@@ -16,6 +16,8 @@
 *vacin5
 */penmpi
 */version.inc
+*/*.original
+modovmc
 
 .cproject
 .idea/

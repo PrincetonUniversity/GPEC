@@ -5,7 +5,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. ode_mod.
+c     0. stride_ode_mod.
 c     1. ode_run.
 c     2. ode_set_intervals.
 c     3. ode_set_interval_details.
@@ -26,11 +26,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE ode_mod
-      USE debug_mod
-      USE sing_mod
+      MODULE stride_ode_mod
+      USE stride_debug_mod
+      USE stride_sing_mod
       USE zvode1_mod
       USE riccati_mod
+      USE omp_lib
       IMPLICIT NONE
 
       REAL(r8), PARAMETER, PRIVATE :: eps=1e-10
@@ -193,6 +194,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     proceed to integration.
 c-----------------------------------------------------------------------
+#ifdef _OPENMP
          IF (integrate_riccati) THEN
             print *,"Using Riccati for non-parallel integration..."
             CALL OMP_SET_NUM_THREADS(1) !Riccati must not be run in ||.
@@ -207,6 +209,8 @@ c-----------------------------------------------------------------------
             ENDIF
             IF(nThreads>0) CALL OMP_SET_NUM_THREADS(nThreads)
          ENDIF
+#endif
+
 !$OMP PARALLEL DEFAULT(NONE)
 !.......................................................................
 !$OMP& SHARED(nIntervals,psiPoints,psiInters,psiDirs,sing,axisPsi,
@@ -436,7 +440,7 @@ c-----------------------------------------------------------------------
                      CALL SYSTEM_CLOCK(COUNT=fTime)
                      WRITE(*,'(i3,a,f8.6,a,f8.6,a,f8.6)')
      $                    iInterval,",",t0,",",t1,",",
-     $                    REAL(fTime-sTime,8)/REAL(cr,8)
+     $                    REAL(fTime-sTime,r8)/REAL(cr,r8)
                   ENDIF
                ENDIF
 c-----------------------------------------------------------------------
@@ -453,7 +457,7 @@ c-----------------------------------------------------------------------
          CALL SYSTEM_CLOCK(COUNT=fTime)
          IF (verbose_performance_output) THEN
             print *,"*** ode-parallel-integration time=",
-     $           REAL(fTime-sTime0,8)/REAL(cr,8)
+     $           REAL(fTime-sTime0,r8)/REAL(cr,r8)
          ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -625,7 +629,8 @@ c-----------------------------------------------------------------------
                ENDDO
                ! then, start breaking up the longest intervals
                IF(j<0)THEN
-                  j = MAXLOC(aT(1:nIntervals), DIM=1, MASK=aMask)
+                  j = MAXLOC(aT(1:nIntervals), DIM=1, 
+     $                                       MASK=aMask(1:nIntervals))
                ENDIF
                psiPoints(j+2:nIntervals+1,:)=psiPoints(j+1:nIntervals,:)
                psiInters(j+2:nIntervals+1,:)=psiInters(j+1:nIntervals,:)
@@ -842,7 +847,7 @@ c-----------------------------------------------------------------------
          CALL SYSTEM_CLOCK(COUNT=fTime)
          IF (verbose_performance_output) THEN
             print*,"*** ode-propagateLR time=",
-     $           REAL(fTime-sTime,8) /REAL(cr,8)
+     $           REAL(fTime-sTime,r8) /REAL(cr,r8)
          ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -970,7 +975,7 @@ c-----------------------------------------------------------------------
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
          print*,"*** calc-modes-for-wp time=",
-     $        REAL(fTime-sTime,8) / REAL(cr,8)
+     $        REAL(fTime-sTime,r8) / REAL(cr,r8)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1021,7 +1026,7 @@ c-----------------------------------------------------------------------
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
          print*,"*** dprime-set-edge-time=",
-     $        REAL(fTime-sTime,8) / REAL(cr,8)
+     $        REAL(fTime-sTime,r8) / REAL(cr,r8)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1247,7 +1252,7 @@ c-----------------------------------------------------------------------
          CALL SYSTEM_CLOCK(COUNT=fTime)
          IF (verbose_performance_output) THEN
             print*,"*** calc-dprime-time=",
-     $           REAL(fTime-sTime,8) / REAL(cr,8)
+     $           REAL(fTime-sTime,r8) / REAL(cr,r8)
          ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1343,7 +1348,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     calculate.
 c-----------------------------------------------------------------------
-         x = REAL((/(i,i=0,n-1)/),8) / REAL(n-1,8)
+         x = REAL((/(i,i=0,n-1)/),r8) / REAL(n-1,r8)
          IF (pi < pf) THEN
             y = x**power
          ELSE
@@ -1409,7 +1414,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE ode_nojac(neq_jac, t, y, ml, mu, pd, nrpd)
          INTEGER  neq_jac, ml, mu, nrpd
-         REAL*8  t, y, pd(nrpd,2)
+         REAL(r8)  t, y, pd(nrpd,2)
          pd(:,:) = 0
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1433,16 +1438,16 @@ c-----------------------------------------------------------------------
          SELECT CASE(mode)
          CASE("a")
             !axis
-            a = REAL(39695,8)
-            b = REAL(212830,8)
+            a = REAL(39695,r8)
+            b = REAL(212830,r8)
          CASE("s")
             !singular surface
-            a = REAL(17147,8)
-            b = REAL(470710,8)
+            a = REAL(17147,r8)
+            b = REAL(470710,r8)
          CASE("e")
             !edge
-            a = REAL(1646,8)
-            b = REAL(4683,8)
+            a = REAL(1646,r8)
+            b = REAL(4683,r8)
          CASE DEFAULT
             CALL program_stop("Unknown itime mode")
          END SELECT
@@ -1472,4 +1477,4 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       END FUNCTION ode_etime
-      END MODULE ode_mod
+      END MODULE stride_ode_mod

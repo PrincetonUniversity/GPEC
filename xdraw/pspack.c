@@ -26,7 +26,10 @@ FILE *file, *frd;
 int wdx, wdy, wbord;
 extern int ps_aspect;
 char outfile[40] = "";
-
+extern void ps_country(int);
+extern int get_maxps();
+extern void ps_layout(int, int, int);
+extern void writetrf(FILE *, FILE *, int, int, int, int, int, int);
 /*-----------------------------------------------------------------------------
 |   main
 -----------------------------------------------------------------------------*/

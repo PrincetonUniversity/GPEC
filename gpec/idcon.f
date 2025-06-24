@@ -13,6 +13,8 @@ c     4. idcon_metric
 c     5. idcon_matrix
 c     6. idcon_vacuum
 c     7. idcon_action_matrices
+c     8. check
+c     9. ahg_write
 c-----------------------------------------------------------------------
 c     subprogram 0. idcon_mod.
 c     module declarations.
@@ -22,7 +24,9 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE idcon_mod
       USE gpglobal_mod
+      USE vacuum_mod, ONLY: mscvac
       USE ismath_mod
+      USE netcdf
       IMPLICIT NONE
 
       CONTAINS
@@ -270,8 +274,8 @@ c-----------------------------------------------------------------------
          ! this could be due to termination at a zero crossing (bad)
          ! but it could also be due to psiedge termination (good)
          IF(verbose)THEN
-            WRITE(*,*)"WARNING: psilim does not match eigenmode psifac"
-            WRITE(*,*)"        > Forcing psilim to last psifac"
+            PRINT *,"!! WARNING: psilim does not match eigenmode psifac"
+            PRINT *,"        >> Forcing psilim to last psifac"
          ENDIF
          psilim = psifac(mstep)
          CALL spline_eval(sq,psilim,0)
@@ -344,7 +348,8 @@ c-----------------------------------------------------------------------
          CALL bin_close(in_unit)
          DEALLOCATE(rgarr,zgarr,psigarr)
          CALL bicube_fit(psi_in,"extrap","extrap")
-         IF(verbose) WRITE(*,*)"mr = ",mr,", mz = ",mz
+         IF(verbose) WRITE(*,'(1x,2(a2,a8,I6))') "  ","mr =    ",mr,
+     $      ", ","mz =    ",mz
       ELSE
          DO itheta=0,mthsurf
             CALL bicube_eval(rzphi,psilim,theta(itheta),0)
@@ -872,7 +877,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE idcon_matrix
 c-----------------------------------------------------------------------
 c     subprogram 6. idcon_vacuum.
-c     read vacuum.bin from vacuum code.
+c     recompute vacuum response matricies in mthsurf
 c-----------------------------------------------------------------------
       SUBROUTINE idcon_vacuum
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
@@ -881,55 +886,45 @@ c-----------------------------------------------------------------------
       INTEGER :: mths
       REAL(r8) :: kernelsignin
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp
-c-----------------------------------------------------------------------
-c     read vacuum data.
-c-----------------------------------------------------------------------
-      IF(mthsurf==mthvac)THEN
-         nths=mthvac+5
-         nths2=nths*2
-         nfm2=mpert*2
-         ALLOCATE(grri(nths2,nfm2),grre(nths2,nfm2),
-     $        griw(nths2,nfm2),grrw(nths2,nfm2),xzpts(nths,4))
-         IF(verbose) WRITE(*,*)"Reading vacuum energy matrices"
-         CALL bin_open(bin_unit,ivacuumfile,"OLD","REWIND","none")
-         READ(bin_unit)grri
-         READ(bin_unit)grre
-         READ(bin_unit)griw
-         READ(bin_unit)grrw
-         READ(bin_unit)xzpts
-         CALL bin_close(bin_unit)
+      CHARACTER(128) :: ahg_fname
+
 c-----------------------------------------------------------------------
 c     get grri and grre matrices by calling mscvac. repeat free.f.
 c-----------------------------------------------------------------------
-      ELSE
-         nths=mthsurf+5
-         nths2=nths*2
-         nfm2=mpert*2
-         ALLOCATE(grri(nths2,nfm2),grre(nths2,nfm2),
-     $        griw(nths2,nfm2),grrw(nths2,nfm2),xzpts(nths,4))     
-         IF(debug_flag) PRINT *,'mscvac - ',mthvac,mtheta,mthsurf,nths2
-         farwal_flag=.TRUE.
-         kernelsignin = -1.0
-         CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
-     $               kernelsignin,wall_flag,farwal_flag,grri,xzpts)
-         kernelsignin = 1.0
-         CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
-     $               kernelsignin,wall_flag,farwal_flag,grre,xzpts)
-         IF(wv_farwall_flag)THEN
-            temp=wv
-         ENDIF        
+      nths=mthsurf+5
+      nths2=nths*2
+      nfm2=mpert*2
+      IF(verbose) WRITE(*,*)"Calculating vacuum energy matrices"
+      
+      ahg_fname='ahg2msc_gpec.out'
+      CALL ahg_write(psilim,ahg_fname)
 
-         farwal_flag=.FALSE.
-         kernelsignin = -1.0
-         CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
-     $               kernelsignin,wall_flag,farwal_flag,griw,xzpts)
-         kernelsignin = 1.0
-         CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
-     $               kernelsignin,wall_flag,farwal_flag,grrw,xzpts)
-         IF(wv_farwall_flag)THEN
-            wv=temp
-         ENDIF
+      ALLOCATE(grri(nths2,nfm2),grre(nths2,nfm2),
+     $        griw(nths2,nfm2),grrw(nths2,nfm2),xzpts(nths,4))     
+      IF(debug_flag) PRINT *,'mscvac - ',mthvac,mtheta,mthsurf,nths2
+      farwal_flag=.TRUE.
+      kernelsignin = -1.0
+      CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
+     $      kernelsignin,wall_flag,farwal_flag,grri,xzpts,ahg_fname)
+      kernelsignin = 1.0
+      CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
+     $      kernelsignin,wall_flag,farwal_flag,grre,xzpts,ahg_fname)
+      IF(wv_farwall_flag)THEN
+         temp=wv
+      ENDIF        
+
+      farwal_flag=.FALSE.
+      kernelsignin = -1.0
+      CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
+     $      kernelsignin,wall_flag,farwal_flag,griw,xzpts,ahg_fname)
+      kernelsignin = 1.0
+      CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
+     $      kernelsignin,wall_flag,farwal_flag,grrw,xzpts,ahg_fname)
+      IF(wv_farwall_flag)THEN
+         wv=temp
       ENDIF
+      
+      if (vac_memory) CALL unset_dcon_params
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -1099,5 +1094,134 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE idcon_action_matrices
+
+c-----------------------------------------------------------------------
+c     subprogram 8. check.
+c     Check status of netcdf file.
+c-----------------------------------------------------------------------
+
+      SUBROUTINE check(stat)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT (IN) :: stat
+c-----------------------------------------------------------------------
+c     stop if it is an error.
+c-----------------------------------------------------------------------
+      IF(stat /= nf90_noerr) THEN
+         PRINT *, TRIM(nf90_strerror(stat))
+         STOP "ERROR: failed to write/read netcdf file"
+      ENDIF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE check
+
+c-----------------------------------------------------------------------
+c     subprogram 9. ahg_write.
+c     compute flux surface inductances.
+c-----------------------------------------------------------------------
+      SUBROUTINE ahg_write(psi, op_ahgfile)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      REAL(r8), INTENT(IN) :: psi
+
+      INTEGER :: i,itheta,rtheta,vn,lwork
+      REAL(r8) :: qa,kernelsignin
+      CHARACTER(1), PARAMETER :: tab=CHAR(9)
+      LOGICAL, PARAMETER :: complex_flag=.TRUE.,wall_flag=.FALSE.      
+      LOGICAL, PARAMETER :: farwal_flag=.TRUE.
+
+      INTEGER, DIMENSION(mpert) :: ipiv
+      REAL(r8), DIMENSION(3*mpert-2) :: rwork
+      COMPLEX(r8), DIMENSION(2*mpert-1) :: work
+
+      REAL(r8), DIMENSION(0:mtheta) :: vtheta,vrfac,veta,vr,vz,
+     $     vdphi,delte
+      REAL(r8), DIMENSION(0:mthsurf) :: dphi
+
+      CHARACTER(128), OPTIONAL :: op_ahgfile
+      CHARACTER(128) :: ahg_file
+
+      IF (PRESENT(op_ahgfile)) THEN
+         ahg_file=op_ahgfile
+      ELSE
+         ahg_file="ahg2msc_gpec.out"
+      ENDIF
+
+c-----------------------------------------------------------------------
+c     specify flux surface in hamada given by equilibrium file.
+c-----------------------------------------------------------------------
+      vtheta=rzphi%ys
+      CALL spline_eval(sq,psi,0)
+      DO itheta=0,mtheta
+         CALL bicube_eval(rzphi,psi,vtheta(itheta),0)
+         vrfac(itheta)=SQRT(rzphi%f(1))
+         veta(itheta)=twopi*(vtheta(itheta)+rzphi%f(2))
+         vr(itheta)=ro+vrfac(itheta)*COS(veta(itheta))
+         vz(itheta)=zo+vrfac(itheta)*SIN(veta(itheta))
+         vdphi(itheta)=rzphi%f(3)
+      ENDDO
+      delte=-vdphi/sq%f(4)
+c-----------------------------------------------------------------------
+c     invert values for vn < 0.
+c-----------------------------------------------------------------------
+      vn=nn
+      qa=sq%f(4)
+      IF(nn <0) THEN
+         qa=-qa
+         delte=-delte
+         vn=-vn
+      ENDIF
+
+c-----------------------------------------------------------------------
+c     pass all values in memory instead of over ascii io (faster).
+c-----------------------------------------------------------------------
+      IF(vac_memory)THEN
+         CALL set_dcon_params(mtheta,mlow,mhigh,vn,qa,vr(mtheta:0:-1),
+     $        vz(mtheta:0:-1),delte(mtheta:0:-1))
+      ELSE
+c-----------------------------------------------------------------------
+c     write scalars.
+c-----------------------------------------------------------------------
+
+         CALL ascii_open(bin_unit,ahg_file,"UNKNOWN")
+         WRITE(bin_unit,'(i4,a)')mtheta,tab//tab//"mtheta"//tab//"mthin"
+     $        //tab//"Number of poloidal nodes"
+         WRITE(bin_unit,'(i4,a)')mlow,tab//tab//"mlow"//tab//"lmin"//tab
+     $        //"Lowest poloidal harmonic"
+         WRITE(bin_unit,'(i4,a,a)')mhigh,tab//tab//"mhigh"//tab//"lmax"
+     $        //tab//"Highest poloidal harmonic"
+         WRITE(bin_unit,'(i4,a)')vn,tab//tab//"nn"//tab//"nadj"//tab
+     $        //"Toroidal harmonic"
+         WRITE(bin_unit,'(f13.10,a)')qa,tab//"qa"//tab//"qa1"//tab
+     $        //"Safety factor at plasma edge"
+c-----------------------------------------------------------------------
+c     write arrays.
+c-----------------------------------------------------------------------
+         WRITE(bin_unit,'(/a/)')"Poloidal Coordinate Theta:"
+         WRITE(bin_unit,'(1p,4e18.10)')(1-vtheta(itheta),
+     $        itheta=mtheta,0,-1)
+         WRITE(bin_unit,'(/a/)')"Polar Angle Eta:"
+         WRITE(bin_unit,'(1p,4e18.10)')(twopi-veta(itheta),
+     $        itheta=mtheta,0,-1)
+         WRITE(bin_unit,'(/a/)')"Radial Coordinate X:"
+         WRITE(bin_unit,'(1p,4e18.10)')(vr(itheta),itheta=mtheta,0,-1)
+         WRITE(bin_unit,'(/a/)')"Axial Coordinate Z:"
+         WRITE(bin_unit,'(1p,4e18.10)')(vz(itheta),itheta=mtheta,0,-1)
+         WRITE(bin_unit,'(/a/)')"Toroidal Angle Difference Delta:"
+         WRITE(bin_unit,'(1p,4e18.10)')(delte(itheta),
+     $        itheta=mtheta,0,-1)
+         CALL ascii_close(bin_unit)
+      ENDIF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ahg_write
+
+
 
       END MODULE idcon_mod

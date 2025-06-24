@@ -52,11 +52,11 @@ c-----------------------------------------------------------------------
       SUBROUTINE timer(mode,unit,op_cpuseconds,op_wallseconds)
       
       INTEGER, INTENT(IN) :: mode,unit
-      REAL(4), INTENT(OUT), OPTIONAL :: op_cpuseconds,op_wallseconds
+      REAL(r4), INTENT(OUT), OPTIONAL :: op_cpuseconds,op_wallseconds
 
       INTEGER(8), SAVE :: count_rate, wall_start
-      REAL(4), SAVE :: start
-      REAL(4) :: seconds
+      REAL(r4), SAVE :: start
+      REAL(r4) :: seconds
       INTEGER(8) :: hrs,mins,secs, wall_seconds, count_max
 c-----------------------------------------------------------------------
 c     format statements.

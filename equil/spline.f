@@ -67,7 +67,13 @@ c-----------------------------------------------------------------------
 
       INTEGER, INTENT(IN) :: mx,nqty
       TYPE(spline_type), INTENT(INOUT) :: spl
-      IF(spl%allocated) CALL spline_dealloc(spl)
+      ! IF(spl%allocated) CALL spline_dealloc(spl)
+c-----------------------------------------------------------------------
+c     safety check.
+c-----------------------------------------------------------------------
+      IF(spl%allocated)
+     $   CALL program_stop("spline_alloc: spline already allocated")
+      
 c-----------------------------------------------------------------------
 c     set scalars.
 c-----------------------------------------------------------------------
@@ -105,6 +111,11 @@ c-----------------------------------------------------------------------
       SUBROUTINE spline_dealloc(spl)
 
       TYPE(spline_type), INTENT(INOUT) :: spl
+c-----------------------------------------------------------------------
+c     safety check.
+c-----------------------------------------------------------------------
+      IF(.NOT.spl%allocated)
+     $   CALL program_stop("spline_dealloc: spline not allocated")
 c-----------------------------------------------------------------------
 c     deallocate space.
 c-----------------------------------------------------------------------
@@ -1773,7 +1784,7 @@ c-----------------------------------------------------------------------
       ENDDO
       roots(1:nroots) = tmproots(1:nroots)
       IF(nroots>0 .AND. debug)
-     $   PRINT *," > Sorted roots are",roots(1:nroots)
+     $   PRINT *,"  > Sorted roots are",roots(1:nroots)
       DEALLOCATE(index, tmproots)
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1827,9 +1838,11 @@ c-----------------------------------------------------------------------
       ENDDO
       ! abort on failure.
       IF(it >= itmax)THEN
-         WRITE(*,*) "WARNING: root refining convergence failure!"
+         WRITE(*,*)
+         WRITE(*,*) "!! WARNING: root refining convergence failure"
          WRITE(*,*) " -> estimated root ",x,
      $              " has error/tol ",abs(dx)/(tol*lx),abs(df)/(tol*lf)
+         WRITE(*,*)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.

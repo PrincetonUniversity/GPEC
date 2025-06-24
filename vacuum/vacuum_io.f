@@ -22,7 +22,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine inglo
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 c-----------------------------------------------------------------------
 c     computations.
@@ -57,7 +57,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine cardmo
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       
       logical, save :: warned = .false.
@@ -113,7 +113,7 @@ c     override namelist r in favor of r=0 for DCON
 c-----------------------------------------------------------------------
       if(r/=0.0)then
          if(.not. warned) write(*,'(1x,a,es9.2,a,i2)')
-     $        " > Vacuum code overriding r",r," from vac.in, to be",0
+     $        "  > Vacuum code overriding r",r," from vac.in, to be",0
          r=0.0
          warned = .true.
       endif 
@@ -171,7 +171,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine dskmd1
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       dimension vecin(ntsin), xigr_(ntsin), xigi_(ntsin)
@@ -283,8 +283,8 @@ c     dcon inputs.
 c-----------------------------------------------------------------------
       if ( ldcon .eq. 1 ) then
          lzio = 1
-         call readahg ( ahgdir, mthin,lmin(1),lmax(1),ndcon,qa1,xinf,
-     $        zinf, delta, vecin, mth )
+         call readahg (ahgfile, ahgdir, mthin,lmin(1),lmax(1),ndcon,qa1,
+     $      xinf, zinf, delta, vecin, mth )
          mthin1 = mthin + 1
          mthin2 = mthin1 + 1
          n = ndcon
@@ -321,7 +321,7 @@ c-----------------------------------------------------------------------
          r=0
          lgivup=1
          nadres = 1
-         call zrd(iomode,ntitle(1),43,nadres,lgivup,999)
+         call zrd(iomode,real(ntitle(1),r8),43,nadres,lgivup,999)
          write ( outmod, 9000 )   ntitle,dat
          lj = 0
          zma = 0.0
@@ -464,13 +464,15 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      subroutine readahg ( ahgdir, mthin,lmin,lmax,ndcon,qa1,xinf,
-     $     zinf, delta, vecin, mth )
+      subroutine readahg (ahgfile, ahgdir, mthin,lmin,lmax,ndcon,qa1,
+     $     xinf, zinf, delta, vecin, mth )
+      use local_mod, only: r8
       use vglobal_mod, only: dcon_set, mth_dcon, lmin_dcon,lmax_dcon,
      $     nn_dcon, qa1_dcon, x_dcon, z_dcon, delta_dcon
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       character(128) ahgdir
+      character(128) ahgfile
       integer mthin,lmin,lmax,ndcon,ith
       dimension xinf(*), zinf(*), delta(*), vecin(*)
 c-----------------------------------------------------------------------
@@ -492,7 +494,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read data.
 c-----------------------------------------------------------------------
-         open(unit=3,file=trim(ahgdir)//'/ahg2msc.out')
+         print *, "Using ahgfile: ", ahgfile
+         open(unit=3,file=trim(ahgdir)//'/'//trim(ahgfile))
          read(3,*)mthin
          read(3,*)lmin
          read(3,*)lmax
@@ -529,7 +532,8 @@ c-----------------------------------------------------------------------
       subroutine readvacin ( mthin,rgato,ndum2,ngato,qa1,xinf,zinf,
      $     delta, vecin,xigr,xigi, mth,mth1,mth2, ndfel, dx0,
      $     ireig, nout1, nout2 )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       integer mthin,ndum2,ngato,ith
       dimension xinf(*), zinf(*), delta(*), vecin(*), xigr(*),xigi(*)
@@ -583,10 +587,11 @@ c-----------------------------------------------------------------------
      $     mthin, lmin,lmax,ntor, qa1,
      $     xinf,zinf, delta, vecin, bnlr,bnli,
      $     mth, dx0,dx1, ireig5)
+      use local_mod, only: r8
 c-----------------------------------------------------------------------
 c     read input.
 c-----------------------------------------------------------------------
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       INTEGER mthin, lmin, lmax, ntor, ith,jl, jmax1
       DIMENSION xinf(*),zinf(*),delta(*), vecin(*),bnlr(*), bnli(*)
@@ -653,7 +658,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine adjustm ( mth, mfel, mth1,mth2, ndfel, nout1,nout2 )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 c-----------------------------------------------------------------------
 c     computations.
@@ -707,17 +713,19 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine set_dcon_params ( mthin,lmin,lmax,nnin,qa1in,xin,
      $     zin, deltain )
+      use local_mod, only: r8
       use vglobal_mod, only: dcon_set, mth_dcon, lmin_dcon,lmax_dcon,
      $     nn_dcon, qa1_dcon, x_dcon, z_dcon, delta_dcon
-      integer :: mthin,lmin,lmax,nnin,mthin1
-      real*8 :: qa1in
-      real*8, dimension(*) :: xin, zin, deltain
+      integer :: mthin,lmin,lmax,nnin,mthin1,mthin5,i
+      real(r8) :: qa1in
+      real(r8), dimension(*) :: xin, zin, deltain
 c-----------------------------------------------------------------------
 c     computations.
 c-----------------------------------------------------------------------
       mthin1 = mthin + 1
+      mthin5 = mthin1 + 4
       if(dcon_set) call unset_dcon_params
-      allocate(x_dcon(mthin1), z_dcon(mthin1), delta_dcon(mthin1))
+      allocate(x_dcon(mthin5), z_dcon(mthin5), delta_dcon(mthin5))
       mth_dcon = mthin
       lmin_dcon = lmin
       lmax_dcon = lmax
@@ -726,6 +734,12 @@ c-----------------------------------------------------------------------
       x_dcon(1:mthin1) = xin(1:mthin1)
       z_dcon(1:mthin1) = zin(1:mthin1)
       delta_dcon(1:mthin1) = deltain(1:mthin1)
+
+      do i=1,5
+         x_dcon(mthin+i) = x_dcon(i)
+         z_dcon(mthin+i) = z_dcon(i)
+         delta_dcon(mthin+i) = delta_dcon(i)
+      enddo
 
       dcon_set = .TRUE.
 c-----------------------------------------------------------------------

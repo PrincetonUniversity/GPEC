@@ -2,7 +2,6 @@
    dcon_dir   = ''                   ! Path to DCON outputs. Individual file paths are appended to this
    idconfile  = 'euler.bin'          ! Eigenfunctions output by DCON run
    ieqfile    = 'psi_in.bin'         ! Flux surfaces output by DCON run
-   ivacuumfile= 'vacuum.bin'         ! Vacuum info output by DCON run
    rdconfile  = 'globalsol.bin'      ! Galerkin eigenfunctions output by resistive DCON run
 
    gal_flag = f             ! Use the Galerkin eigenfunctions from resistive DCON instead of the ideal DCON shooting method solutions
@@ -52,7 +51,7 @@
 
    resp_flag=t              ! Output energy, reluctance, inductance, and permeability eigenvalues, eigenvectors, and matrices
    filter_flag=t            ! Outputs energy, reluctance, pereability, and (optionally) the singular-coupling eigenmodes on the control surface
-   singcoup_flag=f          ! Calculate coupling of each m to resonant surfaces
+   singcoup_flag=t          ! Calculate coupling of each m to resonant surfaces
    singfld_flag=t           ! Output of resonant surface quantities (flux,current,etc.)
    vsingfld_flag=f          ! Output of vacuum resonant surface quantities
    singthresh_flag=t        ! Calculate Callen resonant field penetration threshold (requires kinetic profiles from pentrc.in)
@@ -79,6 +78,7 @@
    flux_flag=f              ! Write outputs to (psi,theta) in addition to default (psi,m)
    bin_flag=f               ! Write binary outputs for use with xdraw
    bin_2d_flag=f            ! Write 2D binary outputs for use with xdraw
+   out_ahg2msc=f            ! Output deprecated ahg2msc.out files. This is used to communicate with vacuum, but is now done through memory.
    max_linesout=0           ! Maximum length of ascii data tables enforced by increasing radial step size (iff .gt. 0).
    verbose=t                ! Print run log to terminal
 /

@@ -1,14 +1,16 @@
-      REAL*8 FUNCTION DUMACH ()
+      REAL(r8) FUNCTION DUMACH ()
+      USE local_mod, ONLY: r8
+
 C***BEGIN PROLOGUE  DUMACH
 C***PURPOSE  Compute the unit roundoff of the machine.
 C***LIBRARY   MATHLIB
 C***CATEGORY  R1
-C***TYPE      REAL*8 (RUMACH-S, DUMACH-D)
+C***TYPE      REAL(r8) (RUMACH-S, DUMACH-D)
 C***KEYWORDS  MACHINE CONSTANTS
 C***AUTHOR  Hindmarsh, Alan C., (LLNL)
 C***DESCRIPTION
 C *Usage:
-C        REAL*8  A, DUMACH
+C        REAL(r8)  A, DUMACH
 C        A = DUMACH()
 C
 C *Function Return Values:
@@ -32,7 +34,7 @@ C Subroutines/functions called by DUMACH.. None
 C-----------------------------------------------------------------------
 C**End
 C
-      REAL*8 U, COMP
+      REAL(r8) U, COMP
 C***FIRST EXECUTABLE STATEMENT  DUMACH
       U = 1.0
  10   U = U*0.5
