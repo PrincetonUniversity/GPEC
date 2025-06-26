@@ -208,15 +208,12 @@
 
 <span class="sd">We see the data contains dimensions, variables, and global attributes. Some individual data arrays may have attributes as well.</span>
 
-<span class="sd">For quick visualization, we can use xarray&#39;s built in plotting routines,</span>
+<span class="sd">For quick visualization, we can use xarray\&#39;s built in plotting routines,</span>
 
 <span class="sd">&gt;&gt;&gt; import xarray.plot as xplot</span>
 <span class="sd">&gt;&gt;&gt; f1,a1 = plt.subplots()</span>
 <span class="sd">&gt;&gt;&gt; l1 = xplot.plot(con[&#39;W_EVX&#39;]) # 1D data, returns a list of lines</span>
 <span class="sd">&gt;&gt;&gt; f1.savefig(&#39;examples/figures/example_eigenvalues.png&#39;)</span>
-
-<span class="sd">.. image:: examples/figures/example_eigenvalues.png</span>
-<span class="sd">   :width: 600px</span>
 
 <span class="sd">&gt;&gt;&gt; f2,a2 = plt.subplots()</span>
 <span class="sd">&gt;&gt;&gt; l2 = xplot.plot(con[&#39;W_EDX&#39;]) # This is 2D, returns Quadmesh</span>
