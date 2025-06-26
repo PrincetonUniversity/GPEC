@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>DCON README &#8212; GPEC 1.5.5 documentation</title>
+    <title>DCON README &#8212; GPEC 1.5.6 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css" />
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
@@ -600,6 +600,42 @@ profile of sigma=J.B/B^2 is sigma0/(1+(r/a))**(2*p_sig))**(1+1/p_sig).
 Specifying sigma_type=”wesson” changes the functional form of sigma to a
 simpler “Wesson-like” sigma0*(1-(r/a)**2)**p_sig. Additional profiles
 would be simple to add. Here are sample input parameters:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 28%" />
+<col style="width: 72%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>ma=64</p></td>
+<td><p>number of radial grid points</p></td>
+</tr>
+<tr class="row-even"><td><p>mtau=64</p></td>
+<td><p>number of azimuthal grid points</p></td>
+</tr>
+<tr class="row-odd"><td><p>lar_r0=10</p></td>
+<td><p>major radium</p></td>
+</tr>
+<tr class="row-even"><td><p>lar_a=1</p></td>
+<td><p>minor radius</p></td>
+</tr>
+<tr class="row-odd"><td><p>beta0=0</p></td>
+<td><p>value of beta (pressure ratio) on axis</p></td>
+</tr>
+<tr class="row-even"><td><p>q0=3.2</p></td>
+<td><p>value of q (safety factor) on axis</p></td>
+</tr>
+<tr class="row-odd"><td><p>p_pres=2</p></td>
+<td><p>power used in specifying pressure profile</p></td>
+</tr>
+<tr class="row-even"><td><p>p_sig=2</p></td>
+<td><p>power used in specifying current profile</p></td>
+</tr>
+<tr class="row-odd"><td><p>sigma_type=’default’</p></td>
+<td><p>functional form of sigma profile
+(‘default’ or ‘wesson’)</p></td>
+</tr>
+</tbody>
+</table>
 <p>The sol_input namelist of equil.in is used when
 eq_type=”soloviev” and eq_filename=”sol.in”.  See Berger et al
 [D. Berger,L.C. Bernard, R. Gruber,and 6. Troyon, J. Appl. Math.
@@ -1093,7 +1129,7 @@ metric.tex      Expressions for the metric tensor</p>
       
     </p>
     <p>
-        &copy; Copyright 2015, PPPL.<br/>
+        &copy; Copyright 2007 The Trustees of Princeton University.<br/>
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.3.0.<br/>
     </p>
   </div>
