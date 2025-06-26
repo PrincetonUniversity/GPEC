@@ -66,7 +66,7 @@ Interfacing with VACUUM
 Vacuum is the code used in DCON to calculate the vacuum energy matrices, which combine with the plasma energy matrix to describe the full system eigenmodes. The VACUUM code uses CCW :math:`\phi` and downward outboard :math:`\theta`. We thus use the complex conjugate of RH configurations to interface GPEC and VACUUM.
 
 
-
+.. _Inputs:
 Inputs
 ******
 
