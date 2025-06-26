@@ -11,7 +11,7 @@ Code Development
 
 There is a `Github repository <https://github.com/PrincetonUniversity/GPEC>`_ for this package to facilitate version control and collaborative contributions.
 
-To become a contributor to the GPEC package, contact nlogan@pppl.gov to be added to the development team. Next, go the the Github repository to familiarize yourself with the documentation, branch structure, latest commits, etc. While there, go ahead and copy the HTTPS clone URL from the box in the right side panel. Finally, create a directory on your local machine, clone the repository, and checkout the appropriate branch in order to start contributing.
+To become a contributor to the GPEC package, contact nikolas.logan@columbia.edu to be added to the development team. Next, go the the Github repository to familiarize yourself with the documentation, branch structure, latest commits, etc. While there, go ahead and copy the HTTPS clone URL from the box in the right side panel. Finally, create a directory on your local machine, clone the repository, and checkout the appropriate branch in order to start contributing.
 
 On the PPPL portal computers, navigate to a directory in which you want to do your development (something like /p/gpec/users/<username>/gpec) and use following commands::
 
@@ -64,7 +64,7 @@ for example.
 Documentation
 -------------
 
-Documentation of the GPEC package has been created using sphinx and is hosted by `PrincetonUniveristy GitHub Pages <http://princetonuniversity.github.io/GPEC/>`_.
+Documentation of the GPEC package has been created using sphinx and is hosted by `GitHub Pages <http://princetonuniversity.github.io/GPEC/>`_.
 
 The documentation for the entire package is contained within the top level docs directory, and uses rst files with syntax that should be straight forward to mimic. If creating a new .rst file be sure to include it in the top level organization of the index.rst file.
 

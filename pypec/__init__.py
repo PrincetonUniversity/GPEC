@@ -3,26 +3,24 @@
 :mod:`pypec` -- Main Package
 ============================
 
-Python modules for data visualization and postprocessing, 
+Python modules for data visualization and postprocessing,
 as well as python wrappers for GPEC and PENT.
 
-:Author: 
+:Author:
   N.C. Logan
-:Location:
-  Princeton Plasma Physics Laboratory
 :Email:
-  nlogan@pppl.gov
+  nikolas.logan@columbia.edu
 
 
-Python at PPPL 
+Python at PPPL
 ==============
 
-To set up python on portal at PPPL, insert the 
+To set up python on portal at PPPL, insert the
 following lines into your .bashrc file::
 
   export PYTHONPATH=$PYTHONPATH:/path/to/gpec
   module load anaconda/2.3.0
-  
+
 .. note:: Anaconda is the most complete and current python distribution
     available at pppl. Users can also use locally built python/2.7.2, but
     will loose 3D plotting capabilities and may experience problems reading
@@ -36,7 +34,7 @@ and insert in .cshrc.
 
 .. note: Mayavi's default gui api is not consistent with the anaconda
     interactive python default. To enable 3D plotting, you must add
-    "export QT_API=pyqt" and "ETS_TOOLKIT=qt4" to your .bashrc or a similar 
+    "export QT_API=pyqt" and "ETS_TOOLKIT=qt4" to your .bashrc or a similar
     line to your .cshrc.
 
 To put the changes into effect::
@@ -76,7 +74,7 @@ Using the Best Environment
 ---------------------------
 
 The ipython (interactive) environment is recommended for commandline
-data analysis. To start, it is easiest to auto-import a number of 
+data analysis. To start, it is easiest to auto-import a number of
 basic mathematics and visualization modules and use an enhanced
 interactivity for displaying figures. To do this enter::
 
@@ -88,13 +86,15 @@ interactivity for displaying figures. To do this enter::
     it is not imported in the above order! For this reason, we cannot use
     the --pylab call option with ipython.
 
-Look into online tutorial on numpy and matplotlib. Advanced users 
+Look into online tutorial on numpy and matplotlib. Advanced users
 are recommended to edit ~/.matplotlib/matplotlibrc and
 ~/.ipython/profile_default/startup/autoimports.ipy files.
 
 Now in the ipython environment, type
 
 >>> from pypec import gpec,data # doctest:+ELLIPSIS
+>>> import numpy as np
+>>> from numpy import *
 
 There may be a few warnings/hints... take them or leave them.
 
@@ -104,7 +104,8 @@ There may be a few warnings/hints... take them or leave them.
 # This file tells python to treat the folder as a package
 
 # for "from package import *" to work use __all__ = ["file1","file2",...]
-__all__ = ['data', 'gpec', 'post']  # ,'namelist','modplot']
+__all__ = ["data", "gpec", "post"]  # ,'namelist','modplot']
 
 from . import gpec, data, post, synthetics, modplot
 import numpy as np
+from numpy import *

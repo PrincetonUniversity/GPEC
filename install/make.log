@@ -1,0 +1,124 @@
+------------------------------------------------------------
+Defaults tailored for 
+Compiling with FC = /opt/homebrew/bin/gfortran-15
+   using math libraries -llapack -lblas
+   from /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework
+   including /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework
+   and netcdf libraries -lnetcdff -lnetcdf
+   from /opt/homebrew/lib /opt/homebrew/lib
+   including /opt/homebrew/include
+   and compiler libraries 
+   from .
+   including .
+   and using OMPFLAG -fopenmp
+
+Set environment FC,LAPACKHOME,NETCDFHOME to change these
+------------------------------------------------------------
+cd ../; git submodule init; git submodule update
+cd ../harvest; make FC='/opt/homebrew/bin/gfortran-15' CC='/opt/homebrew/bin/gcc-15' GACODE_ROOT= -f Makefile libharvest.a
+make[1]: `libharvest.a' is up to date.
+mkdir -p ../lib
+cp -f ../harvest/libharvest.a ../lib/
+cd ../equil;  make libequil
+mkdir -p ../lib/
+ar -r ../lib/libequil.a *.o
+cd ../lsode;  make liblsode
+mkdir -p ../lib
+ar -r ../lib/liblsode.a *.o
+cd ../zlange;  make libzlange
+mkdir -p ../lib
+ar -r ../lib/libzlange.a *.o
+cd ../zvode;  make libzvode
+mkdir -p ../lib
+ar -r ../lib/libzvode.a *.o
+cd ../orbit;  make orbit
+make[1]: `orbit' is up to date.
+cd ../vacuum; make libvac
+mkdir -p ../lib
+ar -r ../lib/libvac.a *.o
+cd ../pentrc; make pentrc
+make[1]: `pentrc' is up to date.
+cd ../dcon;   make dcon
+cd ../pentrc; make pentrc
+make[2]: `pentrc' is up to date.
+/opt/homebrew/bin/gfortran-15 -fallow-argument-mismatch -fopenmp -I../equil -I../harvest -I../pentrc -I../vacuum -I/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework -I/opt/homebrew/include -frecursive -std=legacy -o dcon debug.o dcon_mod.o mercier.o bal.o fourfit.o sing.o ode_output.o free.o ode.o dcon_netcdf.o resist.o dcon.o -L../lib -lpentrc -llsode -lequil -lvac -lharvest  -L/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework -llapack -lblas -L/opt/homebrew/lib -lnetcdff -L/opt/homebrew/lib -lnetcdf 
+mkdir -p ../bin
+cp -f dcon ../bin
+cd ../match;  make match
+make[1]: `match' is up to date.
+cd ../rdcon;   make rdcon
+make[1]: `rdcon' is up to date.
+cd ../rmatch;  make rmatch
+make[1]: `rmatch' is up to date.
+cd ../multi;  make multi
+make[1]: `multi' is up to date.
+cd ../sum;    make sum
+/opt/homebrew/bin/gfortran-15 -fallow-argument-mismatch -I../equil  -c sum.f
+sum.f:278:72:
+
+  278 |       CALL bin_open(sum_unit2,"sum2.bin","UNKNOWN","REWIND","none")
+      |                                                                        1
+Error: More actual than formal arguments in procedure call at (1)
+sum.f:115:72:
+
+  115 |       CALL bin_open(sumin_unit,TRIM(filename),"OLD","REWIND","none")
+      |                                                                        1
+Error: More actual than formal arguments in procedure call at (1)
+sum.f:74:72:
+
+   74 |       CALL bin_open(sumin_unit,TRIM(filename),"OLD","REWIND","none")
+      |                                                                        1
+Error: More actual than formal arguments in procedure call at (1)
+sum.f:407:10:
+
+  407 |       USE sum_mod
+      |          1
+Fatal Error: Cannot open module file 'sum_mod.mod' for reading at (1): No such file or directory
+compilation terminated.
+make[1]: [sum.o] Error 1 (ignored)
+cd ../xdraw;  make
+/opt/homebrew/bin/gcc-15 -DUNIX -O2 -I/opt/homebrew/include -c binread.c
+/opt/homebrew/bin/gcc-15 -DUNIX -O2 -I/opt/homebrew/include -c event.c
+/opt/homebrew/bin/gcc-15 -DUNIX -O2 -I/opt/homebrew/include -c gradient.c
+/opt/homebrew/bin/gcc-15 -DUNIX -O2 -I/opt/homebrew/include -c limits.c
+/opt/homebrew/bin/gcc-15 -DUNIX -O2 -I/opt/homebrew/include -c redraw.c
+/opt/homebrew/bin/gcc-15 -DUNIX -O2 -I/opt/homebrew/include -c setcolor.c
+/opt/homebrew/bin/gcc-15 -DUNIX -O2 -I/opt/homebrew/include -c spline.c
+/opt/homebrew/bin/gcc-15 -DUNIX -O2 -I/opt/homebrew/include -c spline1.c
+/opt/homebrew/bin/gcc-15 -DUNIX -O2 -I/opt/homebrew/include -c xcontour.c
+/opt/homebrew/bin/gcc-15 -DUNIX -O2 -I/opt/homebrew/include -c xdraw.c
+xdraw.c: In function 'main':
+xdraw.c:190:5: warning: old-style function definition [-Wold-style-definition]
+  190 | int main(argc, argv)
+      |     ^~~~
+/opt/homebrew/bin/gcc-15 -DUNIX -O2 -I/opt/homebrew/include -c xedit.c
+/opt/homebrew/bin/gcc-15 -DUNIX -O2 -I/opt/homebrew/include -c xinit.c
+/opt/homebrew/bin/gcc-15 -DUNIX -O2 -I/opt/homebrew/include -c xtools.c
+/opt/homebrew/bin/gcc-15 -DUNIX -O2 -I/opt/homebrew/include -o xdraw binread.o event.o gradient.o limits.o ps.o redraw.o setcolor.o spline.o spline1.o xcontour.o xdraw.o xedit.o xinit.o xtools.o -L/usr/X11R6/lib64 -L/opt/local/include -L/opt/homebrew/include -L/opt/homebrew/lib -lm -lX11
+ld: warning: directory not found for option '-L/usr/X11R6/lib64'
+mkdir -p ../bin
+cp -f xdraw ../bin
+/opt/homebrew/bin/gcc-15 -DUNIX -O2 -I/opt/homebrew/include -c pspack.c
+/opt/homebrew/bin/gcc-15 -DUNIX -O2 -I/opt/homebrew/include -o pspack ps.o pspack.o
+cd ../slayer; make slayer
+make[1]: `slayer' is up to date.
+cd ../coil;   make libcoil
+mkdir -p ../lib
+ar -r ../lib/libcoil.a *.o
+cd ../gpec;   make gpec
+make[1]: `gpec' is up to date.
+cd ../stride; make stride
+make[1]: `stride' is up to date.
+mkdir -p ../bin
+cp -f ../orbit/orbit ../bin
+cp -f ../dcon/dcon ../bin
+cp -f ../match/match ../bin
+cp -f ../rdcon/rdcon ../bin
+cp -f ../rmatch/rmatch ../bin
+cp -f ../xdraw/xdraw ../bin
+cp -f ../multi/multi ../bin
+cp -f ../sum/sum ../bin
+cp -f ../slayer/slayer ../bin
+cp -f ../gpec/gpec ../bin
+cp -f ../pentrc/pentrc ../bin
+cp -f ../stride/stride ../bin

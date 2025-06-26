@@ -51,7 +51,7 @@ or a friend when that super special file gets over-written.
 """
     @package pypec
     @author NC Logan
-    @email nlogan@pppl.gov
+    @email nikolas.logan@columbia.edu
 """
 
 # basics

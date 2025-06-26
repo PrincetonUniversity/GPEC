@@ -37,6 +37,7 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
     'sphinx.ext.mathjax',
+
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -130,8 +131,9 @@ html_theme_options = {
                      ("Contact", "contact"),
                      ("I/O", "outputs"),
                      ("Release History", "releases"),
+                     ("DCON", "dcon_readme"),
                      ("Develop", "developers"),
-                     ("Code","source_documentation"),
+                     ("Python Post Processing","source_documentation"),
                      ],
 
     # Render the next and previous page links in navbar. (Default: true)

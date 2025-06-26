@@ -103,7 +103,7 @@ Attributes:
 
 We see the data contains dimensions, variables, and global attributes. Some individual data arrays may have attributes as well.
 
-For quick visualization, we can use xarray's built in plotting routines,
+For quick visualization, we can use xarray\'s built in plotting routines,
 
 >>> import xarray.plot as xplot
 >>> f1,a1 = plt.subplots()
@@ -290,83 +290,93 @@ given in the documentation "Definition" line (watch out for inconsistent
 
 
 .. note::
-  These examples can be tested by developers using ipython 
+  These examples can be tested by developers using ipython
   in this directory as follows:
 
     In [1]: import data,doctest
-   
+
     In [2]: doctest.testmod(data,verbose=True)
 
 """
 """
     @package pypec
     @author NC Logan
-    @email nlogan@pppl.gov
+    @email nikolas.logan@columbia.edu
 """
 
-import os,copy,time
+import os, copy, time
 
 from io import StringIO
 
-import numpy as np                               # math
-from scipy.interpolate import interp1d,interp2d,LinearNDInterpolator,RegularGridInterpolator,griddata
-from scipy.special import ellipk,ellipe
+import numpy as np  # math
+from scipy.interpolate import (
+    interp1d,
+    interp2d,
+    LinearNDInterpolator,
+    RegularGridInterpolator,
+    griddata,
+)
+from scipy.special import ellipk, ellipe
 
 try:
     import mayavi.mlab as mmlab
 except ImportError as ie:
     mmlab = False
-    print('WARNING: Mayavi not in python path')
+    print("WARNING: Mayavi not in python path")
 except ValueError as ve:
     mmlab = False
-    print('WARNING: Mayavi conflicts with already set gui backend settings (using pylab?)\n'+repr(ve))
+    print(
+        "WARNING: Mayavi conflicts with already set gui backend settings (using pylab?)\n"
+        + repr(ve)
+    )
 except Exception as e:
     mmlab = False
-    print('WARNING: Mayavi unavailable - '+repr(e))
+    print("WARNING: Mayavi unavailable - " + repr(e))
 try:
     import xarray
 except ImportError:
     xarray = False
-    print('WARNING: xarray not in python path')
-    print(' -> We recomend loading anaconda/2.3.0 on portal')
+    print("WARNING: xarray not in python path")
+    print(" -> We recomend loading anaconda/2.3.0 on portal")
 try:
     import seaborn as sns
 except ImportError:
     sns = False
-    print('WARNING: seaborn not in python path')
-    print(' -> We recomend loading anaconda/2.3.0 on portal')
+    print("WARNING: seaborn not in python path")
+    print(" -> We recomend loading anaconda/2.3.0 on portal")
 
 # in this package
 from . import modplot as plt
 from . import namelist
 
 # better label recognition using genfromtxt
-for c in '^|<>/':
+for c in "^|<>/":
     if c in np.lib._iotools.NameValidator.defaultdeletechars:
         np.lib._iotools.NameValidator.defaultdeletechars.remove(c)
 
 ######################################################## Global Variables
 
 default_quiet = False
-cmap_div = plt.pyplot.get_cmap('RdBu_r')
-cmap_seq = plt.pyplot.get_cmap('viridis') #_load_default_cmap()
+cmap_div = plt.pyplot.get_cmap("RdBu_r")
+cmap_seq = plt.pyplot.get_cmap("viridis")  # _load_default_cmap()
 
 ######################################################## Helper functions
 
-def _set_color_defaults(calc_data,center=None,**kwargs):
+
+def _set_color_defaults(calc_data, center=None, **kwargs):
     """
     Stolen from xarray.plot. Sets vmin, vmax, cmap.
     """
-    vmin = kwargs.get('vmin',None)
-    vmax = kwargs.get('vmax',None)
-    cmap = kwargs.get('cmap',None)
+    vmin = kwargs.get("vmin", None)
+    vmax = kwargs.get("vmax", None)
+    cmap = kwargs.get("cmap", None)
 
     if vmin is None:
         vmin = np.percentile(calc_data, 2)
     if vmax is None:
         vmax = np.percentile(calc_data, 98)
     # Simple heuristics for whether these data should  have a divergent map
-    divergent = ((vmin < 0) and (vmax > 0))
+    divergent = (vmin < 0) and (vmax > 0)
     # Now set center to 0 so math below makes sense
     if center is None:
         center = 0
@@ -384,67 +394,83 @@ def _set_color_defaults(calc_data,center=None,**kwargs):
         else:
             cmap = "viridis"
 
-    kwargs['vmin'] = vmin
-    kwargs['vmax'] = vmax
-    kwargs['cmap'] = cmap
+    kwargs["vmin"] = vmin
+    kwargs["vmax"] = vmax
+    kwargs["cmap"] = cmap
 
     return kwargs
 
+
 ######################################################## IO FOR DATA OBJECTs
 
-def open_dataset(filename_or_obj,complex_dim='i',**kwargs):
+
+def open_dataset(filename_or_obj, complex_dim="i", **kwargs):
     """
     Wrapper for xarray.open_dataset that allows automated reduction of
     a dimension distinguishing real and imaginary components.
 
+    Strings are interpreted as a path to a netCDF file or an OpenDAP URL
+    and opened with python-netCDF4, unless the filename ends with .gz, in
+    which case the file is gunzipped and opened with scipy.io.netcdf
+    (only netCDF3 supported). File-like objects are opened with
+    scipy.io.netcdf (only netCDF3 supported).
+
     :param filename_or_obj: str, file or xarray.backends.DataStore
-        Strings are interpreted as a path to a netCDF file or an OpenDAP URL
-        and opened with python-netCDF4, unless the filename ends with .gz, in
-        which case the file is gunzipped and opened with scipy.io.netcdf
-        (only netCDF3 supported). File-like objects are opened with
-        scipy.io.netcdf (only netCDF3 supported).
     :param complex_dim: str. Dimension designating real/imaginary (0,1)
     :param kwargs: dict. All other key word arguments are passed to xarray.open_dataset.
-
-    **Original Documentation:**
 
     """
 
     try:
-        ds = xarray.open_dataset(filename_or_obj,**kwargs)
+        ds = xarray.open_dataset(filename_or_obj, **kwargs)
     except:
-        dat = read(filename_or_obj,**kwargs)
+        dat = read(filename_or_obj, **kwargs)
         ds = xarray.Dataset()
-        for i,d in enumerate(dat):
-            if i==0:
-                for k,v in d.params.items():
-                    ds.attrs[k]=v
+        for i, d in enumerate(dat):
+            if i == 0:
+                for k, v in d.params.items():
+                    ds.attrs[k] = v
             if not d.x:
                 raise ValueError("No regular grid for dataset")
-            for yk,yv in d.y.items():
-                ds[yk] = xarray.DataArray(yv.reshape(d.shape),coords=d.x,dims=d.xnames,attrs=d.params)
+            for yk, yv in d.y.items():
+                ds[yk] = xarray.DataArray(
+                    yv.reshape(d.shape), coords=d.x, dims=d.xnames, attrs=d.params
+                )
 
     if complex_dim in ds.dims:
-        for k,v in ds.data_vars.items():
+        for k, v in ds.data_vars.items():
             if len(v.dims) > len(set(v.dims)):
-                print("WARNING: Removing {:} to avoid error (below) reforming complex_dim. ".format(k))
+                print(
+                    "WARNING: Removing {:} to avoid error (below) reforming complex_dim. ".format(
+                        k
+                    )
+                )
                 print("ValueError: broadcasting cannot handle duplicate dimensions")
                 del ds[k]
                 continue
             if complex_dim in v.dims:
                 tmp = v.attrs
-                ds[k] = v.loc[{complex_dim:0}]+1j*v.loc[{complex_dim:1}]
+                ds[k] = v.loc[{complex_dim: 0}] + 1j * v.loc[{complex_dim: 1}]
                 ds[k].attrs = tmp
 
     return ds
 
-open_dataset.__doc__+= xarray.open_dataset.__doc__
-while '--' in open_dataset.__doc__:
-    open_dataset.__doc__ = open_dataset.__doc__.replace('--','')
+
+# open_dataset.__doc__ += xarray.open_dataset.__doc__
+# while "--" in open_dataset.__doc__:
+#     open_dataset.__doc__ = open_dataset.__doc__.replace("--", "")
 
 
-def read(fname,squeeze=False,forcex=[],forcedim=[],maxnumber=999,maxlength=1e6,
-         auto_complex=True,quiet=default_quiet):
+def read(
+    fname,
+    squeeze=False,
+    forcex=[],
+    forcedim=[],
+    maxnumber=999,
+    maxlength=1e6,
+    auto_complex=True,
+    quiet=default_quiet,
+):
     """
     Get the data from any gpec output as a list of python
     class-type objects using numpy.genfromtxt.
@@ -457,87 +483,91 @@ def read(fname,squeeze=False,forcex=[],forcedim=[],maxnumber=999,maxlength=1e6,
     :param maxlength: int. Tables with more rows than this are downsampled for speed.
     :param auto_complex: bool. Include amplitude and phase of complex data as variables.
     :param quiet: bool. Prevent non-warning messages printed to terminal.
-    
+
     :returns: list. Class objects for each block of data in the file.
-    
+
     """
-    #debug start_time = time.time()
+    # debug start_time = time.time()
 
     collection = []
     dcollection = []
     pcollection = []
-    
+
     with open(fname) as f:
-        #Get preamble
-        preamble = ''
-        lastline = ''
-        for lstart,line in enumerate(f):
+        # Get preamble
+        preamble = ""
+        lastline = ""
+        for lstart, line in enumerate(f):
             try:
                 test = float(line.split()[0])
                 break
             except:
-                preamble+= lastline
+                preamble += lastline
                 lastline = line
         f.seek(0)
-        try: #Simple file : single table
-            #data = np.genfromtxt(f,skip_header=lstart-1,names=True,dtype=np.float)
-            raise ValueError # genfromtxt read pfile (multiple 2-column tables) as one... '\r' bug
+        try:  # Simple file : single table
+            # data = np.genfromtxt(f,skip_header=lstart-1,names=True,dtype=np.float)
+            raise ValueError  # genfromtxt read pfile (multiple 2-column tables) as one... '\r' bug
             pcollection.append(preamble)
             dcollection.append(data)
-        #look through file manually
+        # look through file manually
         except ValueError as e:
             data = []
             f.seek(0)
             # clean up messy dcon output formats
-            if 'dcon.out' in fname:
+            if "dcon.out" in fname:
                 lines = f.read()
-                lines=lines.replace('mu0 p','mu0p')
-                lines=lines.replace(' abs ',' abs')
-                lines=lines.replace(' re ',' real')
-                lines=lines.replace(' im ',' imag')
-                lines=lines.replace('*','')
+                lines = lines.replace("mu0 p", "mu0p")
+                lines = lines.replace(" abs ", " abs")
+                lines = lines.replace(" re ", " real")
+                lines = lines.replace(" im ", " imag")
+                lines = lines.replace("*", "")
                 lines = StringIO(lines).readlines()
             else:
                 lines = f.readlines()
-            top,bot = 0,0
+            top, bot = 0, 0
             count = 0
-            length= len(lines)
-            while bot<length and top<(length-2) and count<maxnumber:
-                preamble=''
-                lastline=''
-                for i,line in enumerate(lines[bot:]):
+            length = len(lines)
+            while bot < length and top < (length - 2) and count < maxnumber:
+                preamble = ""
+                lastline = ""
+                for i, line in enumerate(lines[bot:]):
                     try:
                         # Find top defined as start of numbers
                         test = float(line.split()[0])
-                        top = bot+i
-                        # Throw out single lines of numbers 
-                        #if not lines[top+1].translate(None,' \n\t\r'):#=='\n': 
+                        top = bot + i
+                        # Throw out single lines of numbers
+                        # if not lines[top+1].translate(None,' \n\t\r'):#=='\n':
                         #    raise ValueError
                         # Find bottom defined by end of numbers
-                        for j,bline in enumerate(lines[top:]):
+                        for j, bline in enumerate(lines[top:]):
                             try:
                                 test = float(bline.split()[0])
                             except:
-                                break # end of numbers
+                                break  # end of numbers
                         # Throw out single lines of numbers
-                        if j==1:
+                        if j == 1:
                             # but include them as preamble (DCON one-liners)
                             vals = lines[top]
-                            keys = lines[top-1]
-                            if not keys.translate(str.maketrans(dict.fromkeys(' \n\t'))): #empty line
-                                keys = lines[top-2]
-                            if '=' not in keys and len(keys.split())==len(vals.split()):
-                                for k,v in zip(keys.split(),vals.split()):
-                                    preamble+='{:} = {:}\n'.format(k,v)
+                            keys = lines[top - 1]
+                            if not keys.translate(
+                                str.maketrans(dict.fromkeys(" \n\t"))
+                            ):  # empty line
+                                keys = lines[top - 2]
+                            if "=" not in keys and len(keys.split()) == len(
+                                vals.split()
+                            ):
+                                for k, v in zip(keys.split(), vals.split()):
+                                    preamble += "{:} = {:}\n".format(k, v)
                             raise ValueError
                         else:
-                            bot = top+j+1
+                            bot = top + j + 1
                         break
                     except:
-                        preamble+= lastline
+                        preamble += lastline
                         lastline = line
-                if line==lines[-1] and line==lastline:
-                    break #end of file without another table
+                if line == lines[-1] and line == lastline:
+                    break  # end of file without another table
                 """
                 try:
                     bot = top+lines[top:].index(' \n')
@@ -553,141 +583,166 @@ def read(fname,squeeze=False,forcex=[],forcedim=[],maxnumber=999,maxlength=1e6,
                             except:
                                 bot = length
                 """
-                
+
                 # include headers
-                top-=1
-                if not lines[top].translate(str.maketrans(dict.fromkeys(' \n\t'))): #empty line
-                    top-=1
-                skipfoot = length-bot
+                top -= 1
+                if not lines[top].translate(
+                    str.maketrans(dict.fromkeys(" \n\t"))
+                ):  # empty line
+                    top -= 1
+                skipfoot = length - bot
                 f.seek(0)
                 table = lines[top:bot]
-                if '\n' in table: #empty space
-                    table.remove('\n')
-                data = np.genfromtxt(StringIO(''.join(table)),names=True,
-                                     deletechars='?',dtype=np.float)
+                if "\n" in table:  # empty space
+                    table.remove("\n")
+                data = np.genfromtxt(
+                    StringIO("".join(table)),
+                    names=True,
+                    deletechars="?",
+                    dtype=np.float,
+                )
                 pcollection.append(preamble)
                 dcollection.append(data)
-                count+=1
-        #debug print("Finished parsing file in "
-        #debug       +"{} seconds".format(time.time()-start_time))
-        #turn arrays into classes
-        for i,(data,preamble) in enumerate(zip(dcollection,pcollection)): 
-            if not quiet: 
-                print("Casting table "+str(i+1)+" into Data object.")
-            collection.append(DataBase(data,preamble,forcex=forcex,forcedim=forcedim,maxlength=maxlength,quiet=quiet))
-            
+                count += 1
+        # debug print("Finished parsing file in "
+        # debug       +"{} seconds".format(time.time()-start_time))
+        # turn arrays into classes
+        for i, (data, preamble) in enumerate(zip(dcollection, pcollection)):
+            if not quiet:
+                print("Casting table " + str(i + 1) + " into Data object.")
+            collection.append(
+                DataBase(
+                    data,
+                    preamble,
+                    forcex=forcex,
+                    forcedim=forcedim,
+                    maxlength=maxlength,
+                    quiet=quiet,
+                )
+            )
+
     # force all attributes to single object
     if squeeze:
         dc1 = collection[0]
-        if len(collection)>1:
+        if len(collection) > 1:
             for dc in collection[1:]:
-                dc1+=dc
+                dc1 += dc
         return dc1
 
     return collection
 
 
-def readall(base='.',filetype='pent_n1.out',**kwargs):
+def readall(base=".", filetype="pent_n1.out", **kwargs):
     """
     Recursively searches base directory for files with name
-    filetype, reads them into python objects, and stores 
+    filetype, reads them into python objects, and stores
     objects in a dictionary with directory names as keys.
-    
+
     :param base: str. Top level directory in which to begin search.
     :param filetype: str. Files to read.
     :param kwargs: dict. Passed to appropriate reader function.
-    
+
     :returns: dict. Key-Value pairs are directories and their contained data.
-    
+
     """
 
     results = {}
-    if('.in' in filetype):
+    if ".in" in filetype:
         reader = namelist.read
     else:
         reader = read
-    base = os.path.abspath(base)+'/'
-    #if(base[-1]!='/'): base+='/'
-        
-    subs = [name for name in os.listdir(base) if os.path.isdir(base+name)]
+    base = os.path.abspath(base) + "/"
+    # if(base[-1]!='/'): base+='/'
+
+    subs = [name for name in os.listdir(base) if os.path.isdir(base + name)]
     if subs:
         results = {}
         for subd in subs:
-            results[subd] = readall(base=base+subd,filetype=filetype,**kwargs)
-    if os.path.isfile(base+filetype):
-        results[filetype] = reader(base+filetype,**kwargs)
+            results[subd] = readall(base=base + subd, filetype=filetype, **kwargs)
+    if os.path.isfile(base + filetype):
+        results[filetype] = reader(base + filetype, **kwargs)
     _cleandict(results)
 
     # not a dict if only result in the directory
-    if results.keys()==[filetype]:
+    if results.keys() == [filetype]:
         results = results[filetype]
 
     return results
 
+
 def _cleandict(d):
-    """ 
+    """
     Helper function to clear empty keys from dictionary.
-    
+
     """
     ks = d.keys()
     for k in ks:
-        if type(d[k])==dict:
+        if type(d[k]) == dict:
             _cleandict(d[k])
         if not d[k]:
             del d[k]
-    #return d
+    # return d
 
 
-def write(dataobj,fname='',ynames=[],**kwargs):
+def write(dataobj, fname="", ynames=[], **kwargs):
     """
     Write data object to file. The aim is to replicate the original file
     structure... the header text will have been lost in the read however,
     as will some column label symbols in the use of genfromtxt.
-    
+
     :param dataobj: obj. Data_Base type object.
     :param fname: str. File to write to.
     :param kwargs: dict. Passed to numpy.savetxt
 
     :returns: bool. True.
-    
-    """
-    if not fname: return False
-    
-    if 'fmt' not in kwargs: kwargs['fmt'] = '%16.8E'
-    if 'delimiter' not in kwargs: kwargs['delimiter']=' '
-    if 'comments' not in kwargs: kwargs['comments']=''
-    if 'header' in kwargs:
-        kwargs['header']+= '\n\n'
-    else:
-        kwargs['header']=''
 
-    for k,v in dataobj.params.items():
-        kwargs['header']+= k+" = "+str(v)+"\n"
+    """
+    if not fname:
+        return False
+
+    if "fmt" not in kwargs:
+        kwargs["fmt"] = "%16.8E"
+    if "delimiter" not in kwargs:
+        kwargs["delimiter"] = " "
+    if "comments" not in kwargs:
+        kwargs["comments"] = ""
+    if "header" in kwargs:
+        kwargs["header"] += "\n\n"
+    else:
+        kwargs["header"] = ""
+
+    for k, v in dataobj.params.items():
+        kwargs["header"] += k + " = " + str(v) + "\n"
 
     nums = []
-    if not ynames: ynames = dataobj.y.keys()    
-    for i,name in enumerate(dataobj.xnames):
-        nums.append(dataobj.pts[:,i])
-        kwargs['header']+=kwargs['delimiter']*(i!=0)+'{:>16}'.format(name)
-    for i,name in enumerate(ynames):
+    if not ynames:
+        ynames = dataobj.y.keys()
+    for i, name in enumerate(dataobj.xnames):
+        nums.append(dataobj.pts[:, i])
+        kwargs["header"] += kwargs["delimiter"] * (i != 0) + "{:>16}".format(name)
+    for i, name in enumerate(ynames):
         if np.iscomplex(dataobj.y[name][0]):
             nums.append(np.real(dataobj.y[name]))
-            kwargs['header']+=kwargs['delimiter']+'{:>16}'.format('real('+name.replace(' ','')+')')
+            kwargs["header"] += kwargs["delimiter"] + "{:>16}".format(
+                "real(" + name.replace(" ", "") + ")"
+            )
             nums.append(np.imag(dataobj.y[name]))
-            kwargs['header']+=kwargs['delimiter']+'{:>16}'.format('imag('+name.replace(' ','')+')')
+            kwargs["header"] += kwargs["delimiter"] + "{:>16}".format(
+                "imag(" + name.replace(" ", "") + ")"
+            )
         else:
             nums.append(dataobj.y[name])
-            kwargs['header']+=kwargs['delimiter']+'{:>16}'.format(name.replace(' ',''))
-    np.savetxt(fname,np.array(nums).T,**kwargs)
+            kwargs["header"] += kwargs["delimiter"] + "{:>16}".format(
+                name.replace(" ", "")
+            )
+    np.savetxt(fname, np.array(nums).T, **kwargs)
 
     return True
 
 
-
-
-def plotall(results,xfun,yfun,label='',axes=None,**kwargs):
+def plotall(results, xfun, yfun, label="", axes=None, **kwargs):
     """
-    Line plot of data gethered recursively from a dictionary 
+    Line plot of data gethered recursively from a dictionary
     containing multiple namelists or data objects.
 
     :param results: dict. A readall result.
@@ -695,34 +750,35 @@ def plotall(results,xfun,yfun,label='',axes=None,**kwargs):
     :param yfun: func. A function that takes args (key,val) for each dictionary item and whose result is appended to the yaxis.
     :param axes: obj. matplotlib axes object.
     :param kwargs: dict. Passed to matplotlib plot function
-    
+
     :returns: figure.
-    
+
     """
     x = []
     y = []
     if not axes:
-        f,ax = plt.subplots()
+        f, ax = plt.subplots()
     else:
         ax = axes
 
-    def newpoint(key,val):
+    def newpoint(key, val):
         if type(val) == dict:
-            for k,v in val.items():
-                newpoint(k,v)
+            for k, v in val.items():
+                newpoint(k, v)
         else:
             try:
-                x.append(xfun(key,val))
-                y.append(yfun(key,val))
+                x.append(xfun(key, val))
+                y.append(yfun(key, val))
             except:
                 pass
-    for key,val in results.items():
-        newpoint(key,val)
 
-    z = list(zip(x,y))
+    for key, val in results.items():
+        newpoint(key, val)
+
+    z = list(zip(x, y))
     z.sort()
-    x,y = list(zip(*z))
-    ax.plot(x,y,label=label,**kwargs)
+    x, y = list(zip(*z))
+    ax.plot(x, y, label=label, **kwargs)
     ax.legend()
     f = ax.get_figure()
     f.show()
@@ -731,26 +787,35 @@ def plotall(results,xfun,yfun,label='',axes=None,**kwargs):
 
 ######################################################## THE BASE GPEC DATA OBJECTS
 
+
 class DataBase(object):
     """
     An emtpy class object with the following operations overloaded::
 
       +,-,*,/,**
 
-    such that the operation is only performed on the attributes 
-    starting with .real_ and .imag_ and ending with r,z, or phi. 
+    such that the operation is only performed on the attributes
+    starting with .real_ and .imag_ and ending with r,z, or phi.
     If the two factors in the operation have different r or z attributes
     data is interpolated to the wider spaced axis.
-    
+
     """
-    
-    def __init__(self,fromtxt,preamble,forcex=[],forcedim=[],maxlength=1e6,
-                 auto_complex=True,quiet=default_quiet):
+
+    def __init__(
+        self,
+        fromtxt,
+        preamble,
+        forcex=[],
+        forcedim=[],
+        maxlength=1e6,
+        auto_complex=True,
+        quiet=default_quiet,
+    ):
         """
         Takes structured array from numpy.genfromtxt, and creates
         dictionaries of dependent and independent data. Also breaks
         down preamble to find any global parameters.
-        
+
         :param fromtxt: structured array.
         :param preamble: str. Pre-pending text
         :param forcex: list. x-axis labels.
@@ -759,232 +824,277 @@ class DataBase(object):
         :param quiet: bool. Supress printed information and warnings.
 
         """
-        #debug start_time = time.time()
+        # debug start_time = time.time()
         names = list(fromtxt.dtype.names)
         l = len(fromtxt)
         potxnames = names[:3]
         # Set independent/dependent variables (max 3D,min 3pt grid)
         if not np.all([name in names for name in forcex]):
-            print('WARNING: Requested axes not available. Using default left column(s).')
+            print(
+                "WARNING: Requested axes not available. Using default left column(s)."
+            )
         if forcex and np.all([name in names for name in forcex]):
             nd = len(forcex)
             potxnames = forcex
-        elif len(names)==2:
+        elif len(names) == 2:
             nd = 1
             potxnames = names[0:1]
         else:
             nd = 1
             # hack for psi,q pairs
-            if 'q' in potxnames:
+            if "q" in potxnames:
                 potxnames = names[:4]
-                potxnames.remove('q')
+                potxnames.remove("q")
             # hack for rzphi
-            if 'l' in potxnames:
+            if "l" in potxnames:
                 potxnames = names[:4]
-                potxnames.remove('l')
-            if len(set(fromtxt[potxnames[1]]))<l/3: 
-                nd+=1
-                if len(set(fromtxt[potxnames[2]]))<l/3:
-                    nd+=1
+                potxnames.remove("l")
+            if len(set(fromtxt[potxnames[1]])) < l / 3:
+                nd += 1
+                if len(set(fromtxt[potxnames[2]])) < l / 3:
+                    nd += 1
             # hack for pent
-            if nd==1 and potxnames[1]=='Lambda':
-                nd+=1
-            if nd==2 and potxnames[2]=='x':
-                nd+=1
-        #debug print("Determined dimensionality in {} seconds".format(time.time()-start_time))
-        #debug start_time = time.time()
-        self.xnames= potxnames[:nd]    
+            if nd == 1 and potxnames[1] == "Lambda":
+                nd += 1
+            if nd == 2 and potxnames[2] == "x":
+                nd += 1
+        # debug print("Determined dimensionality in {} seconds".format(time.time()-start_time))
+        # debug start_time = time.time()
+        self.xnames = potxnames[:nd]
         x = fromtxt[potxnames[:nd]]
-        if nd==1:
-            self.x = [x[self.xnames[0]]] # can be any order
-        else:    # Must be written in ascending order
+        if nd == 1:
+            self.x = [x[self.xnames[0]]]  # can be any order
+        else:  # Must be written in ascending order
             self.x = [np.sort(list(set(x[name]))) for name in self.xnames]
         self.shape = [len(ax) for ax in self.x]
-        #debug print("Set x in {} seconds".format(time.time()-start_time))
-        #debug print("shape = "+str(self.shape))
-        #debug start_time = time.time()        
+        # debug print("Set x in {} seconds".format(time.time()-start_time))
+        # debug print("shape = "+str(self.shape))
+        # debug start_time = time.time()
         # reduce exesively large files, assuming 1st column is x
-        if len(fromtxt)>maxlength:
+        if len(fromtxt) > maxlength:
             name = self.xnames[0]
-            step = l/int(maxlength)+1
+            step = l / int(maxlength) + 1
             if np.product(self.shape) != l:
-                fromtxt = fromtxt[::step] # no axes to muck up
+                fromtxt = fromtxt[::step]  # no axes to muck up
             else:
-                mask = np.ones(self.shape,dtype=bool)
-                mask[::step,...] = False
-                #debug print('set mask in {} seconds'.format(time.time()-start_time))
+                mask = np.ones(self.shape, dtype=bool)
+                mask[::step, ...] = False
+                # debug print('set mask in {} seconds'.format(time.time()-start_time))
                 fromtxt = fromtxt[mask.ravel()]
-            #debug print('masked fromtxt in {} seconds'.format(time.time()-start_time))
+            # debug print('masked fromtxt in {} seconds'.format(time.time()-start_time))
             if not quiet:
-                print("WARNING: Reducing length of "
-                +"table from {:} to {:}".format(l,len(fromtxt))
-                +" by reducing x[0] by a factor of {}".format(step))
+                print(
+                    "WARNING: Reducing length of "
+                    + "table from {:} to {:}".format(l, len(fromtxt))
+                    + " by reducing x[0] by a factor of {}".format(step)
+                )
             l = len(fromtxt)
             x = fromtxt[potxnames[:nd]]
             self.x = [np.sort(list(set(x[name]))) for name in self.xnames]
             self.shape = [len(ax) for ax in self.x]
-            #debug print("Set x in {} seconds".format(time.time()-start_time))
-            #debug start_time = time.time()
-        self.pts  = x.view(np.float).reshape(l,-1)
+            # debug print("Set x in {} seconds".format(time.time()-start_time))
+            # debug start_time = time.time()
+        self.pts = x.view(np.float).reshape(l, -1)
         if forcedim:
-            #debug print(len(self.pts),self.pts.shape)
-            forcedim = list(forcedim)+[-1]
+            # debug print(len(self.pts),self.pts.shape)
+            forcedim = list(forcedim) + [-1]
             newx = self.pts.reshape(*forcedim)
-            if nd==2: self.x = [newx[:,0,0],newx[0,:,1]]
-            if nd==3: self.x = [newx[:,0,0,0],newx[0,:,0,1],newx[0,0,:,2]]
+            if nd == 2:
+                self.x = [newx[:, 0, 0], newx[0, :, 1]]
+            if nd == 3:
+                self.x = [newx[:, 0, 0, 0], newx[0, :, 0, 1], newx[0, 0, :, 2]]
             self.shape = [len(ax) for ax in self.x]
-        #debug print("Set pts in {} seconds".format(time.time()-start_time))
-        #debug start_time = time.time()
-        self.nd    = np.shape(self.pts)[-1]
-        #debug print(self.shape,l)
-        if np.product(self.shape) != l: #probably psi to closely packed
+        # debug print("Set pts in {} seconds".format(time.time()-start_time))
+        # debug start_time = time.time()
+        self.nd = np.shape(self.pts)[-1]
+        # debug print(self.shape,l)
+        if np.product(self.shape) != l:  # probably psi to closely packed
             # maybe first axis is packed too tight, try trusting others
-            if self.nd ==1:
+            if self.nd == 1:
                 self.shape = [l]
-                self.x[0] = self.pts[:,0]
-            if self.nd ==2:
-                self.shape[0] = l/self.shape[1] 
-                self.x[0]  = self.pts[:,0][::self.shape[1]]
-            if self.nd ==3:
-                self.shape[0] = l/np.product(self.shape[1:])
-                self.x[0] = self.pts[:,0][::np.product(self.shape[1:])]
+                self.x[0] = self.pts[:, 0]
+            if self.nd == 2:
+                self.shape[0] = l / self.shape[1]
+                self.x[0] = self.pts[:, 0][:: self.shape[1]]
+            if self.nd == 3:
+                self.shape[0] = l / np.product(self.shape[1:])
+                self.x[0] = self.pts[:, 0][:: np.product(self.shape[1:])]
             # test result
-            if np.any(list(set(self.pts[:,0]).difference(self.x[0]))):
-                if not quiet: print("WARNING: Irregular dependent data: can not form axes for interpolation.")
-                self.x=None
+            if np.any(list(set(self.pts[:, 0]).difference(self.x[0]))):
+                if not quiet:
+                    print(
+                        "WARNING: Irregular dependent data: can not form axes for interpolation."
+                    )
+                self.x = None
             else:
-                if not quiet: print("Warning: Axes contain repeated values. Forced axes may be incorrect.")
-        #debug print("Checked axes in {} seconds".format(time.time()-start_time))
-        #debug start_time = time.time()
+                if not quiet:
+                    print(
+                        "Warning: Axes contain repeated values. Forced axes may be incorrect."
+                    )
+        # debug print("Checked axes in {} seconds".format(time.time()-start_time))
+        # debug start_time = time.time()
 
-        self.y={}
+        self.y = {}
         ynames = [name for name in names if name not in self.xnames]
         for name in ynames:
-            if 'real' in name:
-                newname = name.replace('real','')
-                self.y[newname] = fromtxt[name]+1j*fromtxt[name.replace('real','imag')]
+            if "real" in name:
+                newname = name.replace("real", "")
+                self.y[newname] = (
+                    fromtxt[name] + 1j * fromtxt[name.replace("real", "imag")]
+                )
                 if auto_complex:
-                    self.y['|'+newname+'|'] = np.abs(self.y[newname]).real
-                    self.y['angle '+newname] = np.angle(self.y[newname])
-            elif not 'imag' in name:
-                self.y[name]=fromtxt[name]
-        #debug print("Set y in {} seconds".format(time.time()-start_time))
-        #debug start_time = time.time()
+                    self.y["|" + newname + "|"] = np.abs(self.y[newname]).real
+                    self.y["angle " + newname] = np.angle(self.y[newname])
+            elif not "imag" in name:
+                self.y[name] = fromtxt[name]
+        # debug print("Set y in {} seconds".format(time.time()-start_time))
+        # debug start_time = time.time()
 
-        #scipy interpolation function for ND (stored so user can override)
-        self._interpdict={}
+        # scipy interpolation function for ND (stored so user can override)
+        self._interpdict = {}
 
         # Set any variables from preamble
-        preamble=preamble.split()
-        params=[]
+        preamble = preamble.split()
+        params = []
         names = []
-        while preamble.count('='):    #paramter specifications
-            idx = preamble.index('=')
-            param = preamble[idx+1]
-            name = preamble[idx-1]
-            name.translate(str.maketrans(dict.fromkeys('()[]{}\/*-+^%.,:!@#&')))
-            if name in names and idx>1:
-                name = ' '.join(preamble[idx-2:idx])
-                name.translate(str.maketrans(dict.fromkeys('()[]{}\/*-+^%.,:!@#&')))
+        while preamble.count("="):  # paramter specifications
+            idx = preamble.index("=")
+            param = preamble[idx + 1]
+            name = preamble[idx - 1]
+            name.translate(str.maketrans(dict.fromkeys("()[]{}\/*-+^%.,:!@#&")))
+            if name in names and idx > 1:
+                name = " ".join(preamble[idx - 2 : idx])
+                name.translate(str.maketrans(dict.fromkeys("()[]{}\/*-+^%.,:!@#&")))
             elif name in names:
-                for sfx in range(1,100):
-                    if name+str(sfx) not in names:
-                        name+= str(sfx)
+                for sfx in range(1, 100):
+                    if name + str(sfx) not in names:
+                        name += str(sfx)
                         break
-            try: 
-                params.append((name,float(param))) #if its a number
-            except: 
-                params.append((name,param))        #if its not a number
+            try:
+                params.append((name, float(param)))  # if its a number
+            except:
+                params.append((name, param))  # if its not a number
             names.append(name)
-            preamble.remove(preamble[idx-1])
+            preamble.remove(preamble[idx - 1])
             preamble.remove(str(param))
-            preamble.remove('=')
-        self.params=dict(params)
-        self.__doc__ = ''.join(preamble)    #whatever is left
+            preamble.remove("=")
+        self.params = dict(params)
+        self.__doc__ = "".join(preamble)  # whatever is left
 
-        #debug print("Set preamble in {} seconds".format(time.time()-start_time))
-        #debug start_time = time.time()
-
+        # debug print("Set preamble in {} seconds".format(time.time()-start_time))
+        # debug start_time = time.time()
 
     # Operations overrides
-    def __add__(self,other): return _data_op(self,other,np.add,'+')
-    def __sub__(self,other): return _data_op(self,other,np.subtract,'-')
-    def __mul__(self,other): return _data_op(self,other,np.multiply,'*')
-    def __div__(self,other): return _data_op(self,other,np.divide,'/')
-    def __pow__(self,other): return _data_op(self,other,pow,'^')
-    def __radd__(self,other): return self.__add__(other)
-    def __rmul__(self,other): return self.__mul__(other)
-    def __rsub__(self,other): return self.__sub__(other)
-    def __rdiv__(self,other): return self.__div__(other)
-    
+    def __add__(self, other):
+        return _data_op(self, other, np.add, "+")
+
+    def __sub__(self, other):
+        return _data_op(self, other, np.subtract, "-")
+
+    def __mul__(self, other):
+        return _data_op(self, other, np.multiply, "*")
+
+    def __div__(self, other):
+        return _data_op(self, other, np.divide, "/")
+
+    def __pow__(self, other):
+        return _data_op(self, other, pow, "^")
+
+    def __radd__(self, other):
+        return self.__add__(other)
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
+
+    def __rsub__(self, other):
+        return self.__sub__(other)
+
+    def __rdiv__(self, other):
+        return self.__div__(other)
 
     # Built in interpolation
-    def interp(self,x,ynames=None,quiet=False,**kwargs):
+    def interp(self, x, ynames=None, quiet=False, **kwargs):
         """
         Interpolate data to point(s).
-        
+
         :param x: ndarray shape (npts,ndim). Point(s) on dependent axis(axes).
         :param ynames: list. Any number of keys from y attribute
         :param quiet: bool. Suppress status messages
 
         :returns: dict. Each name contains array of interpolated data.
-        
+
         """
-        #housekeeping
-        if not ynames: ynames=np.sort(self.y.keys()).tolist()
-        if not type(ynames) in (list,tuple): ynames=(ynames,)
-        if not type(x) in [list,tuple,np.ndarray]: x=[x,]
+        # housekeeping
+        if not ynames:
+            ynames = np.sort(self.y.keys()).tolist()
+        if not type(ynames) in (list, tuple):
+            ynames = (ynames,)
+        if not type(x) in [list, tuple, np.ndarray]:
+            x = [
+                x,
+            ]
         NewData = copy.deepcopy(self)
-        if self.nd==1:
+        if self.nd == 1:
             x = np.atleast_1d(x)
             NewData.pts = x
             NewData.x = [x]
             NewData.shape = [len(x)]
         else:
-            if self.nd==2:
+            if self.nd == 2:
                 x = np.atleast_2d(x)
-            elif self.nd==3:
+            elif self.nd == 3:
                 x = np.atleast_3d(x)
             NewData.pts = x
             NewData.x = [np.array(sorted(set(xi))) for xi in x.T]
             NewData.shape = [len(xi) for xi in NewData.x]
-            if np.product(NewData.shape)!=len(NewData.pts):
+            if np.product(NewData.shape) != len(NewData.pts):
                 NewData.x = None
-        
-        #function to form interpolator if needed
+
+        # function to form interpolator if needed
         def new_interp(name):
-            if not quiet: print("Forming interpolator for "+name+".")
+            if not quiet:
+                print("Forming interpolator for " + name + ".")
             args = []
-            if self.x: # regular grid is fast
+            if self.x:  # regular grid is fast
                 for n in range(self.nd):
                     args.append(self.x[n])
-                return RegularGridInterpolator(tuple(args),self.y[name].reshape(self.shape),bounds_error=False)
-            else: # irregular grid is slower but ok
-                step = max(1,len(self.pts[:,0])/1e6)
+                return RegularGridInterpolator(
+                    tuple(args), self.y[name].reshape(self.shape), bounds_error=False
+                )
+            else:  # irregular grid is slower but ok
+                step = max(1, len(self.pts[:, 0]) / 1e6)
                 for n in range(self.nd):
-                    args.append(self.pts[::step,n])
-                return LinearNDInterpolator(list(zip(*args)),self.y[name][::step])
+                    args.append(self.pts[::step, n])
+                return LinearNDInterpolator(list(zip(*args)), self.y[name][::step])
 
         # for each name check if interpolator is up to date and get values
-        values={}
+        values = {}
         for name in ynames:
             if name in self._interpdict.keys():
                 if not all(self._interpdict[name].values.ravel() == self.y[name]):
                     self._interpdict[name] = new_interp(name)
             else:
                 self._interpdict[name] = new_interp(name)
-            if not quiet: print("Interpolating values for "+name+".")
-            values[name]=self._interpdict[name](x)
+            if not quiet:
+                print("Interpolating values for " + name + ".")
+            values[name] = self._interpdict[name](x)
         NewData.y = values
         return NewData
-        
-    
+
     # Built-in visualizations
-    def plot1d(self,ynames=None,xname=None,x1rng=None,x2rng=None,x3rng=None,squeeze=False,
-               **kwargs):
+    def plot1d(
+        self,
+        ynames=None,
+        xname=None,
+        x1rng=None,
+        x2rng=None,
+        x3rng=None,
+        squeeze=False,
+        **kwargs
+    ):
         """
         Line plots of from 1D or 2D data.
-        
+
         :param ynames: list. Strings specifying dependent data displayed.
         :param xname: string. The independent axis if 2D data.
         :param x1rng: optional. Valid formats are,
@@ -1000,121 +1110,160 @@ class DataBase(object):
 
         """
         # housekeeping
-        if not ynames: ynames=np.sort(self.y.keys()).tolist()
-        if not type(ynames) in (list,tuple): ynames=(ynames,)
-        if not xname: xname=self.xnames[0]
+        if not ynames:
+            ynames = np.sort(self.y.keys()).tolist()
+        if not type(ynames) in (list, tuple):
+            ynames = (ynames,)
+        if not xname:
+            xname = self.xnames[0]
 
         indx = self.xnames.index(xname)
         if self.x:
-            x=self.x[indx]
+            x = self.x[indx]
         else:
-            x = self.pts[:,indx]
+            x = self.pts[:, indx]
 
         # helper to sort through axes of ND data
-        def maskmaker(ax,rng):
-            if type(rng) in [float,int]: 
-                mask = ax==ax[abs(ax-rng).argmin()]
-            elif type(rng) in [tuple,list] and len(rng)==2:
-                mask = (ax>=rng[0]) * (ax<=rng[1])
-            elif type(rng) in [tuple,list] and len(rng)>2:
+        def maskmaker(ax, rng):
+            if type(rng) in [float, int]:
+                mask = ax == ax[abs(ax - rng).argmin()]
+            elif type(rng) in [tuple, list] and len(rng) == 2:
+                mask = (ax >= rng[0]) * (ax <= rng[1])
+            elif type(rng) in [tuple, list] and len(rng) > 2:
                 print("Warning: mapping all axes to regular grid.")
-                if self.nd==2:
-                    x,ax = np.mgrid[x.min():x.max():x.size,rng[0]:rng[1]:rng[2]]
+                if self.nd == 2:
+                    x, ax = np.mgrid[
+                        x.min() : x.max() : x.size, rng[0] : rng[1] : rng[2]
+                    ]
                     x = x[0]
                     mask = range(rng[2])
-                if self.nd==3:
+                if self.nd == 3:
                     raise ValueError("Griding for 3D data is under developement.")
             else:
-                mask = np.ones_like(ax,dtype=bool)
-            return ax,mask
-        
+                mask = np.ones_like(ax, dtype=bool)
+            return ax, mask
+
         # display data
-        if 'figure' in kwargs:
-            f,ax = kwargs['figure'],np.array(kwargs['figure'].get_axes())
-            del kwargs['figure']
-        elif 'axes' in kwargs:
-            if type(kwargs['axes'])==np.ndarray:
-                f,ax = kwargs['axes'][0].get_figure(),kwargs['axes']
+        if "figure" in kwargs:
+            f, ax = kwargs["figure"], np.array(kwargs["figure"].get_axes())
+            del kwargs["figure"]
+        elif "axes" in kwargs:
+            if type(kwargs["axes"]) == np.ndarray:
+                f, ax = kwargs["axes"][0].get_figure(), kwargs["axes"]
             else:
-                f,ax = kwargs['axes'].get_figure(),np.array(kwargs['axes'])
-            del kwargs['axes']
+                f, ax = kwargs["axes"].get_figure(), np.array(kwargs["axes"])
+            del kwargs["axes"]
         else:
             if squeeze:
-                nrow,ncol = 1,1
+                nrow, ncol = 1, 1
             else:
-                nrow,ncol =  min(len(ynames),2),max(1,(len(ynames)+1)/2)
-            f,ax = plt.subplots(nrow,ncol,squeeze=False,figsize=plt.rcp_size*(ncol,nrow))
-        if squeeze: ax = np.array([ax.ravel()[0]]*len(ynames))
+                nrow, ncol = min(len(ynames), 2), max(1, (len(ynames) + 1) / 2)
+            f, ax = plt.subplots(
+                nrow, ncol, squeeze=False, figsize=plt.rcp_size * (ncol, nrow)
+            )
+        if squeeze:
+            ax = np.array([ax.ravel()[0]] * len(ynames))
 
-        if 'label' in kwargs:
-            ulbl = kwargs['label']+', '
-            del kwargs['label']
+        if "label" in kwargs:
+            ulbl = kwargs["label"] + ", "
+            del kwargs["label"]
         else:
-            ulbl = ''
-        
-        for a,name in zip(ax.ravel(),ynames):
+            ulbl = ""
+
+        for a, name in zip(ax.ravel(), ynames):
             lbl = ulbl + _mathtext(name)
-            if self.nd==1:
-                a.plot(x,self.y[name],label=lbl,**kwargs)
-            elif self.nd==2:
+            if self.nd == 1:
+                a.plot(x, self.y[name], label=lbl, **kwargs)
+            elif self.nd == 2:
                 if self.x:
-                    x2,rng2 = maskmaker(self.x[indx-1],x2rng)
-                    ys = self.y[name].reshape(self.shape).swapaxes(-1,indx)
-                    xlbl = _mathtext(self.xnames[indx-1])
-                    for y,x2 in zip(ys[rng2],x2[rng2]):
-                        x,rng1 = maskmaker(x,x1rng)
-                        a.plot(x[rng1],y[rng1],label=lbl+', '+xlbl+'={0:.3}'.format(x2),**kwargs)
+                    x2, rng2 = maskmaker(self.x[indx - 1], x2rng)
+                    ys = self.y[name].reshape(self.shape).swapaxes(-1, indx)
+                    xlbl = _mathtext(self.xnames[indx - 1])
+                    for y, x2 in zip(ys[rng2], x2[rng2]):
+                        x, rng1 = maskmaker(x, x1rng)
+                        a.plot(
+                            x[rng1],
+                            y[rng1],
+                            label=lbl + ", " + xlbl + "={0:.3}".format(x2),
+                            **kwargs
+                        )
                 else:
-                    x2s,rng2 = maskmaker(self.pts[:,indx-1],x2rng)
-                    xlbl = _mathtext(self.xnames[indx-1])
+                    x2s, rng2 = maskmaker(self.pts[:, indx - 1], x2rng)
+                    xlbl = _mathtext(self.xnames[indx - 1])
                     x2s = np.sort(list(set(x2s[rng2])))
                     for x2 in x2s:
-                        x,rng2 = maskmaker(self.pts[:,indx-1],float(x2))
-                        x = self.pts[:,indx][rng2]
+                        x, rng2 = maskmaker(self.pts[:, indx - 1], float(x2))
+                        x = self.pts[:, indx][rng2]
                         y = self.y[name][rng2]
-                        x,y = np.array(list(zip(*sorted(zip(x,y)))))
-                        x,rng1 = maskmaker(x,x1rng)
-                        a.plot(x[rng1],y[rng1],label=lbl+', '+xlbl+'={0:.3}'.format(x2),**kwargs)
-            elif self.nd==3:
+                        x, y = np.array(list(zip(*sorted(zip(x, y)))))
+                        x, rng1 = maskmaker(x, x1rng)
+                        a.plot(
+                            x[rng1],
+                            y[rng1],
+                            label=lbl + ", " + xlbl + "={0:.3}".format(x2),
+                            **kwargs
+                        )
+            elif self.nd == 3:
                 indx23 = range(3)
                 indx23.remove(indx)
                 if self.x:
-                    x2,rng2 = maskmaker(self.x[indx23[0]],x2rng)
-                    x3,rng3 = maskmaker(self.x[indx23[1]],x3rng)
-                    ys = self.y[name].reshape(self.shape).swapaxes(-1,indx)
-                    xlbls = [_mathtext(name) for name in self.xnames if name!=xname]
-                    for y2,x2 in zip(ys[rng2],x2[rng2]):
-                        x2lbl = lbl+', '+xlbls[0]+'='+str(x2)
-                        for y,x3 in zip(y2[rng3],x3[rng3]):
-                            x,rng1 = maskmaker(x,x1rng)
-                            a.plot(x[rng1],y[rng1],label=x2lbl+', '+xlbls[1]+'={0:.3}'.format(x3),**kwargs)
+                    x2, rng2 = maskmaker(self.x[indx23[0]], x2rng)
+                    x3, rng3 = maskmaker(self.x[indx23[1]], x3rng)
+                    ys = self.y[name].reshape(self.shape).swapaxes(-1, indx)
+                    xlbls = [_mathtext(name) for name in self.xnames if name != xname]
+                    for y2, x2 in zip(ys[rng2], x2[rng2]):
+                        x2lbl = lbl + ", " + xlbls[0] + "=" + str(x2)
+                        for y, x3 in zip(y2[rng3], x3[rng3]):
+                            x, rng1 = maskmaker(x, x1rng)
+                            a.plot(
+                                x[rng1],
+                                y[rng1],
+                                label=x2lbl + ", " + xlbls[1] + "={0:.3}".format(x3),
+                                **kwargs
+                            )
                 else:
-                    x2s,rng2 = maskmaker(self.pts[:,indx23[0]],x2rng)
+                    x2s, rng2 = maskmaker(self.pts[:, indx23[0]], x2rng)
                     x2s = np.sort(list(set(x2s[rng2])))
-                    xs = self.pts[:,indx][rng2]
+                    xs = self.pts[:, indx][rng2]
                     ys = self.y[name][rng2]
-                    xlbls = [_mathtext(xlbl) for xlbl in self.xnames if xlbl!=xname]
+                    xlbls = [_mathtext(xlbl) for xlbl in self.xnames if xlbl != xname]
                     for x2 in x2s:
-                        x2lbl = lbl+', '+xlbls[0]+'='+str(x2)
-                        x3s,rng3 = maskmaker(self.pts[:,indx23[1]][rng2],x3rng)
+                        x2lbl = lbl + ", " + xlbls[0] + "=" + str(x2)
+                        x3s, rng3 = maskmaker(self.pts[:, indx23[1]][rng2], x3rng)
                         x3s = np.sort(list(set(x3s[rng3])))
                         for x3 in x3s:
-                            x3d,rng3 = maskmaker(self.pts[:,indx23[1]][rng2],float(x3))
+                            x3d, rng3 = maskmaker(
+                                self.pts[:, indx23[1]][rng2], float(x3)
+                            )
                             x = xs[rng3]
                             y = ys[rng3]
-                            np.array(list(zip(*sorted(zip(x,y)))))
-                            x,rng1 = maskmaker(x,x1rng)
-                            a.plot(x[rng1],y[rng1],label=x2lbl+', '+xlbls[1]+'={0:.3}'.format(x3),**kwargs)
+                            np.array(list(zip(*sorted(zip(x, y)))))
+                            x, rng1 = maskmaker(x, x1rng)
+                            a.plot(
+                                x[rng1],
+                                y[rng1],
+                                label=x2lbl + ", " + xlbls[1] + "={0:.3}".format(x3),
+                                **kwargs
+                            )
             a.set_xlabel(_mathtext(self.xnames[indx]))
-            a.legend(ncol=max(1,len(a.lines)/6))
+            a.legend(ncol=max(1, len(a.lines) / 6))
         f.show()
         return f
-                              
-    def plot2d(self,ynames=None,aspect='auto',plot_type='imshow',cbar=True,
-               center=None,grid_size=(256,256),swap=False,**kwargs):
+
+    def plot2d(
+        self,
+        ynames=None,
+        aspect="auto",
+        plot_type="imshow",
+        cbar=True,
+        center=None,
+        grid_size=(256, 256),
+        swap=False,
+        **kwargs
+    ):
         """
         Matplotlib 2D plots of the data.
-        
+
         :param ynames: list. Strings specifying dependent data displayed.
         :param aspect: str/float. Choose from 'auto' or 'equal' (see matplotlib axes.set_aspect). A float stretches a circle to hight=aspect*width.
         :param plot_type: str. Choose one of,
@@ -1129,102 +1278,120 @@ class DataBase(object):
         :param grid_size: tuple. Size of grid used if no regular axes x (in order of xnames).
         :param swap: bool. Swap x/y axes.
         :param kwargs: dict. Valid pcolormesh/contour/contourf key arguments.
-        
+
         :returns: figure.
-        
+
         """
-        if not ynames: ynames=np.sort(self.y.keys()).tolist()
-        if not type(ynames) in (list,tuple): ynames=[ynames]
-        if self.nd != 2: raise IndexError("Data not 2D.")
-            
+        if not ynames:
+            ynames = np.sort(self.y.keys()).tolist()
+        if not type(ynames) in (list, tuple):
+            ynames = [ynames]
+        if self.nd != 2:
+            raise IndexError("Data not 2D.")
+
         if self.x:
-            x1,x2 = map(np.reshape,self.pts.T,[self.shape]*self.nd)
-        elif plot_type in ['imshow','pcolormesh','contour','contourf']:
-            x1,x2 = np.mgrid[self.pts[:,0].min():self.pts[:,0].max():1j*grid_size[0],
-                             self.pts[:,1].min():self.pts[:,1].max():1j*grid_size[1]]
+            x1, x2 = map(np.reshape, self.pts.T, [self.shape] * self.nd)
+        elif plot_type in ["imshow", "pcolormesh", "contour", "contourf"]:
+            x1, x2 = np.mgrid[
+                self.pts[:, 0].min() : self.pts[:, 0].max() : 1j * grid_size[0],
+                self.pts[:, 1].min() : self.pts[:, 1].max() : 1j * grid_size[1],
+            ]
         else:
-            step = max(len(self.pts[:,0])/np.product(grid_size),1)
-            if step>1: print('Reducing data by factor of {:}'.format(step))
-            x1,x2 = self.pts[::step].T
+            step = max(len(self.pts[:, 0]) / np.product(grid_size), 1)
+            if step > 1:
+                print("Reducing data by factor of {:}".format(step))
+            x1, x2 = self.pts[::step].T
 
         for name in ynames:
             try:
                 if np.any(np.iscomplex(self.y[name])):
                     idx = ynames.index(name)
-                    ynames[idx] = 'imag '+name
-                    ynames.insert(idx,'real '+name)
-            except: # looks at new names -> KeyError
+                    ynames[idx] = "imag " + name
+                    ynames.insert(idx, "real " + name)
+            except:  # looks at new names -> KeyError
                 pass
 
         # display data
-        if 'figure' in kwargs:
-            f,ax = kwargs['figure'],np.array(kwargs['figure'].get_axes())
-        elif 'axes' in kwargs:
-            if type(kwargs['axes'])==np.ndarray:
-                f,ax = kwargs['axes'][0].get_figure(),kwargs['axes']
+        if "figure" in kwargs:
+            f, ax = kwargs["figure"], np.array(kwargs["figure"].get_axes())
+        elif "axes" in kwargs:
+            if type(kwargs["axes"]) == np.ndarray:
+                f, ax = kwargs["axes"][0].get_figure(), kwargs["axes"]
             else:
-                f,ax = kwargs['axes'].get_figure(),np.array(kwargs['axes'])
+                f, ax = kwargs["axes"].get_figure(), np.array(kwargs["axes"])
         else:
-            nrow,ncol =  min(len(ynames),2),max(1,(len(ynames)+1)/2)
-            f,ax = plt.subplots(nrow,ncol,squeeze=False,figsize=plt.rcp_size*(ncol,nrow))
-        
-        for a,name in zip(ax.ravel(),ynames):
-            print("Plotting "+name+".")
-            plotter = getattr(a,plot_type)
-            #if(plot_type=='line'):
+            nrow, ncol = min(len(ynames), 2), max(1, (len(ynames) + 1) / 2)
+            f, ax = plt.subplots(
+                nrow, ncol, squeeze=False, figsize=plt.rcp_size * (ncol, nrow)
+            )
+
+        for a, name in zip(ax.ravel(), ynames):
+            print("Plotting " + name + ".")
+            plotter = getattr(a, plot_type)
+            # if(plot_type=='line'):
             #    #plotter = getattr(a,'trip'*bool(self.x)+'contour')
             #    plotter=a.contour
-            #elif(plot_type=='fill'):
+            # elif(plot_type=='fill'):
             #    #plotter = getattr(a,'trip'*bool(self.x)+'contourf')
             #    plotter=a.contourf
-            #else:
+            # else:
             #    if self.x:
             #        plotter = a.pcolormesh
             #    else:
             #        plotter = a.tripcolor
 
             # convert to reals and grid if necessary
-            reducedname = name.replace('real ','').replace('imag ','')
-            if 'imag ' in name:
+            reducedname = name.replace("real ", "").replace("imag ", "")
+            if "imag " in name:
                 raw = np.imag(self.y[reducedname])
             else:
                 raw = np.real(self.y[reducedname])
             if self.x:
                 y = raw.reshape(self.shape)
-            elif np.all(x1==self.pts[:,0]) or np.all(x1==self.pts[:,1]):
+            elif np.all(x1 == self.pts[:, 0]) or np.all(x1 == self.pts[:, 1]):
                 y = raw
             else:
-                y = griddata(self.pts,np.nan_to_num(raw),(x1,x2),method='linear')
+                y = griddata(self.pts, np.nan_to_num(raw), (x1, x2), method="linear")
             if swap:
-                x1,x2,y = x2.T,x1.T,y.T
+                x1, x2, y = x2.T, x1.T, y.T
 
-            kwargs = _set_color_defaults(y,center=center,**kwargs)
+            kwargs = _set_color_defaults(y, center=center, **kwargs)
 
             # plot type specifics
-            if plotter==a.imshow:
-                kwargs.setdefault('origin','lower')
-                kwargs['aspect']=aspect
-                kwargs.setdefault('extent',[x1.min(),x1.max(),x2.min(),x2.max()])
-                kwargs.setdefault('interpolation','gaussian')
+            if plotter == a.imshow:
+                kwargs.setdefault("origin", "lower")
+                kwargs["aspect"] = aspect
+                kwargs.setdefault("extent", [x1.min(), x1.max(), x2.min(), x2.max()])
+                kwargs.setdefault("interpolation", "gaussian")
                 args = [y.T]
             else:
-                args = [x1,x2,y]
-                if plotter in [a.pcolormesh,a.tripcolor]:
-                    kwargs.setdefault('edgecolor','None')
-                    kwargs.setdefault('shading','gouraud')
-            pcm = plotter(*args,**kwargs)
+                args = [x1, x2, y]
+                if plotter in [a.pcolormesh, a.tripcolor]:
+                    kwargs.setdefault("edgecolor", "None")
+                    kwargs.setdefault("shading", "gouraud")
+            pcm = plotter(*args, **kwargs)
 
-            a.set_xlabel(_mathtext(self.xnames[0+swap]))
-            a.set_ylabel(_mathtext(self.xnames[1-swap]))
-            a.set_xlim(x1.min(),x1.max())
+            a.set_xlabel(_mathtext(self.xnames[0 + swap]))
+            a.set_ylabel(_mathtext(self.xnames[1 - swap]))
+            a.set_xlim(x1.min(), x1.max())
             a.set_title(_mathtext(name))
             a.set_aspect(aspect)
-            if cbar: f.colorbar(pcm,ax=a)
+            if cbar:
+                f.colorbar(pcm, ax=a)
         f.show()
         return f
 
-    def plot3d(self,ynames=None,filter={'psi':1},cbar=False,size=(600,600),
-               plot_type='',phi=None,center=None,**kwargs):
+    def plot3d(
+        self,
+        ynames=None,
+        filter={"psi": 1},
+        cbar=False,
+        size=(600, 600),
+        plot_type="",
+        phi=None,
+        center=None,
+        **kwargs
+    ):
         """
         Three dimensional plots. Data with xnames r,z will be plotted
         with third dimension phi where Y = Re[y]cos(n*phi)+Im[y]sin(n*phi).
@@ -1234,7 +1401,7 @@ class DataBase(object):
             - 3D data > chosen display type
 
         Must have mayavi.mlab module available in pythonpath.
-        
+
         :param ynames: list. Strings specifying dependent data displayed.
         :param filter: dict. Filter points as only those closest to this y value.
         :param cbar: bool. Display a vertical colorbar in the Mayavi Scene.
@@ -1244,8 +1411,8 @@ class DataBase(object):
         :param center: float. Center colormap on this value.
 
         :returns: figure.
-          
-          
+
+
         """
         """
         :Examples:
@@ -1271,72 +1438,89 @@ class DataBase(object):
         >>> mmlab.mesh(X, Y, Z, scalars=S) #, colormap='YlGnBu'
         
         """
-        if not ynames: ynames=np.sort(self.y.keys()).tolist()
-        if not type(ynames) in (list,tuple): ynames=[ynames]
-        if not mmlab: raise ImportError("Unable to import mayavi.mlab.")
+        if not ynames:
+            ynames = np.sort(self.y.keys()).tolist()
+        if not type(ynames) in (list, tuple):
+            ynames = [ynames]
+        if not mmlab:
+            raise ImportError("Unable to import mayavi.mlab.")
 
         # the correct 3d plotting function
-        plotfunc = getattr(mmlab,['plot3d','mesh','quiver3d'][self.nd-1])
+        plotfunc = getattr(mmlab, ["plot3d", "mesh", "quiver3d"][self.nd - 1])
         if plot_type:
-            if plot_type=='volume':
-                def plotfunc(x,y,z,s,name='',**kwargs):
+            if plot_type == "volume":
+
+                def plotfunc(x, y, z, s, name="", **kwargs):
                     mmlab.pipeline.sc
-                    src = mmlab.pipeline.scalar_field(xx,yy,zz,S,name=name)
-                    mmlab.pipeline.volume(src,**kwargs)
-                    mmlab.pipeline.scalar_cut_plane(thr,plane_orientation='x_axes')
-                    mmlab.pipeline.scalar_cut_plane(thr,plane_orientation='y_axes')
+                    src = mmlab.pipeline.scalar_field(xx, yy, zz, S, name=name)
+                    mmlab.pipeline.volume(src, **kwargs)
+                    mmlab.pipeline.scalar_cut_plane(thr, plane_orientation="x_axes")
+                    mmlab.pipeline.scalar_cut_plane(thr, plane_orientation="y_axes")
+
             else:
-                plotfunc = getattr(mmlab,plot_type)
-                
+                plotfunc = getattr(mmlab, plot_type)
 
         # filter data by other y variable
-        fltr = self.y[ynames[0]]==self.y[ynames[0]]
+        fltr = self.y[ynames[0]] == self.y[ynames[0]]
         for k in filter:
             if k in self.y.keys():
-                fltr*= self.y[k]==self.y[k][np.abs(self.y[k]-filter[k]).argmin()]
-        
+                fltr *= self.y[k] == self.y[k][np.abs(self.y[k] - filter[k]).argmin()]
+
         # general multidimensional axes
-        X = np.array(self.pts[fltr,:]).T.tolist()
-        if self.nd==1: X += np.zeros_like(X.ravel())
+        X = np.array(self.pts[fltr, :]).T.tolist()
+        if self.nd == 1:
+            X += np.zeros_like(X.ravel())
         # Extra work to convert the cylindrical axes
-        if self.xnames==['r','z']:
-            r,z,p = self.pts[:,0][fltr],self.pts[:,1][fltr],np.linspace(0,2*np.pi,180)
-            if phi!=None: p = np.array(phi) # Added for more custamization
-            XY = r.reshape(-1,1)*np.exp(1j*p.reshape(1,-1))
-            Z = z.reshape(-1,1)*np.ones_like(XY.real)
-            X = [XY.real,XY.imag,Z]
-        
+        if self.xnames == ["r", "z"]:
+            r, z, p = (
+                self.pts[:, 0][fltr],
+                self.pts[:, 1][fltr],
+                np.linspace(0, 2 * np.pi, 180),
+            )
+            if phi != None:
+                p = np.array(phi)  # Added for more custamization
+            XY = r.reshape(-1, 1) * np.exp(1j * p.reshape(1, -1))
+            Z = z.reshape(-1, 1) * np.ones_like(XY.real)
+            X = [XY.real, XY.imag, Z]
+
         # display data
         for name in ynames:
-            if 'figure' not in kwargs: f = mmlab.figure(bgcolor=(1,1,1),fgcolor=(0,0,0),size=size)
+            if "figure" not in kwargs:
+                f = mmlab.figure(bgcolor=(1, 1, 1), fgcolor=(0, 0, 0), size=size)
             S = self.y[name][fltr]
-            if self.xnames==['r','z']:
-                S = np.real((S.reshape(-1,1)*np.exp(-self.params['n']*1j*p.reshape(1,-1))))
-            if plotfunc in [mmlab.mesh,mmlab.points3d]:
+            if self.xnames == ["r", "z"]:
+                S = np.real(
+                    (
+                        S.reshape(-1, 1)
+                        * np.exp(-self.params["n"] * 1j * p.reshape(1, -1))
+                    )
+                )
+            if plotfunc in [mmlab.mesh, mmlab.points3d]:
                 XYZ = X
-                kwargs['scalars'] = S
+                kwargs["scalars"] = S
             else:
-                XYZ = X+np.real(S).tolist()
-            #print(np.array(XYZ).shape)
-            kwargs = _set_color_defaults(S,center=center,**kwargs)
-            mapper = {'viridis':'YlGnBu'}
-            cmap = kwargs.pop('cmap','')
-            cmap = mapper.get(cmap,cmap)
-            reverse = cmap.endswith('_r')
-            kwargs['colormap'] = cmap.rstrip('_r')
-            plotobj = plotfunc(*XYZ,name=name,**kwargs)
-            if reverse: plotobj.module_manager.scalar_lut_manager.reverse_lut = True
-            if cbar: mmlab.colorbar(title=name,orientation='vertical')
+                XYZ = X + np.real(S).tolist()
+            # print(np.array(XYZ).shape)
+            kwargs = _set_color_defaults(S, center=center, **kwargs)
+            mapper = {"viridis": "YlGnBu"}
+            cmap = kwargs.pop("cmap", "")
+            cmap = mapper.get(cmap, cmap)
+            reverse = cmap.endswith("_r")
+            kwargs["colormap"] = cmap.rstrip("_r")
+            plotobj = plotfunc(*XYZ, name=name, **kwargs)
+            if reverse:
+                plotobj.module_manager.scalar_lut_manager.reverse_lut = True
+            if cbar:
+                mmlab.colorbar(title=name, orientation="vertical")
             f = mmlab.gcf()
-        return f #X,S
-    
+        return f  # X,S
 
-    def scatter(self,ynames=None,xname=None,x1=None,x2=None,x3=None,**kwargs):
+    def scatter(self, ynames=None, xname=None, x1=None, x2=None, x3=None, **kwargs):
         """
         Scatter plot display for non-regular data. Display mimics plot1d in t
-        hat it displays a single independent axis. If is another independent 
-        axis exists, and is not sliced using one of the optional keyword arguments, 
-        it s represented as the color of the plotted symbols. If the data is 3D 
+        hat it displays a single independent axis. If is another independent
+        axis exists, and is not sliced using one of the optional keyword arguments,
+        it s represented as the color of the plotted symbols. If the data is 3D
         and unsliced, preference if given in order of xnames.
 
         :param ynames: list. Dependent data to be displayed. Default is all y data.
@@ -1344,64 +1528,69 @@ class DataBase(object):
         :param x1: float. Use only data with first axis clossest to value.
         :param x2: float. Use only data with second axis clossest to value.
         :param x3: float. Use only data with thrid axis clossest to value.
-        
+
         :returns: figure.
-        
+
         """
-        if not ynames: ynames=np.sort(self.y.keys()).tolist()
-        if not type(ynames) in (list,tuple): ynames=[ynames]
-        if not xname: xname=self.xnames[-1]
+        if not ynames:
+            ynames = np.sort(self.y.keys()).tolist()
+        if not type(ynames) in (list, tuple):
+            ynames = [ynames]
+        if not xname:
+            xname = self.xnames[-1]
         indx = self.xnames.index(xname)
 
-        rng = np.ones_like(self.pts[:,0],dtype=bool)
-        ylbl=''
+        rng = np.ones_like(self.pts[:, 0], dtype=bool)
+        ylbl = ""
         indx2 = range(self.nd)
         indx2.remove(indx)
-        if x1: 
+        if x1:
             indx2.remove(0)
-            x1 = self.pts[:,0][abs(self.pts[:,0]-x1).argmin()]
-            ylbl+=', '+self.xnames[0]+'={0:.3}'.format(x1)
-            rng*=self.pts[:,0]==x1
-        if x2: 
+            x1 = self.pts[:, 0][abs(self.pts[:, 0] - x1).argmin()]
+            ylbl += ", " + self.xnames[0] + "={0:.3}".format(x1)
+            rng *= self.pts[:, 0] == x1
+        if x2:
             indx2.remove(1)
-            x2 = self.pts[:,1][abs(self.pts[:,1]-x2).argmin()]
-            ylbl+=', '+self.xnames[1]+'={0:.3}'.format(x2)
-            rng*=self.pts[:,1]==x2
-        if x3: 
+            x2 = self.pts[:, 1][abs(self.pts[:, 1] - x2).argmin()]
+            ylbl += ", " + self.xnames[1] + "={0:.3}".format(x2)
+            rng *= self.pts[:, 1] == x2
+        if x3:
             indx2.remove(2)
-            x3 = self.pts[:,2][abs(self.pts[:,2]-x3).argmin()]
-            ylbl+=', '+self.xnames[2]+'={0:.3}'.format(x3)
-            rng*=self.pts[:,2]==x3
-        if indx2: 
-            c = self.pts[:,indx2[0]][rng]
+            x3 = self.pts[:, 2][abs(self.pts[:, 2] - x3).argmin()]
+            ylbl += ", " + self.xnames[2] + "={0:.3}".format(x3)
+            rng *= self.pts[:, 2] == x3
+        if indx2:
+            c = self.pts[:, indx2[0]][rng]
             cset = np.array(list(set(c))).round(4)
             clbl = self.xnames[indx2[0]]
         else:
             c = np.ones_like(rng[rng])
-            clbl = ''
+            clbl = ""
 
-        #double number of axes for complex data
+        # double number of axes for complex data
         for name in ynames:
             try:
                 if np.any(np.iscomplex(self.y[name])):
                     idx = ynames.index(name)
-                    ynames[idx] = 'imag '+name
-                    ynames.insert(idx,'real '+name)
-            except: # looks at new names -> KeyError
+                    ynames[idx] = "imag " + name
+                    ynames.insert(idx, "real " + name)
+            except:  # looks at new names -> KeyError
                 pass
         # actual plotting
-        if 'figure' in kwargs:
-            f,ax = kwargs['figure'],np.array(kwargs['figure'].get_axes())
-        elif 'axes' in kwargs:
-            if type(kwargs['axes'])==np.ndarray:
-                f,ax = kwargs['axes'][0].get_figure(),kwargs['axes']
+        if "figure" in kwargs:
+            f, ax = kwargs["figure"], np.array(kwargs["figure"].get_axes())
+        elif "axes" in kwargs:
+            if type(kwargs["axes"]) == np.ndarray:
+                f, ax = kwargs["axes"][0].get_figure(), kwargs["axes"]
             else:
-                f,ax = kwargs['axes'].get_figure(),np.array(kwargs['axes'])
+                f, ax = kwargs["axes"].get_figure(), np.array(kwargs["axes"])
         else:
-            nrow,ncol =  min(len(ynames),2),max(1,(len(ynames)+1)/2)
-            f,ax = plt.subplots(nrow,ncol,squeeze=False,figsize=plt.rcp_size*(ncol,nrow))
+            nrow, ncol = min(len(ynames), 2), max(1, (len(ynames) + 1) / 2)
+            f, ax = plt.subplots(
+                nrow, ncol, squeeze=False, figsize=plt.rcp_size * (ncol, nrow)
+            )
 
-        for a,name in zip(ax.ravel(),ynames):
+        for a, name in zip(ax.ravel(), ynames):
             """if 'real' in name:
                 sc=a.scatter(self.pts[:,indx][rng],np.real(self.y[name.replace('real ','')][rng]),
                          c=c,cmap=plt.matplotlib.cm.gist_rainbow,**kwargs)
@@ -1411,233 +1600,303 @@ class DataBase(object):
             else:
                 sc=a.scatter(self.pts[:,indx][rng],np.real(self.y[name][rng]),
                          c=c,cmap=plt.matplotlib.cm.gist_rainbow,**kwargs)
-        """
-            y = self.y[name.replace('real ','').replace('imag ','')][rng]
-            if 'real' in name:
+            """
+            y = self.y[name.replace("real ", "").replace("imag ", "")][rng]
+            if "real" in name:
                 y = np.real(y)
-            elif 'imag' in name:
+            elif "imag" in name:
                 y = np.imag(y)
-            sc=a.scatter(self.pts[:,indx][rng],y,c=c,
-                         cmap=plt.matplotlib.cm.gist_rainbow,**kwargs)
+            sc = a.scatter(
+                self.pts[:, indx][rng],
+                y,
+                c=c,
+                cmap=plt.matplotlib.cm.gist_rainbow,
+                **kwargs
+            )
             # for printing purposes
-            line = plt.matplotlib.lines.Line2D(
-                    self.pts[:,indx][rng],y,visible=False)
-            if 'label' in kwargs: line.set_label(kwargs['label'])
+            line = plt.matplotlib.lines.Line2D(self.pts[:, indx][rng], y, visible=False)
+            if "label" in kwargs:
+                line.set_label(kwargs["label"])
             a.add_line(line)
-            
+
             a.set_xlabel(_mathtext(self.xnames[indx]))
-            a.set_ylabel(_mathtext(name+ylbl))
+            a.set_ylabel(_mathtext(name + ylbl))
             if clbl:
-                f.colorbar(sc,ax=a,ticks=cset)
-                cb=f.get_axes()[-1]
-                cb.set_ylabel(_mathtext(clbl),fontsize='large')
+                f.colorbar(sc, ax=a, ticks=cset)
+                cb = f.get_axes()[-1]
+                cb.set_ylabel(_mathtext(clbl), fontsize="large")
         f.show()
         return f
 
-    def slice(self,x,xname=None,ynames=[]):#npts=100,**kwargs):
+    def slice(self, x, xname=None, ynames=[]):  # npts=100,**kwargs):
         """
         *UNDER CONSTRUCTION*
 
-        Return 1D data object from 2D. Method grids new data, 
+        Return 1D data object from 2D. Method grids new data,
         so beware of loosing accuracy near rational surfaces.
-        
+
         :param x: float. Lower bound of the axis.
         :param xname: str. Axis allong which slice is performed.
-        
+
         :returns: obj. New data nd-1 dimensional data object.
-        
+
         """
 
         # housekeeping
-        if not ynames: ynames=np.sort(self.y.keys()).tolist()
-        if not type(ynames) in (list,tuple): ynames=(ynames,)
-        if not xname: xname=self.xnames[0]
+        if not ynames:
+            ynames = np.sort(self.y.keys()).tolist()
+        if not type(ynames) in (list, tuple):
+            ynames = (ynames,)
+        if not xname:
+            xname = self.xnames[0]
 
         indx = self.xnames.index(xname)
-        x = self.pts[:,indx]
+        x = self.pts[:, indx]
 
         # helper to sort through axes of ND data
-        def maskmaker(ax,rng):
-            if type(rng) in [float,int]: 
-                mask = ax==ax[abs(ax-rng).argmin()]
-            elif type(rng) in [tuple,list] and len(rng)==2:
-                mask = (ax>=rng[0]) * (ax<=rng[1])
-            elif type(rng) in [tuple,list] and len(rng)>2:
+        def maskmaker(ax, rng):
+            if type(rng) in [float, int]:
+                mask = ax == ax[abs(ax - rng).argmin()]
+            elif type(rng) in [tuple, list] and len(rng) == 2:
+                mask = (ax >= rng[0]) * (ax <= rng[1])
+            elif type(rng) in [tuple, list] and len(rng) > 2:
                 print("Warning: mapping all axes to regular grid.")
-                if self.nd==2:
-                    x,ax = np.mgrid[x.min():x.max():x.size,rng[0]:rng[1]:rng[2]]
+                if self.nd == 2:
+                    x, ax = np.mgrid[
+                        x.min() : x.max() : x.size, rng[0] : rng[1] : rng[2]
+                    ]
                     x = x[0]
                     mask = range(rng[2])
-                if self.nd==3:
+                if self.nd == 3:
                     raise ValueError("Griding for 3D data is under developement.")
             else:
-                mask = np.ones_like(ax,dtype=bool)
-            return ax,mask
-        
-        for a,name in zip(ax.ravel(),ynames):
-            if self.nd==1:
-                a.plot(x,self.y[name],label=lbl,**kwargs)
-            elif self.nd==2:
+                mask = np.ones_like(ax, dtype=bool)
+            return ax, mask
+
+        for a, name in zip(ax.ravel(), ynames):
+            if self.nd == 1:
+                a.plot(x, self.y[name], label=lbl, **kwargs)
+            elif self.nd == 2:
                 if self.x:
-                    x2,rng2 = maskmaker(self.x[indx-1],x2rng)
-                    ys = self.y[name].reshape(self.shape).swapaxes(-1,indx)
-                    xlbl = _mathtext(self.xnames[indx-1])
-                    for y,x2 in zip(ys[rng2],x2[rng2]):
-                        a.plot(x,y,label=lbl+', '+xlbl+'={0:.3}'.format(x2),**kwargs)
+                    x2, rng2 = maskmaker(self.x[indx - 1], x2rng)
+                    ys = self.y[name].reshape(self.shape).swapaxes(-1, indx)
+                    xlbl = _mathtext(self.xnames[indx - 1])
+                    for y, x2 in zip(ys[rng2], x2[rng2]):
+                        a.plot(
+                            x,
+                            y,
+                            label=lbl + ", " + xlbl + "={0:.3}".format(x2),
+                            **kwargs
+                        )
                 else:
-                    x2s,rng2 = maskmaker(self.pts[:,indx-1],x2rng)
-                    xlbl = _mathtext(self.xnames[indx-1])
+                    x2s, rng2 = maskmaker(self.pts[:, indx - 1], x2rng)
+                    xlbl = _mathtext(self.xnames[indx - 1])
                     x2s = np.sort(list(set(x2s[rng2])))
                     for x2 in x2s:
-                        x,rng2 = maskmaker(self.pts[:,indx-1],float(x2))
-                        x = self.pts[:,indx][rng2]
+                        x, rng2 = maskmaker(self.pts[:, indx - 1], float(x2))
+                        x = self.pts[:, indx][rng2]
                         y = self.y[name][rng2]
-                        x,y = list(zip(*sorted(zip(x,y))))
-                        a.plot(x,y,label=lbl+', '+xlbl+'={0:.3}'.format(x2),**kwargs)
-            elif self.nd==3:
+                        x, y = list(zip(*sorted(zip(x, y))))
+                        a.plot(
+                            x,
+                            y,
+                            label=lbl + ", " + xlbl + "={0:.3}".format(x2),
+                            **kwargs
+                        )
+            elif self.nd == 3:
                 indx23 = range(3)
                 indx23.remove(indx)
                 if self.x:
-                    x2,rng2 = maskmaker(self.x[indx23[0]],x2rng)
-                    x3,rng3 = maskmaker(self.x[indx23[1]],x3rng)
-                    ys = self.y[name].reshape(self.shape).swapaxes(-1,indx)
-                    xlbls = [_mathtext(name) for name in self.xnames if name!=xname]
-                    for y2,x2 in zip(ys[rng2],x2[rng2]):
-                        x2lbl = lbl+', '+xlbls[0]+'='+str(x2)
-                        for y,x3 in zip(y2[rng3],x3[rng3]):
-                            a.plot(x,y,label=x2lbl+', '+xlbls[1]+'={0:.3}'.format(x3),**kwargs)
+                    x2, rng2 = maskmaker(self.x[indx23[0]], x2rng)
+                    x3, rng3 = maskmaker(self.x[indx23[1]], x3rng)
+                    ys = self.y[name].reshape(self.shape).swapaxes(-1, indx)
+                    xlbls = [_mathtext(name) for name in self.xnames if name != xname]
+                    for y2, x2 in zip(ys[rng2], x2[rng2]):
+                        x2lbl = lbl + ", " + xlbls[0] + "=" + str(x2)
+                        for y, x3 in zip(y2[rng3], x3[rng3]):
+                            a.plot(
+                                x,
+                                y,
+                                label=x2lbl + ", " + xlbls[1] + "={0:.3}".format(x3),
+                                **kwargs
+                            )
                 else:
-                    x2s,rng2 = maskmaker(self.pts[:,indx23[0]],x2rng)
+                    x2s, rng2 = maskmaker(self.pts[:, indx23[0]], x2rng)
                     x2s = np.sort(list(set(x2s[rng2])))
-                    xs = self.pts[:,indx][rng2]
+                    xs = self.pts[:, indx][rng2]
                     ys = self.y[name][rng2]
-                    xlbls = [_mathtext(xlbl) for xlbl in self.xnames if xlbl!=xname]
+                    xlbls = [_mathtext(xlbl) for xlbl in self.xnames if xlbl != xname]
                     for x2 in x2s:
-                        x2lbl = lbl+', '+xlbls[0]+'='+str(x2)
-                        x3s,rng3 = maskmaker(self.pts[:,indx23[1]][rng2],x3rng)
+                        x2lbl = lbl + ", " + xlbls[0] + "=" + str(x2)
+                        x3s, rng3 = maskmaker(self.pts[:, indx23[1]][rng2], x3rng)
                         x3s = np.sort(list(set(x3s[rng3])))
                         for x3 in x3s:
-                            x3d,rng3 = maskmaker(self.pts[:,indx23[1]][rng2],float(x3))
+                            x3d, rng3 = maskmaker(
+                                self.pts[:, indx23[1]][rng2], float(x3)
+                            )
                             x = xs[rng3]
                             y = ys[rng3]
-                            x,y = list(zip(*sorted(zip(x,y))))
-                            a.plot(x,y,label=x2lbl+', '+xlbls[1]+'={0:.3}'.format(x3),**kwargs)
-        
-    
-    
-
-
-
+                            x, y = list(zip(*sorted(zip(x, y))))
+                            a.plot(
+                                x,
+                                y,
+                                label=x2lbl + ", " + xlbls[1] + "={0:.3}".format(x3),
+                                **kwargs
+                            )
 
 
 ######################################################## helper functions
 
 ##class operations
 
-def _data_op(self,other,fun,op,quiet=default_quiet):
+
+def _data_op(self, other, fun, op, quiet=default_quiet):
     """
     This function generalizes the process of creating a new class
     and filling it with the appropriate dependent data, info, and
     indepenedent data from an operation on one or more data classes.
-    
-    """
-    NewData = copy.deepcopy(self) #intialize new data object.
 
-    if type(other)==DataBase:
+    """
+    NewData = copy.deepcopy(self)  # intialize new data object.
+
+    if type(other) == DataBase:
         # check if same dependent variables
         if self.xnames != other.xnames:
-            raise ArithmeticError('Two data objects do not have same dependent variables.')
-        if not np.all(self.pts==other.pts):#[np.all(sx==ox) for sx,ox in zip(self.x,other.x)]):
-            if not quiet: print('interpolating to same axes.')
+            raise ArithmeticError(
+                "Two data objects do not have same dependent variables."
+            )
+        if not np.all(
+            self.pts == other.pts
+        ):  # [np.all(sx==ox) for sx,ox in zip(self.x,other.x)]):
+            if not quiet:
+                print("interpolating to same axes.")
             otherinterp = other.interp(NewData.pts).y
         else:
             otherinterp = other.y
         # problem from unbound interpolation?? Fixed when switched to returning objects.
-        #if self.nd==1:
+        # if self.nd==1:
         #    for k in otherinterp:
         #        otherinterp[k] = otherinterp[k].ravel()
-            
-    
+
         for key in other.y:
             if key in NewData.y:
-                #if not quiet: print(key+op+key)
-                NewData.y[key] = fun(NewData.y[key],otherinterp[key])
-            else: 
-                if not quiet: print('0'+op+key)
-                NewData.y[key] = fun(np.zeros_like(otherinterp[key]),otherinterp[key])
+                # if not quiet: print(key+op+key)
+                NewData.y[key] = fun(NewData.y[key], otherinterp[key])
+            else:
+                if not quiet:
+                    print("0" + op + key)
+                NewData.y[key] = fun(np.zeros_like(otherinterp[key]), otherinterp[key])
         for key in NewData.y:
-            if key not in other.y and not quiet: print(key+op+'0')
-        
-    else: # apply operation to y values
-        for k,v in NewData.y.items():
-            #if not quiet: print(k+op+str(other))
-            NewData.y[k] = fun(v,other)
-            
+            if key not in other.y and not quiet:
+                print(key + op + "0")
+
+    else:  # apply operation to y values
+        for k, v in NewData.y.items():
+            # if not quiet: print(k+op+str(other))
+            NewData.y[k] = fun(v, other)
+
     return NewData
-
-
 
 
 def _mathtext(text):
     """
-    Helper function to convert lazy ascii conventions to 
+    Helper function to convert lazy ascii conventions to
     nicer latex strings.
-    
+
     :param text : str.
-    
+
     """
 
-    simplemaps = ['epsilon','psi','omega','nabla','cdot','kappa','vartheta','theta',
-                  'nu','times','perp','parallel','lambda','ln',
-                  'Lambda','xi','chi','varphi','phi','Phi','mu','int', 'Re','Im',
-                  'delta','angle','ell','alpha','beta','zeta','rho']
-    
-    trickymaps = [('par','parallel'), ('divxprp','nablacdotxi_perp'),
-                  ('exb','EtimesB'), ('lmda','lambda'),#('lam','lambda'),
-                  ('wdian','omega_*n'), ('wdiat','omega_{*T}'),
-                  ('wrot','omega_phi'), ('real','Re'),
-                  ('imag','Im'), ('log','ln'), ('ln10','log_{10}'),
-                  ('kxprp','kappacdotxi_perp'),
-                  ('prp','perp'), ('int','int '),('eps_','epsilon_')
-                 ]
+    simplemaps = [
+        "epsilon",
+        "psi",
+        "omega",
+        "nabla",
+        "cdot",
+        "kappa",
+        "vartheta",
+        "theta",
+        "nu",
+        "times",
+        "perp",
+        "parallel",
+        "lambda",
+        "ln",
+        "Lambda",
+        "xi",
+        "chi",
+        "varphi",
+        "phi",
+        "Phi",
+        "mu",
+        "int",
+        "Re",
+        "Im",
+        "delta",
+        "angle",
+        "ell",
+        "alpha",
+        "beta",
+        "zeta",
+        "rho",
+    ]
+
+    trickymaps = [
+        ("par", "parallel"),
+        ("divxprp", "nablacdotxi_perp"),
+        ("exb", "EtimesB"),
+        ("lmda", "lambda"),  # ('lam','lambda'),
+        ("wdian", "omega_*n"),
+        ("wdiat", "omega_{*T}"),
+        ("wrot", "omega_phi"),
+        ("real", "Re"),
+        ("imag", "Im"),
+        ("log", "ln"),
+        ("ln10", "log_{10}"),
+        ("kxprp", "kappacdotxi_perp"),
+        ("prp", "perp"),
+        ("int", "int "),
+        ("eps_", "epsilon_"),
+    ]
 
     # replace some lazy data labeling with proper math
     for tm in trickymaps:
-        text=text.replace(*tm)
+        text = text.replace(*tm)
     # tex up symbols
     for sm in simplemaps:
-        text=text.replace(sm,"$\\"+sm+'$')
+        text = text.replace(sm, "$\\" + sm + "$")
     # clean up known bugs
-    text = text.replace('e$\\psi$lon','epsilon')
-    text = text.replace('var$\\theta','vartheta')
-    text = text.replace('var$\\phi','varphi')
+    text = text.replace("e$\\psi$lon", "epsilon")
+    text = text.replace("var$\\theta", "vartheta")
+    text = text.replace("var$\\phi", "varphi")
     # deliniate start/stop of latexing
-    for word in text.split(' '):
-        #if '_' in word: # got too fancy (required spaces after subscripts)
+    for word in text.split(" "):
+        # if '_' in word: # got too fancy (required spaces after subscripts)
         #    newword='$'+word.replace('_','_{').replace('$','')+'}'*word.count('_')+'$'
-        if '^' in word or '_' in word:
-            text=text.replace(word,'$'+word.replace('$',' ')+'$')
-    #text.replace('$$','')
-    
-    return text#.encode('string-escape') #raw string
+        if "^" in word or "_" in word:
+            text = text.replace(word, "$" + word.replace("$", " ") + "$")
+    # text.replace('$$','')
 
-def getshot(path='.',full_name=False):
+    return text  # .encode('string-escape') #raw string
+
+
+def getshot(path=".", full_name=False):
     """
     Find 6 digit shot number in path to directory or file.
-    
+
     :param d: str. Path.
 
     :returns: str. Shot number if found, '' if not.
-    
+
     """
     pth = os.path.abspath(path)
-    shot = ''
-    for i in range(len(pth)-5):
-        if str.isdigit(pth[i:i+6]):
-            shot = pth[i:i+6]
+    shot = ""
+    for i in range(len(pth) - 5):
+        if str.isdigit(pth[i : i + 6]):
+            shot = pth[i : i + 6]
             break
     if full_name:
-        dirs = pth.split('/')
+        dirs = pth.split("/")
         for d in dirs:
             if shot in d:
                 shot = d
@@ -1648,102 +1907,123 @@ def getshot(path='.',full_name=False):
 ######################################################## Developer functions
 
 
-def _write_ellipk(npts=3e2,fname='ellipk01.dat'):
+def _write_ellipk(npts=3e2, fname="ellipk01.dat"):
     """
-    Writes complete elliptic integral of the first 
+    Writes complete elliptic integral of the first
     kind to file.
 
     .. note:: This is not the original routine. Could not find it.
 
-    Key Word Arguments: 
-      npts : int.
-      fname: str.
-    
-    """
-    # ellipk(1-1e-17)=inf
-    x = np.log(1./1e-15)
-    kappas = 1.0-np.exp(np.linspace(0,x,npts))/np.exp(x)
-    with open(fname,'w') as f:
-        f.write('{:.0f} \n'.format(npts))
-        for k in kappas[::-1]:
-            f.write('{:.21} '.format(k))
-        f.write('\n')
-        for k in kappas[::-1]:
-            f.write('{} '.format(ellipk(k)))
-    return True
-
-def _write_ellipe(npts=3e2,fname='ellipe01.dat'):
-    """
-    Writes complete elliptic integral of the first 
-    kind to file.
-    
-    .. note:: This is not the original routine. Could not find it.
-    
     Key Word Arguments:
       npts : int.
       fname: str.
-    
-    """
-    kappas = np.linspace(0,1,npts)
-    with open(fname,'w') as f:
-        f.write('{:.0f} \n'.format(npts))
-        for k in kappas:
-            f.write('{} '.format(k))
-        f.write('\n')
-        for k in kappas:
-            f.write('{} '.format(ellipe(k)))
-    return True
-        
-def _factors(n):
-    return list(sorted(set(reduce(list.__add__, 
-                      ([i, n//i] for i in range(1, int(n**0.5) + 1) 
-                       if n % i == 0)))))
 
-def _plot3dvolume(self,ynames=None,npts=124,cbar=True,plot_type='',**kwargs):
+    """
+    # ellipk(1-1e-17)=inf
+    x = np.log(1.0 / 1e-15)
+    kappas = 1.0 - np.exp(np.linspace(0, x, npts)) / np.exp(x)
+    with open(fname, "w") as f:
+        f.write("{:.0f} \n".format(npts))
+        for k in kappas[::-1]:
+            f.write("{:.21} ".format(k))
+        f.write("\n")
+        for k in kappas[::-1]:
+            f.write("{} ".format(ellipk(k)))
+    return True
+
+
+def _write_ellipe(npts=3e2, fname="ellipe01.dat"):
+    """
+    Writes complete elliptic integral of the first
+    kind to file.
+
+    .. note:: This is not the original routine. Could not find it.
+
+    Key Word Arguments:
+      npts : int.
+      fname: str.
+
+    """
+    kappas = np.linspace(0, 1, npts)
+    with open(fname, "w") as f:
+        f.write("{:.0f} \n".format(npts))
+        for k in kappas:
+            f.write("{} ".format(k))
+        f.write("\n")
+        for k in kappas:
+            f.write("{} ".format(ellipe(k)))
+    return True
+
+
+def _factors(n):
+    return list(
+        sorted(
+            set(
+                reduce(
+                    list.__add__,
+                    ([i, n // i] for i in range(1, int(n**0.5) + 1) if n % i == 0),
+                )
+            )
+        )
+    )
+
+
+def _plot3dvolume(self, ynames=None, npts=124, cbar=True, plot_type="", **kwargs):
     """
     Under construction volume plotting.
     """
-    
+
     # general multidimensional axes
     X = np.array(self.pts).T.tolist()
-    if self.nd==1: X += np.zeros_like(X.ravel())
+    if self.nd == 1:
+        X += np.zeros_like(X.ravel())
     # Extra work to convert the cylindrical axes
-    if self.xnames==['r','z']:
+    if self.xnames == ["r", "z"]:
         # regularly spaced grid in x,y,z
-        rlim = self.pts[:,0].max()
-        zlim = np.abs(self.pts[:,1]).max()
-        xx,yy,zz = np.mgrid[-rlim:rlim:npts*1j,-rlim:rlim:npts*1j,-zlim:zlim:npts*1j]
-        rr 	 = np.sqrt(xx**2.0+xx**2.0)
-        pp = np.arctan2(yy,xx)
-        X = [xx,yy,zz]
-    
+        rlim = self.pts[:, 0].max()
+        zlim = np.abs(self.pts[:, 1]).max()
+        xx, yy, zz = np.mgrid[
+            -rlim : rlim : npts * 1j, -rlim : rlim : npts * 1j, -zlim : zlim : npts * 1j
+        ]
+        rr = np.sqrt(xx**2.0 + xx**2.0)
+        pp = np.arctan2(yy, xx)
+        X = [xx, yy, zz]
+
         # To index coordinates
-        cordpts = [(npts-1)*(rr-rlim)/(2*rlim),(npts-1)*(zz-zlim)/(2*zlim)]
-    
+        cordpts = [
+            (npts - 1) * (rr - rlim) / (2 * rlim),
+            (npts - 1) * (zz - zlim) / (2 * zlim),
+        ]
+
     # display data
     for name in ynames:
-        if 'figure' not in kwargs: f = mmlab.figure(bgcolor=(1,1,1),fgcolor=(0,0,0),size=size)
+        if "figure" not in kwargs:
+            f = mmlab.figure(bgcolor=(1, 1, 1), fgcolor=(0, 0, 0), size=size)
         S = self.y[name]
-        if self.xnames==['r','z']:
-            
+        if self.xnames == ["r", "z"]:
+
             # 2D interpolation
-            print('interpolating real component...')
-            S = griddata(self.pts,np.real(self.y[name]),(rr,zz),method='linear')
-            print('interpolating imag component...')
-            S+= griddata(self.pts,np.imag(self.y[name]),(rr,zz),method='linear')*1j
-            S = np.real(S*np.exp(-self.params['n']*1j*pp))
-            print(np.shape(S),np.shape(rr))
+            print("interpolating real component...")
+            S = griddata(self.pts, np.real(self.y[name]), (rr, zz), method="linear")
+            print("interpolating imag component...")
+            S += (
+                griddata(self.pts, np.imag(self.y[name]), (rr, zz), method="linear")
+                * 1j
+            )
+            S = np.real(S * np.exp(-self.params["n"] * 1j * pp))
+            print(np.shape(S), np.shape(rr))
             # Take out wedge for better view
-            wedge = (xx>=0.0)*(yy>=0.0)
-            #m[wedge==False] = 0.0
-            S[wedge==False] = -1e99
-            S[(S==S)==False]= -1e99
-            src = mmlab.pipeline.scalar_field(xx,yy,zz,S)
-            thr = mmlab.pipeline.threshold(src,low=-1e98)
-            #mmlab.pipeline.volume(src)
-            mmlab.pipeline.scalar_cut_plane(src,plane_orientation='x_axes')
-            mmlab.pipeline.scalar_cut_plane(src,plane_orientation='y_axes')
-            if cbar: mmlab.colorbar(title=name,orientation='vertical')
-        
+            wedge = (xx >= 0.0) * (yy >= 0.0)
+            # m[wedge==False] = 0.0
+            S[wedge == False] = -1e99
+            S[(S == S) == False] = -1e99
+            src = mmlab.pipeline.scalar_field(xx, yy, zz, S)
+            thr = mmlab.pipeline.threshold(src, low=-1e98)
+            # mmlab.pipeline.volume(src)
+            mmlab.pipeline.scalar_cut_plane(src, plane_orientation="x_axes")
+            mmlab.pipeline.scalar_cut_plane(src, plane_orientation="y_axes")
+            if cbar:
+                mmlab.colorbar(title=name, orientation="vertical")
+
     f = mmlab.gcf()
-    return xx,yy,zz,S
+    return xx, yy, zz, S
