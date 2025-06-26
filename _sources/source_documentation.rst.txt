@@ -1,5 +1,9 @@
 .. _source_documentation:
 
+The recommended post processing for GPEC is now to use the devoted :ref:`OMFIT module <omfit>`.
+The deprecated code below has been ported there and improved, but is included here for reference.
+
+
 PYPEC Source documentation
 **************************
 
