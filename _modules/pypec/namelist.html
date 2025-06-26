@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pypec.namelist &#8212; GPEC 1.5.5 documentation</title>
+    <title>pypec.namelist &#8212; GPEC 1.5.6 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/bootstrap-sphinx.css" />
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
@@ -48,6 +48,7 @@
                 <li><a href="../../contact.html">Contact</a></li>
                 <li><a href="../../outputs.html">I/O</a></li>
                 <li><a href="../../releases.html">Release History</a></li>
+                <li><a href="../../dcon_readme.html">DCON</a></li>
                 <li><a href="../../developers.html">Develop</a></li>
                 <li><a href="../../source_documentation.html">Code</a></li>
             
@@ -106,14 +107,14 @@
 <span class="sd">:mod:`pypec.namelist` -- IO for FORTRAN Namelists</span>
 <span class="sd">=================================================</span>
 
-<span class="sd">This module provides pythonic tools for reading and writing </span>
+<span class="sd">This module provides pythonic tools for reading and writing</span>
 <span class="sd">fortran namelists.</span>
 
 <span class="sd">Examples</span>
 <span class="sd">--------</span>
 
-<span class="sd">This module can be used to convert FORTRAN namelist files into </span>
-<span class="sd">python ordered dictionary type objects. The individual namelists are </span>
+<span class="sd">This module can be used to convert FORTRAN namelist files into</span>
+<span class="sd">python ordered dictionary type objects. The individual namelists are</span>
 <span class="sd">capitalized and their paramters are left as written. The actual</span>
 <span class="sd">parameter is thus stored two levels deep in the dictionary.</span>
 
@@ -142,7 +143,7 @@
 <span class="sd">&gt;&gt;&gt; write(nl,&#39;examples/example_namelist_edit.in&#39;)</span>
 <span class="sd">True</span>
 
-<span class="sd">.. note:: </span>
+<span class="sd">.. note::</span>
 <span class="sd"> These examples can be tested by developers using ipython as follows:</span>
 
 <span class="sd">   In [1]: import pypec.namelist,doctest</span>
@@ -150,6 +151,7 @@
 <span class="sd">   In [2]: doctest.testmod(pypec.namelist,verbose=True)</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
+
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    @package gpec</span>
 <span class="sd">    @author NC Logan</span>
@@ -158,11 +160,13 @@
 
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
 
+
 <div class="viewcode-block" id="Objectify"><a class="viewcode-back" href="../../source_documentation.html#pypec.namelist.Objectify">[docs]</a><span class="k">class</span> <span class="nc">Objectify</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Class base to convert iterable to instance.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Recursively convert iterable to instance.</span>
@@ -172,152 +176,184 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
-               <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="p">[</span><span class="n">Objectify</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">b</span><span class="p">])</span>
+                <span class="nb">setattr</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="p">[</span><span class="n">Objectify</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">b</span><span class="p">]</span>
+                <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-               <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">Objectify</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="n">b</span><span class="p">)</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">Objectify</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="n">b</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_todict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            Converts instance back to dictionary.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Converts instance back to dictionary.</span>
 
-<span class="sd">            &quot;&quot;&quot;</span>
-            <span class="n">d</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
-            <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">attr</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;__&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">attr</span><span class="o">==</span><span class="s1">&#39;_todict&#39;</span><span class="p">:</span>
-                    <span class="n">val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
-                        <span class="n">d</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">_todict</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">Objectify</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">val</span><span class="p">]</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">d</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">_todict</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">Objectify</span><span class="p">)</span> <span class="k">else</span> <span class="n">val</span> 
-            <span class="k">return</span> <span class="n">d</span></div>
-
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">attr</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;__&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">attr</span> <span class="o">==</span> <span class="s2">&quot;_todict&quot;</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+                    <span class="n">d</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                        <span class="n">x</span><span class="o">.</span><span class="n">_todict</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">Objectify</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">val</span>
+                    <span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">d</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">_todict</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">Objectify</span><span class="p">)</span> <span class="k">else</span> <span class="n">val</span>
+        <span class="k">return</span> <span class="n">d</span></div>
 
 
 <span class="k">def</span> <span class="nf">_string_to_type</span><span class="p">(</span><span class="nb">str</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Convert a string representing a fortran namelist value</span>
 <span class="sd">    to the appropriate python type object.</span>
-<span class="sd">    </span>
+
 <span class="sd">    :param str  : str. String to convert</span>
-<span class="sd">    </span>
+
 <span class="sd">    :returns: obj. Python object of appropriate type.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">pyobj</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+        <span class="n">pyobj</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">pyobj</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+            <span class="n">pyobj</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">str</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;.t&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">str</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;t&#39;</span><span class="p">):</span>
-                <span class="n">pyobj</span><span class="o">=</span><span class="kc">True</span>
-            <span class="k">elif</span> <span class="nb">str</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;.f&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">str</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;f&#39;</span><span class="p">):</span>
-                <span class="n">pyobj</span><span class="o">=</span><span class="kc">False</span>
-            <span class="c1">#complex written as tuple</span>
-            <span class="k">elif</span> <span class="nb">str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;(&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">str</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;)&#39;</span><span class="p">):</span>
-                <span class="n">fpair</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span><span class="nb">str</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">maketrans</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="s1">&#39;() &#39;</span><span class="p">)))</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)))</span>
-                <span class="n">pyobj</span><span class="o">=</span><span class="nb">complex</span><span class="p">(</span><span class="o">*</span><span class="n">fpair</span><span class="p">)</span>
-            <span class="c1">#lists written using spaces or repetition</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="s1">&#39;*&#39;</span> <span class="ow">in</span> <span class="nb">str</span> <span class="ow">or</span> <span class="s1">&#39; &#39;</span> <span class="ow">in</span> <span class="nb">str</span> <span class="ow">or</span> <span class="s1">&#39;,&#39;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">str</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">maketrans</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="s1">&#39;,.* &#39;</span><span class="p">)))</span><span class="o">.</span><span class="n">isalnum</span><span class="p">():</span>
-                <span class="n">pyobj</span><span class="o">=</span><span class="p">[]</span>
-                <span class="nb">str</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">,</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">str</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;.t&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">str</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;t&quot;</span><span class="p">):</span>
+                <span class="n">pyobj</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">elif</span> <span class="nb">str</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;.f&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">str</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;f&quot;</span><span class="p">):</span>
+                <span class="n">pyobj</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="c1"># complex written as tuple</span>
+            <span class="k">elif</span> <span class="nb">str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;(&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">str</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;)&quot;</span><span class="p">):</span>
+                <span class="n">fpair</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+                    <span class="nb">map</span><span class="p">(</span>
+                        <span class="nb">float</span><span class="p">,</span>
+                        <span class="nb">str</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">maketrans</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="s2">&quot;() &quot;</span><span class="p">)))</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">),</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">pyobj</span> <span class="o">=</span> <span class="nb">complex</span><span class="p">(</span><span class="o">*</span><span class="n">fpair</span><span class="p">)</span>
+            <span class="c1"># lists written using spaces or repetition</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="s2">&quot;*&quot;</span> <span class="ow">in</span> <span class="nb">str</span> <span class="ow">or</span> <span class="s2">&quot; &quot;</span> <span class="ow">in</span> <span class="nb">str</span> <span class="ow">or</span> <span class="s2">&quot;,&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">str</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span>
+                <span class="nb">str</span><span class="o">.</span><span class="n">maketrans</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="s2">&quot;,.* &quot;</span><span class="p">))</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">isalnum</span><span class="p">():</span>
+                <span class="n">pyobj</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="nb">str</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">str</span><span class="o">.</span><span class="n">split</span><span class="p">():</span>
-                    <span class="k">if</span> <span class="s1">&#39;*&#39;</span> <span class="ow">in</span> <span class="n">i</span><span class="p">:</span>
-                        <span class="n">n</span><span class="p">,</span><span class="n">v</span> <span class="o">=</span> <span class="n">i</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
-                        <span class="n">pyobj</span><span class="o">+=</span><span class="nb">int</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="o">*</span><span class="p">[</span><span class="n">_string_to_type</span><span class="p">(</span><span class="n">v</span><span class="p">)]</span>
+                    <span class="k">if</span> <span class="s2">&quot;*&quot;</span> <span class="ow">in</span> <span class="n">i</span><span class="p">:</span>
+                        <span class="n">n</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">i</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">)</span>
+                        <span class="n">pyobj</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="p">[</span><span class="n">_string_to_type</span><span class="p">(</span><span class="n">v</span><span class="p">)]</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="n">pyobj</span><span class="o">+=</span><span class="p">[</span><span class="n">_string_to_type</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span>
-            <span class="c1">#default to string</span>
+                        <span class="n">pyobj</span> <span class="o">+=</span> <span class="p">[</span><span class="n">_string_to_type</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span>
+            <span class="c1"># default to string</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">pyobj</span><span class="o">=</span><span class="nb">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;&quot;&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+                <span class="n">pyobj</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;&quot;&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">pyobj</span>
 
 
-
-<div class="viewcode-block" id="read"><a class="viewcode-back" href="../../source_documentation.html#pypec.namelist.read">[docs]</a><span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">out_type</span><span class="o">=</span><span class="s1">&#39;dict&#39;</span><span class="p">,</span><span class="n">comment</span><span class="o">=</span><span class="s1">&#39;!&#39;</span><span class="p">,</span><span class="n">old</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="read"><a class="viewcode-back" href="../../source_documentation.html#pypec.namelist.read">[docs]</a><span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">out_type</span><span class="o">=</span><span class="s2">&quot;dict&quot;</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;!&quot;</span><span class="p">,</span> <span class="n">old</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Read in a file. Must have namelists in series, not embedded.</span>
 <span class="sd">    Assumes name of list preceded by &#39;&amp;&#39; and list ends with a single backslash.</span>
-<span class="sd">    </span>
+
 <span class="sd">    :param filename: str. Path to input namelist.</span>
 <span class="sd">    :param out_type: str. Can be either &#39;dict&#39; or &#39;obj&#39;.</span>
 <span class="sd">    :param comment: str. Lines starting with any of these characters are considered annotations.</span>
 
 <span class="sd">    :returns: dict (object). Top keys (attributes) are namelists with sub-key(-attribute) parameter values.</span>
-<span class="sd">        </span>
-<span class="sd">    .. note:: The returned dict is actually &quot;OrderedDict&quot; type from </span>
-<span class="sd">        collections module. If returning an object, the object is </span>
+
+<span class="sd">    .. note:: The returned dict is actually &quot;OrderedDict&quot; type from</span>
+<span class="sd">        collections module. If returning an object, the object is</span>
 <span class="sd">        un-ordered.</span>
-<span class="sd">    </span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
-    
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">out_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;dict&#39;</span><span class="p">,</span><span class="s1">&#39;obj&#39;</span><span class="p">]:</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">out_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;dict&quot;</span><span class="p">,</span> <span class="s2">&quot;obj&quot;</span><span class="p">]:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Must output &#39;dict&#39; or &#39;obj&#39; type.&quot;</span><span class="p">)</span>
     <span class="n">nldict</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">old</span><span class="p">:</span>
-        <span class="n">grp</span> <span class="o">=</span> <span class="s1">&#39;$&#39;</span>
-        <span class="n">end</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span> <span class="c1"># $END gets mixed up with the $ group labeling</span>
+        <span class="n">grp</span> <span class="o">=</span> <span class="s2">&quot;$&quot;</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="s2">&quot;/&quot;</span>  <span class="c1"># $END gets mixed up with the $ group labeling</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">grp</span> <span class="o">=</span> <span class="s1">&#39;&amp;&#39;</span>
-        <span class="n">end</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span>
-    
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-        <span class="n">filestr</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-	<span class="c1">#handle $END block specification</span>
-    <span class="n">filestr</span> <span class="o">=</span> <span class="n">filestr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;$end&#39;</span><span class="p">,</span><span class="s1">&#39;$END&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;$END&#39;</span><span class="p">,</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
-    <span class="c1">#handle unnamed groups</span>
-    <span class="k">if</span> <span class="n">grp</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filestr</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No group names found: placing all in blank group.&#39;</span><span class="p">)</span>
-        <span class="n">filestr</span><span class="o">=</span><span class="n">grp</span><span class="o">+</span><span class="s1">&#39; </span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">+</span><span class="n">filestr</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">/&#39;</span>
-    <span class="k">if</span> <span class="s1">&#39;=&#39;</span> <span class="ow">in</span> <span class="n">filestr</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">filestr</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">grp</span><span class="p">)]:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Group with no name found in begining: placing in blank group.&#39;</span><span class="p">)</span>
-        <span class="n">filestr</span> <span class="o">=</span> <span class="n">grp</span><span class="o">+</span><span class="s1">&#39; </span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">+</span><span class="n">filestr</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">filestr</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">grp</span><span class="p">)]</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">+</span><span class="n">end</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">+</span><span class="n">filestr</span><span class="p">[</span><span class="n">filestr</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">grp</span><span class="p">):]</span>
-    <span class="k">if</span> <span class="s1">&#39;=&#39;</span> <span class="ow">in</span> <span class="n">filestr</span><span class="p">[</span><span class="n">filestr</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="n">end</span><span class="p">):]:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Group with no name found in end: placing in blank group.&#39;</span><span class="p">)</span>
-        <span class="n">filestr</span> <span class="o">=</span> <span class="n">filestr</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">filestr</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="n">end</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">+</span><span class="n">grp</span><span class="o">+</span><span class="s1">&#39; </span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">+</span><span class="n">filestr</span><span class="p">[</span><span class="n">filestr</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="n">end</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">:]</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">+</span><span class="n">end</span>
-    <span class="c1">#remove tabs and split lines</span>
-    <span class="n">nlist</span> <span class="o">=</span> <span class="n">filestr</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">maketrans</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)))</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">grp</span><span class="p">,</span><span class="n">grp</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
-    <span class="c1">#prevent errors in searching for &amp; or /, without condensing list values</span>
-    <span class="n">nlist</span><span class="o">=</span><span class="p">[</span><span class="n">nlistkey</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">nlistkey</span> <span class="ow">in</span> <span class="n">nlist</span><span class="p">]</span>
+        <span class="n">grp</span> <span class="o">=</span> <span class="s2">&quot;&amp;&quot;</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="s2">&quot;/&quot;</span>
 
-    <span class="n">start</span><span class="o">=</span><span class="mi">0</span>
-    <span class="n">stop</span><span class="o">=</span><span class="mi">0</span>
-    <span class="n">it</span><span class="o">=</span><span class="mi">0</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">filestr</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="c1"># handle $END block specification</span>
+    <span class="n">filestr</span> <span class="o">=</span> <span class="n">filestr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;$end&quot;</span><span class="p">,</span> <span class="s2">&quot;$END&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;$END&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">)</span>
+    <span class="c1"># handle unnamed groups</span>
+    <span class="k">if</span> <span class="n">grp</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filestr</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No group names found: placing all in blank group.&quot;</span><span class="p">)</span>
+        <span class="n">filestr</span> <span class="o">=</span> <span class="n">grp</span> <span class="o">+</span> <span class="s2">&quot; </span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">filestr</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">/&quot;</span>
+    <span class="k">if</span> <span class="s2">&quot;=&quot;</span> <span class="ow">in</span> <span class="n">filestr</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="n">filestr</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">grp</span><span class="p">)]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Group with no name found in begining: placing in blank group.&quot;</span><span class="p">)</span>
+        <span class="n">filestr</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">grp</span>
+            <span class="o">+</span> <span class="s2">&quot; </span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="n">filestr</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="n">filestr</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">grp</span><span class="p">)]</span>
+            <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="n">end</span>
+            <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="n">filestr</span><span class="p">[</span><span class="n">filestr</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">grp</span><span class="p">)</span> <span class="p">:]</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;=&quot;</span> <span class="ow">in</span> <span class="n">filestr</span><span class="p">[</span><span class="n">filestr</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="n">end</span><span class="p">)</span> <span class="p">:]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Group with no name found in end: placing in blank group.&quot;</span><span class="p">)</span>
+        <span class="n">filestr</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">filestr</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="n">filestr</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="n">end</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="n">grp</span>
+            <span class="o">+</span> <span class="s2">&quot; </span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="n">filestr</span><span class="p">[</span><span class="n">filestr</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="n">end</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]</span>
+            <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="n">end</span>
+        <span class="p">)</span>
+    <span class="c1"># remove tabs and split lines</span>
+    <span class="n">nlist</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">filestr</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">maketrans</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)))</span>
+        <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">grp</span><span class="p">,</span> <span class="n">grp</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="c1"># prevent errors in searching for &amp; or /, without condensing list values</span>
+    <span class="n">nlist</span> <span class="o">=</span> <span class="p">[</span><span class="n">nlistkey</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">nlistkey</span> <span class="ow">in</span> <span class="n">nlist</span><span class="p">]</span>
+
+    <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">stop</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">it</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">while</span> <span class="n">stop</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">nlist</span><span class="p">):</span>
-        <span class="n">it</span><span class="o">+=</span><span class="mi">1</span>
-        <span class="n">start</span> <span class="o">=</span> <span class="n">nlist</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">grp</span><span class="p">,</span><span class="n">stop</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span>
-        <span class="n">stop</span> <span class="o">=</span> <span class="n">nlist</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">end</span><span class="p">,</span><span class="n">stop</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span>
+        <span class="n">it</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">nlist</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">grp</span><span class="p">,</span> <span class="n">stop</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">stop</span> <span class="o">=</span> <span class="n">nlist</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">end</span><span class="p">,</span> <span class="n">stop</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
         <span class="n">name</span> <span class="o">=</span> <span class="n">nlist</span><span class="p">[</span><span class="n">start</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
         <span class="n">nldict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
-        <span class="c1">#loop through each list, skiping empty lines</span>
-        <span class="c1">#for item in [line for line in nlist[start+1:stop+1] if line.strip()]:</span>
-        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">nlist</span><span class="p">[</span><span class="n">start</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span><span class="n">stop</span><span class="o">+</span><span class="mi">1</span><span class="p">]:</span>
-            <span class="k">if</span> <span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">lstrip</span><span class="p">()</span><span class="o">+</span><span class="s1">&#39; &#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">comment</span><span class="p">:</span>       <span class="c1"># comment</span>
-                <span class="n">iname</span><span class="p">,</span><span class="n">ival</span> <span class="o">=</span> <span class="n">item</span><span class="p">,</span><span class="kc">None</span>
-                <span class="n">nldict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">item</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span>
-            <span class="k">elif</span> <span class="s1">&#39;=&#39;</span> <span class="ow">in</span> <span class="n">item</span><span class="p">:</span>                           <span class="c1"># parameter</span>
-                <span class="n">iname</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
-                <span class="n">ival</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="c1"># note there could be another &#39;=&#39; in the comments</span>
+        <span class="c1"># loop through each list, skiping empty lines</span>
+        <span class="c1"># for item in [line for line in nlist[start+1:stop+1] if line.strip()]:</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">nlist</span><span class="p">[</span><span class="n">start</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:</span> <span class="n">stop</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">lstrip</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">comment</span><span class="p">:</span>  <span class="c1"># comment</span>
+                <span class="n">iname</span><span class="p">,</span> <span class="n">ival</span> <span class="o">=</span> <span class="n">item</span><span class="p">,</span> <span class="kc">None</span>
+                <span class="n">nldict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">item</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">elif</span> <span class="s2">&quot;=&quot;</span> <span class="ow">in</span> <span class="n">item</span><span class="p">:</span>  <span class="c1"># parameter</span>
+                <span class="n">iname</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">ival</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="p">)[</span>
+                    <span class="mi">1</span>
+                <span class="p">]</span>  <span class="c1"># note there could be another &#39;=&#39; in the comments</span>
                 <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">comment</span><span class="p">:</span>
-                    <span class="n">ival</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="n">ival</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">c</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="c1"># allow same line comments</span>
+                    <span class="n">ival</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="n">ival</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">c</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>  <span class="c1"># allow same line comments</span>
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="n">nldict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">iname</span><span class="p">]</span><span class="o">=</span><span class="n">_string_to_type</span><span class="p">(</span><span class="n">ival</span><span class="p">)</span>
+                    <span class="n">nldict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">iname</span><span class="p">]</span> <span class="o">=</span> <span class="n">_string_to_type</span><span class="p">(</span><span class="n">ival</span><span class="p">)</span>
                 <span class="k">except</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Failed to read &quot;</span><span class="o">+</span><span class="n">name</span><span class="o">+</span><span class="s2">&quot; due to line: &quot;</span><span class="o">+</span><span class="n">item</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Failed to read &quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot; due to line: &quot;</span> <span class="o">+</span> <span class="n">item</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">continue</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">test</span><span class="o">=</span><span class="n">nlist</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">grp</span><span class="p">,</span><span class="n">stop</span><span class="p">)</span>
+            <span class="n">test</span> <span class="o">=</span> <span class="n">nlist</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">grp</span><span class="p">,</span> <span class="n">stop</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="n">stop</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">nlist</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">it</span><span class="o">&gt;</span><span class="mi">100</span><span class="p">:</span> <span class="n">stop</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">nlist</span><span class="p">)</span> <span class="c1">#prevent inf loop if bug</span>
+            <span class="n">stop</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">nlist</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">it</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
+            <span class="n">stop</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">nlist</span><span class="p">)</span>  <span class="c1"># prevent inf loop if bug</span>
 
-    <span class="k">if</span> <span class="n">out_type</span><span class="o">==</span><span class="s1">&#39;obj&#39;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">out_type</span> <span class="o">==</span> <span class="s2">&quot;obj&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">Objectify</span><span class="p">(</span><span class="n">nldict</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">nldict</span></div>
 
 
-<div class="viewcode-block" id="write"><a class="viewcode-back" href="../../source_documentation.html#pypec.namelist.write">[docs]</a><span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="n">nl</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">old</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="write"><a class="viewcode-back" href="../../source_documentation.html#pypec.namelist.write">[docs]</a><span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="n">nl</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">old</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Write namelist object to file for fortran interface.</span>
 
@@ -328,41 +364,45 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">nl</span><span class="p">)</span> <span class="o">==</span> <span class="n">Objectify</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Warning: lists from objects are un-ordered.&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Warning: lists from objects are un-ordered.&quot;</span><span class="p">)</span>
         <span class="n">nl</span> <span class="o">=</span> <span class="n">nl</span><span class="o">.</span><span class="n">_todict</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">old</span><span class="p">:</span>
-        <span class="n">start</span> <span class="o">=</span> <span class="s1">&#39;$&#39;</span>
-        <span class="n">end</span> <span class="o">=</span> <span class="s1">&#39;$END&#39;</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="s2">&quot;$&quot;</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="s2">&quot;$END&quot;</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">start</span> <span class="o">=</span> <span class="s1">&#39;&amp;&#39;</span>
-        <span class="n">end</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span>
-    
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span> <span class="c1">#vacuum code requires first line in vac.in</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="s2">&quot;&amp;&quot;</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="s2">&quot;/&quot;</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># vacuum code requires first line in vac.in</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">nl</span><span class="p">:</span>
-            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">start</span><span class="o">*</span><span class="nb">bool</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">+</span><span class="n">key</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">start</span> <span class="o">*</span> <span class="nb">bool</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">+</span> <span class="n">key</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">subkey</span> <span class="ow">in</span> <span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
-                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span><span class="o">==</span><span class="nb">bool</span><span class="p">:</span>
-                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;   &#39;</span><span class="o">+</span><span class="n">subkey</span><span class="o">+</span><span class="s1">&#39; = .&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
-                <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span><span class="o">==</span><span class="nb">complex</span><span class="p">:</span>
-                    <span class="n">fortranfmt</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;+&#39;</span><span class="p">,</span><span class="s1">&#39;,&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;j&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
-                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;   &#39;</span><span class="o">+</span><span class="n">subkey</span><span class="o">+</span><span class="s1">&#39; = &#39;</span><span class="o">+</span><span class="n">fortranfmt</span><span class="o">+</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
-                <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span><span class="o">==</span><span class="nb">str</span><span class="p">:</span>
-                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;   &#39;</span><span class="o">+</span><span class="n">subkey</span><span class="o">+</span><span class="s2">&quot; = &#39;&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;&#39;&quot;</span><span class="p">)</span>
-                <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span><span class="o">==</span><span class="nb">list</span><span class="p">:</span>
-                    <span class="n">spacedlist</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">maketrans</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="s1">&#39;,[]&#39;</span><span class="p">)))</span>
-                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;   &#39;</span><span class="o">+</span><span class="n">subkey</span><span class="o">+</span><span class="s1">&#39; = &#39;</span><span class="o">+</span><span class="n">spacedlist</span><span class="o">+</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span> <span class="o">==</span> <span class="nb">bool</span><span class="p">:</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                        <span class="s2">&quot;   &quot;</span> <span class="o">+</span> <span class="n">subkey</span> <span class="o">+</span> <span class="s2">&quot; = .&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span> <span class="o">==</span> <span class="nb">complex</span><span class="p">:</span>
+                    <span class="n">fortranfmt</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;+&quot;</span><span class="p">,</span> <span class="s2">&quot;,&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;j&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;   &quot;</span> <span class="o">+</span> <span class="n">subkey</span> <span class="o">+</span> <span class="s2">&quot; = &quot;</span> <span class="o">+</span> <span class="n">fortranfmt</span> <span class="o">+</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;   &quot;</span> <span class="o">+</span> <span class="n">subkey</span> <span class="o">+</span> <span class="s2">&quot; = &#39;&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span> <span class="o">+</span> <span class="s2">&quot;&#39;&quot;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+                    <span class="n">spacedlist</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span>
+                        <span class="nb">str</span><span class="o">.</span><span class="n">maketrans</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="s2">&quot;,[]&quot;</span><span class="p">))</span>
+                    <span class="p">)</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;   &quot;</span> <span class="o">+</span> <span class="n">subkey</span> <span class="o">+</span> <span class="s2">&quot; = &quot;</span> <span class="o">+</span> <span class="n">spacedlist</span> <span class="o">+</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
                 <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># comments</span>
-                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;   &#39;</span><span class="o">+</span><span class="n">subkey</span><span class="p">)</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;   &quot;</span> <span class="o">+</span> <span class="n">subkey</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;   &#39;</span><span class="o">+</span><span class="n">subkey</span><span class="o">+</span><span class="s1">&#39; = &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">]))</span>
-                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
-            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">end</span><span class="o">*</span><span class="nb">bool</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
-        
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;   &quot;</span> <span class="o">+</span> <span class="n">subkey</span> <span class="o">+</span> <span class="s2">&quot; = &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">]))</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">end</span> <span class="o">*</span> <span class="nb">bool</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="kc">True</span></div>
 
 
-<span class="k">def</span> <span class="nf">_write_rst</span><span class="p">(</span><span class="n">nl</span><span class="p">,</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;namelist.rst&#39;</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_write_rst</span><span class="p">(</span><span class="n">nl</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;namelist.rst&quot;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Write namelist object to rst file for sphinx documentation</span>
 <span class="sd">    including tooltips.</span>
@@ -375,37 +415,51 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">import</span> <span class="nn">_tooltips_</span>
+
     <span class="n">reload</span><span class="p">(</span><span class="n">_tooltips_</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">nl</span><span class="p">)</span> <span class="o">==</span> <span class="n">Objectify</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Warning: lists from objects are un-ordered.&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Warning: lists from objects are un-ordered.&quot;</span><span class="p">)</span>
         <span class="n">nl</span> <span class="o">=</span> <span class="n">nl</span><span class="o">.</span><span class="n">_todict</span><span class="p">()</span>
-    
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">+</span> <span class="s1">&#39; Namelist Inputs</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span> <span class="c1">#Title</span>
-        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;****************</span><span class="se">\n\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot; Namelist Inputs</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># Title</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;*&quot;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;****************</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">nl</span><span class="p">:</span>
-            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">key</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
-            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">key</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">subkey</span> <span class="ow">in</span> <span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
-                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span><span class="o">==</span><span class="nb">bool</span><span class="p">:</span>
-                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;**&#39;</span><span class="o">+</span><span class="n">subkey</span><span class="o">+</span><span class="s1">&#39;**&#39;</span><span class="o">+</span><span class="s1">&#39; = .&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">+</span><span class="s1">&#39;.</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
-                <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span><span class="o">==</span><span class="nb">complex</span><span class="p">:</span>
-                    <span class="n">fortranfmt</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;+&#39;</span><span class="p">,</span><span class="s1">&#39;,&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;j&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
-                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;**&#39;</span><span class="o">+</span><span class="n">subkey</span><span class="o">+</span><span class="s1">&#39;**&#39;</span><span class="o">+</span><span class="s1">&#39; = &#39;</span><span class="o">+</span><span class="n">fortranfmt</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
-                <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span><span class="o">==</span><span class="nb">str</span><span class="p">:</span>
-                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;**&#39;</span><span class="o">+</span><span class="n">subkey</span><span class="o">+</span><span class="s1">&#39;**&#39;</span><span class="o">+</span><span class="s1">&#39; = &quot;&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span><span class="o">+</span><span class="s1">&#39;&quot;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
-                <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span><span class="o">==</span><span class="nb">list</span><span class="p">:</span>
-                    <span class="n">spacedlist</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">maketrans</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="s1">&#39;,[]&#39;</span><span class="p">)))</span>
-                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;**&#39;</span><span class="o">+</span><span class="n">subkey</span><span class="o">+</span><span class="s1">&#39;**&#39;</span><span class="o">+</span><span class="s1">&#39; = &#39;</span><span class="o">+</span><span class="n">spacedlist</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span> <span class="o">==</span> <span class="nb">bool</span><span class="p">:</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                        <span class="s2">&quot;**&quot;</span>
+                        <span class="o">+</span> <span class="n">subkey</span>
+                        <span class="o">+</span> <span class="s2">&quot;**&quot;</span>
+                        <span class="o">+</span> <span class="s2">&quot; = .&quot;</span>
+                        <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+                        <span class="o">+</span> <span class="s2">&quot;.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span> <span class="o">==</span> <span class="nb">complex</span><span class="p">:</span>
+                    <span class="n">fortranfmt</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;+&quot;</span><span class="p">,</span> <span class="s2">&quot;,&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;j&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;**&quot;</span> <span class="o">+</span> <span class="n">subkey</span> <span class="o">+</span> <span class="s2">&quot;**&quot;</span> <span class="o">+</span> <span class="s2">&quot; = &quot;</span> <span class="o">+</span> <span class="n">fortranfmt</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                        <span class="s2">&quot;**&quot;</span> <span class="o">+</span> <span class="n">subkey</span> <span class="o">+</span> <span class="s2">&quot;**&quot;</span> <span class="o">+</span> <span class="s1">&#39; = &quot;&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span> <span class="o">+</span> <span class="s1">&#39;&quot;</span><span class="se">\n</span><span class="s1">&#39;</span>
+                    <span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+                    <span class="n">spacedlist</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span>
+                        <span class="nb">str</span><span class="o">.</span><span class="n">maketrans</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="s2">&quot;,[]&quot;</span><span class="p">))</span>
+                    <span class="p">)</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;**&quot;</span> <span class="o">+</span> <span class="n">subkey</span> <span class="o">+</span> <span class="s2">&quot;**&quot;</span> <span class="o">+</span> <span class="s2">&quot; = &quot;</span> <span class="o">+</span> <span class="n">spacedlist</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;**&#39;</span><span class="o">+</span><span class="n">subkey</span><span class="o">+</span><span class="s1">&#39;**&#39;</span><span class="o">+</span><span class="s1">&#39; = &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;**&quot;</span> <span class="o">+</span> <span class="n">subkey</span> <span class="o">+</span> <span class="s2">&quot;**&quot;</span> <span class="o">+</span> <span class="s2">&quot; = &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">nl</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">subkey</span><span class="p">])</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">subkey</span> <span class="ow">in</span> <span class="n">_tooltips_</span><span class="o">.</span><span class="n">alltips</span><span class="p">:</span>
-                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;  &#39;</span><span class="o">+</span><span class="n">_tooltips_</span><span class="o">.</span><span class="n">alltips</span><span class="p">[</span><span class="n">subkey</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span><span class="c1">#.replace(&#39;\n&#39;,&#39;&#39;)+&#39;\n&#39;)</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                        <span class="s2">&quot;  &quot;</span> <span class="o">+</span> <span class="n">_tooltips_</span><span class="o">.</span><span class="n">alltips</span><span class="p">[</span><span class="n">subkey</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>  <span class="c1"># .replace(&#39;\n&#39;,&#39;&#39;)+&#39;\n&#39;)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
-                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
-            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&#39;</span><span class="p">)</span>
-        
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="kc">True</span>
 </pre></div>
 
@@ -423,7 +477,7 @@
       
     </p>
     <p>
-        &copy; Copyright 2015, PPPL.<br/>
+        &copy; Copyright 2007 The Trustees of Princeton University.<br/>
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.3.0.<br/>
     </p>
   </div>
