@@ -369,11 +369,13 @@ are recommended to edit ~/.matplotlib/matplotlibrc and
 <span class="gp">&gt;&gt;&gt; </span><span class="n">f1</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;examples/figures/example_eigenvalues.png&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
+<a class="reference internal image-reference" href="examples/figures/example_eigenvalues.png"><img alt="examples/figures/example_eigenvalues.png" src="examples/figures/example_eigenvalues.png" style="width: 600px;" /></a>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">f2</span><span class="p">,</span><span class="n">a2</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">l2</span> <span class="o">=</span> <span class="n">xplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">con</span><span class="p">[</span><span class="s1">&#39;W_EDX&#39;</span><span class="p">])</span> <span class="c1"># This is 2D, returns Quadmesh</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">f2</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;examples/figures/example_eigenvectors.png&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
+<a class="reference internal image-reference" href="examples/figures/example_eigenvectors.png"><img alt="examples/figures/example_eigenvectors.png" src="examples/figures/example_eigenvectors.png" style="width: 600px;" /></a>
 <p>Note this uses matplotlib, and the plots are fully interactive. Navigate and zoom using the toolbar below plots.</p>
 <p>This is not the recommended way to display detailed studies using GPEC data, however. It is
 recommended that the user familiarise themselves with matplotlib (there are many great online
@@ -706,20 +708,14 @@ so beware of loosing accuracy near rational surfaces.</p>
 <span class="sig-prename descclassname"><span class="pre">pypec.data.</span></span><span class="sig-name descname"><span class="pre">open_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename_or_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">complex_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'i'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pypec/data.html#open_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pypec.data.open_dataset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wrapper for xarray.open_dataset that allows automated reduction of
 a dimension distinguishing real and imaginary components.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>filename_or_obj</strong> – str, file or xarray.backends.DataStore
-Strings are interpreted as a path to a netCDF file or an OpenDAP URL
+<p>Strings are interpreted as a path to a netCDF file or an OpenDAP URL
 and opened with python-netCDF4, unless the filename ends with .gz, in
 which case the file is gunzipped and opened with scipy.io.netcdf
 (only netCDF3 supported). File-like objects are opened with
-scipy.io.netcdf (only netCDF3 supported).</p></li>
-<li><p><strong>complex_dim</strong> – str. Dimension designating real/imaginary (0,1)</p></li>
-<li><p><strong>kwargs</strong> – dict. All other key word arguments are passed to xarray.open_dataset.</p></li>
-</ul>
-</dd>
-</dl>
+scipy.io.netcdf (only netCDF3 supported).
+:param filename_or_obj: str, file or xarray.backends.DataStore
+:param complex_dim: str. Dimension designating real/imaginary (0,1)
+:param kwargs: dict. All other key word arguments are passed to xarray.open_dataset.</p>
 <p><strong>Original Documentation:</strong></p>
 <p>Open and decode a dataset from a file or file-like object.</p>
 <p>Parameters</p>

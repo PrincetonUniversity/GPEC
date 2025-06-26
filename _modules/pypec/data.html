@@ -215,9 +215,15 @@
 <span class="sd">&gt;&gt;&gt; l1 = xplot.plot(con[&#39;W_EVX&#39;]) # 1D data, returns a list of lines</span>
 <span class="sd">&gt;&gt;&gt; f1.savefig(&#39;examples/figures/example_eigenvalues.png&#39;)</span>
 
+<span class="sd">.. image:: examples/figures/example_eigenvalues.png</span>
+<span class="sd">   :width: 600px</span>
+
 <span class="sd">&gt;&gt;&gt; f2,a2 = plt.subplots()</span>
 <span class="sd">&gt;&gt;&gt; l2 = xplot.plot(con[&#39;W_EDX&#39;]) # This is 2D, returns Quadmesh</span>
 <span class="sd">&gt;&gt;&gt; f2.savefig(&#39;examples/figures/example_eigenvectors.png&#39;)</span>
+
+<span class="sd">.. image:: examples/figures/example_eigenvectors.png</span>
+<span class="sd">   :width: 600px</span>
 
 <span class="sd">Note this uses matplotlib, and the plots are fully interactive. Navigate and zoom using the toolbar below plots.</span>
 
@@ -508,12 +514,13 @@
 <span class="sd">    Wrapper for xarray.open_dataset that allows automated reduction of</span>
 <span class="sd">    a dimension distinguishing real and imaginary components.</span>
 
-<span class="sd">    :param filename_or_obj: str, file or xarray.backends.DataStore</span>
-<span class="sd">        Strings are interpreted as a path to a netCDF file or an OpenDAP URL</span>
-<span class="sd">        and opened with python-netCDF4, unless the filename ends with .gz, in</span>
-<span class="sd">        which case the file is gunzipped and opened with scipy.io.netcdf</span>
-<span class="sd">        (only netCDF3 supported). File-like objects are opened with</span>
-<span class="sd">        scipy.io.netcdf (only netCDF3 supported).</span>
+<span class="sd">    Strings are interpreted as a path to a netCDF file or an OpenDAP URL</span>
+<span class="sd">    and opened with python-netCDF4, unless the filename ends with .gz, in</span>
+<span class="sd">    which case the file is gunzipped and opened with scipy.io.netcdf</span>
+<span class="sd">    (only netCDF3 supported). File-like objects are opened with</span>
+<span class="sd">    scipy.io.netcdf (only netCDF3 supported).</span>
+
+<span class="sd">        :param filename_or_obj: str, file or xarray.backends.DataStore</span>
 <span class="sd">    :param complex_dim: str. Dimension designating real/imaginary (0,1)</span>
 <span class="sd">    :param kwargs: dict. All other key word arguments are passed to xarray.open_dataset.</span>
 
