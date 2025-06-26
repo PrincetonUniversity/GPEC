@@ -137,7 +137,7 @@
 <li><a class="reference internal" href="#pypec.gpec.optpentrc"><code class="docutils literal notranslate"><span class="pre">optpentrc()</span></code></a></li>
 <li><a class="reference internal" href="#pypec.gpec.run"><code class="docutils literal notranslate"><span class="pre">run()</span></code></a></li>
 <li><a class="reference internal" href="#pypec-namelist-io-for-fortran-namelists"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pypec.namelist</span></code> – IO for FORTRAN Namelists</a><ul>
-<li><a class="reference internal" href="#id3">Examples</a></li>
+<li><a class="reference internal" href="#id1">Examples</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#pypec.namelist.Objectify"><code class="docutils literal notranslate"><span class="pre">Objectify</span></code></a></li>
@@ -722,117 +722,6 @@ scipy.io.netcdf (only netCDF3 supported).</p>
 </ul>
 </dd>
 </dl>
-<p>Open and decode a dataset from a file or file-like object.</p>
-<p>Parameters</p>
-<dl>
-<dt>filename_or_obj<span class="classifier">str, Path, file-like or DataStore</span></dt><dd><p>Strings and Path objects are interpreted as a path to a netCDF file
-or an OpenDAP URL and opened with python-netCDF4, unless the filename
-ends with .gz, in which case the file is gunzipped and opened with
-scipy.io.netcdf (only netCDF3 supported). Byte-strings or file-like
-objects are opened by scipy.io.netcdf (netCDF3) or h5py (netCDF4/HDF).</p>
-</dd>
-<dt>engine<span class="classifier">{“netcdf4”, “scipy”, “pydap”, “h5netcdf”, “pynio”, “cfgrib”,         “pseudonetcdf”, “zarr”} or subclass of xarray.backends.BackendEntrypoint, optional</span></dt><dd><p>Engine to use when reading files. If not provided, the default engine
-is chosen based on available dependencies, with a preference for
-“netcdf4”. A custom backend class (a subclass of <code class="docutils literal notranslate"><span class="pre">BackendEntrypoint</span></code>)
-can also be used.</p>
-</dd>
-<dt>chunks<span class="classifier">int or dict, optional</span></dt><dd><p>If chunks is provided, it is used to load the new dataset into dask
-arrays. <code class="docutils literal notranslate"><span class="pre">chunks=-1</span></code> loads the dataset with dask using a single
-chunk for all arrays. <code class="docutils literal notranslate"><span class="pre">chunks={}</span></code> loads the dataset with dask using
-engine preferred chunks if exposed by the backend, otherwise with
-a single chunk for all arrays.
-<code class="docutils literal notranslate"><span class="pre">chunks='auto'</span></code> will use dask <code class="docutils literal notranslate"><span class="pre">auto</span></code> chunking taking into account the
-engine preferred chunks. See dask chunking for more details.</p>
-</dd>
-<dt>cache<span class="classifier">bool, optional</span></dt><dd><p>If True, cache data loaded from the underlying datastore in memory as
-NumPy arrays when accessed to avoid reading from the underlying data-
-store multiple times. Defaults to True unless you specify the <cite>chunks</cite>
-argument to use dask, in which case it defaults to False. Does not
-change the behavior of coordinates corresponding to dimensions, which
-always load their data from disk into a <code class="docutils literal notranslate"><span class="pre">pandas.Index</span></code>.</p>
-</dd>
-<dt>decode_cf<span class="classifier">bool, optional</span></dt><dd><p>Whether to decode these variables, assuming they were saved according
-to CF conventions.</p>
-</dd>
-<dt>mask_and_scale<span class="classifier">bool, optional</span></dt><dd><p>If True, replace array values equal to <cite>_FillValue</cite> with NA and scale
-values according to the formula <cite>original_values * scale_factor +
-add_offset</cite>, where <cite>_FillValue</cite>, <cite>scale_factor</cite> and <cite>add_offset</cite> are
-taken from variable attributes (if they exist).  If the <cite>_FillValue</cite> or
-<cite>missing_value</cite> attribute contains multiple values a warning will be
-issued and all array values matching one of the multiple values will
-be replaced by NA. mask_and_scale defaults to True except for the
-pseudonetcdf backend. This keyword may not be supported by all the backends.</p>
-</dd>
-<dt>decode_times<span class="classifier">bool, optional</span></dt><dd><p>If True, decode times encoded in the standard NetCDF datetime format
-into datetime objects. Otherwise, leave them encoded as numbers.
-This keyword may not be supported by all the backends.</p>
-</dd>
-<dt>decode_timedelta<span class="classifier">bool, optional</span></dt><dd><p>If True, decode variables and coordinates with time units in
-{“days”, “hours”, “minutes”, “seconds”, “milliseconds”, “microseconds”}
-into timedelta objects. If False, leave them encoded as numbers.
-If None (default), assume the same value of decode_time.
-This keyword may not be supported by all the backends.</p>
-</dd>
-<dt>use_cftime: bool, optional</dt><dd><p>Only relevant if encoded dates come from a standard calendar
-(e.g. “gregorian”, “proleptic_gregorian”, “standard”, or not
-specified).  If None (default), attempt to decode times to
-<code class="docutils literal notranslate"><span class="pre">np.datetime64[ns]</span></code> objects; if this is not possible, decode times to
-<code class="docutils literal notranslate"><span class="pre">cftime.datetime</span></code> objects. If True, always decode times to
-<code class="docutils literal notranslate"><span class="pre">cftime.datetime</span></code> objects, regardless of whether or not they can be
-represented using <code class="docutils literal notranslate"><span class="pre">np.datetime64[ns]</span></code> objects.  If False, always
-decode times to <code class="docutils literal notranslate"><span class="pre">np.datetime64[ns]</span></code> objects; if this is not possible
-raise an error. This keyword may not be supported by all the backends.</p>
-</dd>
-<dt>concat_characters<span class="classifier">bool, optional</span></dt><dd><p>If True, concatenate along the last dimension of character arrays to
-form string arrays. Dimensions will only be concatenated over (and
-removed) if they have no corresponding variable and if they are only
-used as the last dimension of character arrays.
-This keyword may not be supported by all the backends.</p>
-</dd>
-<dt>decode_coords<span class="classifier">bool or {“coordinates”, “all”}, optional</span></dt><dd><p>Controls which variables are set as coordinate variables:</p>
-<ul class="simple">
-<li><p>“coordinates” or True: Set variables referred to in the
-<code class="docutils literal notranslate"><span class="pre">'coordinates'</span></code> attribute of the datasets or individual variables
-as coordinate variables.</p></li>
-<li><p>“all”: Set variables referred to in  <code class="docutils literal notranslate"><span class="pre">'grid_mapping'</span></code>, <code class="docutils literal notranslate"><span class="pre">'bounds'</span></code> and
-other attributes as coordinate variables.</p></li>
-</ul>
-</dd>
-<dt>drop_variables: str or iterable, optional</dt><dd><p>A variable or list of variables to exclude from being parsed from the
-dataset. This may be useful to drop variables with problems or
-inconsistent values.</p>
-</dd>
-<dt>backend_kwargs: dict</dt><dd><p>Additional keyword arguments passed on to the engine open function,
-equivalent to <cite>**kwargs</cite>.</p>
-</dd>
-<dt><a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs: dict</dt><dd><p>Additional keyword arguments passed on to the engine open function.
-For example:</p>
-<ul class="simple">
-<li><p>‘group’: path to the netCDF4 group in the given file to open given as
-a str,supported by “netcdf4”, “h5netcdf”, “zarr”.</p></li>
-<li><p>‘lock’: resource lock to use when reading data from disk. Only
-relevant when using dask or another form of parallelism. By default,
-appropriate locks are chosen to safely read and write files with the
-currently active dask scheduler. Supported by “netcdf4”, “h5netcdf”,
-“scipy”, “pynio”, “pseudonetcdf”, “cfgrib”.</p></li>
-</ul>
-<p>See engine open function for kwargs accepted by each specific engine.</p>
-</dd>
-</dl>
-<p>Returns
--
-dataset : Dataset</p>
-<blockquote>
-<div><p>The newly created dataset.</p>
-</div></blockquote>
-<p>Notes
--
-<code class="docutils literal notranslate"><span class="pre">open_dataset</span></code> opens the file with read-only access. When you modify
-values of a Dataset, even one linked to files on disk, only the in-memory
-copy you are manipulating in xarray is modified: the original file on disk
-is never touched.</p>
-<p>See Also</p>
-<p>open_mfdataset</p>
 </dd></dl>
 
 <dl class="py function">
@@ -1402,8 +1291,8 @@ a search for the normalized spectrum that maximizes NTV.</p>
 <h2><a class="reference internal" href="#module-pypec.namelist" title="pypec.namelist"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pypec.namelist</span></code></a> – IO for FORTRAN Namelists<a class="headerlink" href="#pypec-namelist-io-for-fortran-namelists" title="Permalink to this heading">¶</a></h2>
 <p>This module provides pythonic tools for reading and writing
 fortran namelists.</p>
-<section id="id3">
-<h3>Examples<a class="headerlink" href="#id3" title="Permalink to this heading">¶</a></h3>
+<section id="id1">
+<h3>Examples<a class="headerlink" href="#id1" title="Permalink to this heading">¶</a></h3>
 <p>This module can be used to convert FORTRAN namelist files into
 python ordered dictionary type objects. The individual namelists are
 capitalized and their paramters are left as written. The actual
@@ -1928,8 +1817,8 @@ fig_kw.setdefault(‘figsize’,figsize).</p>
 <p>Create a figure and a set of subplots.</p>
 <p>This utility wrapper makes it convenient to create common layouts of
 subplots, including the enclosing figure object, in a single call.</p>
-<section id="id4">
-<h2>Parameters<a class="headerlink" href="#id4" title="Permalink to this heading">¶</a></h2>
+<section id="id2">
+<h2>Parameters<a class="headerlink" href="#id2" title="Permalink to this heading">¶</a></h2>
 <dl>
 <dt>nrows, ncols<span class="classifier">int, default: 1</span></dt><dd><p>Number of rows/columns of the subplot grid.</p>
 </dd>
@@ -1973,13 +1862,13 @@ subplot.</p>
 <dt>gridspec_kw<span class="classifier">dict, optional</span></dt><dd><p>Dict with keywords passed to the <cite>~matplotlib.gridspec.GridSpec</cite>
 constructor used to create the grid the subplots are placed on.</p>
 </dd>
-<dt><a href="#id5"><span class="problematic" id="id6">**</span></a>fig_kw</dt><dd><p>All additional keyword arguments are passed to the
+<dt><a href="#id3"><span class="problematic" id="id4">**</span></a>fig_kw</dt><dd><p>All additional keyword arguments are passed to the
 <cite>.pyplot.figure</cite> call.</p>
 </dd>
 </dl>
 </section>
-<section id="id7">
-<h2>Returns<a class="headerlink" href="#id7" title="Permalink to this heading">¶</a></h2>
+<section id="id5">
+<h2>Returns<a class="headerlink" href="#id5" title="Permalink to this heading">¶</a></h2>
 <p>fig : <cite>~.figure.Figure</cite></p>
 <dl>
 <dt>ax<span class="classifier"><cite>.axes.Axes</cite> or array of Axes</span></dt><dd><p><em>ax</em> can be either a single <cite>~matplotlib.axes.Axes</cite> object or an
@@ -2012,8 +1901,8 @@ because for the latter it’s not clear if it refers to a single
 .Figure.subplots
 .Figure.add_subplot</p>
 </section>
-<section id="id8">
-<h2>Examples<a class="headerlink" href="#id8" title="Permalink to this heading">¶</a></h2>
+<section id="id6">
+<h2>Examples<a class="headerlink" href="#id6" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># First create some toy data:</span>
 <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">400</span><span class="p">)</span>
 <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
