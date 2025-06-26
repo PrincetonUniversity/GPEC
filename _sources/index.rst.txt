@@ -3,8 +3,6 @@
 
 .. _Run_Process:
 
-.. _omfit:
-
 Running using OMFIT
 ====================
 
