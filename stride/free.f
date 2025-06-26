@@ -22,6 +22,7 @@ c-----------------------------------------------------------------------
       MODULE stride_free_mod
       USE vacuum_mod, ONLY: mscvac, mscfld
       USE stride_ode_mod
+      USE sym_mod
       USE stride_netcdf_mod
       IMPLICIT NONE
 
@@ -296,6 +297,7 @@ c-----------------------------------------------------------------------
 c     optionally write netcdf file.
 c-----------------------------------------------------------------------
       IF(present(op_netcdf_out))THEN
+         IF(op_netcdf_out) CALL symmetrize(delta_prime_mat)
          IF(op_netcdf_out) CALL stride_netcdf_out(wp,wv,wt,ep,ev,et,
      $          delta_prime_mat)
       ENDIF
