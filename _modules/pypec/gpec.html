@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pypec.gpec &#8212; GPEC 1.5.0 documentation</title>
+    <title>pypec.gpec &#8212; GPEC 1.5.6 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/bootstrap-sphinx.css" />
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
 <meta charset='utf-8'>
@@ -46,6 +48,7 @@
                 <li><a href="../../contact.html">Contact</a></li>
                 <li><a href="../../outputs.html">I/O</a></li>
                 <li><a href="../../releases.html">Release History</a></li>
+                <li><a href="../../dcon_readme.html">DCON</a></li>
                 <li><a href="../../developers.html">Develop</a></li>
                 <li><a href="../../source_documentation.html">Code</a></li>
             
@@ -188,7 +191,7 @@
 <span class="c1">##################################################### DEFAULTS</span>
 
 <div class="viewcode-block" id="InputSet"><a class="viewcode-back" href="../../source_documentation.html#pypec.gpec.InputSet">[docs]</a><span class="k">class</span> <span class="nc">InputSet</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Class designed to hold the standard inputs for a run.</span>
 
 <span class="sd">    :Attributes:</span>
@@ -199,7 +202,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">rundir</span><span class="o">=</span><span class="n">packagedir</span><span class="o">+</span><span class="s1">&#39;bin&#39;</span><span class="p">,</span><span class="n">indir</span><span class="o">=</span><span class="n">packagedir</span><span class="o">+</span><span class="s1">&#39;input&#39;</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initializes the instance.</span>
 
 <span class="sd">        :param rundir: str. Location of GPEC package rundirectory.</span>
@@ -225,7 +228,7 @@
 <span class="c1">##################################################### WRAPPER</span>
 
 <span class="k">def</span> <span class="nf">_newloc</span><span class="p">(</span><span class="n">loc</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Utility function for making and moving to a new location.</span>
 <span class="sd">    Note: First 2 directories counted pre-/ must exist already.</span>
 <span class="sd">    </span>
@@ -248,7 +251,7 @@
 <div class="viewcode-block" id="run"><a class="viewcode-back" href="../../source_documentation.html#pypec.gpec.run">[docs]</a><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">rundir</span><span class="o">=</span><span class="n">default</span><span class="o">.</span><span class="n">rundir</span><span class="p">,</span> <span class="n">submit</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_on_complete</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">rerun</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">rundcon</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">rungpec</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">runpentrc</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">runrdcon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">runstride</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cleandcon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fill_inputs</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s1">&#39;1.3&#39;</span><span class="p">,</span>
         <span class="n">mailon</span><span class="o">=</span><span class="s1">&#39;NONE&#39;</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="mf">3e3</span><span class="p">,</span> <span class="n">hours</span><span class="o">=</span><span class="mi">36</span><span class="p">,</span> <span class="n">partition</span><span class="o">=</span><span class="s1">&#39;general&#39;</span><span class="p">,</span> <span class="n">runipec</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">qsub</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Python wrapper for running gpec package.</span>
 <span class="sd">    </span>
 <span class="sd">    :param loc: str. Directory location for run.</span>
@@ -343,8 +346,8 @@
         <span class="n">ntasks</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="k">if</span> <span class="n">rundcon</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="s1">&#39;dcon.in&#39;</span><span class="p">):</span>
             <span class="n">dcon</span> <span class="o">=</span> <span class="n">namelist</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">&#39;dcon.in&#39;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="s1">&#39;parallel_threads&#39;</span> <span class="ow">in</span> <span class="n">dcon</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;DCON_CONTROL&#39;</span><span class="p">,</span> <span class="p">{}):</span>
-                <span class="n">ntasks</span> <span class="o">=</span> <span class="n">dcon</span><span class="p">[</span><span class="s1">&#39;DCON_CONTROL&#39;</span><span class="p">][</span><span class="s1">&#39;parallel_threads&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s1">&#39;dcon_kin_threads&#39;</span> <span class="ow">in</span> <span class="n">dcon</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;DCON_CONTROL&#39;</span><span class="p">,</span> <span class="p">{}):</span>
+                <span class="n">ntasks</span> <span class="o">=</span> <span class="n">dcon</span><span class="p">[</span><span class="s1">&#39;DCON_CONTROL&#39;</span><span class="p">][</span><span class="s1">&#39;dcon_kin_threads&#39;</span><span class="p">]</span>
                 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39; &gt; Requesting </span><span class="si">{:}</span><span class="s1"> threads&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ntasks</span><span class="p">))</span>
 
     <span class="c1"># actual run</span>
@@ -398,7 +401,7 @@
 
 
 <div class="viewcode-block" id="optntv"><a class="viewcode-back" href="../../source_documentation.html#pypec.gpec.optntv">[docs]</a><span class="k">def</span> <span class="nf">optntv</span><span class="p">(</span><span class="n">mlist</span><span class="p">,</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span><span class="n">rundir</span><span class="o">=</span><span class="n">default</span><span class="o">.</span><span class="n">rundir</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Python wrapper for running gpec package multiple times in</span>
 <span class="sd">    a search for the normalized spectrum that maximizes NTV.</span>
 <span class="sd">    </span>
@@ -445,7 +448,7 @@
     <span class="n">nn</span> <span class="o">=</span> <span class="n">inputs</span><span class="p">[</span><span class="s1">&#39;dcon&#39;</span><span class="p">][</span><span class="s1">&#39;DCON_CONTROL&#39;</span><span class="p">][</span><span class="s1">&#39;nn&#39;</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="nf">totntv</span><span class="p">(</span><span class="n">cs</span><span class="p">,</span><span class="n">mlist</span><span class="o">=</span><span class="n">mlist</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns total ntv torque given a list of the cosine coefficients </span>
 <span class="sd">        and sine coefficients each ordered largest m to lowest.</span>
 
@@ -471,7 +474,7 @@
 
 <div class="viewcode-block" id="optpentrc"><a class="viewcode-back" href="../../source_documentation.html#pypec.gpec.optpentrc">[docs]</a><span class="k">def</span> <span class="nf">optpentrc</span><span class="p">(</span><span class="n">ms</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span><span class="mi">25</span><span class="p">),</span><span class="n">ttype</span><span class="o">=</span><span class="s1">&#39;tgar&#39;</span><span class="p">,</span><span class="n">tfac</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span><span class="n">perp1</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">norm</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span><span class="n">qsub</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
               <span class="n">method</span><span class="o">=</span><span class="s1">&#39;Powell&#39;</span><span class="p">,</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span><span class="n">rundir</span><span class="o">=</span><span class="n">default</span><span class="o">.</span><span class="n">rundir</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Python wrapper for running gpec packages multiple times in</span>
 <span class="sd">    a search for the normalized spectrum that maximizes NTV.</span>
 <span class="sd">    </span>
@@ -570,7 +573,6 @@
     
     <span class="c1"># assert sub-run variables</span>
     <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;gpec&#39;</span><span class="p">][</span><span class="s1">&#39;GPEC_INPUT&#39;</span><span class="p">][</span><span class="s1">&#39;idconfile&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">loc</span><span class="o">+</span><span class="s1">&#39;euler.bin&#39;</span>
-    <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;gpec&#39;</span><span class="p">][</span><span class="s1">&#39;GPEC_INPUT&#39;</span><span class="p">][</span><span class="s1">&#39;ivacuumfile&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">loc</span><span class="o">+</span><span class="s1">&#39;vacuum.bin&#39;</span>
     <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;gpec&#39;</span><span class="p">][</span><span class="s1">&#39;GPEC_INPUT&#39;</span><span class="p">][</span><span class="s1">&#39;ieqfile&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">loc</span><span class="o">+</span><span class="s1">&#39;psi_in.bin&#39;</span>
     <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;gpec&#39;</span><span class="p">][</span><span class="s1">&#39;GPEC_OUTPUT&#39;</span><span class="p">]:</span> <span class="c1"># maximum speed</span>
         <span class="k">if</span> <span class="s1">&#39;flag&#39;</span> <span class="ow">in</span> <span class="n">k</span><span class="p">:</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;gpec&#39;</span><span class="p">][</span><span class="s1">&#39;GPEC_OUTPUT&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span><span class="o">=</span><span class="kc">False</span>
@@ -625,7 +627,7 @@
     
     <span class="c1"># functional wrapper of PENTRC for optimization</span>
     <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">cs</span><span class="p">,</span><span class="n">ms</span><span class="o">=</span><span class="n">ms</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns total ntv torque given a list of the cosine coefficients </span>
 <span class="sd">        and sine coefficients each ordered largest m to lowest.</span>
 
@@ -683,7 +685,7 @@
     
     <span class="c1"># Conditioning and constraints</span>
     <span class="k">def</span> <span class="nf">condition</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span><span class="n">x0</span><span class="o">=</span><span class="n">x0</span><span class="p">,</span><span class="n">direction</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Scale m components to have equal weighting (best guess)&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Scale m components to have equal weighting (best guess)&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">direction</span><span class="o">&gt;=</span><span class="mi">0</span><span class="p">:</span>
             <span class="n">convec</span> <span class="o">=</span> <span class="n">vec</span><span class="o">/</span><span class="n">x0</span>
         <span class="k">else</span><span class="p">:</span>
@@ -691,17 +693,17 @@
         <span class="n">convec</span><span class="o">*=</span> <span class="n">norm</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">convec</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">convec</span>
     <span class="k">def</span> <span class="nf">checknorm</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span><span class="n">norm</span><span class="o">=</span><span class="n">norm</span><span class="p">,</span><span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Equality or inequality constraint on the norm of the vector&quot;&quot;&quot;</span> 
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Equality or inequality constraint on the norm of the vector&quot;&quot;&quot;</span> 
         <span class="n">vnorm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span><span class="c1">#np.sqrt(np.sum(np.abs(vec).ravel()**2))</span>
         <span class="k">if</span> <span class="n">debug</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  vnorm,norm = </span><span class="si">{:}</span><span class="s2">, </span><span class="si">{:}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">vnorm</span><span class="p">,</span><span class="n">norm</span><span class="p">))</span>
         <span class="n">diff</span> <span class="o">=</span> <span class="p">(</span><span class="n">vnorm</span><span class="o">-</span><span class="n">norm</span><span class="p">)</span><span class="o">/</span><span class="n">norm</span>
         <span class="k">return</span> <span class="n">diff</span>
     <span class="k">def</span> <span class="nf">checknorm_prime</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span><span class="n">norm</span><span class="o">=</span><span class="n">norm</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Jacobian of checknorm&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Jacobian of checknorm&quot;&quot;&quot;</span>
         <span class="n">vnorm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">vm</span><span class="p">)</span><span class="o">/</span><span class="n">vnorm</span><span class="p">)</span><span class="o">/</span><span class="n">norm</span>
     <span class="k">def</span> <span class="nf">overlap</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span><span class="n">Phi1</span><span class="o">=</span><span class="n">Phi1</span><span class="p">,</span><span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Equality constrain that solution be perpendicular to GPEC dominant mode&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Equality constrain that solution be perpendicular to GPEC dominant mode&quot;&quot;&quot;</span>
         <span class="n">compvec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="n">j</span><span class="p">]])</span><span class="o">.</span><span class="n">T</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">dot</span> <span class="o">=</span> <span class="n">compvec</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Phi1</span><span class="o">.</span><span class="n">conj</span><span class="p">())</span><span class="o">.</span><span class="n">real</span><span class="c1">#np.sum(compvec.real*Phi1.real+compvec.imag*Phi1.imag)</span>
         <span class="n">ovlp</span><span class="o">=</span> <span class="n">dot</span><span class="o">/</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">compvec</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">Phi1</span><span class="p">))</span>
@@ -753,7 +755,7 @@
 
 
 <div class="viewcode-block" id="omegascan"><a class="viewcode-back" href="../../source_documentation.html#pypec.gpec.omegascan">[docs]</a><span class="k">def</span> <span class="nf">omegascan</span><span class="p">(</span><span class="n">omega</span><span class="o">=</span><span class="s1">&#39;wp&#39;</span><span class="p">,</span><span class="n">base</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span><span class="n">scale</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.5</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span><span class="n">pentrcfile</span><span class="o">=</span><span class="s1">&#39;pentrc.in&#39;</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Run pent for series of scaled nu/omega_phi/omega_E/omega_D/gamma_damp values. </span>
 <span class="sd">    User must specify full path to all files named in pent.in input file</span>
 <span class="sd">    located in the base directory.</span>
@@ -761,7 +763,7 @@
 <span class="sd">    on each surface to obtain the scaled rotation.</span>
 
 <span class="sd">    :param omega: str. Choose from nu, wp, we, wd, or ga</span>
-<span class="sd">    :param base: str. Top level directory containing dcon and gpec runs. Must contain euler.bin and vacuum.bin file.</span>
+<span class="sd">    :param base: str. Top level directory containing dcon and gpec runs. Must contain euler.bin file.</span>
 <span class="sd">    :param scale: ndarray. The scale factors iterated over.</span>
 <span class="sd">    :param pentfile: str. Original input file.</span>
 <span class="sd">    :param rundcon: bool. Set true if using hybrid kinetic MHD DCON. Will also attempt GPEC + PENT.</span>
@@ -801,7 +803,7 @@
 
 <div class="viewcode-block" id="nustarscan"><a class="viewcode-back" href="../../source_documentation.html#pypec.gpec.nustarscan">[docs]</a><span class="k">def</span> <span class="nf">nustarscan</span><span class="p">(</span><span class="n">base</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span><span class="n">scale</span><span class="o">=</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">10.0</span><span class="p">),</span><span class="n">pentfile</span><span class="o">=</span><span class="s1">&#39;pent.in&#39;</span><span class="p">,</span>
            <span class="n">scalen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">scalet</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Run pent for series of *approximately* scaled collisionality values.</span>
 <span class="sd">    Default scaling holds P=NT constant (NTV~P), but this is broken using</span>
 <span class="sd">    scalen or scalet (scalet=False, for example, scales only density).</span>
@@ -817,7 +819,7 @@
 <span class="sd">    .. note:: Approximate scaling ignores log-Lambda dependence, and uses</span>
 <span class="sd">       nu_star ~ nu/v_th ~ (NT^-3/2)/(T^1/2) ~ N/T^2.</span>
 
-<span class="sd">    :param base: str. Top level directory containing dcon and gpec runs. Must contain euler.bin and vacuum.bin file.</span>
+<span class="sd">    :param base: str. Top level directory containing dcon and gpec runs. Must contain euler.bin file.</span>
 <span class="sd">    :param scale: ndarray. The scale factors iterated over.</span>
 <span class="sd">    :param pentfile: str. Original input file.</span>
 <span class="sd">    :param scalen: bool.Use density scaling to change nu_star.</span>
@@ -887,8 +889,8 @@
       
     </p>
     <p>
-        &copy; Copyright 2015, PPPL.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br/>
+        &copy; Copyright 2007 The Trustees of Princeton University.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.3.0.<br/>
     </p>
   </div>
 </footer>

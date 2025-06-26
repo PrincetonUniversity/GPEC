@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pypec.post &#8212; GPEC 1.5.0 documentation</title>
+    <title>pypec.post &#8212; GPEC 1.5.6 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/bootstrap-sphinx.css" />
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
 <meta charset='utf-8'>
@@ -46,6 +48,7 @@
                 <li><a href="../../contact.html">Contact</a></li>
                 <li><a href="../../outputs.html">I/O</a></li>
                 <li><a href="../../releases.html">Release History</a></li>
+                <li><a href="../../dcon_readme.html">DCON</a></li>
                 <li><a href="../../developers.html">Develop</a></li>
                 <li><a href="../../source_documentation.html">Code</a></li>
             
@@ -191,7 +194,7 @@
 
 
 <div class="viewcode-block" id="update_name_conventions"><a class="viewcode-back" href="../../source_documentation.html#pypec.post.update_name_conventions">[docs]</a><span class="k">def</span> <span class="nf">update_name_conventions</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Update the naming conventions in a dataset to the latest conventions.</span>
 
 <span class="sd">    Use this to avoid lots of if statements in cross-checking versions.</span>
@@ -278,7 +281,7 @@
 
 
 <div class="viewcode-block" id="add_3dsurface"><a class="viewcode-back" href="../../source_documentation.html#pypec.post.add_3dsurface">[docs]</a><span class="k">def</span> <span class="nf">add_3dsurface</span><span class="p">(</span><span class="n">control_output</span><span class="p">,</span> <span class="n">phi_lim</span><span class="o">=</span><span class="mi">2</span> <span class="o">*</span> <span class="n">pi</span><span class="p">,</span> <span class="n">nphi</span><span class="o">=</span><span class="mi">180</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Add 3D geometric dimensions to dataset from gpec_control_output_n#.nc.</span>
 
 <span class="sd">    Note, this surface uses the machine toroidal angle. It should only by used</span>
@@ -378,7 +381,7 @@
 
 
 <div class="viewcode-block" id="add_fun"><a class="viewcode-back" href="../../source_documentation.html#pypec.post.add_fun">[docs]</a><span class="k">def</span> <span class="nf">add_fun</span><span class="p">(</span><span class="n">control_output</span><span class="p">,</span> <span class="n">keys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tmag</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Add real space functions of theta calculated from the spectral outputs.</span>
 <span class="sd">    This is helpful when analyzing a GPEC run for which fun_flag was off</span>
 <span class="sd">    for speed/efficiency.</span>
@@ -430,7 +433,7 @@
     <span class="c1"># calculate functions</span>
     <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
         <span class="c1"># inverse fourier transform</span>
-        <span class="n">fun</span> <span class="o">=</span> <span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s1">&#39;xi_n&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s1">&#39;m&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;theta&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">pi</span><span class="p">)))</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s1">&#39;m&#39;</span><span class="p">)</span>
+        <span class="n">fun</span> <span class="o">=</span> <span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s1">&#39;m&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;theta&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">pi</span><span class="p">)))</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s1">&#39;m&#39;</span><span class="p">)</span>
         <span class="c1"># convert to machine toroidal angle</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">tmag</span><span class="p">:</span>
             <span class="n">fun</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;n&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;delta_phi&#39;</span><span class="p">])</span>
@@ -443,7 +446,7 @@
 <span class="c1">######################################################## Post Processing Control Output</span>
 
 <div class="viewcode-block" id="optimize_torque"><a class="viewcode-back" href="../../source_documentation.html#pypec.post.optimize_torque">[docs]</a><span class="k">def</span> <span class="nf">optimize_torque</span><span class="p">(</span><span class="n">matrixprofile</span><span class="p">,</span> <span class="n">psilow</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">psihigh</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">energy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">minimize</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Calculate the eigenvalue and eigenvector corresponding to maximum the torque</span>
 <span class="sd">    within the specified range of normalized poloidal flux.</span>
 
@@ -553,8 +556,8 @@
       
     </p>
     <p>
-        &copy; Copyright 2015, PPPL.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br/>
+        &copy; Copyright 2007 The Trustees of Princeton University.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.3.0.<br/>
     </p>
   </div>
 </footer>
