@@ -653,7 +653,7 @@ c-----------------------------------------------------------------------
 c     agregate coupling matrices
 c-----------------------------------------------------------------------
       ALLOCATE(singcoup(nsingcoup,msing,mpert))  ! coupling field to external field b_x
-      singcoup(1,:,:) = singbnoflxs        ! effective resonant area-normalized flux (Phi_r/A) shielded by current
+      singcoup(1,:,:) = singbnoflxs        ! effective resonant area-normalized flux (Phi_r/A) shielded by current (Tesla)
       singcoup(2,:,:) = singcurs*twopi*nn  ! resonant current (amps)
       singcoup(3,:,:) = islandhwids        ! square of the penetrated island half-width in normalized poloidal flux
       singcoup(4,:,:) = singbwp            ! interpolated (penetrated) resonant field
@@ -2022,7 +2022,7 @@ c-----------------------------------------------------------------------
             CALL check( nf90_redef(mncid))
             CALL check( nf90_def_var(mncid, "Phi_overlap", nf90_double,
      $         (/m_id,i_id/), p_id) )
-            CALL check( nf90_put_att(mncid, p_id, "units", "unitless") )
+            CALL check( nf90_put_att(mncid, p_id, "units", "Tesla") )
             CALL check( nf90_put_att(mncid, p_id, "long_name",
      $        "Pitch resonant flux overlap") )
             CALL check( nf90_def_var(mncid, "Phi_overlap_norm",
@@ -2032,7 +2032,7 @@ c-----------------------------------------------------------------------
      $        "Pitch resonant flux overlap percentage") )
             CALL check( nf90_def_var(mncid, "I_overlap", nf90_double,
      $         (/m_id,i_id/), c_id) )
-            CALL check( nf90_put_att(mncid, c_id, "units", "unitless") )
+            CALL check( nf90_put_att(mncid, c_id, "units", "Amps") )
             CALL check( nf90_put_att(mncid, c_id, "long_name",
      $        "Pitch resonant current overlap") )
             CALL check( nf90_def_var(mncid, "I_overlap_norm",
@@ -2132,7 +2132,7 @@ c-----------------------------------------------------------------------
                CALL check( nf90_redef(mncid))
                CALL check( nf90_def_var(mncid, "Phi_local_overlap",
      $            nf90_double,(/m_id,i_id/), p_id) )
-               CALL check( nf90_put_att(mncid, p_id,"units","unitless"))
+               CALL check( nf90_put_att(mncid, p_id,"units","Tesla"))
                CALL check( nf90_put_att(mncid, p_id, "long_name",
      $           "Local pitch resonant flux overlap") )
                CALL check( nf90_def_var(mncid, "Phi_local_overlap_norm",
@@ -2142,7 +2142,7 @@ c-----------------------------------------------------------------------
      $           "Local pitch resonant flux overlap percentage") )
                CALL check( nf90_def_var(mncid, "I_local_overlap",
      $            nf90_double,(/m_id,i_id/), c_id) )
-               CALL check( nf90_put_att(mncid, c_id,"units","unitless"))
+               CALL check( nf90_put_att(mncid, c_id,"units","Amps"))
                CALL check( nf90_put_att(mncid, c_id, "long_name",
      $           "Local pitch resonant current overlap") )
                CALL check( nf90_def_var(mncid, "I_local_overlap_norm",
