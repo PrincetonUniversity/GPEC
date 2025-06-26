@@ -712,10 +712,16 @@ a dimension distinguishing real and imaginary components.</p>
 and opened with python-netCDF4, unless the filename ends with .gz, in
 which case the file is gunzipped and opened with scipy.io.netcdf
 (only netCDF3 supported). File-like objects are opened with
-scipy.io.netcdf (only netCDF3 supported).
-:param filename_or_obj: str, file or xarray.backends.DataStore
-:param complex_dim: str. Dimension designating real/imaginary (0,1)
-:param kwargs: dict. All other key word arguments are passed to xarray.open_dataset.</p>
+scipy.io.netcdf (only netCDF3 supported).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename_or_obj</strong> – str, file or xarray.backends.DataStore</p></li>
+<li><p><strong>complex_dim</strong> – str. Dimension designating real/imaginary (0,1)</p></li>
+<li><p><strong>kwargs</strong> – dict. All other key word arguments are passed to xarray.open_dataset.</p></li>
+</ul>
+</dd>
+</dl>
 <p><strong>Original Documentation:</strong></p>
 <p>Open and decode a dataset from a file or file-like object.</p>
 <p>Parameters</p>
