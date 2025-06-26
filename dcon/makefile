@@ -79,7 +79,7 @@ sing.o: fourfit.o
 debug.o: ../equil/local_mod.mod
 ode_output.o: dcon_mod.o sing.o debug.o
 ode.o: ode_output.o free.o
-dcon_netcdf.o: dcon_mod.o
+dcon_netcdf.o: dcon_mod.o sing.o
 free.o: ../equil/global_mod.mod dcon_netcdf.o ode_output.o
 resist.o: dcon_mod.o
 dcon.o: ../equil/equil_mod.mod ../equil/equil_out_mod.mod \

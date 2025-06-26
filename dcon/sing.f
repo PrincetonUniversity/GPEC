@@ -252,6 +252,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE sing_vmat(ising)
+      USE, INTRINSIC :: ieee_arithmetic
 
       INTEGER, INTENT(IN) :: ising
 
@@ -259,6 +260,8 @@ c-----------------------------------------------------------------------
       INTEGER :: ipert0,ipert,k
       REAL(r8) :: psifac,di,di0,q,q1,rho,dpsi
       REAL(r8), PARAMETER :: half=.5_r8
+      REAL(r8) :: val
+
       COMPLEX(r8) :: det
       TYPE(sing_type), POINTER :: singp
 c-----------------------------------------------------------------------
@@ -309,8 +312,21 @@ c-----------------------------------------------------------------------
       singp%power=0
       singp%power(ipert0)=-singp%alpha
       singp%power(ipert0+mpert)=singp%alpha
-      WRITE(out_unit,'(i3,1p,7e11.3)')ising,psifac,rho,q,q1,di0,
-     $     singp%di,singp%di/di0-1
+
+! Temporary protection to prevent SIGFPE (division by zero or invalid
+! WRITE(out_unit,'(i3,1p,7e11.3)')ising,psifac,rho,q,q1,di0,
+!     singp%di,singp%di/di0-1
+! di0)
+      IF (abs(di0) > 1.0e-12 .AND. ieee_is_finite(di0)) THEN
+         val = singp%di / di0 - 1
+      ELSE
+         val = 0.0_r8
+         PRINT *, 'WARNING: di0 is zero or invalid at ising = ', ising,
+     $   ' di0= ', di0
+      ENDIF
+
+       WRITE(out_unit,'(i3,1p,7e11.3)') ising, psifac, rho, q, q1, di0,
+     $ singp%di, val
 c-----------------------------------------------------------------------
 c     zeroth-order non-resonant solutions.
 c-----------------------------------------------------------------------

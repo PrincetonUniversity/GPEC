@@ -331,6 +331,7 @@
 #-----------------------------------------------------------------
 # general defaults
 #-----------------------------------------------------------------
+HOST := $(shell hostname)
 
 # The new modules on portal at PPPL now use LAPACK_HOME instead of LAPACKHOME
 ifndef LAPACKHOME
@@ -405,6 +406,10 @@ else
     endif
     ifneq ($(wildcard $(NETCDFHOME)/lib/.),)
         NETCDFDIR = $(NETCDFHOME)/lib
+        HOST := $(shell hostname)
+        ifneq (,$(findstring flux,$(HOST)))
+            NETCDFDIR = $(NETCDFHOME)/lib64
+        endif
     else
         NETCDFDIR = $(NETCDFHOME)
     endif
@@ -421,6 +426,12 @@ ifdef NETCDF_C_HOME
     NETCDFLIBS = -lnetcdff
     NETCDF_C_LIBS = -lnetcdf
     NETCDF_C_DIR = $(NETCDF_C_HOME)/lib
+
+    HOST := $(shell hostname)
+    ifneq (,$(findstring flux,$(HOST)))
+        NETCDF_C_DIR = $(NETCDF_C_HOME)/lib64 
+    endif
+
     NETCDF_EXTRA_LIBS = -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS)
 else
     ifneq ($(shell ls $(NETCDFDIR) | grep netcdff),)
@@ -490,3 +501,12 @@ else
     RECURSFLAG ?= -recursive
     LEGACYFLAG ?= -std=legacy
 endif
+ifeq ($(findstring icx,$(CC)),icx)
+    CFLAGS ?= "-Wno-all -Wno-absolute-value -Wno-pointer-sign -Wno-deprecated-non-prototype"
+else ifeq ($(findstring icc,$(CC)),icc)
+    CFLAGS ?= "-Wno-all -Wno-absolute-value -Wno-pointer-sign -Wno-deprecated-non-prototype"
+endif
+
+
+
+

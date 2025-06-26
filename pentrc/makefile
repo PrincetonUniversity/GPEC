@@ -81,7 +81,7 @@ utilities.o: params.o
 special.o: params.o utilities.o
 dcon_interface.o: params.o utilities.o ../equil/spline_mod.mod ../equil/fspline_mod.mod ../equil/cspline_mod.mod ../equil/bicube_mod.mod
 inputs.o:  params.o utilities.o special.o dcon_interface.o
-energy.o:  params.o utilities.o lsode2.o
+energy.o:  params.o utilities.o lsode2.o dcon_interface.o
 pitch.o:   params.o utilities.o lsode1.o energy.o special.o
 torque.o:  params.o utilities.o lsode1.o special.o dcon_interface.o inputs.o energy.o pitch.o
 diagnostics.o: params.o special.o energy.o pitch.o

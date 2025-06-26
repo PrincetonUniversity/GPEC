@@ -1,7 +1,14 @@
+HOST := $(shell hostname)
 
-include DEFAULTS.inc
+ifneq (,$(findstring flux,$(HOST)))
+#    include /p/transpusers/mgorelen/transp_main/environs/ppplflux/gnu/13.2.0/environ
+    include /p/transpusers/mgorelen/transp_main/environs/ppplflux/gnu/13.2.0/makefile.mk
+else
+	include DEFAULTS.inc
+endif
 
-# extend these variables to sub-makes (?= sets a default if user doesn't specify options)
+
+# extend these variables to sub-$(MAKE)s (?= sets a default if user doesn't specify options)
 FFLAGS ?= -g
 CFLAGS ?= -g
 
@@ -9,7 +16,10 @@ export FFLAGS
 export CFLAGS
 export OMPFLAG
 export LDFLAGS
-
+ifneq (,$(findstring flux,$(HOST)))
+	FFLAGS := $(filter-out -c,$(FFLAGS))
+endif
+FFLAGS := $(filter-out -c,$(FFLAGS))
 # compile package
 
 .IGNORE:
@@ -26,65 +36,65 @@ allf: v harvest equil lsode zlange zvode orbit vacuum pentrc dcon match rdcon rm
 
 harvest:
 	cd ../; git submodule init; git submodule update
-	cd ../harvest; make FC='$(FC)' CC='$(CC)' GACODE_ROOT= -f Makefile libharvest.a
+	cd ../harvest; $(MAKE) FC='$(FC)' CC='$(CC)' GACODE_ROOT= -f Makefile libharvest.a
 	mkdir -p ../lib
 	cp -f ../harvest/libharvest.a ../lib/
 
 xdraw:
-	cd ../xdraw;  make
+	cd ../xdraw;  $(MAKE)
 
-lsode:
-	cd ../lsode;  make liblsode
+lsode: equil
+	cd ../lsode;  $(MAKE) liblsode
 
-zlange:
-	cd ../zlange;  make libzlange
+zlange: equil
+	cd ../zlange;  $(MAKE) libzlange
 
 zvode:
-	cd ../zvode;  make libzvode
+	cd ../zvode;  $(MAKE) libzvode
 
 equil:
-	cd ../equil;  make libequil
+	cd ../equil;  $(MAKE) libequil
 
-vacuum:
-	cd ../vacuum; make libvac
+vacuum: equil
+	cd ../vacuum; $(MAKE) libvac
 
-orbit:
-	cd ../orbit;  make orbit
+orbit: equil lsode
+	cd ../orbit;  $(MAKE) orbit
 
-dcon:
-	cd ../dcon;   make dcon
+dcon: equil pentrc vacuum
+	cd ../dcon;   $(MAKE) dcon
 
-match:
-	cd ../match;  make match
+match: equil
+	cd ../match;  $(MAKE) match
 
-rdcon:
-	cd ../rdcon;   make rdcon
+rdcon: equil
+	cd ../rdcon;   $(MAKE) rdcon
 
-rmatch:
-	cd ../rmatch;  make rmatch
+rmatch: equil
+	cd ../rmatch;  $(MAKE) rmatch
 
-multi:
-	cd ../multi;  make multi
+multi: equil
+	cd ../multi;  $(MAKE) multi
 
-sum:
-	cd ../sum;    make sum
+sum: equil
+	cd ../sum;    $(MAKE) sum
 
-slayer:
-	cd ../slayer; make slayer
+slayer: equil
+	cd ../slayer; $(MAKE) slayer
 
-coil:
-	cd ../coil;   make libcoil
+coil: equil
+	cd ../coil;   $(MAKE) libcoil
 
-gpec:
-	cd ../gpec;   make gpec
+gpec: equil coil vacuum pentrc
+	cd ../gpec;   $(MAKE) gpec
 
-pentrc:
-	cd ../pentrc; make pentrc
+pentrc: equil
+	cd ../pentrc; $(MAKE) pentrc
 
-stride:
-	cd ../stride; make stride
+stride: equil vacuum
+	cd ../stride; $(MAKE) stride
 
-mkbin:
+mkbin: orbit dcon match rdcon rmatch xdraw multi sum slayer gpec pentrc stride
 	mkdir -p ../bin
 	cp -f ../orbit/orbit ../bin
 	cp -f ../dcon/dcon ../bin
@@ -125,25 +135,25 @@ endif
 # cleaning
 
 clean:
-	cd ../harvest; make clean
-	cd ../zlange;  make clean
-	cd ../zvode;  make clean
-	cd ../xdraw;  make clean
-	cd ../lsode;  make clean
-	cd ../equil;  make clean
-	cd ../orbit;  make clean
-	cd ../vacuum; make clean
-	cd ../dcon;   make clean
-	cd ../match;  make clean
-	cd ../rdcon;  make clean
-	cd ../rmatch; make clean
-	cd ../multi;  make clean
-	cd ../sum;    make clean
-	cd ../slayer; make clean
-	cd ../coil;   make clean
-	cd ../gpec;   make clean
-	cd ../pentrc; make clean
-	cd ../stride; make clean
+	cd ../harvest; $(MAKE) clean
+	cd ../zlange;  $(MAKE) clean
+	cd ../zvode;  $(MAKE) clean
+	cd ../xdraw;  $(MAKE) clean
+	cd ../lsode;  $(MAKE) clean
+	cd ../equil;  $(MAKE) clean
+	cd ../orbit;  $(MAKE) clean
+	cd ../vacuum; $(MAKE) clean
+	cd ../dcon;   $(MAKE) clean
+	cd ../match;  $(MAKE) clean
+	cd ../rdcon;  $(MAKE) clean
+	cd ../rmatch; $(MAKE) clean
+	cd ../multi;  $(MAKE) clean
+	cd ../sum;    $(MAKE) clean
+	cd ../slayer; $(MAKE) clean
+	cd ../coil;   $(MAKE) clean
+	cd ../gpec;   $(MAKE) clean
+	cd ../pentrc; $(MAKE) clean
+	cd ../stride; $(MAKE) clean
 
 clear:
 	cd ../docs/examples/run_ideal_example; rm -f *.out *.bin *.nc
