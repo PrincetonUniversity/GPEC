@@ -18,6 +18,7 @@
 /
 &GAL_OUTPUT
     interp_np=3          ! The number of interpration points for outputting Galerkin solution
+    interp_np_res=60     ! The number of interpration points for outputting Galerkin solution in resonant and extension cells
     restore_uh=t         ! Include the Hermite solution in Galerkin soluitn
     restore_us=t         ! Include the small solution in Galerkin solution
     restore_ul=t         ! Include the larger solution in Galerkin solution

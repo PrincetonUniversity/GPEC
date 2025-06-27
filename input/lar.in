@@ -1,4 +1,4 @@
-! Construct a large-aspect-ratio, circular-cross-secJon equilibrium, using the Shafranov expansion to second order
+! Construct a large-aspect-ratio, circular-cross-section equilibrium, using the Shafranov expansion to second order
 &lar_input
 	ma=128         ! number of radial grid points
 	mtau=128       ! number of azimuthal grid points

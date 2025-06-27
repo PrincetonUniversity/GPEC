@@ -85,7 +85,7 @@ c-----------------------------------------------------------------------
       CHARACTER(128), PRIVATE :: format1,format2
       CHARACTER(20) :: solver="cholesky"
       INTEGER :: nx,nq,cutoff=1 
-      INTEGER :: ndiagnose=12,interp_np=3
+      INTEGER :: ndiagnose=12,interp_np=3,interp_np_res=60
       INTEGER, PRIVATE :: jsing,np=3
       REAL(r8) :: dx0,dx1,dx2,pfac
       REAL(r8) :: gal_tol=1e-10
@@ -141,6 +141,14 @@ c-----------------------------------------------------------------------
          ENDDO
          CALL gal_make_grid(ising,nx,dx0,dx1,dx2,pfac,intvl)
       ENDDO
+      ALLOCATE(cellinfos%icell(nx*(msing+1)))
+      ALLOCATE(cellinfos%iintvl(nx*(msing+1)))
+      ALLOCATE(cellinfos%etypes(nx*(msing+1)))
+      ALLOCATE(cellinfos%etypes_int(nx*(msing+1)))
+      ALLOCATE(cellinfos%x1(nx*(msing+1)))
+      ALLOCATE(cellinfos%x2(nx*(msing+1)))
+      cellinfos%ncell=nx*(msing+1)
+      cellinfos%nintvl=msing+1
 c-----------------------------------------------------------------------
 c     resistive perturbed equilibrium solution.
 c-----------------------------------------------------------------------
@@ -806,6 +814,7 @@ c-----------------------------------------------------------------------
       IF(cell%extra == "left")THEN
          x0=cell%x(1)
          x1=cell%x_lsode
+         WRITE(*,*) "x0=",x0," x1=",x1
          IF (x0 > x1) CALL program_stop
      $        ("gal_lsode_int: left resonant element too small.")
       ELSE
@@ -1689,9 +1698,9 @@ c-----------------------------------------------------------------------
      $     diagnose_grid,diagnose_lsode,ndiagnose,diagnose_integrand,
      $     diagnose_mat,gal_tol,dx1dx2_flag,cutoff,prefac,dpsi_intvl,
      $     dpsi1_intvl,gal_xmin_flag,gal_eps_xmin
-      NAMELIST /gal_output/interp_np,restore_uh,restore_us,
-     $     restore_ul,bin_delmatch,out_galsol,bin_galsol,b_flag,
-     $     bin_coilsol
+      NAMELIST /gal_output/interp_np,interp_np_res,restore_uh,
+     $     restore_us,restore_ul,bin_delmatch,out_galsol,bin_galsol,
+     $     b_flag,bin_coilsol
 c-----------------------------------------------------------------------
 c     read input.
 c-----------------------------------------------------------------------
@@ -1949,6 +1958,7 @@ c-----------------------------------------------------------------------
       REAL(r4) :: realsinh,imagsinh
       REAL(r8), PARAMETER :: eps=1e-4
       REAL(r8), DIMENSION(interp_np) :: xvar
+      REAL(r8), DIMENSION(interp_np_res) :: xvarres
       REAL(r8), DIMENSION(mpert) :: singfac      
       REAL(r8), DIMENSION(:), ALLOCATABLE :: psi,q
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: xext
@@ -1961,21 +1971,53 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     generate the interpolated grid.
 c-----------------------------------------------------------------------
-      tot_grids=interp_np*(msing+1)*gal%nx
+      tot_grids=interp_np*(msing+1)*gal%nx-4*interp_np*msing+
+     $                                           4*interp_np_res*msing
       ALLOCATE (issing(0:tot_grids),psi(0:tot_grids),q(0:tot_grids),
      $          sol(mpert,0:tot_grids,gal%nsol),
      $          sol_cut(mpert,0:tot_grids,gal%nsol))
       ALLOCATE (xext(msing,2))
       xvar=(1.0/interp_np)*(/(ip,ip=0,interp_np-1)/)
+      xvarres=(1.0/interp_np_res)*(/(ip,ip=0,interp_np_res-1)/)
       ip=0
       issing=.FALSE.
       DO iintvl=0,msing
          DO icell=1,gal%nx
             cell=>gal%intvl(iintvl)%cell(icell)
-            psi(ip:ip+interp_np-1)=cell%x(1)+(cell%x(2)-cell%x(1))*xvar
+            cellinfos%etypes(iintvl*gal%nx+icell)=cell%etype
+            SELECT CASE(cell%etype)
+            CASE("res")
+               psi(ip:ip+interp_np_res-1)=cell%x(1)+
+     $                                     (cell%x(2)-cell%x(1))*xvarres
+               cellinfos%etypes_int(iintvl*gal%nx+icell)=1
+            CASE("ext")
+               psi(ip:ip+interp_np_res-1)=cell%x(1)+
+     $                                     (cell%x(2)-cell%x(1))*xvarres
+               cellinfos%etypes_int(iintvl*gal%nx+icell)=2
+            CASE("ext1")
+               psi(ip:ip+interp_np-1)=cell%x(1)+
+     $                                        (cell%x(2)-cell%x(1))*xvar
+               cellinfos%etypes_int(iintvl*gal%nx+icell)=3
+            CASE("ext2")
+               psi(ip:ip+interp_np-1)=cell%x(1)+
+     $                                        (cell%x(2)-cell%x(1))*xvar
+               cellinfos%etypes_int(iintvl*gal%nx+icell)=4
+            CASE("none")
+               psi(ip:ip+interp_np-1)=cell%x(1)+
+     $                                        (cell%x(2)-cell%x(1))*xvar
+               cellinfos%etypes_int(iintvl*gal%nx+icell)=0
+            END SELECT
+            cellinfos%icell(iintvl*gal%nx+icell)=icell
+            cellinfos%iintvl(iintvl*gal%nx+icell)=iintvl
+            cellinfos%x1(iintvl*gal%nx+icell)=cell%x(1)
+            cellinfos%x2(iintvl*gal%nx+icell)=cell%x(2)
             IF (cell%extra=="right".AND.cell%etype=="res") 
      $         issing(ip)=.TRUE.
-            ip=ip+interp_np
+            IF (cell%etype=="res".OR.cell%etype=="ext") THEN
+               ip=ip+interp_np_res
+            ELSE
+               ip=ip+interp_np
+            ENDIF
          ENDDO
       ENDDO
       psi(ip)=psihigh

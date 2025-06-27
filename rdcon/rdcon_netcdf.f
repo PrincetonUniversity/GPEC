@@ -61,7 +61,8 @@ c-----------------------------------------------------------------------
      $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id, wt0_id,
      $    l_dim, l_id, coil_dim, coil_id, dpc_id, dc_id,
      $    lp_dim, lp_id, r_dim, r_id, rp_dim, rp_id, pr_id, qr_id,
-     $    dp_id, ap_id, bp_id, gp_id, dpp_id, lrc_dim, lrc_id
+     $    dp_id, ap_id, bp_id, gp_id, dpp_id, lrc_dim, lrc_id,
+     $    ic_id, ic_dim, iic_id, iivl_id, et_id, cx1_id, cx2_id
 
       REAL(r4) :: cpusec, wallsec
       CHARACTER(2) :: sn
@@ -152,6 +153,10 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(ncid, "psi_n", nf90_double, p_dim, p_id))
       CALL check( nf90_put_att(ncid,p_id, "long_name",
      $       "Normalized Poloidal Flux") )
+      CALL check( nf90_def_dim(ncid, "icell", cellinfos%ncell, ic_dim) )
+      CALL check( nf90_def_var(ncid, "icell", nf90_int, ic_dim, ic_id) )
+      CALL check( nf90_put_att(ncid,ic_id,"long_name",
+     $       "Cell Index") )
 
       IF(msing>0)THEN
          CALL check( nf90_def_dim(ncid,"lr_index",2*msing,l_dim) )
@@ -233,6 +238,26 @@ c-----------------------------------------------------------------------
      $    (/m_dim, mo_dim, i_dim/), wt0_id) )
       CALL check( nf90_put_att(ncid,wt0_id,"long_name",
      $    "Total Energy Matrix") )
+      CALL check( nf90_def_var(ncid, "interval_icell", nf90_int,
+     $    ic_dim, iic_id) )
+      CALL check( nf90_put_att(ncid,iic_id,"long_name",
+     $       "Cell index per interval") )
+      CALL check( nf90_def_var(ncid, "iitvl", nf90_int,
+     $    ic_dim, iivl_id) )
+      CALL check( nf90_put_att(ncid,iivl_id,"long_name",
+     $       "Interval index per cell") )
+      CALL check( nf90_def_var(ncid, "etypes", nf90_int,  
+     $    ic_dim, et_id) )
+      CALL check( nf90_put_att(ncid,et_id,"long_name",
+     $       "Cell type (1=res, 2=ext, 3=ext1, 4=ext2, 0=none)") )
+      CALL check( nf90_def_var(ncid, "cell_x1", nf90_double,
+     $    ic_dim, cx1_id) )
+      CALL check( nf90_put_att(ncid,cx1_id,"long_name",
+     $       "Cell left psi_n bound" ))
+      CALL check( nf90_def_var(ncid, "cell_x2", nf90_double,
+     $    ic_dim, cx2_id) )
+      CALL check( nf90_put_att(ncid,cx2_id,"long_name",
+     $       "Cell right psi_n bound" ))
       IF(msing>0 .AND. ALLOCATED(delta))THEN
          CALL check( nf90_def_var(ncid, "Delta", nf90_double,
      $       (/l_dim, lp_dim, i_dim/), dp_id) )
@@ -311,6 +336,14 @@ c-----------------------------------------------------------------------
      $             AIMAG(et)/),(/mpert,2/))) )
       CALL check( nf90_put_var(ncid,wt0_id,RESHAPE((/REAL(wt0),
      $             AIMAG(wt0)/),(/mpert,mpert,2/))) )
+      
+      IF(debug_flag) PRINT *," - Putting cellinfo variables in netcdf"
+      CALL check( nf90_put_var(ncid,ic_id,(/(i,i=1,cellinfos%ncell)/)) )
+      CALL check( nf90_put_var(ncid,iic_id,cellinfos%icell) )
+      CALL check( nf90_put_var(ncid,iivl_id,cellinfos%iintvl) )
+      CALL check( nf90_put_var(ncid,et_id,cellinfos%etypes_int) )
+      CALL check( nf90_put_var(ncid,cx1_id,cellinfos%x1) )
+      CALL check( nf90_put_var(ncid,cx2_id,cellinfos%x2) )
 
 
       IF(msing>0 .AND. ALLOCATED(delta))THEN

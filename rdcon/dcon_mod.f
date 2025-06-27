@@ -106,6 +106,14 @@ c-----------------------------------------------------------------------
          INTEGER :: mcoil,m1,m2
       END TYPE coil_type
 
+      TYPE :: cellinfo_type
+         INTEGER, DIMENSION(:), ALLOCATABLE :: iintvl, icell
+         CHARACTER(6), DIMENSION(:), ALLOCATABLE :: etypes
+         INTEGER, DIMENSION(:), ALLOCATABLE :: etypes_int
+         REAL(r8), DIMENSION(:), ALLOCATABLE :: x1, x2
+         INTEGER :: ncell, nintvl
+      END TYPE cellinfo_type
+
       TYPE(coil_type) :: coil
 
       INTEGER :: msing
@@ -116,5 +124,6 @@ c-----------------------------------------------------------------------
       REAL(r8) :: psilim,qlim,q1lim,dmlim=.5_r8
 
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: delta
+      TYPE(cellinfo_type) :: cellinfos
 
       END MODULE rdcon_mod
