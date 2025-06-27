@@ -608,6 +608,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     construct fsp_sol.
 c-----------------------------------------------------------------------
+         ! Interpolation is necessary because bwp is invalid in the 
+         ! inner layer due to excluding curl (eta J)
          CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)         
 c-----------------------------------------------------------------------
 c     evaluate delta/singular current/normal field/islands.
@@ -1860,7 +1862,7 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(fncid, d_id, "long_name",
      $     "Unitless Resonance Parameter $\partial_\psi \frac{"//
      $     "\delta B \cdot \nabla \psi}{B \cdot \nabla \theta}$") )
-         CALL check( nf90_def_var(fncid, "B_pen", nf90_double,
+         CALL check( nf90_def_var(fncid, "b_pen", nf90_double,
      $      (/q_id,i_id/), bp_id) )
          CALL check( nf90_put_att(fncid, bp_id, "units", "T") )
          CALL check( nf90_put_att(fncid, bp_id, "long_name",
