@@ -22,6 +22,7 @@
     mu_i=2.0             ! ion mass ratio to proton mass, 2 for deuterium plasma
     zeff=2.0             ! plasma Z_effective
     dr_val=-0.1          ! GGJ resistive interchange criterion D_R
+    dgeo_val=10.0        ! J.W. Connor geometric prefactor for Delta_crit
     chi_prof=0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2 ! Rational surface perpendicular ion momentum diffusivity OR perpendicular energy diffusivity profile
     ! >>>
     ! >>> Input normalized layer parameters. If read_eq=f, each will individually override internal calcuation using above inputs
@@ -46,6 +47,7 @@
     knum=100             ! resolution for 2d scan along with the other.
     Q_num=100            ! resolution for stability scan along Re(Q),Im(Q) axes
     scan_radius=1.5      ! stability scan width for Re(Q),Im(Q) scan
+    dc_type="toroidal"   ! Delta_crit type, options are "toroidal", "lar", and "rfitzp"
     read_eq=f            ! read in equilibrium quantities from STRIDE and kinetic file. Set all normalized params to 0.0
     fitz_flag=t          ! Use R. Fitzpatrick formalism (inc. anomalous diffusion) for growth rate calculation 
     QPscan_flag=f        ! scan (Q,P) space for delta and torque.

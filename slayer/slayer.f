@@ -33,7 +33,7 @@ c-----------------------------------------------------------------------
      $     params_check,stabscan_flag,read_eq,est_gamma_flag,
      $     match_gamma_flag,fitz_flag,br_th_flag
       REAL(r8) :: n_e,t_e,t_i,omega,omega0,scan_radius,
-     $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,dr_val
+     $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,dr_val,dgeo_val
       REAL(r8) :: inQ,inQ_e,inQ_i,inpr,inpe,inc_beta,inds,intau,inlu
       REAL(r8) :: psi0,jxb,Q0,Q_sol,br_th,d_b,Residual
       COMPLEX(r8) :: delta,delta_n_p,dels_db,del_s,lar_gamma,
@@ -56,7 +56,7 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(:), ALLOCATABLE :: qval_arr
       REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs,
      $                       Re_deltaprime_arr,Im_deltaprime_arr,
-     $                       gammafac_arr,delta_crit_arr
+     $                       gammafac_arr,d_crit_arr
       REAL(r8), DIMENSION(:,:), ALLOCATABLE ::
      $     js,ks,psis,jxbs,Q_sols,br_ths
       REAL(r8) :: spot, slayer_inpr
@@ -68,13 +68,14 @@ c-----------------------------------------------------------------------
 
       NAMELIST/slayer_input/input_flag,infile,
      $     ncfile,params_flag,mm,nn,n_e,t_e,t_i,sval,bt,rs,R0,omega,
-     $     l_t,l_n,qval,mu_i,zeff,dr_val,chi_prof,inpr,inpe,inQ,
-     $     inQ_e,inQ_i,inc_beta,inds,intau,Q0,delta_prime,delta_n_p,
-     $     ingamma
+     $     l_t,l_n,qval,mu_i,zeff,dr_val,dgeo_val,chi_prof,inpr,inpe,
+     $     inQ,inQ_e,inQ_i,inc_beta,inds,intau,Q0,delta_prime,
+     $     delta_n_p,ingamma
       NAMELIST/slayer_control/inum,jnum,knum,Q_num,scan_radius,
-     $     read_eq,fitz_flag,QPscan_flag,Qscan_flag,QPescan_flag,
-     $     Qbscan_flag,onscan_flag,otscan_flag,ntscan_flag,
-     $     nbtscan_flag,parflow_flag,peohmonly_flag,Pe_flag,layfac
+     $     dc_type,read_eq,fitz_flag,QPscan_flag,Qscan_flag,
+     $     QPescan_flag,Qbscan_flag,onscan_flag,otscan_flag,
+     $     ntscan_flag,nbtscan_flag,parflow_flag,peohmonly_flag,
+     $     Pe_flag,layfac
       NAMELIST/slayer_output/verbose,ascii_flag,bin_flag,netcdf_flag,
      $     est_gamma_flag,match_gamma_flag,stability_flag,
      $     stabscan_flag,br_th_flag,bal_flag
@@ -101,6 +102,7 @@ c-----------------------------------------------------------------------
       mu_i=0.0
       zeff=0.0
       dr_val=0.0
+      dgeo_val=0.0
       inQ=0.0
       inQ_e=0.0
       inQ_i=0.0
@@ -113,8 +115,8 @@ c-----------------------------------------------------------------------
       inlu=0.0
       Q0=0.0
       chi=0.0
-      dr_val=0.0
       gamma_fac=0.0
+      dc_type=""
       delta_prime=(0.0,0.0)
       delta_n_p=(0.0,0.0)
       ingamma=(0.0,0.0)
@@ -184,7 +186,7 @@ c-----------------------------------------------------------------------
 c     calculate parameters as needed.
 c-----------------------------------------------------------------------
       IF (params_flag) THEN
-         CALL params(n_e,t_e,t_i,omega,chi,dr_val,
+         CALL params(n_e,t_e,t_i,omega,chi,dr_val,dgeo_val,
      $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
          inQ=Q
          inQ_e=Q_e
@@ -233,8 +235,8 @@ c-----------------------------------------------------------------------
             nr=REAL(nns(k))
             inpr=prs(k)
             CALL params(n_es(k),t_es(k),t_is(k),omegas(k),chi,dr_val,
-     $           l_ns(k),l_ts(k),qvals(k),svals(k),bts(k),rss(k),R0s(k),
-     $           mu_is(k),zeffs(k),params_check)
+     $           dgeo_val,l_ns(k),l_ts(k),qvals(k),svals(k),bts(k),
+     $           rss(k),R0s(k),mu_is(k),zeffs(k),params_check)
             inQ=Q
             inQ_e=Q_e
             inQ_i=Q_i
@@ -299,8 +301,8 @@ c-----------------------------------------------------------------------
             CALL build_inputs(infile,ncfile,chi_prof,qval_arr,
      $           psi_n_rational,lu_arr,Qconv_arr,Q_arr,Q_e_arr,Q_i_arr,
      $           c_beta_arr,d_beta_arr,D_norm_arr,tau_arr,
-     $           P_perp_arr,omegas_arr,gammafac_arr,
-     $           Re_deltaprime_arr,Im_deltaprime_arr,delta_crit_arr)
+     $           P_perp_arr,omegas_arr,gammafac_arr,Re_deltaprime_arr,
+     $           Im_deltaprime_arr,d_crit_arr)
 
             n_k = SIZE(qval_arr)
          ELSE
@@ -308,7 +310,7 @@ c-----------------------------------------------------------------------
             mr = mm
             nr = nn
 
-            CALL params(n_e,t_e,t_i,omega,chi_prof(1),dr_val,
+            CALL params(n_e,t_e,t_i,omega,chi_prof(1),dr_val,dgeo_val,
      $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
 
             IF (ABS(inQ) > 0.0) THEN
@@ -342,7 +344,7 @@ c-----------------------------------------------------------------------
             tau_arr = (/ tau /)
             D_norm_arr = (/ D_norm /)
             d_beta_arr = (/ d_beta /)
-            delta_eff = REAL(delta_prime)-delta_crit
+            delta_eff = REAL(delta_prime)-d_crit
             gamma_fac = (rs*delta_eff)/tau_r
             gammafac_arr = (/ gamma_fac /)
          END IF 
@@ -374,9 +376,9 @@ c-----------------------------------------------------------------------
             CALL output_gamma(est_gamma_flag,qval_arr,
      $         omegas_arr,Q_arr,Q_e_arr,Q_i_arr,d_beta_arr,
      $         c_beta_arr,D_norm_arr,P_perp_arr,lu_arr,psi_n_rational,
-     $         Re_deltaprime_arr,Im_deltaprime_arr,delta_crit_arr,
-     $         dels_db_arr,gamma_sol_arr,gamma_est_arr,Qconv_arr,
-     $         re_trace,im_trace)
+     $         Re_deltaprime_arr,Im_deltaprime_arr,d_crit_arr,
+     $         dels_db_arr,gamma_sol_arr,gamma_est_arr,
+     $         Qconv_arr,re_trace,im_trace)
          END IF
       ENDIF
 c-----------------------------------------------------------------------
@@ -392,7 +394,7 @@ c-----------------------------------------------------------------------
      $          psi_n_rational,lu_arr,Qconv_arr,Q_arr,Q_e_arr,Q_i_arr,
      $          c_beta_arr,d_beta_arr,D_norm_arr,tau_arr,
      $          P_perp_arr,omegas_arr,gammafac_arr,
-     $          Re_deltaprime_arr,Im_deltaprime_arr,delta_crit_arr)
+     $          Re_deltaprime_arr,Im_deltaprime_arr,d_crit_arr)
 
             n_k = SIZE(qval_arr)
 
@@ -400,7 +402,7 @@ c-----------------------------------------------------------------------
             n_k = 1
 
             ! Use namelist kinetic inputs instead of equilibrium files
-            CALL params(n_e,t_e,t_i,omega,chi_prof(1),dr_val,
+            CALL params(n_e,t_e,t_i,omega,chi_prof(1),dr_val,dgeo_val,
      $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
 
             ! Override desired normalized parameters
@@ -431,7 +433,7 @@ c-----------------------------------------------------------------------
             psi_n_rational = (/ 0.0 /)
             Re_deltaprime_arr = (/ REAL(delta_prime) /)
             Im_deltaprime_arr = (/ AIMAG(delta_prime) /)
-            delta_crit_arr = (/ delta_crit /)
+            d_crit_arr = (/ dc_tmp /)
             P_perp_arr = (/ P_perp /)
             tau_arr = (/ tau /)
             D_norm_arr = (/ D_norm /)
@@ -456,9 +458,10 @@ c-----------------------------------------------------------------------
             c_beta = c_beta_arr(k)
             tauk = Qconv_arr(k)
 
-            ! (Deltaprime - delta_crit)/S^1/3
+            ! (Deltaprime - d_crit)/S^1/3
             delta_eff = (Re_deltaprime_arr(k) - 
-     $                   delta_crit_arr(k))/(lu_arr(k)**(1.0/3.0))
+     $                   d_crit_arr(k))/(lu_arr(k)**(1.0/3.0))
+c            delta_eff = Re_deltaprime_arr(k)
             pe = 0.0
 
             ALLOCATE(re_trace(100),im_trace(100))
@@ -490,11 +493,11 @@ c-----------------------------------------------------------------------
             IF (fitz_flag) THEN
                re_trace = re_trace/tauk
                im_trace = im_trace/tauk
-               gamma_sol_arr(k) = g_r!/tauk THIS IS FOR PLOT
+               gamma_sol_arr(k) = g_r/tauk! THIS IS FOR PLOT
             ELSE
                re_trace = re_trace/tauk
                im_trace = -im_trace/tauk
-               gamma_sol_arr(k) = -g_r!/tauk THIS IS FOR PLOT
+               gamma_sol_arr(k) = -g_r/tauk! THIS IS FOR PLOT
             END IF
          ENDDO 
 
@@ -556,9 +559,9 @@ c-----------------------------------------------------------------------
          CALL output_gamma(est_gamma_flag,qval_arr,
      $         omegas_arr,Q_arr,Q_e_arr,Q_i_arr,d_beta_arr,
      $         c_beta_arr,D_norm_arr,P_perp_arr,lu_arr,psi_n_rational,
-     $         Re_deltaprime_arr,Im_deltaprime_arr,delta_crit_arr,
-     $         dels_db_arr,gamma_sol_arr,gamma_est_arr,Qconv_arr,
-     $         re_trace,im_trace)
+     $         Re_deltaprime_arr,Im_deltaprime_arr,d_crit_arr,
+     $         dels_db_arr,gamma_sol_arr,gamma_est_arr,
+     $         Qconv_arr,re_trace,im_trace)
          stop
       ENDIF
 c-----------------------------------------------------------------------
@@ -568,7 +571,7 @@ c-----------------------------------------------------------------------
 
          WRITE(*,*)"running br_th scan"
 
-         CALL params(n_e,t_e,t_i,omega,chi,dr_val,
+         CALL params(n_e,t_e,t_i,omega,chi,dr_val,dgeo_val,
      $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
          inQ=Q
          inQ_e=Q_e
@@ -1046,7 +1049,7 @@ c-----------------------------------------------------------------------
                ks(j,k)=k_min+(k_max-k_min)*(REAL(k)/knum)
                
                CALL params(n_e*ks(j,k),t_e,t_i,omega*js(j,k),chi,dr_val,
-     $              l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
+     $      dgeo_val,l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
                inQ=Q
                inQ_e=Q_e
                inQ_i=Q_i
@@ -1133,8 +1136,8 @@ c-----------------------------------------------------------------------
                ks(j,k)=k_min+(k_max-k_min)*(REAL(k)/knum)
                
                CALL params(n_e,t_e*ks(j,k),t_i*ks(j,k),
-     $              omega*js(j,k),chi,dr_val,l_n,l_t,qval,sval,bt,
-     $              rs,R0,mu_i,zeff,params_check)
+     $              omega*js(j,k),chi,dr_val,dgeo_val,l_n,l_t,qval,
+     $              sval,bt,rs,R0,mu_i,zeff,params_check)
                inQ=Q
                inQ_e=Q_e
                inQ_i=Q_i
@@ -1219,8 +1222,8 @@ c-----------------------------------------------------------------------
                ks(j,k)=k_min+(k_max-k_min)*(REAL(k)/knum)
                
                CALL params(n_e*ks(j,k),t_e*js(j,k),t_i*js(j,k),omega,
-     $              chi,dr_val,l_n,l_t,qval,sval,bt,rs,R0,mu_i,
-     $              zeff,params_check)
+     $              chi,dr_val,dgeo_val,l_n,l_t,qval,sval,bt,rs,R0,
+     $              mu_i,zeff,params_check)
                inQ=Q
                inQ_e=Q_e
                inQ_i=Q_i
@@ -1305,8 +1308,8 @@ c-----------------------------------------------------------------------
 
              
                CALL params(n_e*ks(j,k),t_e,t_i,omega,chi,dr_val,
-     $              l_n,l_t,qval,sval,bt*js(j,k),rs,R0,mu_i,zeff,
-     $              params_check)
+     $              dgeo_val,l_n,l_t,qval,sval,bt*js(j,k),rs,R0,mu_i,
+     $              zeff,params_check)
                inQ=Q
                inQ_e=Q_e
                inQ_i=Q_i

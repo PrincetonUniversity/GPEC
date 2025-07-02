@@ -8,10 +8,10 @@
 c-----------------------------------------------------------------------
 c     calculate parameters.
 c-----------------------------------------------------------------------
-      SUBROUTINE params(n_e,t_e,t_i,omega,chi,dr_val,
+      SUBROUTINE params(n_e,t_e,t_i,omega,chi,dr_val,dgeo_val,
      $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
 
-      REAL(r8), INTENT(IN) :: n_e,t_e,t_i,omega,chi,dr_val,
+      REAL(r8), INTENT(IN) :: n_e,t_e,t_i,omega,chi,dr_val,dgeo_val,
      $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff
 
       LOGICAL, INTENT(IN) :: params_check
@@ -109,9 +109,23 @@ c-----------------------------------------------------------------------
           Wd = SQRT(8.0)*((chi/chi_par)**0.25)*
      $         (1.0/SQRT((rs/R0)*sval*nr))
       END DO
-      delta_crit = -(SQRT(2.0)*(pi**(1.5))*dr_val)/Wd
+
+      SELECT CASE(dc_type)
+            CASE("lar")
+              dc_tmp = 0.5*(-dr_val)*(pi**1.5)*((chi_par/chi)**0.25)*
+     $                 ( (nr*sval)/(R0*rs) )**0.5
+            CASE("rfitzp")
+               dc_tmp = -(SQRT(2.0)*(pi**(1.5))*dr_val)/Wd
+            CASE("toroidal")
+               dc_tmp = 0.5*(-dr_val)*(pi**1.5)*
+     $                  ((chi_par/chi)**0.25)*dgeo_val
+            CASE default
+               dc_tmp = 0.5*(-dr_val)*(pi**1.5)*
+     $                  ((chi_par/chi)**0.25)*dgeo_val
+      END SELECT
+
       ELSE
-      delta_crit = 0.0
+      dc_tmp = 0.0
       END IF
 
       ! quick diagnostics.

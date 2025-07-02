@@ -51,9 +51,9 @@ c -----------------------------------------------------------------------
       SUBROUTINE slayer_netcdf_out(msing,est_gamma_flag,
      $         qval_arr,omegas_arr,Q_arr,Q_e_arr,Q_i_arr,d_beta_arr,
      $         c_beta_arr,D_norm_arr,P_perp_arr,lu_arr,psi_n_rational,
-     $         Re_deltaprime_arr,Im_deltaprime_arr,delta_crit_arr,
-     $         dels_db_arr,gamma_sol_arr,gamma_est_arr,Qconv_arr,
-     $         re_trace,im_trace)
+     $         Re_deltaprime_arr,Im_deltaprime_arr,d_crit_arr,
+     $         dels_db_arr,gamma_sol_arr,gamma_est_arr,
+     $         Qconv_arr,re_trace,im_trace)
 
       INTEGER, INTENT(IN) :: msing
       LOGICAL, INTENT(IN) :: est_gamma_flag
@@ -61,8 +61,8 @@ c -----------------------------------------------------------------------
       REAL(r8), INTENT(IN), DIMENSION(:) :: omegas_arr,
      $      Q_arr,Q_e_arr,Q_i_arr,d_beta_arr,c_beta_arr,D_norm_arr,
      $      P_perp_arr,lu_arr,psi_n_rational,Re_deltaprime_arr,
-     $      Im_deltaprime_arr,delta_crit_arr,re_trace,im_trace,
-     $      Qconv_arr
+     $      Im_deltaprime_arr,d_crit_arr,re_trace,
+     $      im_trace,Qconv_arr
       COMPLEX(r8),INTENT(IN),DIMENSION(:) :: dels_db_arr,
      $                                    gamma_sol_arr,gamma_est_arr
 
@@ -179,7 +179,7 @@ c -----------------------------------------------------------------------
       CALL sl_check( nf90_put_var(ncid,dpp_id, 
      $      RESHAPE((/Re_deltaprime_arr,Im_deltaprime_arr/),
      $      (/msing,2/))))
-      CALL sl_check( nf90_put_var(ncid,dc_id, delta_crit_arr))
+      CALL sl_check( nf90_put_var(ncid,dc_id, d_crit_arr))
 
       IF (est_gamma_flag) THEN
         CALL sl_check( nf90_put_var(ncid,dels_db_id, 

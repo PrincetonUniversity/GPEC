@@ -166,7 +166,6 @@ c-----------------------------------------------------------------------
       INTEGER :: ipert,jpert,isol,info,lwork
       INTEGER, DIMENSION(mpert) :: m
       INTEGER, DIMENSION(1) :: imax
-      REAL(r8) :: v1
       REAL(r8), DIMENSION(mpert) :: ep,ev,et
       REAL(r8), DIMENSION(3*mpert-1) :: rwork
       COMPLEX(r8) :: phase,norm
@@ -174,6 +173,17 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wt,wpt,wvt
       COMPLEX(r8), DIMENSION(mpert,mpert) :: nmat,smat
       CHARACTER(24), DIMENSION(mpert) :: message
+      !!!!!!!!!!!!!!!
+      INTEGER :: ipsi,itheta
+      REAL(r8), DIMENSION(sq%mx+1) :: ln_q
+      REAL(r8), DIMENSION(msing) :: dgeo,shr
+      TYPE(spline_type) :: psi_t,avg_dpsi_spl,avg_bsq_spl,v_spl,
+     $                     shr_spl
+      REAL(r8) :: bsq,chi1,dpsisq,myeta,jac,psifac,q,q1,respsi,
+     $     rfac,v1,v2,v21,v22,v23,v33,al,Lam,mytheta,myr
+      REAL(r8), DIMENSION(:), POINTER :: avg
+      TYPE(spline_type), TARGET :: fspl
+      !!!!!!!!!!!!!!
 c-----------------------------------------------------------------------
 c     write formats.
 c-----------------------------------------------------------------------
@@ -292,12 +302,120 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,80)
       WRITE(out_unit,90)(isol,ep(isol),ev(isol),isol=1,mpert)
       WRITE(out_unit,80)
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+c-----------------------------------------------------------------------
+c     compute toroidal Delta_crit
+c-----------------------------------------------------------------------
+      ! Prepare toroidal flux spline
+      CALL spline_alloc(psi_t,SIZE(sq%fsi(:, 4))-1,1)
+      psi_t%xs=sq%xs(:)
+      psi_t%fs(:,1)=sq%fsi(:,4)*twopi*psio ! Un-normalize toroidal flux
+      CALL spline_fit(psi_t,"extrap")
+
+      ! Prepare geometric splines
+      CALL spline_alloc(avg_dpsi_spl,SIZE(sq%xs(:))-1,1)
+      avg_dpsi_spl%xs=sq%xs(:)
+      CALL spline_alloc(avg_bsq_spl,SIZE(sq%xs(:))-1,1)
+      avg_bsq_spl%xs=sq%xs(:)
+      CALL spline_alloc(v_spl,SIZE(sq%xs(:))-1,1)
+      v_spl%xs=sq%xs(:)
+
+      ! Prepare shear spline
+      CALL spline_alloc(shr_spl,SIZE(sq%xs(:))-1,1)
+      shr_spl%xs=sq%xs(:)
+      ln_q=LOG(sq%fs(:,4))
+      !ln_q(SIZE(ln_q)) = ln_q(SIZE(ln_q)-1)
+      shr_spl%fs(:,1)=ln_q ! log(q)
+      CALL spline_fit(shr_spl,"extrap")
+
+      CALL spline_alloc(fspl,mtheta,3)
+      fspl%xs=rzphi%ys
+
+      DO ipsi=0,mpsi
+         psifac=sq%xs(ipsi)
+         v1=sq%fs(ipsi,3)
+         v2=sq%fs1(ipsi,3)
+         q=sq%fs(ipsi,4)
+         q1=sq%fs1(ipsi,4)
+         chi1=twopi*psio
+c-----------------------------------------------------------------------
+c     evaluate coordinates and jacobian.
+c-----------------------------------------------------------------------
+         DO itheta=0,mtheta
+            CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),1)
+            mytheta=rzphi%ys(itheta)
+            rfac=SQRT(rzphi%f(1))
+            myeta=twopi*(mytheta+rzphi%f(2))
+            myr=ro+rfac*COS(myeta)
+            jac=rzphi%f(4)
+c-----------------------------------------------------------------------
+c     evaluate other local quantities.
+c-----------------------------------------------------------------------
+            v21=rzphi%fy(1)/(2*rfac*jac)
+            v22=(1+rzphi%fy(2))*twopi*rfac/jac
+            v23=rzphi%fy(3)*myr/jac
+            v33=twopi*myr/jac
+            bsq=chi1**2*(v21**2+v22**2+(v23+q*v33)**2)
+            dpsisq=(twopi*myr)**2*(v21**2+v22**2)
+c-----------------------------------------------------------------------
+c     evaluate integrands.
+c-----------------------------------------------------------------------
+            fspl%fs(itheta,1)=dpsisq*(v1**2) ! Converting to \nabla V
+            fspl%fs(itheta,2)=bsq
+            fspl%fs(itheta,3)=v1
+            fspl%fs(itheta,:)=fspl%fs(itheta,:)*(jac/v1)
+         ENDDO
+c-----------------------------------------------------------------------
+c     integrate quantities with respect to theta.
+c-----------------------------------------------------------------------
+         CALL spline_fit(fspl,"periodic")
+         CALL spline_int(fspl)
+         avg => fspl%fsi(mtheta,:)
+         avg_dpsi_spl%fs(ipsi,1)=avg(1)
+         avg_bsq_spl%fs(ipsi,1)=avg(2)
+         v_spl%fs(ipsi,1)=avg(3)
+      ENDDO
+      CALL spline_dealloc(fspl)
+
+      CALL spline_fit(avg_dpsi_spl,"extrap")
+      CALL spline_fit(avg_bsq_spl,"extrap")
+      CALL spline_fit(v_spl,"extrap")
+
+      WRITE(*,*)'shr_spl%fs(:,1)=',shr_spl%fs(:,1)
+      WRITE(*,*)'avg_dpsi_spl%fs(:,1)=',avg_dpsi_spl%fs(:,1)
+      WRITE(*,*)'avg_bsq_spl%fs(:,1)=',avg_bsq_spl%fs(:,1)
+      WRITE(*,*)'v_spl%fs(:,1)=',v_spl%fs(:,1)
+
+      DO ising=1,msing
+         respsi=sing(ising)%psifac
+         WRITE(*,*)"respsi=",respsi
+
+         ! Evaluate splines on rational surface
+         CALL spline_eval(sq,respsi,1)
+         CALL spline_eval(psi_t,respsi,1)
+         CALL spline_eval(avg_dpsi_spl,respsi,1)
+         CALL spline_eval(avg_bsq_spl,respsi,1)
+         CALL spline_eval(v_spl,respsi,1)
+         CALL spline_eval(shr_spl,respsi,1)
+
+         al = twopi*nn*sq%f(3)*(1.0/chi1)
+         Lam = (psi_t%f1(1)/sq%f(3))*
+     $         (-1.0/(sq%f(4)**2.0))*(sq%f1(4)/sq%f(3))
+         WRITE(*,*)'shr_spl%f(1)=',shr_spl%f(1)
+
+         shr(ising) = shr_spl%f(1)
+         dgeo(ising) = v_spl%f(1)*( (((al**2.0)*(Lam**2.0))/
+     $               (avg_bsq_spl%f(1)*avg_dpsi_spl%f(1)))**0.25 )
+      ENDDO
+      WRITE(*,*)'new shear=',shr
+      WRITE(*,*)'dgeo=',dgeo
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 c-----------------------------------------------------------------------
 c     optionally write netcdf file.
 c-----------------------------------------------------------------------
       IF(present(op_netcdf_out))THEN
          IF(op_netcdf_out) CALL stride_netcdf_out(wp,wv,wt,ep,ev,et,
-     $          delta_prime_mat)
+     $          delta_prime_mat,shr,dgeo)
       ENDIF
 c-----------------------------------------------------------------------
 c     deallocate

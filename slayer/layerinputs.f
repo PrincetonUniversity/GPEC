@@ -233,7 +233,7 @@ c-----------------------------------------------------------------------
      $              Q_e_arr,Q_i_arr,c_beta_arr,d_beta_arr,
      $              D_norm_arr,tau_arr,P_perp_arr,
      $              omegas_arr,gammafac_arr,Re_deltaprime_arr,
-     $              Im_deltaprime_arr,delta_crit_arr)
+     $              Im_deltaprime_arr,d_crit_arr)
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
@@ -264,7 +264,7 @@ c-----------------------------------------------------------------------
      $          Q_i_arr,c_beta_arr,d_beta_arr,
      $          tau_arr,omegas_arr,lu_arr,Qconv_arr,
      $          gammafac_arr,Re_deltaprime_arr,Im_deltaprime_arr,
-     $          delta_crit_arr
+     $          d_crit_arr
       INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: qval_arr
       REAL(r8), DIMENSION(0:128) :: psitor, rhotor
       REAL(r8), DIMENSION(:), ALLOCATABLE :: my_rhotor,my_psitor
@@ -310,7 +310,7 @@ c-----------------------------------------------------------------------
      $    omegas_i_arr(msing),gammafac_arr(msing),
      $    Re_deltaprime_arr(msing),Im_deltaprime_arr(msing),
      $    D_norm_arr(msing),P_perp_arr(msing),
-     $    delta_crit_arr(msing))
+     $    d_crit_arr(msing))
       ALLOCATE(ne_arr(msing),te_arr(msing),ni_arr(msing),
      $    ti_arr(msing),zeff_arr(msing),bt_arr(msing),rs_arr(msing),
      $    R0_arr(msing),mu_i_arr(msing),nns_arr(msing),dr_arr(msing))
@@ -467,9 +467,9 @@ c-----------------------------------------------------------------------
             Wd = SQRT(8.0)*((chi/chi_par)**0.25)*
      $           (1.0/SQRT((my_rs/R_0)*my_sval*nr))
          END DO
-         delta_crit = -(SQRT(2.0)*(pi**(1.5))*dr_val)/Wd
+         d_crit = -(SQRT(2.0)*(pi**(1.5))*dr_val)/Wd
          ELSE
-         delta_crit = 0.0
+         d_crit = 0.0
          END IF
 
 
@@ -491,7 +491,7 @@ c-----------------------------------------------------------------------
          gammafac_arr(ising) = gammafac
          Re_deltaprime_arr(ising) = Re_dp_diagonal(ising)
          Im_deltaprime_arr(ising) = Im_dp_diagonal(ising)
-         delta_crit_arr(ising) = delta_crit
+         d_crit_arr(ising) = dc_tmp
          P_perp_arr(ising) = P_perp
          Qconv_arr(ising) = tauk
       ENDDO
