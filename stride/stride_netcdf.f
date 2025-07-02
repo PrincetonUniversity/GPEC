@@ -17,6 +17,7 @@ c-----------------------------------------------------------------------
       MODULE stride_netcdf_mod
       USE stride_dcon_mod
       USE netcdf
+      !USE dcon_interface, ONLY: issurfint
       IMPLICIT NONE
 
       CONTAINS
@@ -48,23 +49,36 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE stride_netcdf_out(wp,wv,wt,epi,evi,eti,dp)
+      SUBROUTINE stride_netcdf_out(wp,wv,wt,epi,evi,eti,dp,shr,dgeo)
 
       REAL(r8), DIMENSION(mpert), INTENT(IN) :: epi,evi,eti
       COMPLEX(r8), DIMENSION(mpert,mpert), INTENT(IN) :: wp,wv,wt
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: dp
+      INTEGER, DIMENSION(mpert) :: mvec
+      REAL(r8), DIMENSION(msing), INTENT(IN) :: shr,dgeo
 
-      INTEGER :: i, ncid,
+      INTEGER :: i, ncid,mthsur,
      $    i_dim, m_dim, mo_dim, p_dim, i_id, m_id, mo_id, p_id,
      $    f_id, q_id, dv_id, mu_id, di_id, dr_id, ca_id,
      $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id,
      $    r_dim, rp_dim, l_dim, lp_dim, r_id, rp_id, l_id, lp_id,
-     $    pr_id, qr_id, dp_id, ap_id, bp_id, gp_id, dpp_id
+     $    pr_id, qr_id, dp_id, ap_id, bp_id, gp_id, dpp_id,
+     $    shear_id,resm_id,drr_id,dgeo_id
       COMPLEX(r8), DIMENSION(mpert) :: ep,ev,et
       CHARACTER(2) :: sn
       CHARACTER(64) :: ncfile
 
-      INTEGER :: ising,jsing
+      REAL(r8) :: resnum,respsi,resm_sing
+
+      REAL(r8), DIMENSION(msing) :: dr_rationals
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: rs_full
+
+      TYPE(spline_type) :: sr
+      REAL(r8), DIMENSION(0:mpsi) :: rhotor
+
+      INTEGER, DIMENSION(msing) :: resm
+
+      INTEGER :: ising,jsing,m
       COMPLEX(r8), DIMENSION(msing,msing) :: ap,bp,gammap,deltap
 
       LOGICAL, PARAMETER :: debug_flag = .FALSE.
@@ -84,6 +98,13 @@ c-----------------------------------------------------------------------
       ep = CMPLX(epi, 0.0)
       ev = CMPLX(evi, 0.0)
       et = CMPLX(eti, 0.0)
+
+      ! evaluate resistive interchange parameter on rational surfaces
+      DO i=1,msing
+         respsi = sing(i)%psifac
+         CALL spline_eval(locstab,respsi,0)
+         dr_rationals(i)=locstab%f(1)/respsi
+      END DO
 c-----------------------------------------------------------------------
 c     open files
 c-----------------------------------------------------------------------
@@ -108,6 +129,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_att(ncid,nf90_global,'mhigh', mhigh))
       CALL check( nf90_put_att(ncid,nf90_global,'mpert', mpert))
       CALL check( nf90_put_att(ncid,nf90_global,'mband', mband))
+      CALL check( nf90_put_att(ncid,nf90_global,'msing', msing))
       CALL check( nf90_put_att(ncid,nf90_global,'psilow', psilow))
       CALL check( nf90_put_att(ncid,nf90_global,'amean', amean))
       CALL check( nf90_put_att(ncid,nf90_global,'rmean', rmean))
@@ -151,6 +173,13 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_dim(ncid, "psi_n", sq%mx+1, p_dim) )
       CALL check( nf90_def_var(ncid, "psi_n", nf90_double, p_dim, p_id))
       IF(msing>0)THEN
+         mvec=(/(m,m=mlow,mhigh)/)
+         DO i=1,msing
+            respsi=sing(i)%psifac
+            resnum=NINT(sing(i)%q*nn)-mlow+1
+            resm_sing=mvec(resnum)
+            resm(i)=resm_sing
+         ENDDO
          CALL check( nf90_def_dim(ncid,"lr_index",2*msing,l_dim) )
          CALL check( nf90_def_var(ncid,"lr_index",nf90_int,l_dim,l_id))
          CALL check( nf90_put_att(ncid,l_dim,"long_name",
@@ -174,8 +203,12 @@ c-----------------------------------------------------------------------
      $       "Normalized Poloidal Flux at Rational Surfaces") )   
          CALL check( nf90_def_var(ncid,"q_rational",nf90_double,
      $                            r_dim,qr_id) )
-         CALL check( nf90_put_att(ncid,qr_id,"long_name",
-     $       "Safety Factor at Rational Surfaces") )    
+         CALL check( nf90_def_var(ncid, "shear", nf90_double, r_dim,
+     $                            shear_id) )
+         CALL check( nf90_def_var(ncid, "Delta_geo", nf90_double, r_dim,
+     $                            dgeo_id) )
+         CALL check( nf90_def_var(ncid, "resm", nf90_int, r_dim,
+     $                            resm_id) )
       ENDIF
       ! define variables
       IF(debug_flag) PRINT *," - Defining variables in netcdf"
@@ -185,6 +218,8 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(ncid, "q", nf90_double, p_dim, q_id) )
       CALL check( nf90_def_var(ncid, "di", nf90_double, p_dim, di_id) )
       CALL check( nf90_def_var(ncid, "dr", nf90_double, p_dim, dr_id) )
+      CALL check( nf90_def_var(ncid, "dr_rational", nf90_double, p_dim, 
+     $            drr_id) )
       CALL check( nf90_def_var(ncid, "ca1", nf90_double, p_dim, ca_id))
       CALL check( nf90_def_var(ncid, "W_p_eigenvector", nf90_double,
      $    (/m_dim, mo_dim, i_dim/), wp_id) )
@@ -235,6 +270,20 @@ c-----------------------------------------------------------------------
      $                                           i=1,msing)/)) )
          CALL check( nf90_put_var(ncid,qr_id, (/(sing(i)%q,
      $                                           i=1,msing)/)) )
+
+         !mvec=(/(m,m=mlow,mhigh)/)
+         !DO i=1,msing
+         !   respsi=sing(i)%psifac
+         !   CALL spline_eval(sq,respsi,1)
+         !   resnum=NINT(sing(i)%q*2.0)-mlow+1
+         !   shear=mvec(resnum)*sq%f1(4)/sq%f(4)**2
+         !   WRITE(*,*)"SHEAR=",shear
+         !ENDDO
+
+         CALL check( nf90_put_var(ncid,shear_id, shr) )
+         CALL check( nf90_put_var(ncid,resm_id, resm) )
+         CALL check( nf90_put_var(ncid,dgeo_id, dgeo) )
+      !   CALL check( nf90_put_var(ncid,shear_id,shear) ) ! GPEC HAS DIFFERENT SHEAR CALC?
       ENDIF
 
       IF(debug_flag) PRINT *," - Putting profile variables in netcdf"
@@ -244,6 +293,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,q_id, sq%fs(:,4)))
       CALL check( nf90_put_var(ncid,di_id, locstab%fs(:,1)/sq%xs(:)))
       CALL check( nf90_put_var(ncid,dr_id, locstab%fs(:,2)/sq%xs(:)))
+      CALL check( nf90_put_var(ncid,drr_id, dr_rationals))
       CALL check( nf90_put_var(ncid,ca_id, locstab%fs(:,4)))
 
       IF(debug_flag) PRINT *," - Putting matrix variables in netcdf"

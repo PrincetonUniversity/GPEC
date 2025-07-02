@@ -1,45 +1,55 @@
 &SLAYER_INPUT
-
-    !!! FOR READING IN ASCII TABLE, SET INPUT_FLAG = TRUE
     input_flag=f         ! reads profile quantities (n_e, t_e, etc.) from an ascii table
-    infile=''  ! Path to ascii table of profile quantities read when using input_flag
-    ncfile=''  ! Path to netCDF file of STRIDE outputs
-
-    !!! FOR MANUALLY ENTERING KINETIC QUANTITIES @ RATIONAL SURFACE, SET PARAMS_FLAG = TRUE
+    infile=''            ! Path to ascii table of profile quantities read when using input_flag
+    ncfile=''            ! Path to netCDF file of STRIDE outputs
     params_flag=f        ! calculates normalized parameters from profile quantities
+    ! >>>
+    ! >>> Input rational surface quantities
+    ! >>>
     mm=2                 ! poloidal mode number
     nn=1                 ! toroidal mode number
-    n_e=7.77E+17         ! electron density [m^-3]
-    t_e=25.8             ! electron temperature [eV]
-    t_i=25.8             ! ion temperature [eV]
-    sval=2.0             ! magnetic shear at the layer
-    bt=1.0               ! toroidal field [T]
-    rs=0.17              ! minor radius of resonant surface [m]
-    R0=2.0               ! major radius of magnetic axis [m]
-    omega=5.45E+04       ! ExB frequency [1/s]
+    n_e=5.50E+19         ! electron density [m^-3]
+    t_e=1000.0           ! electron temperature [eV]
+    t_i=1000.0           ! ion temperature [eV]
+    sval=1.5             ! magnetic shear at the layer
+    bt=2.0               ! toroidal field [T]
+    rs=0.5               ! minor radius of resonant surface [m]
+    R0=1.67              ! major radius of magnetic axis [m]
+    omega=5.00E+03       ! ExB frequency [Hz]
     l_t=0.11             ! temperature gradient scale length
     l_n=0.25             ! density gradient scale length
     qval=2.0             ! q of resonant surface
-    mu_i=2.0             ! ion mass ratio to proton ??
+    mu_i=2.0             ! ion mass ratio to proton mass, 2 for deuterium plasma
     zeff=2.0             ! plasma Z_effective
-    inpr=10.0            ! Prantdl number
-    inpr_prof=10.0,10.0,10.0,10.0,10.0,10.0,10.0,10.0 ! Prandtl number profile
-    inpe=0.0             ! Electron viscosity (if > 0.0, Pe_flag=t will be overridden and this value used instead)
-
-    !!! IF INPUT_FLAG & PARAMS_FLAG ARE FALSE, MANUALLY ENTER DIMENSIONLESS QUANTITIES @ RATIONAL SURFACE HERE
-    inQ=23.0             ! normalized ExB frequency
-    inQ_e=2.0            ! normalized electron diamagnetic frequency
-    inQ_i=-2.0           ! normalized ion diamagnetic frequency
-    inc_beta=0.7         ! dimensionless measure of the plasma pressure
-    inds=6.0             ! normalized ion sound radius
-    intau=1.0            ! ion temperature divided by electron temperature
-    Q0=4.0               ! unnecessary placeholder variable for inQ?
-    delta_n_p=0          ! delta offset used for jxb calculations. Default is (1e-2,1e-2).
+    dr_val=-0.1          ! GGJ resistive interchange criterion D_R
+    dgeo_val=10.0        ! J.W. Connor geometric prefactor for Delta_crit
+    chi_prof=0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2 ! Rational surface perpendicular ion momentum diffusivity OR perpendicular energy diffusivity profile
+    ! >>>
+    ! >>> Input normalized layer parameters. If read_eq=f, each will individually override internal calcuation using above inputs
+    ! >>>
+    inpr=0.0             ! Prantdl number. Set /= 0.0 to override internal calculation
+    inpe=0.0             ! electron viscosity
+    inQ=1.0              ! normalized ExB frequency. TO DO: update for mode rotation frequency calculation! 
+    inQ_e=0.0            ! normalized electron diamagnetic frequency. Set /= 0.0 to override internal calculation
+    inQ_i=0.0            ! normalized ion diamagnetic frequency. Set /= 0.0 to override internal calculation
+    inc_beta=0.0         ! dimensionless measure of the plasma pressure. Set /= 0.0 to override internal calculation
+    inds=0.0             ! normalized ion sound radius, or normalized ion skin depth. Set /= 0.0 to override internal calculation
+    intau=1.0            ! ratio of ion to electron temperature
+    Q0=1.0               ! unnecessary placeholder variable for inQ?
+    delta_prime=(0.0,0.0)  ! input Delta' or (Delta' - Delta_crit) for growth rate calculation, set /= 0.0 to override internal calculation
+    delta_n_p=(0.01,0.01)  ! delta offset used for jxb calculations. Default for latter is (1e-2,1e-2).
+    ingamma=(0.0,0.0)     ! input (Re(Q),Im(Q)) to calculate inner layer Delta. Set /= 0.0 to override internal root finding
 /
+
 &SLAYER_CONTROL
     inum=400             ! resolution to find error field thresholds.
     jnum=100             ! resolution for 2d scan along with Q,omega.
-    knum=100             ! resolution for 2d scan alont with the other.
+    knum=100             ! resolution for 2d scan along with the other.
+    Q_num=100            ! resolution for stability scan along Re(Q),Im(Q) axes
+    scan_radius=1.5      ! stability scan width for Re(Q),Im(Q) scan
+    dc_type="toroidal"   ! Delta_crit type, options are "toroidal", "lar", and "rfitzp"
+    read_eq=f            ! read in equilibrium quantities from STRIDE and kinetic file. Set all normalized params to 0.0
+    fitz_flag=t          ! Use R. Fitzpatrick formalism (inc. anomalous diffusion) for growth rate calculation 
     QPscan_flag=f        ! scan (Q,P) space for delta and torque.
     Qscan_flag=f         ! scan Q space
     QPescan_flag=f       ! scan (Q,Pe) space for delta and torque.
@@ -50,18 +60,25 @@
     nbtscan_flag=f       ! scan (n,bt) space for error fields.
     parflow_flag=f       ! set parallel flow on
     PeOhmOnly_flag=t     ! only include Pe from Ohm's law
-    Pe_flag=f            ! Not operational yet. If true, it will calculate classical inpe value from inpr and include in SLAYER run
+    Pe_flag=f            ! if true, calculate classical inpe value from inpr and include in SLAYER run
     layfac=0.02          ! layfac*EXP(ifac*ATAN2(AIMAG(Q-Q_e),REAL(Q-Q_e)) is added to Q_e if ABS(Q-Q_e)<layfac). Default is 0.02.
 /
+
 &SLAYER_OUTPUT
     verbose=t            ! prints progress to terminal
-    ascii_flag=t         ! writes results to ascii files
+    ascii_flag=f         ! writes results to ascii files
     bin_flag=f           ! writes results to binary files
     netcdf_flag=f        ! writes results to netcdf files
+    est_gamma_flag=t     ! Calculate and output growth rate estimate
+    match_gamma_flag=t ! Find Delta_hat = Delta_prime match to solve for growth rate
     stability_flag=f     ! calculate delta dependence on complex Q
+    stabscan_flag=f      ! Generate Re(Q),Im(Q) scan and output as ASCII
+    br_th_flag=f         ! Calculate br_th
     bal_flag=f           ! calculate the resonant field penetration threshold from torque balance
 /
+
 &SLAYER_DIAGNOSE
     riccati_out=f        ! writes LSDOE Riccati integration to an ascii file
-    params_check=t       ! prints the primary parameters to the terminal when they are calculated
+    riccatiscan_flag=f
+    params_check=f       ! prints the primary parameters to the terminal when they are calculated
 /

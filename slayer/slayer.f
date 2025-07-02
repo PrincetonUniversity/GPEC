@@ -13,14 +13,16 @@ c-----------------------------------------------------------------------
       PROGRAM slayer
 
       USE sglobal_mod
-      USE params_mod
-      USE delta_mod, ONLY: riccati,riccati_out,
+      USE delta_mod, ONLY: riccati,riccati_del_s,riccati_out,
      $                     parflow_flag,PeOhmOnly_flag
+      USE gslayer_mod
+      USE layerinputs_mod
 
       IMPLICIT NONE
 
-      CHARACTER(128) :: infile
-      INTEGER :: i,j,k,inum,jnum,knum,inn
+      CHARACTER(512) :: infile,ncfile
+      INTEGER :: i,j,k,inum,jnum,knum,inn,count,
+     $           Q_num,n_k
       INTEGER, DIMENSION(1) :: index
 
       LOGICAL :: params_flag,QPscan_flag,QPescan_flag,QPscan2_flag,
@@ -28,77 +30,101 @@ c-----------------------------------------------------------------------
      $     onscan_flag,otscan_flag,ntscan_flag,nbtscan_flag,
      $     Pe_flag,verbose,ascii_flag,bin_flag,netcdf_flag,
      $     bal_flag,stability_flag,riccatiscan_flag,input_flag,
-     $     params_check
-
-      REAL(r8) :: n_e,t_e,t_i,omega,omega0,
-     $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff
+     $     params_check,stabscan_flag,read_eq,est_gamma_flag,
+     $     match_gamma_flag,fitz_flag,br_th_flag
+      REAL(r8) :: n_e,t_e,t_i,omega,omega0,scan_radius,
+     $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,dr_val,dgeo_val
       REAL(r8) :: inQ,inQ_e,inQ_i,inpr,inpe,inc_beta,inds,intau,inlu
-      REAL(r8) :: psi0,jxb,Q0,Q_sol,br_th
-      COMPLEX(r8) :: delta,delta_n_p
+      REAL(r8) :: psi0,jxb,Q0,Q_sol,br_th,d_b,Residual
+      COMPLEX(r8) :: delta,delta_n_p,dels_db,del_s,lar_gamma,
+     $               tmp_gamma,ingamma,delta_prime
 
-      REAL(r8) :: inQ_min,inQ_max,j_min,j_max,jpower,k_min,k_max,kpower,
-     $     Qratio
+      REAL(r8) :: inQ_min,inQ_max,j_min,j_max,jpower,k_min,k_max,
+     $     kpower,ing_step,ing_coarse,iing_coarse,delta_real,
+     $     delta_imag,Qratio,chi
 
       INTEGER, DIMENSION(:), ALLOCATABLE :: mms,nns
 
-      REAL(r8), DIMENSION(8) :: inpr_prof
-
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs,jxbl,bal,
-     $     prs,n_es,t_es,t_is,omegas,l_ns,l_ts,qvals,svals,
-     $        bts,rss,R0s,mu_is,zeffs,Q_soll,br_thl
-      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: 
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: jxbl,bal,
+     $        prs,n_es,t_es,t_is,omegas,l_ns,l_ts,svals,qvals,
+     $        bts,rss,R0s,mu_is,zeffs,Q_soll,br_thl,pes
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: Q_e_arr,Q_i_arr,
+     $                   c_beta_arr,D_norm_arr,tau_arr,P_perp_arr,
+     $                   omegas_arr,Q_arr,lu_arr,psi_n_rational,
+     $                   d_beta_arr,Qconv_arr
+      REAL(r8), DIMENSION(8) :: chi_prof
+      INTEGER, DIMENSION(:), ALLOCATABLE :: qval_arr
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs,
+     $                       Re_deltaprime_arr,Im_deltaprime_arr,
+     $                       gammafac_arr,d_crit_arr
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE ::
      $     js,ks,psis,jxbs,Q_sols,br_ths
+      REAL(r8) :: spot, slayer_inpr
       REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: Q_solss,br_thss
-      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: deltal
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: deltal,outer_deltas,
+     $                                     dels_db_arr,lar_gamma_arr,
+     $                                     gamma_sol_arr,gamma_est_arr
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: deltas
 
-      NAMELIST/slayer_input/params_flag,input_flag,infile,
-     $     mm,nn,n_e,t_e,t_i,omega,l_n,l_t,
-     $     qval,sval,bt,rs,R0,zeff,mu_i,inQ,inQ_e,inQ_i,
-     $     inpr,inpr_prof,inpe,inc_beta,inds,intau,inlu,Q0,delta_n_p
-      NAMELIST/slayer_control/inum,jnum,knum,QPscan_flag,QPscan2_flag,
-     $     QPescan_flag,QDscan2_flag,Qbscan_flag,Qscan_flag,
-     $     onscan_flag,otscan_flag,ntscan_flag,nbtscan_flag,
-     $     layfac,Qratio,parflow_flag,peohmonly_flag,Pe_flag
+      NAMELIST/slayer_input/input_flag,infile,
+     $     ncfile,params_flag,mm,nn,n_e,t_e,t_i,sval,bt,rs,R0,omega,
+     $     l_t,l_n,qval,mu_i,zeff,dr_val,dgeo_val,chi_prof,inpr,inpe,
+     $     inQ,inQ_e,inQ_i,inc_beta,inds,intau,Q0,delta_prime,
+     $     delta_n_p,ingamma
+      NAMELIST/slayer_control/inum,jnum,knum,Q_num,scan_radius,
+     $     dc_type,read_eq,fitz_flag,QPscan_flag,Qscan_flag,
+     $     QPescan_flag,Qbscan_flag,onscan_flag,otscan_flag,
+     $     ntscan_flag,nbtscan_flag,parflow_flag,peohmonly_flag,
+     $     Pe_flag,layfac
       NAMELIST/slayer_output/verbose,ascii_flag,bin_flag,netcdf_flag,
-     $     stability_flag
+     $     est_gamma_flag,match_gamma_flag,stability_flag,
+     $     stabscan_flag,br_th_flag,bal_flag
       NAMELIST/slayer_diagnose/riccati_out,riccatiscan_flag,
-     $     params_check,bal_flag
+     $     params_check
 c-----------------------------------------------------------------------
 c     set initial values.
 c-----------------------------------------------------------------------
-      mm=2
-      nn=1
-      mr = real(mm,4)
-      nr = real(nn,4)
-      n_e=1e19
-      t_e=1e3
-      t_i=1e3
-      omega=1e4
-      l_n=2e-1
-      l_t=2e-1
-      qval=2.0
-      sval=2.0
-      bt=1.0
-      rs=0.5
-      R0=1.0
-      mu_i=2.0
-      zeff=2.0
-      inQ=20.0  ! Q=23.0 for DIII-D example.
-      inQ_e=2.0 ! Q_e=2.0 for DIII-D example.
-      inQ_i=-2.6 ! Q_i=-2.6 for DIII-D example.
-      inpr=1.0 !
-      inpr_prof=1.0
+      mm=0.0
+      nn=0.0
+      mr = 0.0!real(mm,4)
+      nr = 0.0!real(nn,4)
+      n_e=0.0
+      t_e=0.0
+      t_i=0.0
+      omega=0.0
+      l_n=0.0
+      l_t=0.0
+      qval=0.0
+      sval=0.0
+      bt=0.0
+      rs=0.0
+      R0=0.0
+      mu_i=0.0
+      zeff=0.0
+      dr_val=0.0
+      dgeo_val=0.0
+      inQ=0.0
+      inQ_e=0.0
+      inQ_i=0.0
+      inpr=0.0
+      chi_prof=0.0
       inpe=0.0
-      inc_beta=0.7 ! c_beta=0.7 for DIII-D example.
-      inds=6.0 ! 6.0 for DIII-D example.
-      intau=1.0 ! 1.0 for DIII-D example.     
-      inlu=1e8
-      Q0=4.0     
-      delta_n_p=(1e-2,1e-2)
+      inc_beta=0.0
+      inds=0.0
+      intau=0.0
+      inlu=0.0
+      Q0=0.0
+      chi=0.0
+      gamma_fac=0.0
+      dc_type=""
+      delta_prime=(0.0,0.0)
+      delta_n_p=(0.0,0.0)
+      ingamma=(0.0,0.0)
       inum=400 ! resolution to find error field thresholds.
       jnum=500 ! resolution for 2d scan along with Q,omega.
       knum=100 ! resolution for 2d scan alont with the other.
+      Q_num=100 ! resolution for stab. scan along Re(Q) axis
+      scan_radius = 2.0
       in_unit=1
       out_unit=2
       out2_unit=3
@@ -106,6 +132,10 @@ c-----------------------------------------------------------------------
       bin_unit=5
       bin_2d_unit=6
       input_unit=7
+      read_eq=.FALSE.
+      est_gamma_flag=.FALSE.
+      match_gamma_flag=.FALSE.
+      fitz_flag=.FALSE.
       QPscan_flag=.FALSE. ! scan (Q,P) space for delta and torque.
       QPescan_flag=.FALSE. ! scan (Q,Pe) space for delta and torque.
       Qbscan_flag=.FALSE. ! scan (Q,beta) space for delta and torque.
@@ -120,7 +150,8 @@ c-----------------------------------------------------------------------
       Pe_flag=.FALSE.
       params_flag=.TRUE.
       input_flag=.FALSE.
-      infile="input_params.dat"
+      infile=""
+      ncfile=""
       verbose=.TRUE.
       ascii_flag=.TRUE.
       bin_flag=.TRUE.
@@ -130,6 +161,8 @@ c-----------------------------------------------------------------------
       params_check=.FALSE.
       bal_flag=.FALSE.
       stability_flag=.FALSE.
+      stabscan_flag=.FALSE.
+      br_th_flag=.FALSE.
 c-----------------------------------------------------------------------
 c     read slayer.in.
 c-----------------------------------------------------------------------
@@ -153,7 +186,7 @@ c-----------------------------------------------------------------------
 c     calculate parameters as needed.
 c-----------------------------------------------------------------------
       IF (params_flag) THEN
-         CALL params(n_e,t_e,t_i,omega,
+         CALL params(n_e,t_e,t_i,omega,chi,dr_val,dgeo_val,
      $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
          inQ=Q
          inQ_e=Q_e
@@ -168,12 +201,14 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     calculate basic delta, torque, balance, error fields.
 c-----------------------------------------------------------------------
+      IF (.NOT. (match_gamma_flag)) THEN
       delta=riccati(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe)
       psi0=1.0/ABS(delta+delta_n_p) ! a.u.
       jxb=-AIMAG(1.0/(delta+delta_n_p)) ! a.u.
       WRITE(*,*)"delta=",delta
       WRITE(*,*)"psi0=",psi0
       WRITE(*,*)"jxb=",jxb
+      ENDIF
 c-----------------------------------------------------------------------
 c     calculate parameters as needed.
 c-----------------------------------------------------------------------
@@ -199,9 +234,9 @@ c-----------------------------------------------------------------------
             mr=REAL(mms(k))
             nr=REAL(nns(k))
             inpr=prs(k)
-            CALL params(n_es(k),t_es(k),t_is(k),omegas(k),
-     $           l_ns(k),l_ts(k),qvals(k),svals(k),bts(k),rss(k),R0s(k),
-     $           mu_is(k),zeffs(k),params_check)
+            CALL params(n_es(k),t_es(k),t_is(k),omegas(k),chi,dr_val,
+     $           dgeo_val,l_ns(k),l_ts(k),qvals(k),svals(k),bts(k),
+     $           rss(k),R0s(k),mu_is(k),zeffs(k),params_check)
             inQ=Q
             inQ_e=Q_e
             inQ_i=Q_i
@@ -253,6 +288,368 @@ c-----------------------------------------------------------------------
          CLOSE(out_unit)
          DEALLOCATE(prs,n_es,t_es,t_is,omegas,l_ns,l_ts,qvals,svals,
      $        bts,rss,R0s,mu_is,zeffs,Q_soll,br_thl,mms,nns)
+      ENDIF
+c-----------------------------------------------------------------------
+c     LAR (cylindrical) growthrates via restive layer thickness
+c-----------------------------------------------------------------------
+      IF (est_gamma_flag) THEN
+      WRITE(*,*)"------------------------------------------"
+      WRITE(*,*)">>> Estimating growth rate"
+
+         IF (read_eq) THEN
+
+            CALL build_inputs(infile,ncfile,chi_prof,qval_arr,
+     $           psi_n_rational,lu_arr,Qconv_arr,Q_arr,Q_e_arr,Q_i_arr,
+     $           c_beta_arr,d_beta_arr,D_norm_arr,tau_arr,
+     $           P_perp_arr,omegas_arr,gammafac_arr,Re_deltaprime_arr,
+     $           Im_deltaprime_arr,d_crit_arr)
+
+            n_k = SIZE(qval_arr)
+         ELSE
+            n_k = 1
+            mr = mm
+            nr = nn
+
+            CALL params(n_e,t_e,t_i,omega,chi_prof(1),dr_val,dgeo_val,
+     $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
+
+            IF (ABS(inQ) > 0.0) THEN
+               Q = inQ ! NAMELIST
+            END IF
+            IF (ABS(inQ_e) > 0.0) THEN
+               Q_e = inQ_e ! NAMELIST
+            END IF
+            IF (ABS(inQ_i) > 0.0) THEN
+               Q_i = inQ_i ! NAMELIST
+            END IF
+            IF (inpr > 0.0) THEN
+               pr = inpr ! NAMELIST
+            END IF
+            IF (intau > 0.0) THEN
+               tau = intau ! NAMELIST
+            END IF
+            IF (inds > 0.0) THEN
+               D_norm = inds ! NAMELIST
+            END IF
+
+            qval_arr = (/ qval /)
+            omegas_arr = (/ omega /)
+            Q_arr = (/ Q /)
+            Q_e_arr = (/ Q_e /)
+            Q_i_arr = (/ Q_i /)
+            psi_n_rational = (/ 0.0 /)
+            Re_deltaprime_arr = (/ REAL(delta_prime) /)
+            Im_deltaprime_arr = (/ AIMAG(delta_prime) /)
+            P_perp_arr = (/ P_perp /)
+            tau_arr = (/ tau /)
+            D_norm_arr = (/ D_norm /)
+            d_beta_arr = (/ d_beta /)
+            delta_eff = REAL(delta_prime)-d_crit
+            gamma_fac = (rs*delta_eff)/tau_r
+            gammafac_arr = (/ gamma_fac /)
+         END IF 
+
+         ALLOCATE(gamma_est_arr(n_k),dels_db_arr(n_k))
+         DO k=1,n_k
+            WRITE(*,*)
+            WRITE(*,'(A,I0,A)') 'Calculating growth rate '//
+     $             'estimate on q = ',
+     $       qval_arr(k),' rational surface'
+
+            dels_db=riccati_del_s(Q_arr(k),Q_e_arr(k),
+     $                   Q_i_arr(k),P_perp_arr(k),c_beta_arr(k),
+     $                   D_norm_arr(k),tau_arr(k),
+     $                   5.0*D_norm_arr(k))
+
+            del_s = dels_db * d_beta_arr(k)
+
+            gamma_est_arr(k) = gammafac_arr(k)/del_s
+            dels_db_arr(k) = dels_db
+            WRITE(*,*)
+            WRITE(*,'(A,F0.3,A)')'Growth rate estimate = ',
+     $                 REAL(gamma_est_arr(k)),' [Hz]'
+
+         ENDDO
+
+         IF (.NOT. (match_gamma_flag)) THEN
+            gamma_sol_arr = (/0./)
+            CALL output_gamma(est_gamma_flag,qval_arr,
+     $         omegas_arr,Q_arr,Q_e_arr,Q_i_arr,d_beta_arr,
+     $         c_beta_arr,D_norm_arr,P_perp_arr,lu_arr,psi_n_rational,
+     $         Re_deltaprime_arr,Im_deltaprime_arr,d_crit_arr,
+     $         dels_db_arr,gamma_sol_arr,gamma_est_arr,
+     $         Qconv_arr,re_trace,im_trace)
+         END IF
+      ENDIF
+c-----------------------------------------------------------------------
+c     LAR (cylindrical) growthrates via restive layer thickness
+c-----------------------------------------------------------------------
+      IF (match_gamma_flag) THEN
+         WRITE(*,*)"------------------------------------------"
+         WRITE(*,*)">>> Calculating asymptotically matched growth rate"
+
+         IF (read_eq) THEN
+
+            CALL build_inputs(infile,ncfile,chi_prof,qval_arr,
+     $          psi_n_rational,lu_arr,Qconv_arr,Q_arr,Q_e_arr,Q_i_arr,
+     $          c_beta_arr,d_beta_arr,D_norm_arr,tau_arr,
+     $          P_perp_arr,omegas_arr,gammafac_arr,
+     $          Re_deltaprime_arr,Im_deltaprime_arr,d_crit_arr)
+
+            n_k = SIZE(qval_arr)
+
+         ELSE
+            n_k = 1
+
+            ! Use namelist kinetic inputs instead of equilibrium files
+            CALL params(n_e,t_e,t_i,omega,chi_prof(1),dr_val,dgeo_val,
+     $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
+
+            ! Override desired normalized parameters
+            IF (ABS(inQ) > 0.0) THEN
+               Q = inQ ! NAMELIST
+            END IF
+            IF (ABS(inQ_e) > 0.0) THEN
+               Q_e = inQ_e ! NAMELIST
+            END IF
+            IF (ABS(inQ_i) > 0.0) THEN
+               Q_i = inQ_i ! NAMELIST
+            END IF
+            IF (inpr > 0.0) THEN
+               P_perp = inpr ! NAMELIST
+            END IF
+            IF (intau > 0.0) THEN
+               tau = intau ! NAMELIST
+            END IF
+            IF (inds > 0.0) THEN
+               D_norm = inds ! NAMELIST
+            END IF
+
+            qval_arr = (/ qval /)
+            omegas_arr = (/ omega /)
+            Q_arr = (/ Q /)
+            Q_e_arr = (/ Q_e /)
+            Q_i_arr = (/ Q_i /)
+            psi_n_rational = (/ 0.0 /)
+            Re_deltaprime_arr = (/ REAL(delta_prime) /)
+            Im_deltaprime_arr = (/ AIMAG(delta_prime) /)
+            d_crit_arr = (/ dc_tmp /)
+            P_perp_arr = (/ P_perp /)
+            tau_arr = (/ tau /)
+            D_norm_arr = (/ D_norm /)
+            d_beta_arr = (/ d_beta /)
+            gammafac_arr = (/ gamma_fac /)
+            c_beta_arr = (/ c_beta /)
+            lu_arr = (/ lu /)
+            Qconv_arr = (/ tauk /)
+         END IF 
+
+         ALLOCATE(gamma_sol_arr(n_k)) 
+
+         DO k=1,n_k
+            WRITE(*,*)
+            WRITE(*,'(A,I0,A)') 'Calculating growth rate on q = ',
+     $       qval_arr(k),' rational surface:'
+            Q_e = Q_e_arr(k)
+            Q_i = Q_i_arr(k)
+            P_perp = P_perp_arr(k)
+            tau = tau_arr(k)
+            D_norm = D_norm_arr(k)
+            c_beta = c_beta_arr(k)
+            tauk = Qconv_arr(k)
+
+            ! (Deltaprime - d_crit)/S^1/3
+            delta_eff = (Re_deltaprime_arr(k) - 
+     $                   d_crit_arr(k))/(lu_arr(k)**(1.0/3.0))
+c            delta_eff = Re_deltaprime_arr(k)
+            pe = 0.0
+
+            ALLOCATE(re_trace(100),im_trace(100))
+            re_trace = 0.0
+            im_trace = 0.0
+            n_trace = 1
+
+            IF (fitz_flag) THEN
+               g_r = 0.0
+               g_i = -Q_e
+               re_trace(1) = 0.0
+               im_trace(1) = -Q_e
+            ELSE
+               g_i = 0.0
+               g_r = -Q_e
+               im_trace(1) = 0.0
+               re_trace(1) = -Q_e
+            END IF
+
+            CALL newton_root(g_r,g_i,1,fitz_flag)
+
+            WRITE(*,*)
+            WRITE(*,'(A,F0.3,A)') 'Success! Growth rate = ', 
+     $            g_r/tauk, ' [Hz]'
+
+            CALL shrink_array(re_trace, n_trace)
+            CALL shrink_array(im_trace, n_trace)
+
+            IF (fitz_flag) THEN
+               re_trace = re_trace/tauk
+               im_trace = im_trace/tauk
+               gamma_sol_arr(k) = g_r/tauk! THIS IS FOR PLOT
+            ELSE
+               re_trace = re_trace/tauk
+               im_trace = -im_trace/tauk
+               gamma_sol_arr(k) = -g_r/tauk! THIS IS FOR PLOT
+            END IF
+         ENDDO 
+
+         IF (.NOT. (est_gamma_flag)) THEN
+            d_beta_arr = (/ 0. /)
+            dels_db_arr = (/ 0. /)
+         END IF
+
+         IF (stabscan_flag) THEN
+            WRITE(*,*)"------------------------------------------"
+            WRITE(*,'(A,F0.1)')' >>> Running [Re(Q),'//
+     $            'Im(Q)] scan with radius = ',
+     $                scan_radius
+
+            ing_step = (2.0 * scan_radius) / (Q_num - 1)
+            count = 0
+      
+            ALLOCATE(inQs(1:(Q_num+1)),iinQs(1:Q_num))
+            ALLOCATE(deltas(1:(Q_num+1),1:Q_num))
+
+            DO i = 1, (Q_num+1)
+               DO j = 1, Q_num
+                  ing_coarse = -scan_radius + (i - 1) * ing_step
+                  iing_coarse = -scan_radius + (j - 1) * ing_step
+                  ! Evaluate riccati function
+                  g_tmp = CMPLX(ing_coarse,iing_coarse)
+                  IF (fitz_flag) THEN
+                     delta=riccati_f(g_tmp)
+                  ELSE
+                     delta=riccati(iing_coarse,Q_e,Q_i,P_perp,
+     $                             c_beta,D_norm,tau,pe,
+     $                             iinQ=ing_coarse)
+                  END IF
+                  inQs(i) = ing_coarse
+                  IF (fitz_flag) THEN
+                     iinQs(j) = iing_coarse
+                  ELSE
+                     iinQs(j) = -iing_coarse
+                  END IF
+                  deltas(i,j) = delta
+               ENDDO
+            ENDDO
+
+            OPEN(UNIT=out_unit,FILE="slayer_stability_n"//
+     $         TRIM(sn)//".out", STATUS="UNKNOWN")
+            WRITE(out_unit,'(1x,4(a17))') "RE(Q)",
+     $           "IM(Q)","RE(delta)","IM(delta)"
+            DO i=1,Q_num+1
+               DO j=1,Q_num
+                  WRITE(out_unit,'(1x,4(es17.8e3))')
+     $                 inQs(i),iinQs(j),
+     $                 REAL(deltas(i,j)),AIMAG(deltas(i,j))
+               ENDDO
+            ENDDO
+            CLOSE(out_unit)
+
+         ENDIF 
+
+         CALL output_gamma(est_gamma_flag,qval_arr,
+     $         omegas_arr,Q_arr,Q_e_arr,Q_i_arr,d_beta_arr,
+     $         c_beta_arr,D_norm_arr,P_perp_arr,lu_arr,psi_n_rational,
+     $         Re_deltaprime_arr,Im_deltaprime_arr,d_crit_arr,
+     $         dels_db_arr,gamma_sol_arr,gamma_est_arr,
+     $         Qconv_arr,re_trace,im_trace)
+         stop
+      ENDIF
+c-----------------------------------------------------------------------
+c     TEST ANALYTIC SCAN IN GSLAYER.F, FOR TESTING ONLY
+c-----------------------------------------------------------------------
+      IF (br_th_flag) THEN
+
+         WRITE(*,*)"running br_th scan"
+
+         CALL params(n_e,t_e,t_i,omega,chi,dr_val,dgeo_val,
+     $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
+         inQ=Q
+         inQ_e=Q_e
+         inQ_i=Q_i
+         inc_beta=c_beta
+         inds=ds
+         intau=tau
+         Q0=Q
+c-----------------------------------------------------------------------
+c     calculate basic delta, torque, balance, error fields.
+c-----------------------------------------------------------------------
+         WRITE(*,*)"basic delta successful"
+         delta_n_p=1e-2
+         delta=riccati(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,
+     $                   inpe)
+         psi0=1.0/ABS(delta+delta_n_p)     ! a.u.
+         jxb=-AIMAG(1.0/(delta+delta_n_p)) ! a.u.
+c-----------------------------------------------------------------------
+c     find solutions based on simple torque balance.
+c-----------------------------------------------------------------------
+         IF (Q0>inQ_e) THEN
+             inQ_max=2.0*Q0
+             inQ_min=1.05*inQ_e
+         ELSE
+             inQ_max=0.95*inQ_e
+             IF (Q0>0) THEN
+                 inQ_min=0.8*inQ_i
+             ELSE
+                 inQ_min=1.5*MINVAL((/Q0,inQ_i/))
+             ENDIF
+         ENDIF
+         WRITE(*,*)"rotation scan"
+         ! Scan of rotation
+         inQ_max=10.0
+         inQ_min=-10.0
+         inum=200
+         ALLOCATE(inQs(0:inum),deltal(0:inum),jxbl(0:inum),
+     $                bal(0:inum))
+         DO i=0,inum
+            inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
+            deltal(i)=riccati(inQs(i),inQ_e,inQ_i,
+     $                   inpr,inc_beta,inds,intau,inpe)
+            jxbl(i)=-AIMAG(1.0/(deltal(i)+delta_n_p))
+            bal(i)=2.0*inpr*(Q0-inQs(i))/jxbl(i)
+         ENDDO
+
+         ! Identify the threshold from the maximum of the balance parameter
+         index=MAXLOC(bal)
+         Q_sol=inQs(index(1))
+         !omega_sol=inQs(index(1))/Qconv
+         br_th=sqrt(MAXVAL(bal)/lu*(sval**2.0/2.0))
+         DEALLOCATE(inQs,deltal,jxbl,bal)
+
+         WRITE(*,*)"allocating"
+         qval_arr = (/ 3 /)
+         inQs = (/ 1.0 /)
+         inQs = (/ 1.0 /)
+
+         n_k = SIZE(qval_arr)
+
+         qval_arr = (/ 3 /)
+         inQs = (/ 1.0 /)
+         inQs = (/ 1.0 /)
+
+         omegas_arr = (/ 0.0 /)
+         Q_arr = (/ inQ /)
+         Q_e_arr = (/ inQ_e /)
+         Q_i_arr = (/ inQ_i /)
+         psi_n_rational = (/ 0.0 /)
+         Re_deltaprime_arr = (/ 0.0 /)
+         Im_deltaprime_arr = (/ 0.0 /)
+         P_perp_arr = (/ inpr /)
+
+         WRITE(*,*)"allocations successful"
+
+c         CALL slayer_netcdf_out(n_k,lar_gamma_eq_flag,lar_gamma_flag,
+c     $                     stabscan_eq_flag,stabscan_flag,br_th_flag)
+         stop
       ENDIF
 c-----------------------------------------------------------------------
 c     find solutions based on simple torque balance.
@@ -324,7 +721,7 @@ c-----------------------------------------------------------------------
      $              inds,intau,inpe,iinQ=iinQs(j))
             ENDDO
          ENDDO
-      
+
          IF (ascii_flag) THEN
             OPEN(UNIT=out_unit,FILE="slayer_stability_n"//
      $         TRIM(sn)//".out", STATUS="UNKNOWN")
@@ -651,8 +1048,8 @@ c-----------------------------------------------------------------------
             DO k=0,knum
                ks(j,k)=k_min+(k_max-k_min)*(REAL(k)/knum)
                
-               CALL params(n_e*ks(j,k),t_e,t_i,omega*js(j,k),
-     $              l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
+               CALL params(n_e*ks(j,k),t_e,t_i,omega*js(j,k),chi,dr_val,
+     $      dgeo_val,l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
                inQ=Q
                inQ_e=Q_e
                inQ_i=Q_i
@@ -739,8 +1136,8 @@ c-----------------------------------------------------------------------
                ks(j,k)=k_min+(k_max-k_min)*(REAL(k)/knum)
                
                CALL params(n_e,t_e*ks(j,k),t_i*ks(j,k),
-     $              omega*js(j,k),l_n,l_t,qval,sval,bt,
-     $              rs,R0,mu_i,zeff,params_check)
+     $              omega*js(j,k),chi,dr_val,dgeo_val,l_n,l_t,qval,
+     $              sval,bt,rs,R0,mu_i,zeff,params_check)
                inQ=Q
                inQ_e=Q_e
                inQ_i=Q_i
@@ -825,7 +1222,8 @@ c-----------------------------------------------------------------------
                ks(j,k)=k_min+(k_max-k_min)*(REAL(k)/knum)
                
                CALL params(n_e*ks(j,k),t_e*js(j,k),t_i*js(j,k),omega,
-     $              l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
+     $              chi,dr_val,dgeo_val,l_n,l_t,qval,sval,bt,rs,R0,
+     $              mu_i,zeff,params_check)
                inQ=Q
                inQ_e=Q_e
                inQ_i=Q_i
@@ -909,9 +1307,9 @@ c-----------------------------------------------------------------------
                ks(j,k)=k_min+(k_max-k_min)*(REAL(k)/knum)
 
              
-               CALL params(n_e*ks(j,k),t_e,t_i,omega,
-     $              l_n,l_t,qval,sval,bt*js(j,k),rs,R0,mu_i,zeff,
-     $              params_check)
+               CALL params(n_e*ks(j,k),t_e,t_i,omega,chi,dr_val,
+     $              dgeo_val,l_n,l_t,qval,sval,bt*js(j,k),rs,R0,mu_i,
+     $              zeff,params_check)
                inQ=Q
                inQ_e=Q_e
                inQ_i=Q_i
