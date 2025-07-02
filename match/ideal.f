@@ -305,7 +305,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE ideal_build
+      SUBROUTINE ideal_build(sol_num)
+
+      INTEGER, INTENT(IN) :: sol_num
 
       INTEGER :: istep,ifix,jfix,kfix,ieq,info
       INTEGER, DIMENSION(mpert) :: ipiv
@@ -319,7 +321,8 @@ c-----------------------------------------------------------------------
          uedge=0
          uedge(mripple-mlow+1)=1
       ELSE
-         uedge=wt(:,1)
+         WRITE(*,*)"sol_num = ",sol_num
+         uedge=wt(:,sol_num)
       ENDIF
       temp2=soltype(mstep)%u(:,1:mpert,1)
       CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
@@ -357,12 +360,15 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE ideal_write
+      SUBROUTINE ideal_write(sol_num)
+
+      INTEGER, INTENT(IN) :: sol_num
 
       LOGICAL, PARAMETER :: diagnose=.FALSE.
       INTEGER :: ipert,istep,m
       REAL(r8), DIMENSION(mpert) :: singfac
       COMPLEX(r8), DIMENSION(mpert,0:mstep) :: b
+      CHARACTER(128) :: outputname
 c-----------------------------------------------------------------------
 c     compute normal perturbed magnetic field.
 c-----------------------------------------------------------------------
@@ -375,7 +381,14 @@ c-----------------------------------------------------------------------
 c     write binary output for graphs.
 c-----------------------------------------------------------------------
       WRITE(*,*)"Write binary output for graphs."
-      CALL bin_open(bin_unit,"solutions.bin","UNKNOWN","REWIND","none")
+
+      IF (sol_num == 1) THEN
+         outputname = "solutions.bin"
+      ELSE
+         WRITE(outputname, '(A,I0,A)') "solutions", sol_num, ".bin"
+      END IF
+
+      CALL bin_open(bin_unit, outputname, "UNKNOWN", "REWIND", "none")
       DO ipert=1,mpert
          DO istep=0,mstep
             WRITE(bin_unit)REAL(psifac(istep),4),REAL(rho(istep),4),

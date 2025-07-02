@@ -42,6 +42,7 @@ c-----------------------------------------------------------------------
      $     kin_flag=.FALSE.,con_flag=.FALSE.
       LOGICAL, DIMENSION(:), POINTER :: sing_flag
       INTEGER :: mfix,mhigh,mlow,mpert,mstep,nn,msing,mmatch,mbit,mterm
+      INTEGER :: sol_num = 1
       INTEGER, DIMENSION(:), POINTER :: fixstep
       REAL(r8) :: sfac0=1
       REAL(r8), DIMENSION(:), POINTER :: psifac,rho,q
