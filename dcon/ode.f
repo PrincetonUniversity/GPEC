@@ -90,6 +90,13 @@ c-----------------------------------------------------------------------
             force_output = first .OR. test
             CALL ode_output_step(unorm, op_force=force_output)
             CALL ode_record_edge
+            IF(nzero>5 .AND. psifac>MIN(psiedge,0.99))THEN
+               IF(verbose)WRITE(*,"(1x,2a,f10.8,a)")"Equilibrium is "
+     $ ,"unstable at far edge, truncating calculation at psifac = "
+     $ ,psifac," to avoid computational singularity at separatrix."
+               next="finish"
+               EXIT
+            ENDIF
             IF(test)EXIT
             CALL ode_step
             first = .FALSE.

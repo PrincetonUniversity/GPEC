@@ -81,6 +81,13 @@ c-----------------------------------------------------------------------
             IF(istep > 0)CALL ode_unorm(.FALSE.)
             CALL ode_output_step(unorm)
             IF(psifac == psimax .OR. istep == nstep .OR. istate < 0)EXIT
+            IF(nzero>5 .AND. psifac>0.99)THEN
+               IF(verbose)WRITE(*,"(1x,2a,f10.8,a)")"Equilibrium is "
+     $,"ideal unstable at far edge, truncating ideal calc. at psifac = "
+     $,psifac," to avoid computational singularity at separatrix."
+               next="finish"
+               EXIT
+            ENDIF
             CALL ode_step
          ENDDO
 c-----------------------------------------------------------------------
