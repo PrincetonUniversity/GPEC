@@ -213,7 +213,6 @@ c-----------------------------------------------------------------------
 
       LOGICAL :: cyl_flag=.FALSE.,regrid_flag=.FALSE.,verbose=.TRUE.
       INTEGER :: mmin,ipsi
-      REAL(r8) :: plasma1,vacuum1,total1
 
       NAMELIST/rdcon_control/bal_flag,mat_flag,ode_flag,vac_flag,
      $     res_flag,fft_flag,node_flag,mthvac,sing_start,nn,
