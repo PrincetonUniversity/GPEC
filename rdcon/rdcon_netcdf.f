@@ -141,6 +141,17 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_att(ncid,nf90_global,"version", version))
       CALL check( nf90_put_att(ncid,nf90_global,"cpu_time",cpusec) )
       CALL check( nf90_put_att(ncid,nf90_global,"wall_time",wallsec))
+      ! ideal stability calculations
+      IF(ode_flag .OR. (vac_flag .AND. .NOT.
+     $     (ksing > 0 .AND. ksing <= msing+1 .AND. bin_sol)))THEN
+        CALL check( nf90_put_att(ncid,nf90_global,'nzero', nzero))
+      ENDIF
+      IF(vac_flag .AND. .NOT.
+     $     (ksing > 0 .AND. ksing <= msing+1 .AND. bin_sol))THEN
+        CALL check( nf90_put_att(ncid,nf90_global,"plasma1",plasma1))
+        CALL check( nf90_put_att(ncid,nf90_global,"vacuum1",vacuum1))
+        CALL check( nf90_put_att(ncid,nf90_global,"total1",total1))
+      ENDIF
       ! define dimensions
       CALL check( nf90_def_dim(ncid, "i", 2, i_dim) )
       CALL check( nf90_def_var(ncid, "i", nf90_int, i_dim, i_id) )
