@@ -248,11 +248,11 @@ c-----------------------------------------------------------------------
      $       (/r_dim, rp_dim, i_dim/), dpp_id) )
          CALL check( nf90_put_att(ncid,dpp_id,"long_name",
      $       "PEST3 Delta Prime Matrix" ))
-         CALL check( nf90_def_var(ncid, "Delta_gw", nf90_double,
-     $       (/lrc_dim, lp_dim, i_dim/), dc_id) )
-         CALL check( nf90_put_att(ncid,dc_id,"long_name",
-     $ "Galerkin Solution Delta Matrix with Coil Matching Terms"))
          IF(coil%rpec_flag)THEN
+            CALL check( nf90_def_var(ncid, "Delta_gw", nf90_double,
+     $       (/lrc_dim, lp_dim, i_dim/), dc_id) )
+            CALL check( nf90_put_att(ncid,dc_id,"long_name",
+     $ "Galerkin Solution Delta Matrix with Coil Matching Terms"))
             CALL check( nf90_def_var(ncid, "Delta_coil", nf90_double,
      $         (/coil_dim, lp_dim, i_dim/), dpc_id) )
             CALL check( nf90_put_att(ncid,dpc_id,"long_name",
@@ -281,10 +281,12 @@ c-----------------------------------------------------------------------
      $                                           i=1,msing)/)) )
          CALL check( nf90_put_var(ncid,qr_id, (/(sing(i)%q,
      $                                           i=1,msing)/)) )
-         CALL check( nf90_put_var(ncid,lrc_id,
+         IF(coil%rpec_flag)THEN
+            CALL check( nf90_put_var(ncid,lrc_id,
      $       (/(i,i=1,2*msing+coil%mcoil)/)))
-         CALL check( nf90_put_var(ncid,coil_id,
+            CALL check( nf90_put_var(ncid,coil_id,
      $       (/(i,i=1,coil%mcoil)/)) )
+         ENDIF
       ENDIF
 
       IF(debug_flag) PRINT *," - Putting profile variables in netcdf"
