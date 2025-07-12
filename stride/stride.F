@@ -30,6 +30,8 @@ c-----------------------------------------------------------------------
       INTEGER :: mmin
       REAL(r8) :: plasma1,vacuum1,total1
       REAL(r8) :: psilow_tmp, psilim_tmp
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: mx0
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: vx0
 
       CHARACTER(len=64) :: arg_str1, arg_str2
       INTEGER :: nArg
@@ -351,9 +353,14 @@ c-----------------------------------------------------------------------
          WRITE(*,*)"Computing free boundary energies"
          CALL free_run(plasma1,vacuum1,total1,netcdf_out)
       ELSE
-         plasma1=0
-         vacuum1=0
-         total1=0
+         plasma1=0_r8
+         vacuum1=0_r8
+         total1=0_r8
+         ALLOCATE(mx0(mpert,mpert),vx0(mpert))
+         !mx0=0_c8
+         !vx0=0_c8
+         CALL stride_netcdf_out(mx0,mx0,mx0,vx0,vx0,vx0,
+     $          delta_prime_mat,plasma1,vacuum1,total1)
          CALL stride_dealloc
       ENDIF
       IF(mat_flag .OR. ode_flag)DEALLOCATE(amat,bmat,cmat,ipiva,jmat)

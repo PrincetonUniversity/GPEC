@@ -213,6 +213,8 @@ c-----------------------------------------------------------------------
 
       LOGICAL :: cyl_flag=.FALSE.,regrid_flag=.FALSE.,verbose=.TRUE.
       INTEGER :: mmin,ipsi
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: mx0
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: vx0
 
       NAMELIST/rdcon_control/bal_flag,mat_flag,ode_flag,vac_flag,
      $     res_flag,fft_flag,node_flag,mthvac,sing_start,nn,
@@ -400,6 +402,10 @@ c-----------------------------------------------------------------------
          plasma1=0
          vacuum1=0
          total1=0
+         ALLOCATE(mx0(mpert,mpert),vx0(mpert))
+         mx0=0
+         vx0=0
+         CALL rdcon_netcdf_out(mx0,mx0,mx0,mx0,vx0,vx0,vx0)
       ENDIF
       IF(mat_flag .OR. ode_flag)DEALLOCATE(amat,bmat,cmat,ipiva,jmat)
       IF(bin_euler)CALL bin_close(euler_bin_unit)

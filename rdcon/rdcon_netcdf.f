@@ -216,34 +216,38 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(ncid, "di", nf90_double, p_dim, di_id) )
       CALL check( nf90_def_var(ncid, "dr", nf90_double, p_dim, dr_id) )
       CALL check( nf90_def_var(ncid, "ca1", nf90_double, p_dim, ca_id))
-      CALL check( nf90_def_var(ncid, "W_p_eigenvector", nf90_double,
+      IF(ode_flag .AND. vac_flag)THEN !shift to .OR.
+        CALL check( nf90_def_var(ncid, "W_p_eigenvector", nf90_double,
      $    (/m_dim, mo_dim, i_dim/), wp_id) )
-      CALL check( nf90_def_var(ncid, "W_p_eigenvalue", nf90_double,
+        CALL check( nf90_def_var(ncid, "W_p_eigenvalue", nf90_double,
      $    (/mo_dim, i_dim/), wpv_id) )
-      CALL check( nf90_put_att(ncid,wp_id,"long_name",
+        CALL check( nf90_put_att(ncid,wp_id,"long_name",
      $    "Plasma Energy Eigenmodes") )
-      CALL check( nf90_put_att(ncid,wpv_id,"long_name",
+        CALL check( nf90_put_att(ncid,wpv_id,"long_name",
      $    "Plasma Energy Eigenvalues") )
-      CALL check( nf90_def_var(ncid, "W_v_eigenvector", nf90_double,
+      ENDIF
+      IF(vac_flag)THEN
+        CALL check( nf90_def_var(ncid, "W_v_eigenvector", nf90_double,
      $    (/m_dim, mo_dim, i_dim/), wv_id) )
-      CALL check( nf90_def_var(ncid, "W_v_eigenvalue", nf90_double,
+        CALL check( nf90_def_var(ncid, "W_v_eigenvalue", nf90_double,
      $    (/mo_dim, i_dim/), wvv_id) )
-      CALL check( nf90_put_att(ncid,wv_id,"long_name",
+        CALL check( nf90_put_att(ncid,wv_id,"long_name",
      $    "Vacuum Energy Eigenmodes") )
-      CALL check( nf90_put_att(ncid,wvv_id,"long_name",
+        CALL check( nf90_put_att(ncid,wvv_id,"long_name",
      $    "Vacuum Energy Eigenvalues") )
-      CALL check( nf90_def_var(ncid, "W_t_eigenvector", nf90_double,
+        CALL check( nf90_def_var(ncid, "W_t_eigenvector", nf90_double,
      $    (/m_dim, mo_dim, i_dim/), wt_id) )
-      CALL check( nf90_def_var(ncid, "W_t_eigenvalue", nf90_double,
+        CALL check( nf90_def_var(ncid, "W_t_eigenvalue", nf90_double,
      $    (/mo_dim, i_dim/), wtv_id) )
-      CALL check( nf90_put_att(ncid,wt_id,"long_name",
+        CALL check( nf90_put_att(ncid,wt_id,"long_name",
      $    "Total Energy Eigenmodes") )
-      CALL check( nf90_put_att(ncid,wtv_id,"long_name",
+        CALL check( nf90_put_att(ncid,wtv_id,"long_name",
      $    "Total Energy Eigenvalues") )
-      CALL check( nf90_def_var(ncid, "W_t", nf90_double,
+        CALL check( nf90_def_var(ncid, "W_t", nf90_double,
      $    (/m_dim, mo_dim, i_dim/), wt0_id) )
-      CALL check( nf90_put_att(ncid,wt0_id,"long_name",
+        CALL check( nf90_put_att(ncid,wt0_id,"long_name",
      $    "Total Energy Matrix") )
+      ENDIF
       IF(msing>0 .AND. ALLOCATED(delta))THEN
          CALL check( nf90_def_var(ncid, "Delta", nf90_double,
      $       (/l_dim, lp_dim, i_dim/), dp_id) )
@@ -309,22 +313,25 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,dr_id, locstab%fs(:,2)/sq%xs(:)))
       CALL check( nf90_put_var(ncid,ca_id, locstab%fs(:,4)))
 
-      IF(debug_flag) PRINT *," - Putting matrix variables in netcdf"
-      CALL check( nf90_put_var(ncid,wp_id,RESHAPE((/REAL(wp),
+      IF(ode_flag .AND. vac_flag)THEN !Shift to .OR. 
+        IF(debug_flag) PRINT *," - Putting matrix variables in netcdf"
+        CALL check( nf90_put_var(ncid,wp_id,RESHAPE((/REAL(wp),
      $             AIMAG(wp)/),(/mpert,mpert,2/))) )
       CALL check( nf90_put_var(ncid,wpv_id,RESHAPE((/REAL(ep),
      $             AIMAG(ep)/),(/mpert,2/))) )
-      CALL check( nf90_put_var(ncid,wv_id,RESHAPE((/REAL(wv),
+      ENDIF
+      IF(vac_flag)THEN
+        CALL check( nf90_put_var(ncid,wv_id,RESHAPE((/REAL(wv),
      $             AIMAG(wv)/),(/mpert,mpert,2/))) )
-      CALL check( nf90_put_var(ncid,wvv_id,RESHAPE((/REAL(ev),
+        CALL check( nf90_put_var(ncid,wvv_id,RESHAPE((/REAL(ev),
      $             AIMAG(ev)/),(/mpert,2/))) )
-      CALL check( nf90_put_var(ncid,wt_id,RESHAPE((/REAL(wt),
+        CALL check( nf90_put_var(ncid,wt_id,RESHAPE((/REAL(wt),
      $             AIMAG(wt)/),(/mpert,mpert,2/))) )
-      CALL check( nf90_put_var(ncid,wtv_id,RESHAPE((/REAL(et),
+        CALL check( nf90_put_var(ncid,wtv_id,RESHAPE((/REAL(et),
      $             AIMAG(et)/),(/mpert,2/))) )
-      CALL check( nf90_put_var(ncid,wt0_id,RESHAPE((/REAL(wt0),
+        CALL check( nf90_put_var(ncid,wt0_id,RESHAPE((/REAL(wt0),
      $             AIMAG(wt0)/),(/mpert,mpert,2/))) )
-
+      ENDIF
 
       IF(msing>0 .AND. ALLOCATED(delta))THEN
          ! construct PEST3 matching data
