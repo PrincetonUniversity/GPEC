@@ -67,7 +67,7 @@ c-----------------------------------------------------------------------
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
      $     out_fl,bin_fl,out_evals,bin_evals,bin_euler,euler_stride,
      $     bin_vac,ahb_flag,mthsurf0,msol_ahb,netcdf_out,out_fund,
-     $     out_ahg2msc,diagnose_detf
+     $     out_ahg2msc!,diagnose_detf
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------

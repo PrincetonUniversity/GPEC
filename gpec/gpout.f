@@ -1842,7 +1842,8 @@ c-----------------------------------------------------------------------
          ENDDO
          WRITE(out_unit,*)
       ENDIF
-
+      WRITE(*,*)"DEBUG: msing =",msing,"netcdf_flag =",
+     $        netcdf_flag,"ascii_flag =",ascii_flag
       IF(netcdf_flag .AND. msing>0)THEN
          CALL check( nf90_open(fncfile,nf90_write,fncid) )
          CALL check( nf90_inq_dimid(fncid,"i",i_id) )
@@ -3337,7 +3338,7 @@ c-----------------------------------------------------------------------
             DO ipert=1,mpert_pest
                WRITE(out_unit,'(2(es17.8e3),1x,I4,6(es17.8e3))')
      $              psifac(istep),qfac(istep),mfac_pest(ipert),
-     $              REAL(pwpmns(istep,ipert)),AIMAG(pwpmns(istep,ipert))        
+     $              REAL(pwpmns(istep,ipert)),AIMAG(pwpmns(istep,ipert))
             ENDDO
          ENDDO
          CALL ascii_close(out_unit)
