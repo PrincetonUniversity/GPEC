@@ -607,11 +607,15 @@ c-----------------------------------------------------------------------
          CALL gpout_vsingfld()
       ENDIF
       IF (singfld_flag) THEN
-         IF (con_flag) THEN
+         IF (con_flag .AND. .NOT. kin_flag) THEN
             PRINT *,"!! WARNING: singfld_flag not supported with"//
      $              "  con_flag"
+            PRINT *,"kin_flag :",kin_flag
+            PRINT *,"con_flag :",con_flag
             singfld_flag = .FALSE.
             vsingfld_flag = .FALSE.
+         ELSEIF (con_flag .AND. kin_flag) THEN
+            PRINT *,"Development: singfld_flag & con_flag & kin_flag"
          ELSEIF (msing==0) THEN
             PRINT *,"!! WARNING: no rationals for singfld_flag"
             singfld_flag = .FALSE.

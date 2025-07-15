@@ -97,16 +97,16 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     re-initialize.
 c-----------------------------------------------------------------------
+         WRITE(*,*) ising, ksing
          IF(ising == ksing)EXIT
          IF(next == "cross")THEN
             IF(res_flag)THEN
                CALL ode_resist_cross
+            ELSEIF(kin_flag)THEN
+               ! CALL ode_kin_cross
+               CALL ode_ideal_cross
             ELSE
-               IF(kin_flag)THEN
-                  CALL ode_kin_cross
-               ELSE
-                  CALL ode_ideal_cross
-               ENDIF
+               CALL ode_ideal_cross
             ENDIF
          ELSE
             EXIT
@@ -181,7 +181,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     find next singular surface.
 c-----------------------------------------------------------------------
-      IF(kin_flag)THEN
+      IF(.FALSE.)THEN!IF(kin_flag)THEN
          DO
             ising=ising+1
             IF(ising > kmsing)EXIT
@@ -603,6 +603,24 @@ c-----------------------------------------------------------------------
       WRITE(*,10)"psi =",kinsing(ising)%psifac,", q = ",
      $     kinsing(ising)%q
       CALL ode_unorm(.TRUE.)
+c-----------------------------------------------------------------------
+c     write signular surfaces and asymptotic placeholders before reinit.
+c-----------------------------------------------------------------------
+      IF(bin_euler)THEN
+         WRITE(euler_bin_unit)4
+         WRITE(euler_bin_unit)kinsing(ising)%psifac,kinsing(ising)%q,
+     $        kinsing(ising)%q1
+         WRITE(euler_bin_unit)msol
+         WRITE(euler_bin_unit)ca * 0
+         WRITE(euler_bin_unit)msol
+         WRITE(euler_bin_unit)ca * 0
+         WRITE(euler_bin_unit)
+     $        kinsing(ising)%restype%e,kinsing(ising)%restype%f,
+     $        kinsing(ising)%restype%h,kinsing(ising)%restype%m,
+     $        kinsing(ising)%restype%g,kinsing(ising)%restype%k,
+     $        kinsing(ising)%restype%eta,kinsing(ising)%restype%rho,
+     $        kinsing(ising)%restype%taua,kinsing(ising)%restype%taur
+      ENDIF
 c-----------------------------------------------------------------------
 c     re-initialize.
 c-----------------------------------------------------------------------

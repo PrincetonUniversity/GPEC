@@ -1485,14 +1485,14 @@ c     find new singular surfaces.
 c-----------------------------------------------------------------------
       SUBROUTINE ksing_find
 
-      REAL(r8),PARAMETER :: tol=1e-3,dfac=1e-4,keps1=1e-10,keps2=1e-4
+      REAL(r8),PARAMETER :: tol=1e-3,dfac=1e-4,eps=1e-4 ! eps~1e-10 for ideal dcon
       INTEGER, PARAMETER :: nsing=1000, maxstep=100000
       REAL(r8), DIMENSION(nsing) :: psising,psising_check
 
       LOGICAL :: sing_flag
       LOGICAL, PARAMETER :: debug = .FALSE.
       INTEGER :: ising,i_recur,i_depth,i,singnum,singnum_check,i_record
-      REAL(r8) :: x0,x1,eps,reps
+      REAL(r8) :: x0,x1
       COMPLEX(r8) :: det0,det1,sing_det
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: tmp_record
 
@@ -1560,23 +1560,22 @@ c-----------------------------------------------------------------------
       psising_check=psising
       psising=-1
       singnum=1
-      IF(verbose) WRITE(*,'(a,es10.3,a,es10.3)')
-     $   ' Looking for singularities below', keps1,
-     $   'x the maximum determinant of', ABS(det_max)
+      IF(verbose) WRITE(*,'(1x,a,I4,a)') 'Found',singnum_check-2,
+     $     'minima in |F|' 
       psising(1)=psising_check(1)
       DO i=2,singnum_check-1
          det0=sing_get_f_det(psising_check(i))
-         reps=keps1/keps2
-         eps=keps2*reps*10**(psising_check(i)/DLOG10(reps))
+         ! record the effective surface even if it is only a local minimum
          IF (ABS(det0)<=ABS(det_max)*eps) THEN
             singnum=singnum+1
             psising(singnum)=psising_check(i)
-            IF(debug) WRITE(*,'(a,es10.3,a,es10.3,a)') '  > psi',
-     $        psising_check(i), ' is singular'
+            IF(debug) WRITE(*,'(2x,a,ES10.3,a,es10.3,a)')'  > psi =',
+     $      psising_check(i),', |F|/|F|_max =', ABS(det0)/ABS(det_max),
+     $      ' -> is signular'
          ELSE
-            IF(debug) WRITE(*,'(a,es10.3,a,es10.3,a)') '  - psi',
-     $        psising_check(i), ' is not singular. Determinant is ',
-     $        ABS(det0)/(ABS(det_max)*eps), 'x the threshold'
+            IF(debug) WRITE(*,'(2x,a,ES10.3,a,es10.3,a)')'  - psi =',
+     $      psising_check(i),', |F|/|F|_max =', ABS(det0)/ABS(det_max),
+     $      ' -> not signular'
          ENDIF
       ENDDO
       singnum=singnum+1
@@ -1745,7 +1744,7 @@ c-----------------------------------------------------------------------
 c     subprogram 16. sing_newton.
 c     newton iteration for singular surface finder.
 c-----------------------------------------------------------------------
-            SUBROUTINE sing_newton(ff,z,bo0,bo1)
+      SUBROUTINE sing_newton(ff,z,bo0,bo1)
 
       COMPLEX(r8) :: ff
       REAL(r8), INTENT(INOUT) :: z
@@ -1754,7 +1753,7 @@ c-----------------------------------------------------------------------
       INTEGER :: it
 
       INTEGER :: ising,info
-      REAL(r8) :: dzfac=1e-6,dbfac=1e-1,tol=1e-15,itmax=1000,dz,dz1,dz2
+      REAL(r8) :: dzfac=1e-6,dbfac=1e-1,tol=1e-9,itmax=1e4,dz,dz1,dz2
       REAL(r8) :: z_old,f_old,f,b0,b1,zopt,fopt
 c-----------------------------------------------------------------------
 c     find initial guess.
@@ -1783,6 +1782,8 @@ c-----------------------------------------------------------------------
          ENDIF
          IF(it > itmax) THEN
             it=-1
+            ! Excessive warning: if kin_flag is true the well is shallow
+            ! compared to ideal simngularity and we usually hit itmax
             WRITE(*,'(a,es10.3,a,es10.3,a)') "  - search terminated at",
      $               zopt," with large",err," error"
             z=zopt
