@@ -811,6 +811,7 @@ c-----------------------------------------------------------------------
          ALLOCATE(s(osing),u(osing,osing),a(osing,tmpert),
      $      vt(osing,tmpert),work(lwork),rwork(5*osing),ipiv(tmpert),
      $      localcoup_out_vals(nsingcoup, osing),
+     $      localcoup_out(nsingcoup, tmpert, osing),
      $      localcoup_out_vecs(nsingcoup,tmpert,osing),
      $      localcoup_out_bvecs(nsingcoup,tmpert,osing),
      $      matmo(tmpert, osing))
@@ -1714,8 +1715,10 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute pseudo-chirikov parameter.
 c-----------------------------------------------------------------------
-         IF (ising==1) THEN 
+         IF (ising==1 .AND. msing>1) THEN
             hdist=(singtype(ising+1)%psifac-respsi)/2.0
+         ELSE IF (ising==1 .AND. msing==1) THEN
+            hdist=MIN(respsi, 1-respsi)/2.0
          ELSE IF (ising==msing) THEN
             hdist=(respsi-singtype(ising-1)%psifac)/2.0
          ELSE IF ((ising/=1).AND.(ising/=msing)) THEN
@@ -2266,8 +2269,10 @@ c-----------------------------------------------------------------------
          visland_hwidth(ising)=
      $        SQRT(ABS(4*vflxmn(ising)*area/
      $        (twopi*shear*singtype(ising)%q*chi1)))
-         IF (ising==1) THEN 
+         IF (ising==1 .AND. msing>1) THEN
             hdist=(singtype(ising+1)%psifac-respsi)/2.0
+         ELSE IF (ising==1 .AND. msing==1) THEN
+            hdist=MIN(respsi, 1-respsi)/2.0
          ELSE IF (ising==msing) THEN
             hdist=(respsi-singtype(ising-1)%psifac)/2.0
          ELSE IF ((ising/=1).AND.(ising/=msing)) THEN

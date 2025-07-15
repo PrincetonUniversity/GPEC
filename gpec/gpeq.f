@@ -1332,7 +1332,7 @@ c-----------------------------------------------------------------------
       REAL(r8)::nq1,x,x0,x1
       REAL(r8),DIMENSION(msing)::respsi,dxl,dxr
 c-----------------------------------------------------------------------
-c     detemine spline allocation.
+c     determine spline allocation.
 c-----------------------------------------------------------------------
       DO ising=1,msing
          respsi(ising)=singtype(ising)%psifac
@@ -1341,11 +1341,16 @@ c-----------------------------------------------------------------------
          nq1=singtype(ising)%q1*nn
          SELECT CASE(method)
          CASE(1)
-         IF (ising==1) THEN
+         IF (ising==1 .AND. ising < msing) THEN
             dxl(ising)=respsi(ising)
      $                 -spot*(respsi(ising)-psilow)
             dxr(ising)=respsi(ising)
      $                 +spot*(respsi(ising+1)-respsi(ising))
+         ELSEIF (ising==1 .AND. ising == msing) THEN
+            dxl(ising)=respsi(ising)
+     $                 -spot*(respsi(ising)-psilow)
+            dxr(ising)=respsi(ising)
+     $                 +spot*(psilim-respsi(ising))
          ELSEIF (ising==msing) THEN
             dxl(ising)=respsi(ising)
      $                 -spot*(respsi(ising)-respsi(ising-1))
