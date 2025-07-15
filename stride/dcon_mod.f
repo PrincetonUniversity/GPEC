@@ -3,13 +3,13 @@ c     file dcon_mod.f.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
-c     subprogram 0. dcon_mod.
+c     subprogram 0. stride_dcon_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE dcon_mod
+      MODULE stride_dcon_mod
       USE spline_mod
       USE global_mod
       USE equil_mod
@@ -109,4 +109,4 @@ c-----------------------------------------------------------------------
       LOGICAL :: verbose_riccati_output, verbose_performance_output,
      $     riccati_bounce,riccati_match_hamiltonian_evals
 
-      END MODULE dcon_mod
+      END MODULE stride_dcon_mod

@@ -21,6 +21,7 @@ modovmc
 
 .cproject
 .idea/
+.vscode/
 .project
 bin/
 docs/_build/

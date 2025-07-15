@@ -296,7 +296,7 @@
 #     LIBS += -lX11
 #
 # If your platform is not properly included in this make file
-# contact nlogan@pppl.gov with your operating system, compiler, and
+# contact nikolas.logan@columbia.edu with your operating system, compiler, and
 # library installation details.
 #
 #   ---------------------------------------------------------------
@@ -346,6 +346,9 @@ endif
 ifdef MKLROOT
     MATHHOME = $(MKLROOT)
   	MATHLIBS = -lmkl_rt
+else ifdef OPENBLASHOME
+    MATHHOME = $(OPENBLASHOME)
+    MATHLIBS = -lopenblas
 else ifdef LAPACKHOME
     MATHHOME = $(LAPACKHOME)
     MATHLIBS = -llapack -lblas
@@ -353,7 +356,7 @@ else ifdef ACML_HOME
     MATHHOME = $(ACML_HOME)
     MATHLIBS = -lacml
 else
-    $(info "Math libraries require MKLROOT, LAPACKHOME, or ACML_HOME")
+    $(info "Math libraries require MKLROOT, LAPACKHOME, OPENBLASHOME, or ACML_HOME")
 endif
 
 # specifics of which libraries are used
@@ -460,13 +463,30 @@ ifdef X11_HOME
     X11_LIB_DIR = -L$(X11_HOME)/lib
 endif
 
-#Common compiler flags for OpenMP
+#Different flags for different compilers
 ifeq ($(findstring ifort,$(FC)),ifort)
 	OMPFLAG ?= -qopenmp
+    ZEROFLAG ?= -zero
+    RECURSFLAG ?= -recursive
+    LEGACYFLAG ?=
+else ifeq ($(findstring ifx,$(FC)),ifx)
+	OMPFLAG ?= -qopenmp
+    ZEROFLAG ?= -zero
+    RECURSFLAG ?= -recursive
+    LEGACYFLAG ?=
 else ifeq ($(findstring gfortran,$(FC)),gfortran)
 	OMPFLAG ?= -fopenmp
+    ZEROFLAG ?= -finit-local-zero
+    RECURSFLAG ?= -frecursive
+    LEGACYFLAG ?= -std=legacy
 else ifeq ($(findstring pgfortran,$(FC)),pgfortran)
 	OMPFLAG ?= -mp
+    ZEROFLAG ?= -zeroinit
+    RECURSFLAG ?= -Mrecursive
+    LEGACYFLAG ?= -std=legacy
 else
+    ZEROFLAG ?= -zero
 	OMPFLAG ?= -openmp
+    RECURSFLAG ?= -recursive
+    LEGACYFLAG ?= -std=legacy
 endif

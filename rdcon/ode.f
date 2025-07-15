@@ -5,7 +5,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. ode_mod.
+c     0. rdcon_ode_mod.
 c     1. ode_run.
 c     2. ode_axis_init.
 c     3. ode_sing_init.
@@ -15,15 +15,15 @@ c     6. ode_unorm.
 c     7. ode_fixup.
 c     8. ode_test_fixup.
 c-----------------------------------------------------------------------
-c     subprogram 0. ode_mod.
+c     subprogram 0. rdcon_ode_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE ode_mod
-      USE ode_output_mod
-      USE debug_mod
+      MODULE rdcon_ode_mod
+      USE rdcon_ode_output_mod
+      USE rdcon_debug_mod
       IMPLICIT NONE
 
       LOGICAL :: new,diagnose_fixup=.FALSE.
@@ -864,4 +864,4 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ode_test_fixup
-      END MODULE ode_mod
+      END MODULE rdcon_ode_mod

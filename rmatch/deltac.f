@@ -1492,10 +1492,10 @@ c-----------------------------------------------------------------------
       CALL deltac_lsode_der(neq,x0,u,u)
       u=u*deltac_tol
       DO ip=1,neq/2
-c         tmp=MAX( DABS(REAL(u(ip),8)),DABS(IMAG(u(ip),8)) )
+c         tmp=MAX( DABS(REAL(u(ip),r8)),DABS(IMAG(u(ip),r8)) )
          tmp=CDABS(u(ip))
          IF (tmp <deltac_tol) tmp=deltac_tol
-         atol(ip)=CMPLX(tmp,tmp,8)
+         atol(ip)=CMPLX(tmp,tmp,r8)
       ENDDO
       u=0
       iwork=0

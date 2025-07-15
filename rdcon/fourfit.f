@@ -19,9 +19,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE fourfit_mod
+      MODULE rdcon_fourfit_mod
       USE fspline_mod
-      USE dcon_mod
+      USE rdcon_mod
       USE toolbox_mod
       IMPLICIT NONE
 
@@ -680,4 +680,4 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE fourfit_diagnose_1
-      END MODULE fourfit_mod
+      END MODULE rdcon_fourfit_mod

@@ -26,7 +26,7 @@ module pentrc_interface
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
-    ! EMAIL: nlogan@pppl.gov
+    ! EMAIL: nikolas.logan@columbia.edu
     !-----------------------------------------------------------------------
     
     use params, only: r8,xj, npsi_out, nmethods, methods, docs, version

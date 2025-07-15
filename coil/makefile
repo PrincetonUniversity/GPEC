@@ -1,16 +1,5 @@
 # This is the makefile for COIL
 
-# If using gfortran, the proper syntax is -frecursive.
-# If using ifort, the proper syntax is -recursive.
-
-ifneq (,$(findstring ifort,$(FC)))
-    RECURSFLAG=-recursive
-else ifneq (,$(findstring ifx,$(FC)))
-	RECURSFLAG=-recursive
-else
-    RECURSFLAG=-frecursive
-endif
-
 include ../install/DEFAULTS.inc
 
 IFLAGS = -I../equil -I$(MATHINC) -I$(NETCDFINC)

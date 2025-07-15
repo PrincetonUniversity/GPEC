@@ -19,7 +19,7 @@ module torque
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
-    ! EMAIL: nlogan@pppl.gov
+    ! EMAIL: nikolas.logan@columbia.edu
     !-----------------------------------------------------------------------
 
     use params, only : r8, xj, mp, me, e, mu0, pi, twopi, &
@@ -277,13 +277,13 @@ module torque
         bmin = minval(tspl%fs(:,1),dim=1)
         ibmax= 0-1+maxloc(tspl%fs(:,1),dim=1)
         if(bmax/=tspl%fs(ibmax,1)) stop "ERROR: tpsi_var - &
-           &Equilibirum field maximum not consistent with index"
+           &Equilibrium field maximum not consistent with index"
         do i=2,4 !4th smallest so spline has more than 1 pt
            bmin = minval(tspl%fs(:,1),mask=tspl%fs(:,1)>bmin,dim=1)
         enddo
         ibmin = 0-1+MINLOC(tspl%fs(:,1),MASK=tspl%fs(:,1)>=bmin,DIM=1)
         if(bmin/=tspl%fs(ibmin,1)) stop "ERROR: tpsi_var - &
-           &Equilibirum field maximum not consistent with index"
+           &Equilibrium field maximum not consistent with index"
         ! find precise bmin and bmax
         call spline_alloc(dbdtspl, mthsurf, 1)
         dbdtspl%xs(:) = tspl%xs(:)

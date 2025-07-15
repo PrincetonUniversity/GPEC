@@ -1,19 +1,8 @@
 # This is the makefile for ZVODE.
 
-# If using gfortran, the proper syntax is -frecursive.
-# If using ifort, the proper syntax is -recursive.
-
-ifneq (,$(findstring ifort,$(FC)))
-    EXTRAFLAGS=-recursive
-else ifneq (,$(findstring ifx,$(FC)))
-	EXTRAFLAGS=-recursive
-else
-    EXTRAFLAGS=-frecursive -std=legacy
-endif
-
 include ../install/DEFAULTS.inc
 
-F90 = $(FC) $(FFLAGS) $(EXTRAFLAGS) -I../equil
+F90 = $(FC) $(FFLAGS) $(RECURSFLAG) $(LEGACYFLAG) -I../equil
 
 .f.o:
 	$(F90) -c $*.f

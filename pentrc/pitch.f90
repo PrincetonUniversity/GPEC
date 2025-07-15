@@ -20,7 +20,7 @@ module pitch_integration
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
-    ! EMAIL: nlogan@pppl.gov
+    ! EMAIL: nikolas.logan@columbia.edu
     !-----------------------------------------------------------------------
     
     use params, only : r8,xj,mp,e, npsi_out, nell_out, nlambda_out, &

@@ -1,0 +1,279 @@
+name: Build GPEC
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [develop]
+
+jobs:
+  build-netcdf-gfortran:
+    runs-on: ubuntu-latest
+    env:
+      PREFIX: ${{ github.workspace }}/deps
+      FC: gfortran
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore NetCDF-gfortran cache
+        id: netcdf-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PREFIX }}
+          key: ${{ runner.os }}-netcdf-gfortran-v1
+
+      - name: Install dependencies
+        if: steps.netcdf-cache.outputs.cache-hit != 'true'
+        run: |
+          sudo rm /var/lib/man-db/auto-update
+          sudo apt update
+          sudo apt install -y build-essential gfortran m4 curl libhdf5-dev libnetcdf-dev
+
+      - name: Build NetCDF-Fortran 4.6.1
+        if: steps.netcdf-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p $PREFIX/src
+          cd $PREFIX/src
+          curl -L -o netcdf-fortran.tar.gz https://github.com/Unidata/netcdf-fortran/archive/refs/tags/v4.6.1.tar.gz
+          tar xf netcdf-fortran.tar.gz
+          cd netcdf-fortran-4.6.1
+
+          export CPPFLAGS="-I/usr/include/hdf5/serial"
+          export LDFLAGS="-L/usr/lib/x86_64-linux-gnu/hdf5/serial"
+          export LIBS="-lnetcdf -lhdf5 -lhdf5_hl -lm -lz"
+
+          echo "::group::Configure log"
+          ./configure --prefix=$PREFIX --enable-shared --disable-static || (cat config.log && exit 1)
+          echo "::endgroup::"
+
+          make -j$(nproc)
+          make check
+          make install
+
+      - name: Confirm cache result
+        run: |
+          if [ "${{ steps.netcdf-cache.outputs.cache-hit }}" = "true" ]; then
+            echo "Cache found. Skipping build."
+          else
+            echo "Cache not found. Built from source."
+          fi
+
+      - name: Confirm all shared libs
+        run: |
+          ls -lh $PREFIX/lib
+          ls -lh $PREFIX/include
+
+  build-netcdf-ifort:
+    runs-on: ubuntu-latest
+    env:
+      PREFIX: ${{ github.workspace }}/deps
+      ONEAPI_ROOT: /opt/intel/oneapi
+      FC: ifort
+      
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Try restore NetCDF-ifort cache
+        id: netcdf-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PREFIX }}
+          key: ${{ runner.os }}-netcdf-ifort-v1
+
+      - name: Install Intel oneAPI + deps
+        if: steps.netcdf-cache.outputs.cache-hit != 'true'
+        run: |
+          sudo rm /var/lib/man-db/auto-update
+          wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+          sudo apt update
+          sudo apt install -y curl gnupg lsb-release build-essential m4 curl libhdf5-dev libnetcdf-dev
+          sudo apt install -y intel-oneapi-compiler-fortran-2022.2.1
+
+      - name: Source oneAPI and check ifort
+        if: steps.netcdf-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          echo "Which ifort: $(which ifort)"
+          ifort --version
+
+      - name: Build NetCDF-Fortran 4.6.1 with ifort
+        if: steps.netcdf-cache.outputs.cache-hit != 'true'
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          
+          mkdir -p $PREFIX/src
+          cd $PREFIX/src
+          curl -L -o netcdf-fortran.tar.gz https://github.com/Unidata/netcdf-fortran/archive/refs/tags/v4.6.1.tar.gz
+          tar xf netcdf-fortran.tar.gz
+          cd netcdf-fortran-4.6.1
+
+          export CPPFLAGS="-I/usr/include -I/usr/include/hdf5/serial"
+          export LDFLAGS="-L/usr/lib -L/usr/lib/x86_64-linux-gnu/hdf5/serial"
+          export LIBS="-lnetcdf -lhdf5 -lhdf5_hl -lm -lz"
+
+          echo "::group::Configure log"
+          ./configure --prefix=$PREFIX --enable-shared --disable-static || (cat config.log && exit 1)
+          echo "::endgroup::"
+
+          make -j$(nproc)
+          make check
+          make install
+
+      - name: Confirm cache result
+        run: |
+          if [ "${{ steps.netcdf-cache.outputs.cache-hit }}" = "true" ]; then
+            echo "Cache found. Skipping build."
+          else
+            echo "Cache not found. Built from source."
+          fi
+          
+      - name: Confirm all shared libs
+        run: |
+          ls -lh $PREFIX/lib
+          ls -lh $PREFIX/include
+          
+  make_gpec_gfortran:
+    runs-on: ubuntu-latest
+    needs: build-netcdf-gfortran
+    env:
+      PREFIX: ${{ github.workspace }}/deps
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore NetCDF-gfortran cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PREFIX }}
+          key: ${{ runner.os }}-netcdf-gfortran-v1
+
+      - name: Rewrite .gitmodules to use HTTPS
+        run: |
+          git config --file .gitmodules submodule.harvest.url https://github.com/gafusion/harvest_client.git
+          git submodule sync
+          git submodule update --init --recursive
+          
+      - name: Install Dependencies
+        run: |
+          sudo rm /var/lib/man-db/auto-update
+          sudo apt update
+          sudo apt install -y gfortran libopenblas-dev libx11-dev libnetcdf-dev
+
+      - name: Compile
+        run: |
+          cd install
+          export NETCDF_C_HOME=/usr
+          export NETCDF_FORTRAN_HOME=$PREFIX
+          export LAPACKHOME=/usr
+          export FC=/usr/bin/gfortran
+          export CC=/usr/bin/gcc
+          export FFLAGS='-fallow-argument-mismatch -O0 -Wall -Wextra -fcheck=all,no-array-temps -fbacktrace -finit-real=snan -finit-integer=-9999 -fstack-protector-all -fsanitize=bounds -Wno-array-temporaries -Wno-unused-variable -Wno-unused-dummy-argument -Wno-compare-reals -Wno-unused-parameter -Wno-unused-label -fno-omit-frame-pointer -frecord-marker=4 -gdwarf-4 -ffloat-store -fbounds-check'
+          make
+
+      - name: Run Soloviev ideal example
+        run: |
+          export GPECHOME=$(pwd)
+          export LD_LIBRARY_PATH=$PREFIX/lib:$LD_LIBRARY_PATH
+          cd docs/examples/regression_solovev_ideal_example
+          ulimit -s unlimited
+          ../../../bin/dcon && ../../../bin/gpec && ../../../bin/stride && ../../../bin/pentrc
+
+      - name: Run Soloviev kinetic example
+        run: |
+          export GPECHOME=$(pwd)
+          export LD_LIBRARY_PATH=$PREFIX/lib:$LD_LIBRARY_PATH
+          cd docs/examples/regression_solovev_kinetic_example
+          ulimit -s unlimited
+          ../../../bin/dcon && ../../../bin/gpec && ../../../bin/pentrc
+      - name: Run Soloviev resistive example
+        run: |
+          export GPECHOME=$(pwd)
+          export LD_LIBRARY_PATH=$PREFIX/lib:$LD_LIBRARY_PATH
+          cd docs/examples/regression_solovev_resistive_example
+          ulimit -s unlimited
+          ../../../bin/rdcon && ../../../bin/rmatch && ../../../bin/gpec && ../../../bin/stride
+
+  make_gpec_ifort:
+    runs-on: ubuntu-latest
+    needs: build-netcdf-ifort
+    env:
+      PREFIX: ${{ github.workspace }}/deps
+      ONEAPI_ROOT: /opt/intel/oneapi
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore NetCDF-ifort cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PREFIX }}
+          key: ${{ runner.os }}-netcdf-ifort-v1
+
+      - name: Install Intel oneAPI + deps
+        run: |
+          sudo rm /var/lib/man-db/auto-update
+          wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+          sudo apt update
+          sudo apt install -y curl gnupg lsb-release build-essential m4 curl libhdf5-dev libnetcdf-dev
+          sudo apt install -y intel-oneapi-compiler-fortran-2022.2.1 intel-oneapi-mkl-2022.2.1 libx11-dev libnetcdf-dev
+
+      - name: Source oneAPI and check ifort and icx
+        shell: bash
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          echo "Which ifort: $(which ifort)"
+          ifort --version
+
+      - name: Rewrite .gitmodules to use HTTPS
+        run: |
+          git config --file .gitmodules submodule.harvest.url https://github.com/gafusion/harvest_client.git
+          git submodule sync
+          git submodule update --init --recursive
+
+      - name: Compile
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          cd install
+          export NETCDF_C_HOME=/usr
+          export NETCDF_FORTRAN_HOME=$PREFIX
+          export MKLROOT=/opt/intel/oneapi/mkl/2022.2.1
+          export FC=/opt/intel/oneapi/compiler/2022.2.1/linux/bin/intel64/ifort
+          export CC=/usr/bin/gcc
+          export FFLAGS='-O0 -warn all -check all -check noarg_temp_created -traceback -fpe3 -fstack-protector -fopenmp'
+          make
+
+      - name: Run Soloviev ideal example
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          export GPECHOME=$(pwd)
+          export LD_LIBRARY_PATH=$PREFIX/lib:$LD_LIBRARY_PATH
+          export FOR_DISABLE_STACK_TRACE=TRUE
+          cd docs/examples/regression_solovev_ideal_example
+          ulimit -s unlimited
+          ../../../bin/dcon && ../../../bin/gpec && ../../../bin/stride && ../../../bin/pentrc
+
+      - name: Run Soloviev kinetic example
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          export GPECHOME=$(pwd)
+          export LD_LIBRARY_PATH=$PREFIX/lib:$LD_LIBRARY_PATH
+          export FOR_DISABLE_STACK_TRACE=TRUE
+          cd docs/examples/regression_solovev_kinetic_example
+          ulimit -s unlimited
+          ../../../bin/dcon && ../../../bin/gpec && ../../../bin/pentrc
+      - name: Run Soloviev resistive example
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          export GPECHOME=$(pwd)
+          export LD_LIBRARY_PATH=$PREFIX/lib:$LD_LIBRARY_PATH
+          export FOR_DISABLE_STACK_TRACE=TRUE
+          cd docs/examples/regression_solovev_resistive_example
+          ulimit -s unlimited
+          ../../../bin/rdcon && ../../../bin/rmatch && ../../../bin/gpec && ../../../bin/stride

@@ -14,11 +14,11 @@ export LDFLAGS
 
 .IGNORE:
 
-all: v harvest equil lsode zlange zvode  orbit vacuum pentrc dcon match rdcon rmatch \
+all: v harvest equil lsode zlange zvode orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum xdraw slayer coil gpec stride mkbin
 
 # fortran only
-allf: v harvest equil lsode zlange zvode  orbit vacuum pentrc dcon match rdcon rmatch \
+allf: v harvest equil lsode zlange zvode orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum slayer coil gpec stride mkbin
 
 
@@ -150,11 +150,13 @@ clear:
 	cd ../docs/examples/run_kinetic_example; rm -f *.out *.bin *.nc
 	cd ../docs/examples/a10_ideal_example; rm -f *.out *.bin *.nc
 	cd ../docs/examples/a10_kinetic_example; rm -f *.out *.bin *.nc
+	cd ../docs/examples/a5_tearing_example; rm -f *.out *.bin *.nc
 	cd ../docs/examples/DIIID_ideal_example; rm -f *.out *.bin *.nc
-	cd ../docs/examples/DIIID_resistive_example; rm -f *.out *.bin *.nc
+	cd ../docs/examples/DIIID_resistive_example; rm -f *.out *.bin *.nc *.dat
 	cd ../docs/examples/DIIID_kinetic_example; rm -f *.out *.bin *.nc
 	cd ../docs/examples/solovev_ideal_example; rm -f *.out *.bin *.nc
 	cd ../docs/examples/solovev_kinetic_example; rm -f *.out *.bin *.nc
+	cd ../docs/examples/solovev_resistive_example; rm -f *.out *.bin *.nc *.dat
 
 realclean: clean
 	clear
