@@ -344,7 +344,7 @@ c-----------------------------------------------------------------------
      $        REAL(sq%fs(ipsi,4),4),
      $        REAL(asinh(locstab%fs(ipsi,1)/sq%xs(ipsi)),4),
      $        REAL(asinh(locstab%fs(ipsi,2)/sq%xs(ipsi)),4),
-     $        REAL(asinh(locstab%fs(ipsi,3)),4),
+     $        REAL(asinh(locstab%fs(ipsi,3)/sq%xs(ipsi)),4),
      $        REAL(asinh(locstab%fs(ipsi,4)),4),
      $        REAL(-sq%fs1(ipsi,1)/twopi,4)
       ENDDO
