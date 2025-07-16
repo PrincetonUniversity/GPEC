@@ -103,8 +103,8 @@ c-----------------------------------------------------------------------
             IF(res_flag)THEN
                CALL ode_resist_cross
             ELSEIF(kin_flag)THEN
-               ! CALL ode_kin_cross
-               CALL ode_ideal_cross
+               CALL ode_kin_cross
+               ! CALL ode_ideal_cross
             ELSE
                CALL ode_ideal_cross
             ENDIF
