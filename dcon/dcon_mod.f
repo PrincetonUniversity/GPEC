@@ -96,7 +96,6 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:), POINTER :: power
       COMPLEX(r8), DIMENSION(:,:,:,:), POINTER :: vmat,mmat
       TYPE(resist_type) :: restype
-      LOGICAL :: allocated=.FALSE.
       END TYPE sing_type
 
       INTEGER :: msing,kmsing

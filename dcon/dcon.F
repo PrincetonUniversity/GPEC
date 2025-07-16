@@ -422,6 +422,17 @@ c-----------------------------------------------------------------------
             DEALLOCATE(sing(ising)%n2)
          ENDDO
          DEALLOCATE(sing)
+         DEALLOCATE(psiex,qex)
+         IF(kin_flag)THEN
+            DO ksing=1,msing
+               DEALLOCATE(kinsing(ksing)%vmat)
+               DEALLOCATE(kinsing(ksing)%mmat)
+               DEALLOCATE(kinsing(ksing)%power)
+               DEALLOCATE(kinsing(ksing)%n1)
+               DEALLOCATE(kinsing(ksing)%n2)
+            ENDDO
+            DEALLOCATE(kinsing)
+         ENDIF
       ENDIF
       IF(ode_flag)DEALLOCATE(u,du,u_save)
 c-----------------------------------------------------------------------
