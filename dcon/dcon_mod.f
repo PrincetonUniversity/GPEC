@@ -70,6 +70,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: ahb_flag=.FALSE.
       LOGICAL :: out_ahg2msc=.TRUE.
       LOGICAL :: vac_memory=.FALSE.
+      LOGICAL :: use_ideal_singularities=.FALSE.
 
       INTEGER, PARAMETER :: sol_base=50
       INTEGER :: mlow,mhigh,mpert,mband,nn,nstep=HUGE(0),bin_sol_min,
@@ -95,6 +96,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:), POINTER :: power
       COMPLEX(r8), DIMENSION(:,:,:,:), POINTER :: vmat,mmat
       TYPE(resist_type) :: restype
+      LOGICAL :: allocated=.FALSE.
       END TYPE sing_type
 
       INTEGER :: msing,kmsing

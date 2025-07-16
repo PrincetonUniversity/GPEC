@@ -77,13 +77,14 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE sing_find
+      SUBROUTINE sing_find(sings)
 
       INTEGER, PARAMETER :: itmax=200,nsing=1000
       INTEGER :: iex,ising,m,dm,it
       INTEGER, DIMENSION(nsing) :: m_sing
       REAL(r8) :: dq,psifac,psifac0,psifac1,singfac
       REAL(r8), DIMENSION(nsing) :: psising,qsing,q1sing
+      TYPE(sing_type), DIMENSION(:), POINTER, INTENT(OUT) :: sings
 c-----------------------------------------------------------------------
 c     start loop over extrema to find singular surfaces.
 c-----------------------------------------------------------------------
@@ -133,15 +134,16 @@ c-----------------------------------------------------------------------
 c     transfer to permanent storage.
 c-----------------------------------------------------------------------
       msing=ising
-      ALLOCATE(sing(msing))
+      ALLOCATE(sings(msing))
       DO ising=1,msing
-         sing(ising)%m=m_sing(ising)
-         sing(ising)%psifac=psising(ising)
-         sing(ising)%rho=SQRT(psising(ising))
-         sing(ising)%q=qsing(ising)
+         sings(ising)%m=m_sing(ising)
+         sings(ising)%psifac=psising(ising)
+         sings(ising)%rho=SQRT(psising(ising))
+         sings(ising)%q=qsing(ising)
          sing(ising)%q1=q1sing(ising)
       ENDDO
       DEALLOCATE(psiex,qex)
+      sings%allocated=.TRUE.
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -1483,7 +1485,7 @@ c-----------------------------------------------------------------------
 c     subprogram 14. ksing_find.
 c     find new singular surfaces.
 c-----------------------------------------------------------------------
-      SUBROUTINE ksing_find
+      SUBROUTINE ksing_find(ksings)
 
       REAL(r8),PARAMETER :: tol=1e-3,dfac=1e-4,eps=1e-4 ! eps~1e-10 for ideal dcon
       INTEGER, PARAMETER :: nsing=1000, maxstep=100000
@@ -1495,6 +1497,14 @@ c-----------------------------------------------------------------------
       REAL(r8) :: x0,x1
       COMPLEX(r8) :: det0,det1,sing_det
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: tmp_record
+
+      TYPE(sing_type), DIMENSION(:), POINTER, INTENT(OUT) :: ksings
+      
+      IF(use_ideal_singularities)THEN
+         WRITE(*,*) "Finding ideal singular surfaces"
+         CALL sing_find(ksings)
+         RETURN
+      ENDIF
 
       WRITE(*, *) "Finding kinetically displaced singular surfaces"
       ALLOCATE(tmp_record(2, maxstep))
@@ -1535,7 +1545,6 @@ c-----------------------------------------------------------------------
          psising(2:singnum+1)=psising(1:singnum)
          psising(1)=psilow
          singnum=singnum+1
-
       ENDIF
       IF (psising(singnum)<psilim) THEN
          singnum=singnum+1

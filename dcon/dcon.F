@@ -59,7 +59,7 @@ c-----------------------------------------------------------------------
      $     kingridtype,ktanh_flag,passing_flag,trapped_flag,
      $     ion_flag,electron_flag,ktc,ktw,qlow,
      $     use_classic_splines,reform_eq_with_psilim,
-     $     psiedge,nperq_edge,wv_farwall_flag,
+     $     psiedge,nperq_edge,wv_farwall_flag,use_ideal_singularities,
      $     dcon_kin_threads,parallel_threads
       NAMELIST/dcon_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
@@ -187,7 +187,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     define poloidal mode numbers.
 c-----------------------------------------------------------------------
-      CALL sing_find
+      CALL sing_find(sing)
       !CALL sing_lim  ! now done in above test for re-forming equil
       IF(cyl_flag)THEN
          mlow=delta_mlow
@@ -253,6 +253,9 @@ c-----------------------------------------------------------------------
          DO ising=1,msing
             CALL resist_eval(sing(ising))
          ENDDO
+         IF (kin_flag)THEN
+            CALL ksing_find(kinsing)
+         ENDIF
       ENDIF
 c-----------------------------------------------------------------------
 c     integrate main ODE's.
