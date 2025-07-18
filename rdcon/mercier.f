@@ -50,6 +50,7 @@ c-----------------------------------------------------------------------
       DO ipsi=0,mpsi
          psifac=sq%xs(ipsi)
          twopif=sq%fs(ipsi,1)
+         f1=sq%fs1(ipsi,1)/twopi
          p1=sq%fs1(ipsi,2)
          v1=sq%fs(ipsi,3)
          v2=sq%fs1(ipsi,3)
@@ -66,6 +67,7 @@ c-----------------------------------------------------------------------
             eta=twopi*(theta+rzphi%f(2))
             r=ro+rfac*COS(eta)
             jac=rzphi%f(4)
+            bt=twopif/(twopi*r) !This is toroidal B field
 c-----------------------------------------------------------------------
 c     evaluate other local quantities.
 c-----------------------------------------------------------------------
