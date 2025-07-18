@@ -94,7 +94,7 @@ c-----------------------------------------------------------------------
          h=twopif*p1*v1/(q1*chi1**3)*(avg(2)-avg(1)/avg(5))
          locstab%fs(ipsi,1)=di*locstab%xs(ipsi)
          locstab%fs(ipsi,2)=(di+(h-0.5)**2)*locstab%xs(ipsi)
-         locstab%fs(ipsi,3)=h*locstab%xs(ipsi)
+         locstab%fs(ipsi,3)=h
 120      FORMAT(19(E30.15,1X))
       ENDDO
       CALL spline_dealloc(ff)
