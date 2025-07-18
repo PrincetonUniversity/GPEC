@@ -71,6 +71,8 @@ c-----------------------------------------------------------------------
       LOGICAL :: ahb_flag=.FALSE.
       LOGICAL :: out_ahg2msc=.TRUE.
       LOGICAL :: vac_memory=.FALSE.
+      LOGICAL :: compute_MRE_terms=.FALSE.
+      LOGICAL :: print_geom_terms=.FALSE.
 
       INTEGER, PARAMETER :: sol_base=50
       INTEGER :: mlow,mhigh,mpert,mband,nn,nstep=HUGE(0),bin_sol_min,

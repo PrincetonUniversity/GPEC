@@ -229,7 +229,7 @@ c-----------------------------------------------------------------------
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
      $     out_fl,bin_fl,out_evals,bin_evals,bin_euler,euler_stride,
      $     bin_vac,ahb_flag,mthsurf0,msol_ahb,diagnose_fixup,verbose,
-     $     out_ahg2msc
+     $     out_ahg2msc,compute_mre_terms,print_geom_terms
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
