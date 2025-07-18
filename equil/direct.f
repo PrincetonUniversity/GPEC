@@ -51,7 +51,7 @@ c-----------------------------------------------------------------------
       SUBROUTINE direct_run
 
       INTEGER :: ir,iz,itheta,ipsi
-      INTEGER, PARAMETER :: nstep=2048
+      INTEGER, PARAMETER :: nstep=16384
       REAL(r8) :: f0fac,f0,ffac,rfac,eta,r,jacfac,w11,w12,delpsi,q
       REAL(r8), DIMENSION(0:nstep,0:4) :: y_out
       REAL(r8), DIMENSION(2, mpsi+1) :: xdx
@@ -443,7 +443,7 @@ c-----------------------------------------------------------------------
       INTEGER, PARAMETER :: neq=4,liw=30,lrw=22+neq*16
       INTEGER :: iopt,istate,itask,itol,jac,mf,ir
       INTEGER, DIMENSION(liw) :: iwork
-      INTEGER, PARAMETER :: nstep=2048
+      INTEGER, PARAMETER :: nstep=16384
       REAL(r8), PARAMETER :: eps=1e-12
       REAL(r8) :: atol,rtol,rfac,deta,r,z,eta,err,psi0,psifac,dr
       REAL(r8), DIMENSION(neq) :: y
