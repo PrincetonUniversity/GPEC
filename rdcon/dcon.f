@@ -320,6 +320,20 @@ c-----------------------------------------------------------------------
       locstab%name="locstb"
       locstab%title=(/"  di  ","  dr  ","  h   "," ca1  "," ca2  "/)
       IF(verbose) WRITE(*,*)"Evaluating Mercier criterion"
+c-----------------------------------------------------------------------
+c     optionally compute modified Rutherford equation (MRE) terms.
+c-----------------------------------------------------------------------
+      IF(compute_MRE_terms)THEN
+         IF(print_geom_terms)THEN
+            CALL spline_alloc(mreterms,mpsi,30)
+         ELSE
+            CALL spline_alloc(mreterms,mpsi,17)
+         ENDIF
+         mreterms%xs=sq%xs
+         mreterms%fs=0
+         mreterms%name="mreterms"
+         IF(verbose) WRITE(*,*)"Evaluating MRE terms"
+      ENDIF
       CALL mercier_scan
       IF(bal_flag)THEN
          IF(verbose) WRITE(*,*)"Evaluating ballooning criterion"
