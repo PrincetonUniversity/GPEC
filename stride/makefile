@@ -58,7 +58,7 @@ vacuum:
 	cd ../vacuum; make
 
 stride: $(OBJS)
-	$(F90) -o stride $(OBJS) $(LIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS)
+	$(F90) -o stride $(OBJS) $(LIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS) $(NETCDF_EXTRA_LIBS)
 
 ifeq ($(wildcard version.inc),)
 version.inc: force
