@@ -84,7 +84,7 @@ c-----------------------------------------------------------------------
      $     plasma1=0.0,vacuum1=0.0,total1=0.0
 
       REAL(r8) :: dpsi_intvl=0.1,dpsi1_intvl=0.1
-      TYPE(spline_type) :: locstab
+      TYPE(spline_type) :: locstab, mreterms
 
       TYPE :: resist_type
       REAL(r8) :: e,f,h,m,g,k,eta,rho,taua,taur,v1
