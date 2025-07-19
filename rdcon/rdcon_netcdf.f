@@ -220,6 +220,70 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(ncid, "di", nf90_double, p_dim, di_id) )
       CALL check( nf90_def_var(ncid, "dr", nf90_double, p_dim, dr_id) )
       CALL check( nf90_def_var(ncid, "ca1", nf90_double, p_dim, ca_id))
+      IF(compute_MRE_terms)THEN
+         CALL check( nf90_def_var(ncid,
+     $     "Hbs", nf90_double, p_dim, hbs_id))
+         CALL check( nf90_def_var(ncid,
+     $     "tau_a", nf90_double, p_dim, ta_id))
+         CALL check( nf90_def_var(ncid,
+     $     "tau_r", nf90_double, p_dim, tr_id))
+         CALL check( nf90_def_var(ncid,
+     $     "ftr", nf90_double, p_dim, ftr_id))
+         CALL check( nf90_def_var(ncid,
+     $     "mufrac", nf90_double, p_dim, muf_id))
+         CALL check( nf90_def_var(ncid,
+     $     "Jboot_dot_B", nf90_double, p_dim, jbs_id))
+         CALL check( nf90_def_var(ncid,
+     $     "Dnc", nf90_double, p_dim, dnc_id))
+         CALL check( nf90_def_var(ncid,
+     $     "Wc", nf90_double, p_dim, wc_id))
+         CALL check( nf90_def_var(ncid,
+     $     "Jparallel", nf90_double, p_dim, jp_id))
+         CALL check( nf90_def_var(ncid,
+     $     "avg_B", nf90_double, p_dim, b_id))
+         CALL check( nf90_def_var(ncid,
+     $     "avg_Bt", nf90_double, p_dim, bt_id))
+         CALL check( nf90_def_var(ncid,
+     $     "avg_Bp", nf90_double, p_dim, bpo_id))
+         CALL check( nf90_def_var(ncid,
+     $     "avg_r", nf90_double, p_dim, mir_id)) 
+         CALL check( nf90_def_var(ncid,
+     $     "avg_R", nf90_double, p_dim, mar_id))
+         CALL check( nf90_def_var(ncid,
+     $     "avg_inv_R", nf90_double, p_dim, mair_id))
+         CALL check( nf90_def_var(ncid,
+     $     "overbar_Rsq", nf90_double, p_dim, obr_id))
+         CALL check( nf90_def_var(ncid,
+     $     "avg_Rsq", nf90_double, p_dim, ars_id))
+         IF(print_geom_terms)THEN
+            CALL check( nf90_def_var(ncid,
+     $     "avg_1", nf90_double, p_dim, a1_id))
+            CALL check( nf90_def_var(ncid,
+     $     "avg_2", nf90_double, p_dim, a2_id))
+            CALL check( nf90_def_var(ncid,
+     $     "avg_3", nf90_double, p_dim, a3_id))
+            CALL check( nf90_def_var(ncid,
+     $     "avg_4", nf90_double, p_dim, a4_id))
+            CALL check( nf90_def_var(ncid,
+     $     "avg_5", nf90_double, p_dim, a5_id))
+            CALL check( nf90_def_var(ncid,
+     $     "avg_6", nf90_double, p_dim, a6_id))
+            CALL check( nf90_def_var(ncid,
+     $     "avg_7", nf90_double, p_dim, a7_id))
+            CALL check( nf90_def_var(ncid,
+     $     "avg_14", nf90_double, p_dim, a14_id))
+            CALL check( nf90_def_var(ncid,
+     $     "avg_15", nf90_double, p_dim, a15_id))
+            CALL check( nf90_def_var(ncid,
+     $     "avg_16", nf90_double, p_dim, a16_id))
+            CALL check( nf90_def_var(ncid,
+     $     "avg_17", nf90_double, p_dim, a17_id))     
+            CALL check( nf90_def_var(ncid,
+     $     "avg_18", nf90_double, p_dim, a18_id))
+            CALL check( nf90_def_var(ncid,
+     $     "avg_19", nf90_double, p_dim, a19_id))
+         ENDIF
+      ENDIF
       IF(ode_flag .AND. vac_flag)THEN !shift to .OR.
         CALL check( nf90_def_var(ncid, "W_p_eigenvector", nf90_double,
      $    (/m_dim, mo_dim, i_dim/), wp_id) )
