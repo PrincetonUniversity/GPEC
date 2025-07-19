@@ -147,6 +147,26 @@ c-----------------------------------------------------------------------
             ftr=1.d0-(1-eps_loc)**2/
      $       (SQRT(1-eps_loc**2)*(1.d0+1.46d0*SQRT(eps_loc)))
             ftr=MIN(ftr,1.0d0)
+!           Minor improvement to ftr using local triangularity 'delta':
+!           epseff=0.67*(1.0-1.4*delta|delta|)*eps
+!           ftr=1.0-sqrt((1-eps)/(1+eps))*(1-epseff)/(1+2sqrt(epseff))
+!           Use triangularity calculator from surfgeo.f90 in PEST3 code:
+!           https://svn.code.sf.net/p/pest3code/code/
+c-----------------------------------------------------------------------
+c     simple estimates of Jboot and bootstrap drive from 
+c     Callen, 2010 UW-CPTC 09-6R, and Hegna 1999
+c-----------------------------------------------------------------------
+            mufrac=ftr*(1.d0+0.533d0/Zeff)/
+     $                            ((1.d0-ftr)+ftr*(1.d0+0.533d0/Zeff))
+            Jboot_dot_B=-mufrac*(twopif/chi1)*p1 !mu0 included in p1
+c-----------------------------------------------------------------------
+c     evaluate geometric prefactors of MRE stability terms from 
+c     Hegna 1999 https://doi.org/10.1063/1.873661
+c-----------------------------------------------------------------------
+            Dnc_prefac=-q*(p1/(q1*avg(5)))*  !unitless
+     $      avg(20)*                         ! \overbar{R^2} ~ [m^2]
+     $      avg(1)/(psio**2)                 ! [1/m^2]  
+            Dnc=Dnc_prefac*mufrac
          ENDIF
 120      FORMAT(19(E30.15,1X))
       ENDDO
