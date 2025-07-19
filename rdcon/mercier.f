@@ -31,7 +31,7 @@ c-----------------------------------------------------------------------
       INTEGER :: ipsi,itheta
       REAL(r8) :: bsq,chi1,di,dpsisq,eta,h,jac,p1,psifac,q,q1,r,
      $     rfac,term,theta,twopif,v1,v2,v21,v22,v23,v33,
-     $     bt,f1,Dnc,Dnc_prefac,Wc_prefac,eps_loc,Jpara,ftr,Mloc,
+     $     bt,f1,Dnc,Dnc_prefac,Wc_prefac,eps_loc,Jpara,ftr,M,
      $     Hbs_prefac,Jboot_dot_B,mufrac,taua_prefac,taur_prefac
       REAL(r8), DIMENSION(:), POINTER :: avg
       TYPE(spline_type), TARGET :: ff
