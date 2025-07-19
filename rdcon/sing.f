@@ -1281,7 +1281,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE sing_get_ua_cut
 c-----------------------------------------------------------------------
-c     subprogram 13. sing_min.
+c     subprogram 16. sing_min.
 c     checks for lower truncation point in equilibrium based on qlow.
 c     if found, changes psilow to match qlow.
 c-----------------------------------------------------------------------
