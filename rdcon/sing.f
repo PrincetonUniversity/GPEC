@@ -205,24 +205,31 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     use newton iteration to find psilim.
 c-----------------------------------------------------------------------
-      jpsi=MINLOC(ABS(sq%fs(:,4)-qlim))
-      psilim=sq%xs(jpsi(1))
-      it=0
-      DO
-         it=it+1
-         CALL spline_eval(sq,psilim,1)
-         q=sq%f(4)
-         q1=sq%f1(4)
-         dpsi=(qlim-q)/q1
-         psilim=psilim+dpsi
-         IF(ABS(dpsi) < eps*ABS(psilim) .OR. it > itmax)EXIT
-      ENDDO
-      q1lim=q1
+      IF(qlim<qmax)THEN
+         jpsi=MINLOC(ABS(sq%fs(:,4)-qlim))
+         IF (jpsi(1)>= mpsi) jpsi(1)=mpsi-1
+         psilim=sq%xs(jpsi(1))
+         it=0
+         DO
+            it=it+1
+            CALL spline_eval(sq,psilim,1)
+            q=sq%f(4)
+            q1=sq%f1(4)
+            dpsi=(qlim-q)/q1
+            psilim=psilim+dpsi
+            IF(ABS(dpsi) < eps*ABS(psilim) .OR. it > itmax)EXIT
+         ENDDO
+         q1lim=q1
 c-----------------------------------------------------------------------
 c     abort if not found.
 c-----------------------------------------------------------------------
-      IF(it > itmax)THEN
-         CALL program_stop("Can't find psilim.")
+         IF(it > itmax)THEN
+            CALL program_stop("Can't find psilim.")
+         ENDIF
+      ELSE
+         qlim = qmax
+         q1lim=sq%fs1(mpsi,4)
+         psilim=psihigh
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
