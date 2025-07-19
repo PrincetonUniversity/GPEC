@@ -73,6 +73,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: vac_memory=.FALSE.
       LOGICAL :: MRE_flag=.FALSE.
       LOGICAL :: geom_flag=.FALSE.
+      LOGICAL :: reform_eq_with_psilim=.FALSE.
 
       INTEGER, PARAMETER :: sol_base=50
       INTEGER :: mlow,mhigh,mpert,mband,nn,nstep=HUGE(0),bin_sol_min,
@@ -116,7 +117,8 @@ c-----------------------------------------------------------------------
 
       LOGICAL :: sas_flag=.FALSE.,lim_flag
       EQUIVALENCE (sas_flag,lim_flag)
-      REAL(r8) :: psilim,qlim,q1lim,dmlim=.5_r8
+      REAL(r8) :: psilim,qlim,q1lim,dmlim=.5_r8,qhigh=1e3,qlow=0
+      REAL(r8) :: psilow_tmp, psilim_tmp
 
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: delta
 
