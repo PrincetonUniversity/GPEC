@@ -275,6 +275,13 @@ c-----------------------------------------------------------------------
       CALL equil_out_global
       CALL equil_out_qfind
 c-----------------------------------------------------------------------
+c     optionally reform the eq splines to concentrate at true truncation
+c-----------------------------------------------------------------------
+      IF (reform_eq_with_psilim .OR. qlow > sq%xs(0)) THEN
+         CALL sing_lim  ! determine if qhigh is truncating before psihigh
+         CALL sing_min
+      ENDIF
+c-----------------------------------------------------------------------
 c     define poloidal mode numbers.
 c-----------------------------------------------------------------------
       CALL sing_find
