@@ -181,26 +181,27 @@ c-----------------------------------------------------------------------
       qlim=MIN(qmax,qhigh)
       q1lim=sq%fs1(mpsi,4)
       psilim=psihigh
-      IF(.NOT. sas_flag)RETURN
+      IF(sas_flag)THEN
 c-----------------------------------------------------------------------
 c     normalze dmlim to interval [0,1).
 c-----------------------------------------------------------------------
-      DO
-         IF(dmlim < 1)EXIT
-         dmlim=dmlim-1
-      ENDDO
-      DO
-         IF(dmlim >= 0)EXIT
-         dmlim=dmlim+1
-      ENDDO
+         DO
+            IF(dmlim < 1)EXIT
+            dmlim=dmlim-1
+         ENDDO
+         DO
+            IF(dmlim >= 0)EXIT
+            dmlim=dmlim+1
+         ENDDO
 c-----------------------------------------------------------------------
 c     compute qlim.
 c-----------------------------------------------------------------------
-      qlim=(INT(nn*qlim)+dmlim)/nn
-      DO
-         IF(qlim <= qmax)EXIT
-         qlim=qlim-1._r8/nn
-      ENDDO
+         qlim=(INT(nn*qlim)+dmlim)/nn
+         DO
+            IF(qlim <= qmax)EXIT
+            qlim=qlim-1._r8/nn
+         ENDDO
+      ENDIF
 c-----------------------------------------------------------------------
 c     use newton iteration to find psilim.
 c-----------------------------------------------------------------------
