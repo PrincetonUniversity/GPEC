@@ -188,6 +188,41 @@ c     Glasser et al. 1975. Shi doi -> https://doi.org/10.1063/5.0183474
 c-----------------------------------------------------------------------
             Hbs=(avg(1)/avg(5))* ! [m^2]
      $  (-v1/(twopi**2*psio**2*q1))*avg_Jboot_dot_B ! [m^-5*m^3]
+c-----------------------------------------------------------------------
+c     save terms.
+c-----------------------------------------------------------------------
+            mreterms%fs(ipsi,1)=Hbs
+            mreterms%fs(ipsi,2)=taua_prefac
+            mreterms%fs(ipsi,3)=taur_prefac
+            mreterms%fs(ipsi,4)=ftr
+            mreterms%fs(ipsi,5)=mufrac
+            mreterms%fs(ipsi,6)=avg_Jboot_dot_B
+            mreterms%fs(ipsi,7)=Dnc
+            mreterms%fs(ipsi,8)=Wc_prefac
+            mreterms%fs(ipsi,9)=Jpara
+            mreterms%fs(ipsi,10)=avg(8) !Avg B field
+            mreterms%fs(ipsi,11)=avg(9) !Avg toroidal B field
+            mreterms%fs(ipsi,12)=avg(10) !Avg poloidal B field
+            mreterms%fs(ipsi,13)=avg(11) !Avg minor radius
+            mreterms%fs(ipsi,14)=avg(12) !Avg major radius
+            mreterms%fs(ipsi,15)=avg(13) !Avg 1/major radius
+            mreterms%fs(ipsi,16)=avg(20) !overbar{R^2}     (Hegna 1999)
+            mreterms%fs(ipsi,17)=avg(21) !avg{R^2} ~ [m^2] (Hegna 1999)
+            IF(print_geom_terms)THEN
+               mreterms%fs(ipsi,18)=avg(1) 
+               mreterms%fs(ipsi,19)=avg(2) 
+               mreterms%fs(ipsi,20)=avg(3) 
+               mreterms%fs(ipsi,21)=avg(4) 
+               mreterms%fs(ipsi,22)=avg(5) 
+               mreterms%fs(ipsi,23)=avg(6) 
+               mreterms%fs(ipsi,24)=avg(7) 
+               mreterms%fs(ipsi,25)=avg(14) 
+               mreterms%fs(ipsi,26)=avg(15) 
+               mreterms%fs(ipsi,27)=avg(16)
+               mreterms%fs(ipsi,28)=avg(17)
+               mreterms%fs(ipsi,29)=avg(18)
+               mreterms%fs(ipsi,30)=avg(19)
+            ENDIF
          ENDIF
 120      FORMAT(19(E30.15,1X))
       ENDDO
