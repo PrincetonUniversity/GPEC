@@ -232,13 +232,13 @@ c-----------------------------------------------------------------------
          CALL check( nf90_def_var(ncid,
      $     "mufrac", nf90_double, p_dim, muf_id))
          CALL check( nf90_def_var(ncid,
-     $     "Jboot_dot_B", nf90_double, p_dim, jbs_id))
+     $     "avg_mu0Jbs_dot_B", nf90_double, p_dim, jbs_id))
          CALL check( nf90_def_var(ncid,
      $     "Dnc", nf90_double, p_dim, dnc_id))
          CALL check( nf90_def_var(ncid,
      $     "Wc", nf90_double, p_dim, wc_id))
          CALL check( nf90_def_var(ncid,
-     $     "Jparallel", nf90_double, p_dim, jp_id))
+     $     "avg_mu0Jpara", nf90_double, p_dim, jp_id))
          CALL check( nf90_def_var(ncid,
      $     "avg_B", nf90_double, p_dim, b_id))
          CALL check( nf90_def_var(ncid,
