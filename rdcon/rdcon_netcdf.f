@@ -62,6 +62,10 @@ c-----------------------------------------------------------------------
      $    l_dim, l_id, coil_dim, coil_id, dpc_id, dc_id,
      $    lp_dim, lp_id, r_dim, r_id, rp_dim, rp_id, pr_id, qr_id,
      $    dp_id, ap_id, bp_id, gp_id, dpp_id, lrc_dim, lrc_id
+      INTEGER :: hbs_id, ta_id, tr_id, ftr_id, muf_id, jbs_id, dnc_id,
+     $    wc_id, jp_id, b_id, bt_id, bpo_id, mir_id, mar_id, mair_id,
+     $    obr_id, ars_id, a1_id, a2_id, a3_id, a4_id, a5_id,
+     $    a6_id, a7_id, a14_id, a15_id, a16_id, a17_id, a18_id, a19_id
 
       REAL(r4) :: cpusec, wallsec
       CHARACTER(2) :: sn
