@@ -32,7 +32,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: bsq,chi1,di,dpsisq,eta,h,jac,p1,psifac,q,q1,r,
      $     rfac,term,theta,twopif,v1,v2,v21,v22,v23,v33,
      $     bt,f1,Dnc,Dnc_prefac,Wc_prefac,eps_loc,Jpara,ftr,M,
-     $     Hbs_prefac,Jboot_dot_B,mufrac,taua_prefac,taur_prefac
+     $     Hbs,avg_Jboot_dot_B,mufrac,taua_prefac,taur_prefac
       REAL(r8), DIMENSION(:), POINTER :: avg
       TYPE(spline_type), TARGET :: ff
 c-----------------------------------------------------------------------
@@ -158,7 +158,7 @@ c     Callen, 2010 UW-CPTC 09-6R, and Hegna 1999
 c-----------------------------------------------------------------------
             mufrac=ftr*(1.d0+0.533d0/Zeff)/
      $                            ((1.d0-ftr)+ftr*(1.d0+0.533d0/Zeff))
-            Jboot_dot_B=-mufrac*(twopif/chi1)*p1 !mu0 included in p1
+            avg_Jboot_dot_B=-mufrac*(twopif/chi1)*p1 !mu0 included in p1
 c-----------------------------------------------------------------------
 c     evaluate geometric prefactors of MRE stability terms from 
 c     Hegna 1999 https://doi.org/10.1063/1.873661
