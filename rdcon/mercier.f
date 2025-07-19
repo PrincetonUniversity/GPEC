@@ -167,6 +167,21 @@ c-----------------------------------------------------------------------
      $      avg(20)*                         ! \overbar{R^2} ~ [m^2]
      $      avg(1)/(psio**2)                 ! [1/m^2]  
             Dnc=Dnc_prefac*mufrac
+c-----------------------------------------------------------------------
+c     evaluate geometric prefactor of Wc from 
+c     Schlutt and Hegna 2012 https://doi.org/10.1063/1.4747500
+c-----------------------------------------------------------------------
+            Wc_prefac=(v1*avg(5)/(q*psio))* 
+     $      v1*avg(7)*(q*psio)*             
+     $      q**6/((q1/psio)**2)     
+            !Divide by mode num. m^2 to finish, units are Wb^4
+            !Note, psi coordinate in original paper is toroidal flux
+c-----------------------------------------------------------------------
+c     parallel current density from Freidberg Ideal MHD eqs. 6.15, 6.16.
+c     note psi in eqs. 6.15, 6.16 is poloidal flux/(2pi), same as psi_in
+c-----------------------------------------------------------------------
+            Jpara=psio*f1*avg(16) + p1*avg(18)*twopif/(twopi*psio) + 
+     $      (twopif/twopi)**2*f1*avg(17)/psio !(mu0 included in p1))
          ENDIF
 120      FORMAT(19(E30.15,1X))
       ENDDO
