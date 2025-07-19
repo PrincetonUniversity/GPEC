@@ -381,6 +381,41 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,dr_id, locstab%fs(:,2)/sq%xs(:)))
       CALL check( nf90_put_var(ncid,ca_id, locstab%fs(:,4)))
 
+      IF(compute_MRE_terms)THEN
+         CALL check( nf90_put_var(ncid,hbs_id, mreterms%fs(:,1)))
+         CALL check( nf90_put_var(ncid,ta_id, mreterms%fs(:,2)))
+         CALL check( nf90_put_var(ncid,tr_id, mreterms%fs(:,3)))
+         CALL check( nf90_put_var(ncid,ftr_id, mreterms%fs(:,4)))
+         CALL check( nf90_put_var(ncid,muf_id, mreterms%fs(:,5)))
+         CALL check( nf90_put_var(ncid,jbs_id, mreterms%fs(:,6)))
+         CALL check( nf90_put_var(ncid,dnc_id, mreterms%fs(:,7)))
+         CALL check( nf90_put_var(ncid,wc_id, mreterms%fs(:,8)))
+         CALL check( nf90_put_var(ncid,jp_id, mreterms%fs(:,9)))
+         CALL check( nf90_put_var(ncid,b_id, mreterms%fs(:,10)))
+         CALL check( nf90_put_var(ncid,bt_id, mreterms%fs(:,11)))
+         CALL check( nf90_put_var(ncid,bpo_id, mreterms%fs(:,12)))
+         CALL check( nf90_put_var(ncid,mir_id, mreterms%fs(:,13)))
+         CALL check( nf90_put_var(ncid,mar_id, mreterms%fs(:,14)))
+         CALL check( nf90_put_var(ncid,mair_id, mreterms%fs(:,15)))
+         CALL check( nf90_put_var(ncid,obr_id, mreterms%fs(:,16)))
+         CALL check( nf90_put_var(ncid,ars_id, mreterms%fs(:,17)))
+         IF(print_geom_terms)THEN
+            CALL check( nf90_put_var(ncid,a1_id, mreterms%fs(:,18)))
+            CALL check( nf90_put_var(ncid,a2_id, mreterms%fs(:,19)))
+            CALL check( nf90_put_var(ncid,a3_id, mreterms%fs(:,20)))
+            CALL check( nf90_put_var(ncid,a4_id, mreterms%fs(:,21)))
+            CALL check( nf90_put_var(ncid,a5_id, mreterms%fs(:,22)))
+            CALL check( nf90_put_var(ncid,a6_id, mreterms%fs(:,23)))
+            CALL check( nf90_put_var(ncid,a7_id, mreterms%fs(:,24)))
+            CALL check( nf90_put_var(ncid,a14_id, mreterms%fs(:,25)))
+            CALL check( nf90_put_var(ncid,a15_id, mreterms%fs(:,26)))
+            CALL check( nf90_put_var(ncid,a16_id, mreterms%fs(:,27)))
+            CALL check( nf90_put_var(ncid,a17_id, mreterms%fs(:,28)))
+            CALL check( nf90_put_var(ncid,a18_id, mreterms%fs(:,29)))
+            CALL check( nf90_put_var(ncid,a19_id, mreterms%fs(:,30)))
+         ENDIF
+      ENDIF
+
       IF(ode_flag .AND. vac_flag)THEN !Shift to .OR. 
         IF(debug_flag) PRINT *," - Putting matrix variables in netcdf"
         CALL check( nf90_put_var(ncid,wp_id,RESHAPE((/REAL(wp),
