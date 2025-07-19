@@ -182,6 +182,12 @@ c     note psi in eqs. 6.15, 6.16 is poloidal flux/(2pi), same as psi_in
 c-----------------------------------------------------------------------
             Jpara=psio*f1*avg(16) + p1*avg(18)*twopif/(twopi*psio) + 
      $      (twopif/twopi)**2*f1*avg(17)/psio !(mu0 included in p1))
+c-----------------------------------------------------------------------
+c     compute H_bs defined in Shi et al. 2024, using identity from 
+c     Glasser et al. 1975. Shi doi -> https://doi.org/10.1063/5.0183474 
+c-----------------------------------------------------------------------
+            Hbs=(avg(1)/avg(5))* ! [m^2]
+     $  (-v1/(twopi**2*psio**2*q1))*avg_Jboot_dot_B ! [m^-5*m^3]
          ENDIF
 120      FORMAT(19(E30.15,1X))
       ENDDO
