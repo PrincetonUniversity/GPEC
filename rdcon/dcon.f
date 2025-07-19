@@ -280,6 +280,13 @@ c-----------------------------------------------------------------------
       IF (reform_eq_with_psilim .OR. qlow > sq%xs(0)) THEN
          CALL sing_lim  ! determine if qhigh is truncating before psihigh
          CALL sing_min
+         IF(psilim /= psihigh .OR. psilow /= sq%xs(0))THEN
+            psilow_tmp = psilow  ! if we feed psilow directly, it get's overwritten by namelist read
+            psilim_tmp = psilim
+            CALL equil_read(out_unit, psilim_tmp, psilow_tmp)
+            CALL equil_out_global
+            CALL equil_out_qfind
+         ENDIF
       ENDIF
 c-----------------------------------------------------------------------
 c     define poloidal mode numbers.
