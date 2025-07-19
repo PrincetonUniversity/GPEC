@@ -229,7 +229,7 @@ c-----------------------------------------------------------------------
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
      $     out_fl,bin_fl,out_evals,bin_evals,bin_euler,euler_stride,
      $     bin_vac,ahb_flag,mthsurf0,msol_ahb,diagnose_fixup,verbose,
-     $     out_ahg2msc,compute_mre_terms,print_geom_terms
+     $     out_ahg2msc,MRE_flag,geom_flag
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -323,8 +323,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     optionally compute modified Rutherford equation (MRE) terms.
 c-----------------------------------------------------------------------
-      IF(compute_MRE_terms)THEN
-         IF(print_geom_terms)THEN
+      IF(MRE_flag)THEN
+         IF(geom_flag)THEN
             CALL spline_alloc(mreterms,mpsi,30)
          ELSE
             CALL spline_alloc(mreterms,mpsi,17)

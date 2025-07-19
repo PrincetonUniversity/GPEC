@@ -220,7 +220,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(ncid, "di", nf90_double, p_dim, di_id) )
       CALL check( nf90_def_var(ncid, "dr", nf90_double, p_dim, dr_id) )
       CALL check( nf90_def_var(ncid, "ca1", nf90_double, p_dim, ca_id))
-      IF(compute_MRE_terms)THEN
+      IF(MRE_flag)THEN
          CALL check( nf90_def_var(ncid,
      $     "Hbs", nf90_double, p_dim, hbs_id))
          CALL check( nf90_def_var(ncid,
@@ -255,7 +255,7 @@ c-----------------------------------------------------------------------
      $     "overbar_Rsq", nf90_double, p_dim, obr_id))
          CALL check( nf90_def_var(ncid,
      $     "avg_Rsq", nf90_double, p_dim, ars_id))
-         IF(print_geom_terms)THEN
+         IF(geom_flag)THEN
             CALL check( nf90_def_var(ncid,
      $     "avg_1", nf90_double, p_dim, a1_id))
             CALL check( nf90_def_var(ncid,
@@ -381,7 +381,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,dr_id, locstab%fs(:,2)/sq%xs(:)))
       CALL check( nf90_put_var(ncid,ca_id, locstab%fs(:,4)))
 
-      IF(compute_MRE_terms)THEN
+      IF(MRE_flag)THEN
          CALL check( nf90_put_var(ncid,hbs_id, mreterms%fs(:,1)))
          CALL check( nf90_put_var(ncid,ta_id, mreterms%fs(:,2)))
          CALL check( nf90_put_var(ncid,tr_id, mreterms%fs(:,3)))
@@ -399,7 +399,7 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_var(ncid,mair_id, mreterms%fs(:,15)))
          CALL check( nf90_put_var(ncid,obr_id, mreterms%fs(:,16)))
          CALL check( nf90_put_var(ncid,ars_id, mreterms%fs(:,17)))
-         IF(print_geom_terms)THEN
+         IF(geom_flag)THEN
             CALL check( nf90_put_var(ncid,a1_id, mreterms%fs(:,18)))
             CALL check( nf90_put_var(ncid,a2_id, mreterms%fs(:,19)))
             CALL check( nf90_put_var(ncid,a3_id, mreterms%fs(:,20)))

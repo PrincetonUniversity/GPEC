@@ -38,7 +38,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     prepare spline types.
 c-----------------------------------------------------------------------
-      IF(compute_MRE_terms)THEN
+      IF(MRE_flag)THEN
          CALL spline_alloc(ff,mtheta,21)
       ELSE
          CALL spline_alloc(ff,mtheta,5)
@@ -85,7 +85,7 @@ c-----------------------------------------------------------------------
             ff%fs(itheta,3)=1/bsq
             ff%fs(itheta,4)=1/(bsq*dpsisq)
             ff%fs(itheta,5)=bsq
-            IF(compute_MRE_terms)THEN
+            IF(MRE_flag)THEN
                ff%fs(itheta,6)=dpsisq/bsq
                ff%fs(itheta,7)=dpsisq
                ff%fs(itheta,8)=SQRT(bsq)        ! |B|
@@ -124,7 +124,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     MRE term calculations
 c-----------------------------------------------------------------------
-         IF(compute_MRE_terms)THEN
+         IF(MRE_flag)THEN
 c-----------------------------------------------------------------------
 c     computes mass factor M from Glasser 2016 eq. A8, as in resist.f
 c-----------------------------------------------------------------------
@@ -208,7 +208,7 @@ c-----------------------------------------------------------------------
             mreterms%fs(ipsi,15)=avg(13) !Avg 1/major radius
             mreterms%fs(ipsi,16)=avg(20) !overbar{R^2}     (Hegna 1999)
             mreterms%fs(ipsi,17)=avg(21) !avg{R^2} ~ [m^2] (Hegna 1999)
-            IF(print_geom_terms)THEN
+            IF(geom_flag)THEN
                mreterms%fs(ipsi,18)=avg(1) 
                mreterms%fs(ipsi,19)=avg(2) 
                mreterms%fs(ipsi,20)=avg(3) 
