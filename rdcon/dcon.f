@@ -280,6 +280,10 @@ c-----------------------------------------------------------------------
       IF (reform_eq_with_psilim .OR. qlow > sq%xs(0)) THEN
          CALL sing_lim  ! determine if qhigh is truncating before psihigh
          CALL sing_min
+         IF(.NOT. reform_eq_with_psilim)THEN
+            PRINT *, "** qlow is forcing reformation of equil splines."
+            PRINT *, "  > Forcing reform_eq_with_psilim = t"
+         ENDIF
          IF(psilim /= psihigh .OR. psilow /= sq%xs(0))THEN
             psilow_tmp = psilow  ! if we feed psilow directly, it get's overwritten by namelist read
             psilim_tmp = psilim
