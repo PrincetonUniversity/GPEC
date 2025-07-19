@@ -121,6 +121,33 @@ c-----------------------------------------------------------------------
          locstab%fs(ipsi,1)=di*locstab%xs(ipsi)
          locstab%fs(ipsi,2)=(di+(h-0.5)**2)*locstab%xs(ipsi)
          locstab%fs(ipsi,3)=h
+c-----------------------------------------------------------------------
+c     MRE term calculations
+c-----------------------------------------------------------------------
+         IF(compute_MRE_terms)THEN
+c-----------------------------------------------------------------------
+c     computes mass factor M from Glasser 2016 eq. A8, as in resist.f
+c-----------------------------------------------------------------------
+            M=avg(1)*(avg(6)+(twopif/chi1)**2*(avg(3)-1/avg(5)))
+c-----------------------------------------------------------------------
+c     computes geometric prefactors of Alfven and resistive time scales
+c     from Glasser 2016 eqs. A12, A13
+c-----------------------------------------------------------------------
+            taua_prefac=SQRT(M*mu0)/ABS(twopi*q1*chi1/v1) 
+            !to get taua, multiply by local sqrt(rho) and divide by 
+            !toroidal mode number nn (see resist.f)
+            taur_prefac=avg(1)/avg(5)*mu0
+            !to get taur, divide by local resistivity (see resist.f)
+c-----------------------------------------------------------------------
+c     simple estimates of trapped fraction from Sauter 2002:
+c     <https://infoscience.epfl.ch/server/api/core/bitstreams/c42baba0-9
+c     909-4f21-978a-0d0c2646c3ad/content>
+c-----------------------------------------------------------------------
+            eps_loc=avg(11)/avg(12)
+            ftr=1.d0-(1-eps_loc)**2/
+     $       (SQRT(1-eps_loc**2)*(1.d0+1.46d0*SQRT(eps_loc)))
+            ftr=MIN(ftr,1.0d0)
+         ENDIF
 120      FORMAT(19(E30.15,1X))
       ENDDO
       CALL spline_dealloc(ff)
