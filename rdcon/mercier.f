@@ -49,25 +49,25 @@ c     compute surface quantities.
 c-----------------------------------------------------------------------
       DO ipsi=0,mpsi
          psifac=sq%xs(ipsi)
-         twopif=sq%fs(ipsi,1)
-         f1=sq%fs1(ipsi,1)/twopi
+         twopif=sq%fs(ipsi,1)    ! f = toroidal B field * major radius
+         f1=sq%fs1(ipsi,1)/twopi ! df/dpsi, 
          p1=sq%fs1(ipsi,2)
-         v1=sq%fs(ipsi,3)
+         v1=sq%fs(ipsi,3)     ! d(volume inside flux surface)/d(psi)
          v2=sq%fs1(ipsi,3)
          q=sq%fs(ipsi,4)
          q1=sq%fs1(ipsi,4)
-         chi1=twopi*psio
+         chi1=twopi*psio      ! d(poloidal flux)/dpsi, chi=poloidal flux
 c-----------------------------------------------------------------------
 c     evaluate coordinates and jacobian.
 c-----------------------------------------------------------------------
          DO itheta=0,mtheta
             CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),1)
-            theta=rzphi%ys(itheta)
-            rfac=SQRT(rzphi%f(1))
-            eta=twopi*(theta+rzphi%f(2))
-            r=ro+rfac*COS(eta)
-            jac=rzphi%f(4)
-            bt=twopif/(twopi*r) !This is toroidal B field
+            theta=rzphi%ys(itheta)       ! magnetic poloidal angle
+            rfac=SQRT(rzphi%f(1))        ! minor radius
+            eta=twopi*(theta+rzphi%f(2)) ! machine poloidal angle
+            r=ro+rfac*COS(eta)           ! major radius R
+            jac=rzphi%f(4)               ! jacobian of mag. coordinates
+            bt=twopif/(twopi*r)          ! toroidal B field
 c-----------------------------------------------------------------------
 c     evaluate other local quantities.
 c-----------------------------------------------------------------------
@@ -147,11 +147,6 @@ c-----------------------------------------------------------------------
             ftr=1.d0-(1-eps_loc)**2/
      $       (SQRT(1-eps_loc**2)*(1.d0+1.46d0*SQRT(eps_loc)))
             ftr=MIN(ftr,1.0d0)
-!           Minor improvement to ftr using local triangularity 'delta':
-!           epseff=0.67*(1.0-1.4*delta|delta|)*eps
-!           ftr=1.0-sqrt((1-eps)/(1+eps))*(1-epseff)/(1+2sqrt(epseff))
-!           Use triangularity calculator from surfgeo.f90 in PEST3 code:
-!           https://svn.code.sf.net/p/pest3code/code/
 c-----------------------------------------------------------------------
 c     simple estimates of Jboot and bootstrap drive from 
 c     Callen, 2010 UW-CPTC 09-6R, and Hegna 1999
@@ -208,21 +203,20 @@ c-----------------------------------------------------------------------
             mreterms%fs(ipsi,15)=avg(13) !Avg 1/major radius
             mreterms%fs(ipsi,16)=avg(20) !overbar{R^2}     (Hegna 1999)
             mreterms%fs(ipsi,17)=avg(21) !avg{R^2} ~ [m^2] (Hegna 1999)
-            IF(geom_flag)THEN
-               mreterms%fs(ipsi,18)=avg(1) 
-               mreterms%fs(ipsi,19)=avg(2) 
-               mreterms%fs(ipsi,20)=avg(3) 
-               mreterms%fs(ipsi,21)=avg(4) 
-               mreterms%fs(ipsi,22)=avg(5) 
-               mreterms%fs(ipsi,23)=avg(6) 
-               mreterms%fs(ipsi,24)=avg(7) 
-               mreterms%fs(ipsi,25)=avg(14) 
-               mreterms%fs(ipsi,26)=avg(15) 
-               mreterms%fs(ipsi,27)=avg(16)
-               mreterms%fs(ipsi,28)=avg(17)
-               mreterms%fs(ipsi,29)=avg(18)
-               mreterms%fs(ipsi,30)=avg(19)
-            ENDIF
+            ! will only print out the following if geom_flag is true:
+            mreterms%fs(ipsi,18)=avg(1) 
+            mreterms%fs(ipsi,19)=avg(2) 
+            mreterms%fs(ipsi,20)=avg(3) 
+            mreterms%fs(ipsi,21)=avg(4) 
+            mreterms%fs(ipsi,22)=avg(5) 
+            mreterms%fs(ipsi,23)=avg(6) 
+            mreterms%fs(ipsi,24)=avg(7) 
+            mreterms%fs(ipsi,25)=avg(14) 
+            mreterms%fs(ipsi,26)=avg(15) 
+            mreterms%fs(ipsi,27)=avg(16)
+            mreterms%fs(ipsi,28)=avg(17)
+            mreterms%fs(ipsi,29)=avg(18)
+            mreterms%fs(ipsi,30)=avg(19)
          ENDIF
 120      FORMAT(19(E30.15,1X))
       ENDDO

@@ -146,12 +146,10 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_att(ncid,nf90_global,"cpu_time",cpusec) )
       CALL check( nf90_put_att(ncid,nf90_global,"wall_time",wallsec))
       ! ideal stability calculations
-      IF(ode_flag .OR. (vac_flag .AND. .NOT.
-     $     (ksing > 0 .AND. ksing <= msing+1 .AND. bin_sol)))THEN
+      IF(ode_flag .OR. vac_flag)THEN
         CALL check( nf90_put_att(ncid,nf90_global,'nzero', nzero))
       ENDIF
-      IF(vac_flag .AND. .NOT.
-     $     (ksing > 0 .AND. ksing <= msing+1 .AND. bin_sol))THEN
+      IF(vac_flag)THEN
         CALL check( nf90_put_att(ncid,nf90_global,"plasma1",plasma1))
         CALL check( nf90_put_att(ncid,nf90_global,"vacuum1",vacuum1))
         CALL check( nf90_put_att(ncid,nf90_global,"total1",total1))
