@@ -49,25 +49,25 @@ c     compute surface quantities.
 c-----------------------------------------------------------------------
       DO ipsi=0,mpsi
          psifac=sq%xs(ipsi)
-         twopif=sq%fs(ipsi,1)
-         f1=sq%fs1(ipsi,1)/twopi
+         twopif=sq%fs(ipsi,1)    ! f = toroidal B field * major radius
+         f1=sq%fs1(ipsi,1)/twopi ! df/dpsi, 
          p1=sq%fs1(ipsi,2)
-         v1=sq%fs(ipsi,3)
+         v1=sq%fs(ipsi,3)     ! d(volume inside flux surface)/d(psi)
          v2=sq%fs1(ipsi,3)
          q=sq%fs(ipsi,4)
          q1=sq%fs1(ipsi,4)
-         chi1=twopi*psio
+         chi1=twopi*psio      ! d(poloidal flux)/dpsi, chi=poloidal flux
 c-----------------------------------------------------------------------
 c     evaluate coordinates and jacobian.
 c-----------------------------------------------------------------------
          DO itheta=0,mtheta
             CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),1)
-            theta=rzphi%ys(itheta)
-            rfac=SQRT(rzphi%f(1))
-            eta=twopi*(theta+rzphi%f(2))
-            r=ro+rfac*COS(eta)
-            jac=rzphi%f(4)
-            bt=twopif/(twopi*r) !This is toroidal B field
+            theta=rzphi%ys(itheta)       ! magnetic poloidal angle
+            rfac=SQRT(rzphi%f(1))        ! minor radius
+            eta=twopi*(theta+rzphi%f(2)) ! machine poloidal angle
+            r=ro+rfac*COS(eta)           ! major radius R
+            jac=rzphi%f(4)               ! jacobian of mag. coordinates
+            bt=twopif/(twopi*r)          ! toroidal B field
 c-----------------------------------------------------------------------
 c     evaluate other local quantities.
 c-----------------------------------------------------------------------
