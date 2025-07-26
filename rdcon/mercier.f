@@ -147,11 +147,6 @@ c-----------------------------------------------------------------------
             ftr=1.d0-(1-eps_loc)**2/
      $       (SQRT(1-eps_loc**2)*(1.d0+1.46d0*SQRT(eps_loc)))
             ftr=MIN(ftr,1.0d0)
-!           Minor improvement to ftr using local triangularity 'delta':
-!           epseff=0.67*(1.0-1.4*delta|delta|)*eps
-!           ftr=1.0-sqrt((1-eps)/(1+eps))*(1-epseff)/(1+2sqrt(epseff))
-!           Use triangularity calculator from surfgeo.f90 in PEST3 code:
-!           https://svn.code.sf.net/p/pest3code/code/
 c-----------------------------------------------------------------------
 c     simple estimates of Jboot and bootstrap drive from 
 c     Callen, 2010 UW-CPTC 09-6R, and Hegna 1999
