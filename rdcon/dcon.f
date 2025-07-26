@@ -324,11 +324,7 @@ c-----------------------------------------------------------------------
 c     optionally compute modified Rutherford equation (MRE) terms.
 c-----------------------------------------------------------------------
       IF(MRE_flag)THEN
-         IF(geom_flag)THEN
-            CALL spline_alloc(mreterms,mpsi,30)
-         ELSE
-            CALL spline_alloc(mreterms,mpsi,17)
-         ENDIF
+         CALL spline_alloc(mreterms,mpsi,30)
          mreterms%xs=sq%xs
          mreterms%fs=0
          mreterms%name="mreterms"

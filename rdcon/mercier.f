@@ -208,21 +208,20 @@ c-----------------------------------------------------------------------
             mreterms%fs(ipsi,15)=avg(13) !Avg 1/major radius
             mreterms%fs(ipsi,16)=avg(20) !overbar{R^2}     (Hegna 1999)
             mreterms%fs(ipsi,17)=avg(21) !avg{R^2} ~ [m^2] (Hegna 1999)
-            IF(geom_flag)THEN
-               mreterms%fs(ipsi,18)=avg(1) 
-               mreterms%fs(ipsi,19)=avg(2) 
-               mreterms%fs(ipsi,20)=avg(3) 
-               mreterms%fs(ipsi,21)=avg(4) 
-               mreterms%fs(ipsi,22)=avg(5) 
-               mreterms%fs(ipsi,23)=avg(6) 
-               mreterms%fs(ipsi,24)=avg(7) 
-               mreterms%fs(ipsi,25)=avg(14) 
-               mreterms%fs(ipsi,26)=avg(15) 
-               mreterms%fs(ipsi,27)=avg(16)
-               mreterms%fs(ipsi,28)=avg(17)
-               mreterms%fs(ipsi,29)=avg(18)
-               mreterms%fs(ipsi,30)=avg(19)
-            ENDIF
+            ! will only print out the following if geom_flag is true:
+            mreterms%fs(ipsi,18)=avg(1) 
+            mreterms%fs(ipsi,19)=avg(2) 
+            mreterms%fs(ipsi,20)=avg(3) 
+            mreterms%fs(ipsi,21)=avg(4) 
+            mreterms%fs(ipsi,22)=avg(5) 
+            mreterms%fs(ipsi,23)=avg(6) 
+            mreterms%fs(ipsi,24)=avg(7) 
+            mreterms%fs(ipsi,25)=avg(14) 
+            mreterms%fs(ipsi,26)=avg(15) 
+            mreterms%fs(ipsi,27)=avg(16)
+            mreterms%fs(ipsi,28)=avg(17)
+            mreterms%fs(ipsi,29)=avg(18)
+            mreterms%fs(ipsi,30)=avg(19)
          ENDIF
 120      FORMAT(19(E30.15,1X))
       ENDDO
