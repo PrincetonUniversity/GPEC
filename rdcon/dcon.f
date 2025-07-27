@@ -213,7 +213,8 @@ c-----------------------------------------------------------------------
 
       LOGICAL :: cyl_flag=.FALSE.,regrid_flag=.FALSE.,verbose=.TRUE.
       INTEGER :: mmin,ipsi
-      REAL(r8) :: plasma1,vacuum1,total1
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: mx0
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: vx0
 
       NAMELIST/rdcon_control/bal_flag,mat_flag,ode_flag,vac_flag,
      $     res_flag,fft_flag,node_flag,mthvac,sing_start,nn,
@@ -221,14 +222,14 @@ c-----------------------------------------------------------------------
      $     tol_nr,tol_r,crossover,ucrit,singfac_min,singfac_max,
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,sort_type,
      $     gal_flag,regrid_flag,sing1_flag,
-     $     sing_order_ceiling,degen_tol,coil
+     $     sing_order_ceiling,degen_tol,coil,Zeff
       NAMELIST/rdcon_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
      $     out_fl,bin_fl,out_evals,bin_evals,bin_euler,euler_stride,
      $     bin_vac,ahb_flag,mthsurf0,msol_ahb,diagnose_fixup,verbose,
-     $     out_ahg2msc
+     $     out_ahg2msc,MRE_flag,geom_flag
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -319,6 +320,16 @@ c-----------------------------------------------------------------------
       locstab%name="locstb"
       locstab%title=(/"  di  ","  dr  ","  h   "," ca1  "," ca2  "/)
       IF(verbose) WRITE(*,*)"Evaluating Mercier criterion"
+c-----------------------------------------------------------------------
+c     optionally compute modified Rutherford equation (MRE) terms.
+c-----------------------------------------------------------------------
+      IF(MRE_flag)THEN
+         CALL spline_alloc(mreterms,mpsi,30)
+         mreterms%xs=sq%xs
+         mreterms%fs=0
+         mreterms%name="mreterms"
+         IF(verbose) WRITE(*,*)"Evaluating MRE terms"
+      ENDIF
       CALL mercier_scan
       IF(bal_flag)THEN
          IF(verbose) WRITE(*,*)"Evaluating ballooning criterion"
@@ -401,6 +412,10 @@ c-----------------------------------------------------------------------
          plasma1=0
          vacuum1=0
          total1=0
+         ALLOCATE(mx0(mpert,mpert),vx0(mpert))
+         mx0=0
+         vx0=0
+         CALL rdcon_netcdf_out(mx0,mx0,mx0,mx0,vx0,vx0,vx0)
       ENDIF
       IF(mat_flag .OR. ode_flag)DEALLOCATE(amat,bmat,cmat,ipiva,jmat)
       IF(bin_euler)CALL bin_close(euler_bin_unit)
