@@ -290,6 +290,9 @@ c-----------------------------------------------------------------------
             CALL equil_read(out_unit, psilim_tmp, psilow_tmp)
             CALL equil_out_global
             CALL equil_out_qfind
+            sas_flag=.FALSE. ! Avoid removing another surface due to 
+            ! floating point error placing qmax slightly below the 
+            ! sasflag cut-off.
          ENDIF
       ENDIF
 c-----------------------------------------------------------------------
