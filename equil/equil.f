@@ -174,10 +174,13 @@ c-----------------------------------------------------------------------
       CASE("t7")
          CALL read_eq_t7
       CASE("marklin_direct")
+         CALL program_stop("Error: Deprecated eq_type "//TRIM(eq_type))
          CALL read_eq_marklin_direct
       CASE("marklin_inverse")
+         CALL program_stop("Error: Deprecated eq_type "//TRIM(eq_type))
          CALL read_eq_marklin_inverse
       CASE("hansen_inverse")
+         CALL program_stop("Error: Deprecated eq_type "//TRIM(eq_type))
          CALL read_eq_hansen_inverse
       CASE("pfrc")
          CALL read_eq_pfrc
