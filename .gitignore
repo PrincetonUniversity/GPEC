@@ -17,6 +17,7 @@
 */penmpi
 */version.inc
 */*.original
+*/make.log
 modovmc
 
 .cproject
