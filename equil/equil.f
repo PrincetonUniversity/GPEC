@@ -122,9 +122,13 @@ c-----------------------------------------------------------------------
       CASE("galkin")
          CALL read_eq_galkin
       CASE("chease")
-         CALL read_eq_chease
+         CALL read_eq_chease_inp1
       CASE("chease2")
-         CALL read_eq_chease2
+         WRITE(*,*) "   !! Warning: eq_type chease2 is deprecated, "//
+     $      "use chease_ascii instead"
+         CALL read_eq_chease_inp1_ascii
+      CASE("chease_ascii")
+         CALL read_eq_chease_inp1_ascii
       CASE("chease3")
          CALL read_eq_chease3
       CASE("chease4")

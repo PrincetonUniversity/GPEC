@@ -298,12 +298,13 @@ c-----------------------------------------------------------------------
       END SUBROUTINE read_eq_miller4
 c-----------------------------------------------------------------------
 c     subprogram 5. read_eq_chease.
-c     reads data from chease.
+c     reads INP1 binary file from chease 
+c     created by setting NIDEAL=3 in chease namelist
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE read_eq_chease
+      SUBROUTINE read_eq_chease_inp1
 
       INTEGER :: ntnova,npsi1,nsym,ma,mtau
       REAL(r8), DIMENSION(5) :: axx
@@ -373,15 +374,17 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE read_eq_chease
+      END SUBROUTINE read_eq_chease_inp1
 c-----------------------------------------------------------------------
-c     subprogram 6. read_eq_chease2.
-c     reads data from chease.
+c     subprogram 6. read_eq_chease_inp1_ascii.
+c     reads INP1_FORMATTED ascii file from chease
+c     created by setting NIDEAL=3, like the standard binary INP1
+c     as of 08/2025, this is only available on custom CHEASE versions
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE read_eq_chease2
+      SUBROUTINE read_eq_chease_inp1_ascii
 
       INTEGER :: ntnova,npsi1,nsym,ma,mtau
       REAL(r8), DIMENSION(5) :: axx
