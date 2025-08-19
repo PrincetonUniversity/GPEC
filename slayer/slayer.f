@@ -48,23 +48,17 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), ALLOCATABLE :: jxbl,bal,
      $        prs,n_es,t_es,t_is,omegas,l_ns,l_ts,svals,qvals,
      $        bts,rss,R0s,mu_is,zeffs,Q_soll,br_thl,pes
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: Q_e_arr,Q_i_arr,
-     $                   c_beta_arr,D_norm_arr,tau_arr,P_perp_arr,
-     $                   omegas_arr,Q_arr,lu_arr,psi_n_rational,
-     $                   d_beta_arr,Qconv_arr
       REAL(r8), DIMENSION(8) :: chi_prof
-      INTEGER, DIMENSION(:), ALLOCATABLE :: qval_arr
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs,
-     $                       Re_deltaprime_arr,Im_deltaprime_arr,
-     $                       gammafac_arr,d_crit_arr
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs
       REAL(r8), DIMENSION(:,:), ALLOCATABLE ::
      $     js,ks,psis,jxbs,Q_sols,br_ths
       REAL(r8) :: spot, slayer_inpr
       REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: Q_solss,br_thss
-      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: deltal,outer_deltas,
-     $                                     dels_db_arr,lar_gamma_arr,
-     $                                     gamma_sol_arr,gamma_est_arr
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: deltal,outer_deltas
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: deltas
+      
+      TYPE(slayer_inputs_type) :: sl_in
+      TYPE(slayer_outputs_type) :: sl_out
 
       NAMELIST/slayer_input/input_flag,infile,
      $     ncfile,params_flag,mm,nn,n_e,t_e,t_i,sval,bt,rs,R0,omega,
@@ -298,13 +292,11 @@ c-----------------------------------------------------------------------
 
          IF (read_eq) THEN
 
-            CALL build_inputs(infile,ncfile,chi_prof,qval_arr,
-     $           psi_n_rational,lu_arr,Qconv_arr,Q_arr,Q_e_arr,Q_i_arr,
-     $           c_beta_arr,d_beta_arr,D_norm_arr,tau_arr,
-     $           P_perp_arr,omegas_arr,gammafac_arr,Re_deltaprime_arr,
-     $           Im_deltaprime_arr,d_crit_arr)
+            sl_in%chi_prof_arr = chi_prof
 
-            n_k = SIZE(qval_arr)
+            CALL build_inputs(infile,ncfile,sl_in)
+
+            n_k = SIZE(sl_in%qval_arr)
          ELSE
             n_k = 1
             mr = mm
@@ -332,53 +324,53 @@ c-----------------------------------------------------------------------
                D_norm = inds ! NAMELIST
             END IF
 
-            qval_arr = (/ qval /)
-            omegas_arr = (/ omega /)
-            Q_arr = (/ Q /)
-            Q_e_arr = (/ Q_e /)
-            Q_i_arr = (/ Q_i /)
-            psi_n_rational = (/ 0.0 /)
-            Re_deltaprime_arr = (/ REAL(delta_prime) /)
-            Im_deltaprime_arr = (/ AIMAG(delta_prime) /)
-            P_perp_arr = (/ P_perp /)
-            tau_arr = (/ tau /)
-            D_norm_arr = (/ D_norm /)
-            d_beta_arr = (/ d_beta /)
-            delta_eff = REAL(delta_prime)-d_crit
-            gamma_fac = (rs*delta_eff)/tau_r
-            gammafac_arr = (/ gamma_fac /)
+            CALL allocate_inputs(n_k,sl_in)
+            CALL allocate_outputs(n_k,sl_out)
+
+            sl_in%qval_arr = (/ qval /)
+            sl_in%omegas_arr = (/ omega /)
+            !sl_in%Q_arr = (/ Q /)
+            sl_in%Q_e_arr = (/ Q_e /)
+            sl_in%Q_i_arr = (/ Q_i /)
+            sl_in%psi_n_arr = (/ 0.0 /)
+            sl_in%Re_dp_arr = (/ REAL(delta_prime) /)
+            sl_in%Im_dp_arr = (/ AIMAG(delta_prime) /)
+            sl_in%d_crit_arr = (/ dc_tmp /)
+            sl_in%P_perp_arr = (/ P_perp /)
+            sl_in%tau_arr = (/ tau /)
+            sl_in%D_norm_arr = (/ D_norm /)
+            sl_in%d_beta_arr = (/ d_beta /)
+            sl_in%gammafac_arr = (/ gamma_fac /)
+            sl_in%c_beta_arr = (/ c_beta /)
+            sl_in%lu_arr = (/ lu /)
+            sl_in%Qconv_arr = (/ tauk /)
          END IF 
 
-         ALLOCATE(gamma_est_arr(n_k),dels_db_arr(n_k))
+         ALLOCATE(sl_out%gamma_est_arr(n_k),sl_out%dels_db_arr(n_k))
          DO k=1,n_k
             WRITE(*,*)
             WRITE(*,'(A,I0,A)') 'Calculating growth rate '//
      $             'estimate on q = ',
-     $       qval_arr(k),' rational surface'
+     $       sl_in%qval_arr(k),' rational surface'
 
-            dels_db=riccati_del_s(Q_arr(k),Q_e_arr(k),
-     $                   Q_i_arr(k),P_perp_arr(k),c_beta_arr(k),
-     $                   D_norm_arr(k),tau_arr(k),
-     $                   5.0*D_norm_arr(k))
+            dels_db=riccati_del_s(sl_in%Q_e_arr(k),sl_in%Q_e_arr(k), ! NOT using Q_arr
+     $                   sl_in%Q_i_arr(k),sl_in%P_perp_arr(k),
+     $                   sl_in%c_beta_arr(k),sl_in%D_norm_arr(k),
+     $                   sl_in%tau_arr(k),5.0*sl_in%D_norm_arr(k))
 
-            del_s = dels_db * d_beta_arr(k)
+            del_s = dels_db * sl_in%d_beta_arr(k)
 
-            gamma_est_arr(k) = gammafac_arr(k)/del_s
-            dels_db_arr(k) = dels_db
+            sl_out%gamma_est_arr(k) = sl_in%gammafac_arr(k)/del_s
+            sl_out%dels_db_arr(k) = dels_db
             WRITE(*,*)
             WRITE(*,'(A,F0.3,A)')'Growth rate estimate = ',
-     $                 REAL(gamma_est_arr(k)),' [Hz]'
-
+     $                 REAL(sl_out%gamma_est_arr(k)),' [Hz]'
+            
          ENDDO
 
          IF (.NOT. (match_gamma_flag)) THEN
-            gamma_sol_arr = (/0./)
-            CALL output_gamma(est_gamma_flag,qval_arr,
-     $         omegas_arr,Q_arr,Q_e_arr,Q_i_arr,d_beta_arr,
-     $         c_beta_arr,D_norm_arr,P_perp_arr,lu_arr,psi_n_rational,
-     $         Re_deltaprime_arr,Im_deltaprime_arr,d_crit_arr,
-     $         dels_db_arr,gamma_sol_arr,gamma_est_arr,
-     $         Qconv_arr,re_trace,im_trace)
+            sl_out%gamma_sol_arr = (/0./)
+            CALL output_gamma(est_gamma_flag,sl_in,sl_out)
          END IF
       ENDIF
 c-----------------------------------------------------------------------
@@ -389,14 +381,12 @@ c-----------------------------------------------------------------------
          WRITE(*,*)">>> Calculating asymptotically matched growth rate"
 
          IF (read_eq) THEN
+         
+            sl_in%chi_prof_arr = chi_prof
 
-            CALL build_inputs(infile,ncfile,chi_prof,qval_arr,
-     $          psi_n_rational,lu_arr,Qconv_arr,Q_arr,Q_e_arr,Q_i_arr,
-     $          c_beta_arr,d_beta_arr,D_norm_arr,tau_arr,
-     $          P_perp_arr,omegas_arr,gammafac_arr,
-     $          Re_deltaprime_arr,Im_deltaprime_arr,d_crit_arr)
+            CALL build_inputs(infile,ncfile,sl_in)
 
-            n_k = SIZE(qval_arr)
+            n_k = SIZE(sl_in%qval_arr)
 
          ELSE
             n_k = 1
@@ -425,42 +415,45 @@ c-----------------------------------------------------------------------
                D_norm = inds ! NAMELIST
             END IF
 
-            qval_arr = (/ qval /)
-            omegas_arr = (/ omega /)
-            Q_arr = (/ Q /)
-            Q_e_arr = (/ Q_e /)
-            Q_i_arr = (/ Q_i /)
-            psi_n_rational = (/ 0.0 /)
-            Re_deltaprime_arr = (/ REAL(delta_prime) /)
-            Im_deltaprime_arr = (/ AIMAG(delta_prime) /)
-            d_crit_arr = (/ dc_tmp /)
-            P_perp_arr = (/ P_perp /)
-            tau_arr = (/ tau /)
-            D_norm_arr = (/ D_norm /)
-            d_beta_arr = (/ d_beta /)
-            gammafac_arr = (/ gamma_fac /)
-            c_beta_arr = (/ c_beta /)
-            lu_arr = (/ lu /)
-            Qconv_arr = (/ tauk /)
+            CALL allocate_inputs(n_k,sl_in)
+            CALL allocate_outputs(n_k,sl_out)
+
+            sl_in%qval_arr = (/ qval /)
+            sl_in%omegas_arr = (/ omega /)
+            !sl_in%Q_arr = (/ Q /)
+            sl_in%Q_e_arr = (/ Q_e /)
+            sl_in%Q_i_arr = (/ Q_i /)
+            sl_in%psi_n_arr = (/ 0.0 /)
+            sl_in%Re_dp_arr = (/ REAL(delta_prime) /)
+            sl_in%Im_dp_arr = (/ AIMAG(delta_prime) /)
+            sl_in%d_crit_arr = (/ dc_tmp /)
+            sl_in%P_perp_arr = (/ P_perp /)
+            sl_in%tau_arr = (/ tau /)
+            sl_in%D_norm_arr = (/ D_norm /)
+            sl_in%d_beta_arr = (/ d_beta /)
+            sl_in%gammafac_arr = (/ gamma_fac /)
+            sl_in%c_beta_arr = (/ c_beta /)
+            sl_in%lu_arr = (/ lu /)
+            sl_in%Qconv_arr = (/ tauk /)
          END IF 
 
-         ALLOCATE(gamma_sol_arr(n_k)) 
+         ALLOCATE(sl_out%gamma_sol_arr(n_k)) 
 
          DO k=1,n_k
             WRITE(*,*)
             WRITE(*,'(A,I0,A)') 'Calculating growth rate on q = ',
-     $       qval_arr(k),' rational surface:'
-            Q_e = Q_e_arr(k)
-            Q_i = Q_i_arr(k)
-            P_perp = P_perp_arr(k)
-            tau = tau_arr(k)
-            D_norm = D_norm_arr(k)
-            c_beta = c_beta_arr(k)
-            tauk = Qconv_arr(k)
+     $       sl_in%qval_arr(k),' rational surface:'
+            Q_e = sl_in%Q_e_arr(k)
+            Q_i = sl_in%Q_i_arr(k)
+            P_perp = sl_in%P_perp_arr(k)
+            tau = sl_in%tau_arr(k)
+            D_norm = sl_in%D_norm_arr(k)
+            c_beta = sl_in%c_beta_arr(k)
+            tauk = sl_in%Qconv_arr(k)
 
             ! (Deltaprime - d_crit)/S^1/3
-            delta_eff = (Re_deltaprime_arr(k) - 
-     $                   d_crit_arr(k))/(lu_arr(k)**(1.0/3.0))
+            delta_eff = (sl_in%Re_dp_arr(k) - 
+     $          sl_in%d_crit_arr(k))/(sl_in%lu_arr(k)**(1.0/3.0))
 c            delta_eff = Re_deltaprime_arr(k)
             pe = 0.0
 
@@ -493,17 +486,23 @@ c            delta_eff = Re_deltaprime_arr(k)
             IF (fitz_flag) THEN
                re_trace = re_trace/tauk
                im_trace = im_trace/tauk
-               gamma_sol_arr(k) = g_r/tauk! THIS IS FOR PLOT
+               sl_out%gamma_sol_arr(k) = g_r/tauk! THIS IS FOR PLOT
             ELSE
                re_trace = re_trace/tauk
                im_trace = -im_trace/tauk
-               gamma_sol_arr(k) = -g_r/tauk! THIS IS FOR PLOT
+               sl_out%gamma_sol_arr(k) = -g_r/tauk! THIS IS FOR PLOT
             END IF
          ENDDO 
 
+         ALLOCATE(sl_out%r_trace(n_k,n_trace),
+     $            sl_out%i_trace(n_k,n_trace))
+
+         sl_out%r_trace(k,:) = re_trace
+         sl_out%i_trace(k,:) = im_trace
+
          IF (.NOT. (est_gamma_flag)) THEN
-            d_beta_arr = (/ 0. /)
-            dels_db_arr = (/ 0. /)
+            sl_in%d_beta_arr = (/ 0. /)
+            sl_out%dels_db_arr = (/ 0. /)
          END IF
 
          IF (stabscan_flag) THEN
@@ -556,12 +555,7 @@ c            delta_eff = Re_deltaprime_arr(k)
 
          ENDIF 
 
-         CALL output_gamma(est_gamma_flag,qval_arr,
-     $         omegas_arr,Q_arr,Q_e_arr,Q_i_arr,d_beta_arr,
-     $         c_beta_arr,D_norm_arr,P_perp_arr,lu_arr,psi_n_rational,
-     $         Re_deltaprime_arr,Im_deltaprime_arr,d_crit_arr,
-     $         dels_db_arr,gamma_sol_arr,gamma_est_arr,
-     $         Qconv_arr,re_trace,im_trace)
+         CALL output_gamma(est_gamma_flag,sl_in,sl_out)
          stop
       ENDIF
 c-----------------------------------------------------------------------
@@ -626,24 +620,24 @@ c-----------------------------------------------------------------------
          DEALLOCATE(inQs,deltal,jxbl,bal)
 
          WRITE(*,*)"allocating"
-         qval_arr = (/ 3 /)
+         sl_in%qval_arr = (/ 3 /)
          inQs = (/ 1.0 /)
          inQs = (/ 1.0 /)
 
-         n_k = SIZE(qval_arr)
+         n_k = SIZE(sl_in%qval_arr)
 
-         qval_arr = (/ 3 /)
+         sl_in%qval_arr = (/ 3 /)
          inQs = (/ 1.0 /)
          inQs = (/ 1.0 /)
 
-         omegas_arr = (/ 0.0 /)
-         Q_arr = (/ inQ /)
-         Q_e_arr = (/ inQ_e /)
-         Q_i_arr = (/ inQ_i /)
-         psi_n_rational = (/ 0.0 /)
-         Re_deltaprime_arr = (/ 0.0 /)
-         Im_deltaprime_arr = (/ 0.0 /)
-         P_perp_arr = (/ inpr /)
+         sl_in%omegas_arr = (/ 0.0 /)
+         !sl_in%Q_arr = (/ inQ /)
+         sl_in%Q_e_arr = (/ inQ_e /)
+         sl_in%Q_i_arr = (/ inQ_i /)
+         sl_in%psi_n_arr = (/ 0.0 /)
+         sl_in%Re_dp_arr = (/ 0.0 /)
+         sl_in%Im_dp_arr = (/ 0.0 /)
+         sl_in%P_perp_arr = (/ inpr /)
 
          WRITE(*,*)"allocations successful"
 

@@ -179,33 +179,41 @@ c-----------------------------------------------------------------------
 c     Subprogram 3. scan_grid
 c     Run stability scan on real and imaginary rotation axes
 c-----------------------------------------------------------------------
-      SUBROUTINE output_gamma(est_gamma_flag,qval_arr,
-     $         omegas_arr,Q_arr,Q_e_arr,Q_i_arr,d_beta_arr,
-     $         c_beta_arr,D_norm_arr,P_perp_arr,lu_arr,psi_n_rational,
-     $         Re_deltaprime_arr,Im_deltaprime_arr,d_crit_arr,
-     $         dels_db_arr,gamma_sol_arr,gamma_est_arr,
-     $         Qconv_arr,re_trace,im_trace)
+      SUBROUTINE output_gamma(est_gamma_flag,sl_in,sl_out)
 
       ! Declarations (include necessary type declarations from original code)
       LOGICAL, INTENT(IN) :: est_gamma_flag
-      INTEGER, INTENT(IN), DIMENSION(:) :: qval_arr
-      REAL(r8), INTENT(IN), DIMENSION(:) :: omegas_arr,
-     $      Q_arr,Q_e_arr,Q_i_arr,d_beta_arr,c_beta_arr,D_norm_arr,
-     $      P_perp_arr,lu_arr,psi_n_rational,Re_deltaprime_arr,
-     $      Im_deltaprime_arr,re_trace,im_trace,
-     $      Qconv_arr,d_crit_arr
-      COMPLEX(r8),INTENT(IN),DIMENSION(:) :: dels_db_arr,
-     $                                    gamma_sol_arr,gamma_est_arr
+      TYPE(slayer_inputs_type), INTENT(IN) :: sl_in
+      TYPE(slayer_outputs_type), INTENT(IN) :: sl_out
 
-      WRITE(*,*)'d_crit_arr',d_crit_arr
-      CALL slayer_netcdf_out(SIZE(qval_arr),est_gamma_flag,
-     $         qval_arr,omegas_arr,Q_arr,Q_e_arr,Q_i_arr,d_beta_arr,
-     $         c_beta_arr,D_norm_arr,P_perp_arr,lu_arr,psi_n_rational,
-     $         Re_deltaprime_arr,Im_deltaprime_arr,d_crit_arr,
-     $         dels_db_arr,gamma_sol_arr,gamma_est_arr,
-     $         Qconv_arr,re_trace,im_trace)
+      CALL slayer_netcdf_out(SIZE(sl_in%qval_arr),est_gamma_flag,
+     $                       sl_in,sl_out)
 
       END SUBROUTINE output_gamma
+
+      SUBROUTINE allocate_inputs(n_k,sl_in)
+      INTEGER, INTENT(IN) :: n_k
+      TYPE(slayer_inputs_type), INTENT(INOUT) :: sl_in
+
+      ALLOCATE(sl_in%qval_arr(n_k),sl_in%omegas_arr(n_k),
+     $  sl_in%Q_e_arr(n_k),sl_in%Q_i_arr(n_k),sl_in%psi_n_arr(n_k),
+     $  sl_in%Re_dp_arr(n_k),sl_in%Im_dp_arr(n_k),
+     $  sl_in%d_crit_arr(n_k),
+     $  sl_in%P_perp_arr(n_k),sl_in%tau_arr(n_k),
+     $  sl_in%D_norm_arr(n_k),
+     $  sl_in%d_beta_arr(n_k),sl_in%gammafac_arr(n_k),
+     $  sl_in%c_beta_arr(n_k),sl_in%lu_arr(n_k),sl_in%Qconv_arr(n_k))
+      RETURN
+      END SUBROUTINE allocate_inputs
+
+      SUBROUTINE allocate_outputs(n_k,sl_out)
+      INTEGER, INTENT(IN) :: n_k
+      TYPE(slayer_outputs_type), INTENT(INOUT) :: sl_out
+
+      ALLOCATE(sl_out%dels_db_arr(n_k),sl_out%gamma_sol_arr(n_k),
+     $         sl_out%gamma_est_arr(n_k)  )
+      RETURN
+      END SUBROUTINE allocate_outputs
 c-----------------------------------------------------------------------
 c     Subprogram 2. growthrate_scan
 c     Set up and iterate stability scans IF no match is found

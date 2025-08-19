@@ -27,6 +27,21 @@ c      INTEGER, PARAMETER :: r8=SELECTED_REAL_KIND(13,307)
           INTEGER :: count
       END TYPE result_type
 
+      TYPE slayer_inputs_type
+          INTEGER, ALLOCATABLE :: qval_arr(:)
+          REAL(r8), ALLOCATABLE :: chi_prof_arr(:),psi_n_arr(:),
+     $      lu_arr(:),Qconv_arr(:),Q_e_arr(:),Q_i_arr(:),c_beta_arr(:),
+     $      d_beta_arr(:),D_norm_arr(:),tau_arr(:),P_perp_arr(:),
+     $      omegas_arr(:),omegas_e_arr(:),omegas_i_arr(:),
+     $      gammafac_arr(:),Re_dp_arr(:),Im_dp_arr(:),d_crit_arr(:)
+      END TYPE slayer_inputs_type
+
+      TYPE slayer_outputs_type
+          COMPLEX(r8), ALLOCATABLE :: dels_db_arr(:),gamma_sol_arr(:),
+     $      gamma_est_arr(:)      
+          REAL(r8), ALLOCATABLE :: r_trace(:,:),i_trace(:,:)
+      END TYPE slayer_outputs_type
+
       ! lnLamb will be updated.
 
       COMPLEX(r8), PARAMETER :: ifac=(0,1)
