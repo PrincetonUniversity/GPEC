@@ -9,8 +9,8 @@ c      INTEGER, PARAMETER :: r8=SELECTED_REAL_KIND(13,307)
 
       REAL(r8) :: mr,nr
       REAL(r8) :: Q_e,Q_i,pr,pe,c_beta,ds,tau,d_i,
-     $            d_beta,D_norm,P_perp,gamma_fac
-      REAL(r8) :: eta,visc,rho_s,lu,omega_e,omega_i,
+     $            d_beta,D_norm,P_perp,P_tor,gamma_fac
+      REAL(r8) :: eta,visc,rho_s,lu,omega_e,omega_i,iota_e,
      $            delta_n,layfac,Qconv,lnLamb,deltaprim,dc_tmp,
      $            d_crit,tau_r,tauk,g_r,g_i,delta_eff
       REAL(r8), DIMENSION(:), ALLOCATABLE :: re_trace,im_trace
@@ -29,10 +29,11 @@ c      INTEGER, PARAMETER :: r8=SELECTED_REAL_KIND(13,307)
 
       TYPE slayer_inputs_type
           INTEGER, ALLOCATABLE :: qval_arr(:)
-          REAL(r8), ALLOCATABLE :: chi_prof_arr(:),psi_n_arr(:),
+          REAL(r8), ALLOCATABLE :: chi_p_arr(:),chi_t_arr(:),
+     $      kappa_arr(:),psi_n_arr(:),
      $      lu_arr(:),Qconv_arr(:),Q_e_arr(:),Q_i_arr(:),c_beta_arr(:),
      $      d_beta_arr(:),D_norm_arr(:),tau_arr(:),P_perp_arr(:),
-     $      omegas_arr(:),omegas_e_arr(:),omegas_i_arr(:),
+     $      P_tor_arr(:),omegas_arr(:),omegas_e_arr(:),omegas_i_arr(:),
      $      gammafac_arr(:),Re_dp_arr(:),Im_dp_arr(:),d_crit_arr(:)
       END TYPE slayer_inputs_type
 

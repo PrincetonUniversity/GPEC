@@ -8,15 +8,16 @@
 c-----------------------------------------------------------------------
 c     calculate parameters.
 c-----------------------------------------------------------------------
-      SUBROUTINE params(n_e,t_e,t_i,omega,chi,dr_val,dgeo_val,
+      SUBROUTINE params(n_e,t_e,t_i,omega,chis,dr_val,dgeo_val,
      $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
 
-      REAL(r8), INTENT(IN) :: n_e,t_e,t_i,omega,chi,dr_val,dgeo_val,
+      REAL(r8), INTENT(IN) :: n_e,t_e,t_i,omega,dr_val,dgeo_val,
      $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff
+      REAL(r8), DIMENSION(3), INTENT(IN) :: chis
 
       LOGICAL, INTENT(IN) :: params_check
 
-      REAL(r8) :: rho,b_l,v_a,Qconv,
+      REAL(r8) :: rho,b_l,v_a,Qconv,K_val,
      $            lbeta,tau_i,tau_h,tau_v
       REAL(r8) :: tau_ee_num,tau_ee_denom,tau_ee,sigma_par_1,
      $            sigma_par_2,sigma_par,tau_perp,Wd,vte,
@@ -53,12 +54,6 @@ c-----------------------------------------------------------------------
       tau_r=mu0*(rs**2.0)*(sigma_par) ! R. Fitzpatrick resistive time scale
       tau_v=tau_r/pr !rho*rs**2.0/visc ! viscous time scale
 
-      IF (ABS(chi) > 0.0) THEN
-          tau_perp = ( rs**2.0 ) / chi
-      ELSE
-          tau_perp = 0.0
-      END IF
-
       ! this one must be anomalous. calculated back from pr.
       visc= rho*rs**2.0/tau_v 
       
@@ -83,11 +78,24 @@ c-----------------------------------------------------------------------
       lbeta=(5.0/3.0)*mu0*n_e*chag*(t_e+t_i)/bt**2.0
       c_beta=(lbeta/(1.0+lbeta))**0.5
 
-      IF (ABS(tau_perp) > 0.0) THEN
-          P_perp = tau_r / tau_perp ! perpendicular magnetic Prandtl number
+      ! CALCULATE Ps
+      ! chi_tor = the anomalous perpendicular ion momentum diffusivity at the rational surface
+      ! chi_perp = the anomalous perpendicular energy diffusivity at the rational surface
+
+      K_val = chis(3)/eta ! kappa/eta
+      Csq = (c_beta**2.0 + (1.0-c_beta**2.0)*K_val ) ! = P_perp
+
+      IF (ABS(Csq) > 0.0) THEN
+        P_perp = Csq
       ELSE
-          P_perp = 0.0
+        tau_perp = ( rs**2.0 ) / chis(1)
       END IF
+
+      tau_perp = ( rs**2.0 ) / chis(1)
+      P_perp = tau_r / tau_perp ! perpendicular magnetic Prandtl number
+
+      tau_tor = ( rs**2.0 ) / chis(2)
+      P_tor = tau_r / tau_tor ! toroidal magnetic Prandtl number
 
       ! this is using Fitzpatrick's tau', we need tau eventually
       d_beta = c_beta*d_i  
@@ -101,28 +109,29 @@ c-----------------------------------------------------------------------
       chi_par_smfp = (1.581*tau_ee*(vte**2.0))/
      $               (1.0+0.2535*Zeff)
 
+      ! chis(1) = chi_perp
       Wd = 0.1
       DO wit = 1,10
 
           chi_par_lmfp = (2.0*R0*vte)/(SQRT(pi)*nr*sval*Wd)
           chi_par = (chi_par_smfp*chi_par_lmfp)/
      $              (chi_par_smfp+chi_par_lmfp)
-          Wd = SQRT(8.0)*((chi/chi_par)**0.25)*
+          Wd = SQRT(8.0)*((chis(1)/chi_par)**0.25)*
      $         (1.0/SQRT((rs/R0)*sval*nr))
       END DO
 
       SELECT CASE(dc_type)
             CASE("lar")
-              dc_tmp = 0.5*(-dr_val)*(pi**1.5)*((chi_par/chi)**0.25)*
+              dc_tmp = 0.5*(-dr_val)*(pi**1.5)*((chi_par/chis(1))**0.25)*
      $                 ( (nr*sval)/(R0*rs) )**0.5
             CASE("rfitzp")
                dc_tmp = -(SQRT(2.0)*(pi**(1.5))*dr_val)/Wd
             CASE("toroidal")
                dc_tmp = 0.5*(-dr_val)*(pi**1.5)*
-     $                  ((chi_par/chi)**0.25)*dgeo_val
+     $                  ((chi_par/chis(1))**0.25)*dgeo_val
             CASE default
                dc_tmp = 0.5*(-dr_val)*(pi**1.5)*
-     $                  ((chi_par/chi)**0.25)*dgeo_val
+     $                  ((chi_par/chis(1))**0.25)*dgeo_val
       END SELECT
 
       ELSE

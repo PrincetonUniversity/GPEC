@@ -254,10 +254,11 @@ c-----------------------------------------------------------------------
       REAL(r8) :: n_e,t_e,n_i,t_i,omega,omega_e,omega_i,
      $     my_qval,my_sval,my_bt,my_rs,my_inpe,zeff,R_0,dgeo_val
       REAL(r8) :: mu_i,tau_i,b_l,v_a,tau_h,l_n,l_t,
-     $            rho,tau_v,chi,Qconv,lbeta,qintb,gammafac
+     $            rho,tau_v,Qconv,lbeta,qintb,gammafac
       REAL(r8) :: tau_ee_num,tau_ee_denom,tau_ee,sigma_par_1,
      $            sigma_par_2,sigma_par,tau_perp,Wd,vte,
      $            dr_val,chi_par_smfp,chi_par_lmfp,chi_par
+      REAL(r8), DIMENSION(3) :: chi_s
       INTEGER :: wit
 
       REAL(r8), DIMENSION(0:128) :: psitor, rhotor
@@ -306,7 +307,7 @@ c     Allocate SLAYER input type arrays
      $  sl_in%Q_e_arr(msing),sl_in%Q_i_arr(msing),
      $  sl_in%psi_n_arr(msing),
      $  sl_in%Re_dp_arr(msing),sl_in%Im_dp_arr(msing),
-     $  sl_in%d_crit_arr(msing),
+     $  sl_in%d_crit_arr(msing),sl_in%P_tor_arr(msing),
      $  sl_in%P_perp_arr(msing),sl_in%tau_arr(msing),
      $  sl_in%D_norm_arr(msing),
      $  sl_in%d_beta_arr(msing),sl_in%gammafac_arr(msing),
@@ -383,7 +384,9 @@ c-----------------------------------------------------------------------
          mu_i = 2.0
          dr_val = dr_vals(ising)
          
-         chi = sl_in%chi_prof_arr(ising)
+         chi_s(1) = sl_in%chi_p_arr(ising) ! chi_perp
+         chi_s(2) = sl_in%chi_t_arr(ising) ! chi_tor
+         chi_s(3) = sl_in%kappa_arr(ising) ! kappa (thermal cond.)
 
          ne_arr(ising) = n_e
          te_arr(ising) = t_e
@@ -407,7 +410,7 @@ c-----------------------------------------------------------------------
          l_t = 0.0
          WRITE(*,*)"$^$ calling params()"
 
-         CALL params(n_e,t_e,t_i,omega,chi,dr_val,dgeo_val,
+         CALL params(n_e,t_e,t_i,omega,chi_s,dr_val,dgeo_val,
      $        l_n,l_t,my_qval,my_sval,my_bt,my_rs,R_0,mu_i,zeff,.false.)
 
 !!!!!!!!!!!
@@ -428,6 +431,7 @@ c-----------------------------------------------------------------------
          sl_in%Im_dp_arr(ising) = Im_dp_diagonal(ising)
          sl_in%d_crit_arr(ising) = dc_tmp
          sl_in%P_perp_arr(ising) = P_perp
+         sl_in%P_tor_arr(ising) = P_tor
          sl_in%Qconv_arr(ising) = tauk
       ENDDO
 

@@ -41,7 +41,9 @@ c-----------------------------------------------------------------------
 
       REAL(r8) :: inQ_min,inQ_max,j_min,j_max,jpower,k_min,k_max,
      $     kpower,ing_step,ing_coarse,iing_coarse,delta_real,
-     $     delta_imag,Qratio,chi
+     $     delta_imag,Qratio
+      REAL(r8), DIMENSION(3) :: chis
+
 
       INTEGER, DIMENSION(:), ALLOCATABLE :: mms,nns
 
@@ -108,7 +110,7 @@ c-----------------------------------------------------------------------
       intau=0.0
       inlu=0.0
       Q0=0.0
-      chi=0.0
+      chis=0.0
       gamma_fac=0.0
       dc_type=""
       delta_prime=(0.0,0.0)
@@ -180,7 +182,7 @@ c-----------------------------------------------------------------------
 c     calculate parameters as needed.
 c-----------------------------------------------------------------------
       IF (params_flag) THEN
-         CALL params(n_e,t_e,t_i,omega,chi,dr_val,dgeo_val,
+         CALL params(n_e,t_e,t_i,omega,chis,dr_val,dgeo_val,
      $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
          inQ=Q
          inQ_e=Q_e
@@ -228,7 +230,7 @@ c-----------------------------------------------------------------------
             mr=REAL(mms(k))
             nr=REAL(nns(k))
             inpr=prs(k)
-            CALL params(n_es(k),t_es(k),t_is(k),omegas(k),chi,dr_val,
+            CALL params(n_es(k),t_es(k),t_is(k),omegas(k),chis,dr_val,
      $           dgeo_val,l_ns(k),l_ts(k),qvals(k),svals(k),bts(k),
      $           rss(k),R0s(k),mu_is(k),zeffs(k),params_check)
             inQ=Q
@@ -293,7 +295,9 @@ c-----------------------------------------------------------------------
          IF (read_eq) THEN
             WRITE(*,*)"$^$ entered read_eq"
 
-            sl_in%chi_prof_arr = chi_prof
+            sl_in%chi_p_arr = chi_p_prof
+            sl_in%chi_t_arr = chi_t_prof
+            sl_in%kappa_arr = kappa_prof
 
             WRITE(*,*)"$^$ entering build_inputs"
 
@@ -310,7 +314,11 @@ c-----------------------------------------------------------------------
             mr = mm
             nr = nn
 
-            CALL params(n_e,t_e,t_i,omega,chi_prof(1),dr_val,dgeo_val,
+            chis(1) = chi_p_prof(1) ! chi_perp
+            chis(2) = chi_t_prof(1) ! chi_tor
+            chis(3) = kappa_prof(1) ! kappa (thermal cond.)
+
+            CALL params(n_e,t_e,t_i,omega,chis,dr_val,dgeo_val,
      $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
 
             IF (ABS(inQ) > 0.0) THEN
@@ -347,6 +355,7 @@ c-----------------------------------------------------------------------
             sl_in%Im_dp_arr = (/ AIMAG(delta_prime) /)
             sl_in%d_crit_arr = (/ dc_tmp /)
             sl_in%P_perp_arr = (/ P_perp /)
+            sl_in%P_tor_arr = (/ P_tor /)
             sl_in%tau_arr = (/ tau /)
             sl_in%D_norm_arr = (/ D_norm /)
             sl_in%d_beta_arr = (/ d_beta /)
@@ -366,6 +375,7 @@ c-----------------------------------------------------------------------
             WRITE(*,*)"sl_in%Q_e_arr(k): ",sl_in%Q_e_arr(k)
             WRITE(*,*)"sl_in%Q_i_arr(k): ",sl_in%Q_i_arr(k)
             WRITE(*,*)"sl_in%P_perp_arr(k): ",sl_in%P_perp_arr(k)
+            WRITE(*,*)"sl_in%P_tor_arr(k): ",sl_in%P_tor_arr(k)
             WRITE(*,*)"sl_in%c_beta_arr(k): ",sl_in%c_beta_arr(k)
             WRITE(*,*)"sl_in%D_norm_arr(k): ",sl_in%D_norm_arr(k)
             WRITE(*,*)"sl_in%tau_arr(k): ",sl_in%tau_arr(k)
@@ -404,7 +414,9 @@ c-----------------------------------------------------------------------
          IF (read_eq) THEN
          
             IF (.NOT. est_gamma_flag) THEN
-               sl_in%chi_prof_arr = chi_prof
+               sl_in%chi_p_arr = chi_p_prof
+               sl_in%chi_t_arr = chi_t_prof
+               sl_in%kappa_arr = kappa_prof
 
                CALL build_inputs(infile,ncfile,sl_in)
 
@@ -416,8 +428,12 @@ c-----------------------------------------------------------------------
 
             IF (.NOT. est_gamma_flag) THEN
 
+            chis(1) = chi_p_prof(1) ! chi_perp
+            chis(2) = chi_t_prof(1) ! chi_tor
+            chis(3) = kappa_prof(1) ! kappa (thermal cond.)
+
             ! Use namelist kinetic inputs instead of equilibrium files
-            CALL params(n_e,t_e,t_i,omega,chi_prof(1),dr_val,dgeo_val,
+            CALL params(n_e,t_e,t_i,omega,chis,dr_val,dgeo_val,
      $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
 
             ! Override desired normalized parameters
@@ -455,6 +471,7 @@ c-----------------------------------------------------------------------
             sl_in%Im_dp_arr = (/ AIMAG(delta_prime) /)
             sl_in%d_crit_arr = (/ dc_tmp /)
             sl_in%P_perp_arr = (/ P_perp /)
+            sl_in%P_tor_arr = (/ P_tor /)
             sl_in%tau_arr = (/ tau /)
             sl_in%D_norm_arr = (/ D_norm /)
             sl_in%d_beta_arr = (/ d_beta /)
@@ -474,10 +491,12 @@ c-----------------------------------------------------------------------
             Q_e = sl_in%Q_e_arr(k)
             Q_i = sl_in%Q_i_arr(k)
             P_perp = sl_in%P_perp_arr(k)
+            P_tor = sl_in%P_tor_arr(k)
             tau = sl_in%tau_arr(k)
             D_norm = sl_in%D_norm_arr(k)
             c_beta = sl_in%c_beta_arr(k)
             tauk = sl_in%Qconv_arr(k)
+            iota_e = Q_e / (Q_e - Q_i)
 
             ! (Deltaprime - d_crit)/S^1/3
             delta_eff = (sl_in%Re_dp_arr(k) - 
@@ -511,7 +530,7 @@ c            delta_eff = Re_deltaprime_arr(k)
             !CALL shrink_array(re_trace, n_trace)
             !CALL shrink_array(im_trace, n_trace)
             n_trace = 100
-            
+
             IF (fitz_flag) THEN
                re_trace = re_trace/tauk
                im_trace = im_trace/tauk
@@ -594,7 +613,7 @@ c-----------------------------------------------------------------------
 
          WRITE(*,*)"running br_th scan"
 
-         CALL params(n_e,t_e,t_i,omega,chi,dr_val,dgeo_val,
+         CALL params(n_e,t_e,t_i,omega,chis,dr_val,dgeo_val,
      $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
          inQ=Q
          inQ_e=Q_e
@@ -1071,7 +1090,7 @@ c-----------------------------------------------------------------------
             DO k=0,knum
                ks(j,k)=k_min+(k_max-k_min)*(REAL(k)/knum)
                
-               CALL params(n_e*ks(j,k),t_e,t_i,omega*js(j,k),chi,dr_val,
+               CALL params(n_e*ks(j,k),t_e,t_i,omega*js(j,k),chis,dr_val,
      $      dgeo_val,l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
                inQ=Q
                inQ_e=Q_e
@@ -1159,7 +1178,7 @@ c-----------------------------------------------------------------------
                ks(j,k)=k_min+(k_max-k_min)*(REAL(k)/knum)
                
                CALL params(n_e,t_e*ks(j,k),t_i*ks(j,k),
-     $              omega*js(j,k),chi,dr_val,dgeo_val,l_n,l_t,qval,
+     $              omega*js(j,k),chis,dr_val,dgeo_val,l_n,l_t,qval,
      $              sval,bt,rs,R0,mu_i,zeff,params_check)
                inQ=Q
                inQ_e=Q_e
@@ -1245,7 +1264,7 @@ c-----------------------------------------------------------------------
                ks(j,k)=k_min+(k_max-k_min)*(REAL(k)/knum)
                
                CALL params(n_e*ks(j,k),t_e*js(j,k),t_i*js(j,k),omega,
-     $              chi,dr_val,dgeo_val,l_n,l_t,qval,sval,bt,rs,R0,
+     $              chis,dr_val,dgeo_val,l_n,l_t,qval,sval,bt,rs,R0,
      $              mu_i,zeff,params_check)
                inQ=Q
                inQ_e=Q_e
@@ -1330,7 +1349,7 @@ c-----------------------------------------------------------------------
                ks(j,k)=k_min+(k_max-k_min)*(REAL(k)/knum)
 
              
-               CALL params(n_e*ks(j,k),t_e,t_i,omega,chi,dr_val,
+               CALL params(n_e*ks(j,k),t_e,t_i,omega,chis,dr_val,
      $              dgeo_val,l_n,l_t,qval,sval,bt*js(j,k),rs,R0,mu_i,
      $              zeff,params_check)
                inQ=Q

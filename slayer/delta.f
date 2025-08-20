@@ -295,28 +295,40 @@ c-----------------------------------------------------------------------
       !!!!!!!!
       !IF(present(inx)) my_p=inx!10.0 ! "starting backwards integration at large q"
       !!!!!!!!
-      my_p=6.0
+      !my_p=6.0
       xmin=1e-6
       xout=xmin
 
       ! SOLVE FOR W BOUNDARY CONDITION
-      IF (D_norm > (P_perp**(1.0/6.0))) THEN
+      IF ((D_norm**2.0) > ((iota_e*P_perp)/(P_tor**(2.0/3.0)))) THEN
+          my_p = ( (P_tor*D_norm**2)/(iota_e*P_tor*P_perp) )**0.25
+          IF (my_p < 6.0) THEN
+            my_p = 6.0
+          END IF
+
           ak = -(g_tmp + ifac*Q_e)
-          bk = P_perp/(2.0*(D_norm**2.0))
+          bk = (iota_e*P_perp*P_tor)/(P_tor*(D_norm**2.0))
 
-          ck_1 = 2.0*(g_tmp + ifac*Q_i)/P_perp
-          ck_2 = (P_perp + (g_tmp + 
-     $     ifac*Q_i)*(D_norm**2.0))/(2.0*P_perp*(D_norm**2.0))
-          ck = (P_perp/(2.0*(D_norm**2.0)))*(1 + ck_1 - ck_2)
+          ck = bk*(1+(g_tmp+ifac*Q_i)*((P_tor+P_perp)/(P_tor*P_perp))-
+     $       (P_perp+(g_tmp + 
+     $       ifac*Q_i)*(D_norm**2.0) )*(iota_e/(P_tor*(D_norm**2.0))))
+        !  ck_1 = 2.0*(g_tmp + ifac*Q_i)/P_perp
+        !  ck_2 = (P_perp + (g_tmp + 
+      !$     ifac*Q_i)*(D_norm**2.0))/(2.0*P_perp*(D_norm**2.0))
+      !    ck = (P_perp/(2.0*(D_norm**2.0)))*(1 + ck_1 - ck_2)
 
-          xk = (ck - SQRT(bk)*(1 - 
-     $     SQRT(bk)*ak))/(2.0*SQRT(bk))
+          xk = (ck - SQRT(bk)*(1 - SQRT(bk)*ak)) / (2.0*SQRT(bk))
 
           W_bound = xk - SQRT(bk)*my_p
       ELSE
+          my_p = 1.0/(P_tor**(1.0/6.0))
+          IF (my_p < 6.0) THEN
+            my_p = 6.0
+          END IF
+
           ak = -(g_tmp + ifac*Q_e)
-          bk = P_perp
-          ck = -ifac*(Q_e - Q_i) + (g_tmp + ifac*Q_i)
+          bk = P_tor
+          ck = -ifac*(Q_e - Q_i)*(P_tor/P_perp) + (g_tmp + ifac*Q_i)
           xk = (ak*bk - ck)/(2.0*SQRT(bk))
 
           W_bound = -1 + xk*my_p - SQRT(bk)*(my_p**3.0)
@@ -398,11 +410,12 @@ c-----------------------------------------------------------------------
       fA = (my_p**2)/(g_tmp + ifac*Q_e + (my_p**2.0))
       fA_prime = (g_tmp + ifac*Q_e - (my_p**2)) / (g_tmp + 
      $          ifac*Q_e + (my_p**2.0))
-      fB = g_tmp*(g_tmp + ifac*Q_i) + 2.0*(g_tmp + 
-     $    ifac*Q_i)*P_perp*(my_p**2.0) + (P_perp**2.0)*(my_p**4.0)
+      fB = g_tmp*(g_tmp + ifac*Q_i) + (g_tmp + 
+     $    ifac*Q_i)*(P_perp+P_tor)*(my_p**2.0) + 
+     $    (P_perp*P_tor)*(my_p**4.0)
       fC = g_tmp + ifac*Q_e + ( P_perp + (g_tmp + 
      $    ifac*Q_i)*(D_norm**2.0))*(my_p**2.0) + 
-     $    2.0*P_perp*(D_norm**2.0)*(my_p**4.0)
+     $    (1.0/iota_e)*P_tor*(D_norm**2.0)*(my_p**4.0)
 
       dWdp(1) = -(fA_prime/my_p)*W(1) - (W(1)**2.0)/my_p + 
      $          (fB/(fA*fC))*(my_p**3.0)

@@ -198,7 +198,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(sl_in%qval_arr(n_k),sl_in%omegas_arr(n_k),
      $  sl_in%Q_e_arr(n_k),sl_in%Q_i_arr(n_k),sl_in%psi_n_arr(n_k),
      $  sl_in%Re_dp_arr(n_k),sl_in%Im_dp_arr(n_k),
-     $  sl_in%d_crit_arr(n_k),
+     $  sl_in%d_crit_arr(n_k),sl_in%P_tor_arr(n_k),
      $  sl_in%P_perp_arr(n_k),sl_in%tau_arr(n_k),
      $  sl_in%D_norm_arr(n_k),
      $  sl_in%d_beta_arr(n_k),sl_in%gammafac_arr(n_k),

@@ -57,9 +57,9 @@ c -----------------------------------------------------------------------
       TYPE(slayer_outputs_type), INTENT(IN) :: sl_out
 
       INTEGER :: i,ncid,r_id,qsing_dim,i_dim,r_dim,qr_id,omegas_id,
-     $    Q_id,Q_e_id,Q_i_id,d_b_id,c_b_id,Dnorm_id,inpr_id,S_id,
+     $    Q_id,Q_e_id,Q_i_id,d_b_id,c_b_id,Dnorm_id,p_perp_id,S_id,
      $    pr_id,dpp_id,dc_id,dels_db_id,gs_id,ge_id,tr_id,tr_dim,
-     $    qsing_id,qc_id
+     $    qsing_id,qc_id,p_tor_id
 
       INTEGER :: run, run_dimid, point_dimid, varids(4)
 
@@ -123,8 +123,10 @@ c -----------------------------------------------------------------------
      $    qsing_dim,S_id))
          CALL sl_check( nf90_def_var(ncid,"psi_n_rational",
      $                            nf90_double,qsing_dim,pr_id) )
-         CALL sl_check( nf90_def_var(ncid,"P",nf90_double,
-     $                            qsing_dim,inpr_id) )
+         CALL sl_check( nf90_def_var(ncid,"P_perp",nf90_double,
+     $                            qsing_dim,p_perp_id) )
+         CALL sl_check( nf90_def_var(ncid,"P_tor",nf90_double,
+     $                            qsing_dim,p_tor_id) )
          !CALL sl_check( nf90_def_var(ncid,"q_rational",nf90_double,
       !$                            qsing_dim,qr_id) )
       END IF
@@ -163,7 +165,8 @@ c -----------------------------------------------------------------------
       !CALL sl_check( nf90_put_var(ncid,Q_id, Q_arr))
       CALL sl_check( nf90_put_var(ncid,Q_e_id, sl_in%Q_e_arr))
       CALL sl_check( nf90_put_var(ncid,Q_i_id, sl_in%Q_i_arr))
-      CALL sl_check( nf90_put_var(ncid,inpr_id, sl_in%P_perp_arr))
+      CALL sl_check( nf90_put_var(ncid,p_perp_id, sl_in%P_perp_arr))
+      CALL sl_check( nf90_put_var(ncid,p_tor_id, sl_in%P_tor_arr))
       CALL sl_check( nf90_put_var(ncid,Dnorm_id, sl_in%D_norm_arr))
 
       CALL sl_check( nf90_put_var(ncid,dpp_id, 
