@@ -31,6 +31,7 @@ c-----------------------------------------------------------------------
       TYPE(bicube_type):: shear, curvature, B_magnitude
 
       LOGICAL :: shear_flag=.TRUE.
+      LOGICAL :: curvature_flag=.TRUE.
 
       CONTAINS
 c-----------------------------------------------------------------------
@@ -205,7 +206,6 @@ c-----------------------------------------------------------------------
 
             CALL spline_eval(sq, psi, 0)
             q_val = sq%f(4)
-            f_psi = sq%f(1) / twopi
 
             IF (g_psi_g_psi > 1.0E-12_r8) THEN
               temp%fs(ipsi, itheta, 1) = 
@@ -257,17 +257,25 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     subprogram 3. curvature_calculation
 c     CAUTION - this does not calculate curvature it only cal kappa dot (delpsi)
+c     κ·∇ψ = (|∇ψ|²/B²)[μ₀p' + (1/2)(∂B²/∂ψ) + (1/2)(∂B²/∂θ)(∇ψ·∇ψ)/(∇ψ·∇θ)]
 c-----------------------------------------------------------------------
-
       SUBROUTINE curvature_calculation
 
       INTEGER :: ipsi, itheta, curvature_unit
       REAL(r8) :: psi, theta
+      REAL(r8) :: B_squared, grad_psi_squared, grad_psi_dot_grad_theta
+      REAL(r8) :: dB2_dpsi, dB2_dtheta, p_prime, mu0_p_prime
       REAL(r8) :: kappa_dot_grad_psi
+      REAL(r8) :: q_val, f_psi, r_minor, eta_norm, R_major_local
+      REAL(r8) :: B_T, B_P, g_psipsi
       REAL(r8), PARAMETER :: pi = 3.141592653589793_r8
       REAL(r8), PARAMETER :: twopi = 2.0_r8 * pi
+      REAL(r8), PARAMETER :: mu0 = 1.0_r8 
+
+      TYPE(bicube_type) :: B_magnitude_spline
 
       CALL bicube_alloc(curvature, rzphi%mx, rzphi%my, 1)
+      CALL bicube_alloc(B_magnitude_spline, rzphi%mx, rzphi%my, 1)
 
       curvature%xs = rzphi%xs
       curvature%ys = rzphi%ys
@@ -275,28 +283,103 @@ c-----------------------------------------------------------------------
       curvature%xtitle = "psi"
       curvature%ytitle = "theta"
 
-      PRINT *, ' > curvature calculation'
+      B_magnitude_spline%xs = rzphi%xs
+      B_magnitude_spline%ys = rzphi%ys
+      B_magnitude_spline%name = "B_magnitude"
+
+      PRINT *, ' > curvature calculation: computing B²'
+
       DO itheta = 0, rzphi%my
          theta = rzphi%ys(itheta)
          DO ipsi = 0, rzphi%mx
             psi = rzphi%xs(ipsi)
             
-            ! 여기서 κ·∇ψ 계산
-            ! 구체적인 공식이 필요해요!
+            CALL spline_eval(sq, psi, 0)
+            q_val = sq%f(4)
+            f_psi = sq%f(1) / twopi
+            
+            ! geometry
+            r_minor = SQRT(MAX(0.0_r8, rzphi%fs(ipsi,itheta,1)))
+            eta_norm = rzphi%fs(ipsi,itheta,2) + theta
+            R_major_local = ro + r_minor * COS(eta_norm * twopi)
+            
+            ! |∇ψ|² = g^psi,psi
+            g_psipsi = w(ipsi,itheta,1,1)**2 + 
+     $                 w(ipsi,itheta,1,2)**2 + 
+     $                 w(ipsi,itheta,1,3)**2
+            
+            ! B field 
+            IF (R_major_local > 1.0E-9_r8) THEN
+               B_T = f_psi / R_major_local
+               B_P = SQRT(g_psipsi) / R_major_local
+               B_magnitude_spline%fs(ipsi, itheta, 1) = B_T**2 + B_P**2
+            ELSE
+               B_magnitude_spline%fs(ipsi, itheta, 1) = 0.0_r8
+            ENDIF
+         END DO
+      END DO
+
+c-----------------------------------------------------------------------
+c     B² spline fitting
+c-----------------------------------------------------------------------
+      CALL bicube_fit(B_magnitude_spline, "extrap", "periodic")
+
+      PRINT *, ' > curvature calculation: computing κ·∇ψ'
+
+      DO itheta = 0, rzphi%my
+         theta = rzphi%ys(itheta)
+         DO ipsi = 0, rzphi%mx
+            psi = rzphi%xs(ipsi)
+            
+            grad_psi_squared = w(ipsi,itheta,1,1)**2 + 
+     $                         w(ipsi,itheta,1,2)**2 + 
+     $                         w(ipsi,itheta,1,3)**2
+            
+            grad_psi_dot_grad_theta = 
+     $           w(ipsi,itheta,1,1)*w(ipsi,itheta,2,1) +
+     $           w(ipsi,itheta,1,2)*w(ipsi,itheta,2,2) +
+     $           w(ipsi,itheta,1,3)*w(ipsi,itheta,2,3)
+            
+            CALL bicube_eval(B_magnitude_spline, psi, theta, 1)
+            B_squared = B_magnitude_spline%f(1)
+            dB2_dpsi = B_magnitude_spline%fx(1)
+            dB2_dtheta = B_magnitude_spline%fy(1)
+            
+            CALL spline_eval(sq, psi, 1)
+            p_prime = sq%f1(2)
+            mu0_p_prime = mu0 * p_prime
+
+            IF (grad_psi_squared > 1.0E-12_r8) THEN
+               kappa_dot_grad_psi = (grad_psi_squared/B_squared) * 
+     $            (mu0_p_prime + 0.5_r8 * dB2_dpsi + 
+     $             0.5_r8 * dB2_dtheta * grad_psi_dot_grad_theta / 
+     $             grad_psi_squared)
+            ELSE
+               kappa_dot_grad_psi = 0.0_r8
+            ENDIF
             
             curvature%fs(ipsi, itheta, 1) = kappa_dot_grad_psi
          END DO
       END DO
 
+c-----------------------------------------------------------------------
+c     curvature spline fitting
+c-----------------------------------------------------------------------
       CALL bicube_fit(curvature, "extrap", "periodic")
-      PRINT *, ' > curvature calculation finished'
 
+c-----------------------------------------------------------------------
+c     file print
+c-----------------------------------------------------------------------
       curvature_unit = 102
-      CALL ascii_open(curvature_unit, "curvature.out", "UNKNOWN")
-      CALL bicube_write_xy(PgradB_spline, .TRUE., .FALSE.
-   $       , curvature_unit, 0, .FALSE.)
-      CALL ascii_close(curvature_unit)
+      IF (curvature_flag) THEN
+         CALL ascii_open(curvature_unit, "curvature.out", "UNKNOWN")
+         CALL bicube_write_xy(curvature, .TRUE., .FALSE.,
+     $                     curvature_unit, 0, .FALSE.)
+         CALL ascii_close(curvature_unit)
+      ENDIF
 
+      PRINT *, ' > curvature calculation finished'
+      PRINT *, ' > curvature(0,0) = ', curvature%fs(0,0,1)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

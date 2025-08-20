@@ -894,7 +894,7 @@ c     PRINT *, ' Computing bernstien form '
 
       CALL metric_calculation
       CALL shear_calculation
-c      CALL shear_out
+      CALL curvature_calculation
 
 c-----------------------------------------------------------------------
 c     terminate.
