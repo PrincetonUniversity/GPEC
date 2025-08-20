@@ -291,12 +291,20 @@ c-----------------------------------------------------------------------
       WRITE(*,*)">>> Estimating growth rate"
 
          IF (read_eq) THEN
+            WRITE(*,*)"$^$ entered read_eq"
 
             sl_in%chi_prof_arr = chi_prof
+
+            WRITE(*,*)"$^$ entering build_inputs"
+
+            WRITE(*,*)"$^$ infile: ",infile
+            WRITE(*,*)"$^$ ncfile: ",ncfile
 
             CALL build_inputs(infile,ncfile,sl_in)
 
             n_k = SIZE(sl_in%qval_arr)
+            CALL allocate_outputs(n_k,sl_out)
+
          ELSE
             n_k = 1
             mr = mm
@@ -324,7 +332,9 @@ c-----------------------------------------------------------------------
                D_norm = inds ! NAMELIST
             END IF
 
+            WRITE(*,*)"$^$ entering allocate_inputs"
             CALL allocate_inputs(n_k,sl_in)
+            WRITE(*,*)"$^$ entering allocate_outputs"
             CALL allocate_outputs(n_k,sl_out)
 
             sl_in%qval_arr = (/ qval /)
@@ -346,12 +356,21 @@ c-----------------------------------------------------------------------
             sl_in%Qconv_arr = (/ tauk /)
          END IF 
 
-         ALLOCATE(sl_out%gamma_est_arr(n_k),sl_out%dels_db_arr(n_k))
          DO k=1,n_k
             WRITE(*,*)
             WRITE(*,'(A,I0,A)') 'Calculating growth rate '//
      $             'estimate on q = ',
      $       sl_in%qval_arr(k),' rational surface'
+
+            WRITE(*,*)"sl_in%Q_e_arr(k): ",sl_in%Q_e_arr(k)
+            WRITE(*,*)"sl_in%Q_e_arr(k): ",sl_in%Q_e_arr(k)
+            WRITE(*,*)"sl_in%Q_i_arr(k): ",sl_in%Q_i_arr(k)
+            WRITE(*,*)"sl_in%P_perp_arr(k): ",sl_in%P_perp_arr(k)
+            WRITE(*,*)"sl_in%c_beta_arr(k): ",sl_in%c_beta_arr(k)
+            WRITE(*,*)"sl_in%D_norm_arr(k): ",sl_in%D_norm_arr(k)
+            WRITE(*,*)"sl_in%tau_arr(k): ",sl_in%tau_arr(k)
+            WRITE(*,*)"sl_in%gammafac_arr(k): ",sl_in%gammafac_arr(k)
+            WRITE(*,*)"sl_in%d_beta_arr(k): ",sl_in%d_beta_arr(k)
 
             dels_db=riccati_del_s(sl_in%Q_e_arr(k),sl_in%Q_e_arr(k), ! NOT using Q_arr
      $                   sl_in%Q_i_arr(k),sl_in%P_perp_arr(k),
@@ -359,6 +378,8 @@ c-----------------------------------------------------------------------
      $                   sl_in%tau_arr(k),5.0*sl_in%D_norm_arr(k))
 
             del_s = dels_db * sl_in%d_beta_arr(k)
+
+            WRITE(*,*)"del_s: ",del_s
 
             sl_out%gamma_est_arr(k) = sl_in%gammafac_arr(k)/del_s
             sl_out%dels_db_arr(k) = dels_db
@@ -382,14 +403,18 @@ c-----------------------------------------------------------------------
 
          IF (read_eq) THEN
          
-            sl_in%chi_prof_arr = chi_prof
+            IF (.NOT. est_gamma_flag) THEN
+               sl_in%chi_prof_arr = chi_prof
 
-            CALL build_inputs(infile,ncfile,sl_in)
+               CALL build_inputs(infile,ncfile,sl_in)
 
-            n_k = SIZE(sl_in%qval_arr)
-
+               n_k = SIZE(sl_in%qval_arr)
+               CALL allocate_outputs(n_k,sl_out)
+            END IF
          ELSE
             n_k = 1
+
+            IF (.NOT. est_gamma_flag) THEN
 
             ! Use namelist kinetic inputs instead of equilibrium files
             CALL params(n_e,t_e,t_i,omega,chi_prof(1),dr_val,dgeo_val,
@@ -415,8 +440,10 @@ c-----------------------------------------------------------------------
                D_norm = inds ! NAMELIST
             END IF
 
-            CALL allocate_inputs(n_k,sl_in)
-            CALL allocate_outputs(n_k,sl_out)
+            IF (.NOT. est_gamma_flag) THEN
+               CALL allocate_inputs(n_k,sl_in)
+               CALL allocate_outputs(n_k,sl_out)
+            END IF
 
             sl_in%qval_arr = (/ qval /)
             sl_in%omegas_arr = (/ omega /)
@@ -435,10 +462,11 @@ c-----------------------------------------------------------------------
             sl_in%c_beta_arr = (/ c_beta /)
             sl_in%lu_arr = (/ lu /)
             sl_in%Qconv_arr = (/ tauk /)
+
+            END IF
          END IF 
 
-         ALLOCATE(sl_out%gamma_sol_arr(n_k)) 
-
+         ALLOCATE(re_trace(100),im_trace(100))
          DO k=1,n_k
             WRITE(*,*)
             WRITE(*,'(A,I0,A)') 'Calculating growth rate on q = ',
@@ -457,7 +485,6 @@ c-----------------------------------------------------------------------
 c            delta_eff = Re_deltaprime_arr(k)
             pe = 0.0
 
-            ALLOCATE(re_trace(100),im_trace(100))
             re_trace = 0.0
             im_trace = 0.0
             n_trace = 1
@@ -474,15 +501,17 @@ c            delta_eff = Re_deltaprime_arr(k)
                re_trace(1) = -Q_e
             END IF
 
+            WRITE(*,*)"$^$ calling newton_root(): "
             CALL newton_root(g_r,g_i,1,fitz_flag)
 
             WRITE(*,*)
             WRITE(*,'(A,F0.3,A)') 'Success! Growth rate = ', 
      $            g_r/tauk, ' [Hz]'
 
-            CALL shrink_array(re_trace, n_trace)
-            CALL shrink_array(im_trace, n_trace)
-
+            !CALL shrink_array(re_trace, n_trace)
+            !CALL shrink_array(im_trace, n_trace)
+            n_trace = 100
+            
             IF (fitz_flag) THEN
                re_trace = re_trace/tauk
                im_trace = im_trace/tauk

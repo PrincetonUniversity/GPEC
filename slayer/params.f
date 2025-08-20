@@ -52,6 +52,7 @@ c-----------------------------------------------------------------------
       !tau_r=mu0*rs**2.0/eta ! resistive time scale
       tau_r=mu0*(rs**2.0)*(sigma_par) ! R. Fitzpatrick resistive time scale
       tau_v=tau_r/pr !rho*rs**2.0/visc ! viscous time scale
+
       IF (ABS(chi) > 0.0) THEN
           tau_perp = ( rs**2.0 ) / chi
       ELSE

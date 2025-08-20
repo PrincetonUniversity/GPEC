@@ -161,9 +161,9 @@ c-----------------------------------------------------------------------
 
       P_hat = P_perp / D_norm**6.0 ! P_perp, 0.377 for Pperp_hat benchmark
 
-      !WRITE(*,*)"riccati_del_s inpr = ",inpr
-      !WRITE(*,*)"riccati_del_s Q_e = ",Q_e
-      !WRITE(*,*)"riccati_del_s ind_beta = ",ind_beta
+      Q_e = inQ_e
+      Q_i = inQ_i
+      P_perp = inpr
 
       alpha = (P_hat/(1+1/tau))**0.5 ! this is actually tau', we need tau
       W(1) = -alpha*my_q**2 - 0.5
@@ -236,6 +236,11 @@ c-----------------------------------------------------------------------
       Q_hat = (Q_e*(1+tau)/tau) / D_norm**4.0 ! Q_star = Q_e * (1+tau), 2.4e-02 for benchmark
       P_perp_hat = P_perp / D_norm**6.0 ! 0.377 for benchmark
       P_tor_hat = P_perp / D_norm**6.0 ! 1.15 for benchmark
+
+      !WRITE(*,*)"w_der_del_s P_perp_hat = ",P_perp_hat
+      !WRITE(*,*)"w_der_del_s P_tor_hat = ",P_tor_hat
+      !WRITE(*,*)"w_der_del_s Q_hat = ",Q_hat
+
       !WRITE(*,*)"w_der inpr = ",pr
       !WRITE(*,*)"w_der Q_e = ",Q_e
       !WRITE(*,*)"w_der D_beta_norm = ",D_beta_norm

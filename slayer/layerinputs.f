@@ -44,6 +44,8 @@ c-----------------------------------------------------------------------
       INTEGER :: bt0_len,ro_len,psio_len,mpsi_len,
      $             msing_len,nn_len,dr_len    ! Attribute lengths
 
+      WRITE(*,*)"$^$ opening netcdf file",ncfile
+
         ! Open the NetCDF file
       stat = nf90_open(path=ncfile,mode=NF90_WRITE,ncid=ncid)
       CALL sl_check(stat)  ! Error handling
@@ -59,7 +61,7 @@ c-----------------------------------------------------------------------
 
       ! Allocate Arrays (based on dimension)
       ALLOCATE(Re_dp_diagonal(msing),q_rational(msing),
-     $           psi_n_rational(msing),shear(msing),
+     $           psi_n_rational(msing),shear(msing),dgeo(msing),
      $           resm(msing),Im_dp_diagonal(msing),dr_vals(msing))
       ALLOCATE(delta_prime(msing, msing,2))
 
@@ -82,8 +84,8 @@ c-----------------------------------------------------------------------
       !ro_id=0
 
       ALLOCATE(my_bt0(INT(bt0_len)),r_o(INT(ro_len)),
-     $ my_psio(INT(psio_len)),
-     $mpsi(INT(mpsi_len)),nn(INT(nn_len)))
+     $         my_psio(INT(psio_len)),
+     $         mpsi(INT(mpsi_len)),nn(INT(nn_len)))
 
       ! Get Variable IDs
       stat = nf90_inq_varid(ncid, "Delta_prime", dp_id)
@@ -277,6 +279,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     Read in STRIDE netcdf
 c-----------------------------------------------------------------------
+
       CALL read_stride_netcdf_diagonal(ncfile,msing,Re_dp_diagonal,
      $           Im_dp_diagonal,q_rational,psi_n_rational,dgeo,
      $           shear,r_o,my_bt0,my_psio,dr_vals,mpsi_arr,nn,resm)
@@ -298,6 +301,8 @@ c-----------------------------------------------------------------------
 
 c     Allocate SLAYER input type arrays
       ALLOCATE(sl_in%qval_arr(msing),sl_in%omegas_arr(msing),
+     $  sl_in%omegas_e_arr(msing),
+     $  sl_in%omegas_i_arr(msing),!sl_in%chi_prof_arr(msing),
      $  sl_in%Q_e_arr(msing),sl_in%Q_i_arr(msing),
      $  sl_in%psi_n_arr(msing),
      $  sl_in%Re_dp_arr(msing),sl_in%Im_dp_arr(msing),
@@ -377,7 +382,7 @@ c-----------------------------------------------------------------------
          R_0 = r_o(1)
          mu_i = 2.0
          dr_val = dr_vals(ising)
-
+         
          chi = sl_in%chi_prof_arr(ising)
 
          ne_arr(ising) = n_e
@@ -396,9 +401,12 @@ c-----------------------------------------------------------------------
          nrs = real(nns,4)
 
          nns_arr(ising) = nn(1)
+         nr = nn(1)
 
          l_n = 0.0
          l_t = 0.0
+         WRITE(*,*)"$^$ calling params()"
+
          CALL params(n_e,t_e,t_i,omega,chi,dr_val,dgeo_val,
      $        l_n,l_t,my_qval,my_sval,my_bt,my_rs,R_0,mu_i,zeff,.false.)
 
@@ -407,14 +415,14 @@ c-----------------------------------------------------------------------
 
          sl_in%qval_arr(ising) = INT(my_qval)
          sl_in%lu_arr(ising)=lu
-         sl_in%Q_e_arr(ising)=Q_e
-         sl_in%Q_i_arr(ising)=Q_i
+         sl_in%Q_e_arr(ising)=-tauk*omega_e ! skipping params() calculation
+         sl_in%Q_i_arr(ising)=-tauk*omega_i ! skipping params() calculation
          sl_in%c_beta_arr(ising)=c_beta
          sl_in%d_beta_arr(ising)=d_beta
          sl_in%D_norm_arr(ising)=D_norm
          sl_in%tau_arr(ising)=tau
          sl_in%omegas_arr(ising) = omega
-
+         sl_in%psi_n_arr(ising) = respsi
          sl_in%gammafac_arr(ising) = gammafac
          sl_in%Re_dp_arr(ising) = Re_dp_diagonal(ising)
          sl_in%Im_dp_arr(ising) = Im_dp_diagonal(ising)
