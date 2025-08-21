@@ -17,7 +17,7 @@ c-----------------------------------------------------------------------
 
       LOGICAL, INTENT(IN) :: params_check
 
-      REAL(r8) :: rho,b_l,v_a,Qconv,K_val,
+      REAL(r8) :: rho,b_l,v_a,Qconv,K_val,Csq,tau_tor,
      $            lbeta,tau_i,tau_h,tau_v
       REAL(r8) :: tau_ee_num,tau_ee_denom,tau_ee,sigma_par_1,
      $            sigma_par_2,sigma_par,tau_perp,Wd,vte,
@@ -122,7 +122,7 @@ c-----------------------------------------------------------------------
 
       SELECT CASE(dc_type)
             CASE("lar")
-              dc_tmp = 0.5*(-dr_val)*(pi**1.5)*((chi_par/chis(1))**0.25)*
+              dc_tmp=0.5*(-dr_val)*(pi**1.5)*((chi_par/chis(1))**0.25)*
      $                 ( (nr*sval)/(R0*rs) )**0.5
             CASE("rfitzp")
                dc_tmp = -(SQRT(2.0)*(pi**(1.5))*dr_val)/Wd
@@ -130,8 +130,7 @@ c-----------------------------------------------------------------------
                dc_tmp = 0.5*(-dr_val)*(pi**1.5)*
      $                  ((chi_par/chis(1))**0.25)*dgeo_val
             CASE default
-               dc_tmp = 0.5*(-dr_val)*(pi**1.5)*
-     $                  ((chi_par/chis(1))**0.25)*dgeo_val
+               dc_tmp = 0.0
       END SELECT
 
       ELSE

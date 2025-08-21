@@ -17,7 +17,7 @@ c-----------------------------------------------------------------------
 c     subprogram 1. read_stride_netcdf_diagonal.
 c     Read STRIDE netcdf file for SLAYER inputs only.
 c-----------------------------------------------------------------------
-      SUBROUTINE read_stride_netcdf_diagonal(ncfile,msing,
+      SUBROUTINE read_stride_netcdf_diagonal(ncfile,msing,dp_mat,
      $   Re_dp_diagonal,Im_dp_diagonal,q_rational,psi_n_rational,dgeo,
      $   shear,r_o,my_bt0,my_psio,dr_vals,mpsi,nn,resm)
 
@@ -25,6 +25,7 @@ c-----------------------------------------------------------------------
       CHARACTER(512), INTENT(IN) :: ncfile
       REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) ::
      $                                 Re_dp_diagonal,Im_dp_diagonal
+      REAL(r8), DIMENSION(:,:,:), ALLOCATABLE, INTENT(OUT):: dp_mat
       REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: q_rational,
      $                                     psi_n_rational, shear,dgeo
       REAL(r8), DIMENSION(:),ALLOCATABLE,INTENT(OUT) :: r_o,my_bt0,
@@ -39,7 +40,6 @@ c-----------------------------------------------------------------------
      $  dp_id, qr_id,pr_id,dgeo_id,shear_id,ro_id,bt0_id,psio_id,
      $  mpsi_id,msing_id,nn_id,resm_id,drr_id ! Explicit kind for NetCDF variables
       INTEGER(kind=nf90_int), DIMENSION(1) :: start, count ! Explicit kind for NetCDF variables
-      REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: delta_prime
       INTEGER :: i
       INTEGER :: bt0_len,ro_len,psio_len,mpsi_len,
      $             msing_len,nn_len,dr_len    ! Attribute lengths
@@ -63,7 +63,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(Re_dp_diagonal(msing),q_rational(msing),
      $           psi_n_rational(msing),shear(msing),dgeo(msing),
      $           resm(msing),Im_dp_diagonal(msing),dr_vals(msing))
-      ALLOCATE(delta_prime(msing, msing,2))
+      ALLOCATE(dp_mat(msing, msing,2))
 
       stat = nf90_inquire_attribute(ncid,ro_id,"ro",len = ro_len)
       CALL sl_check(stat)
@@ -114,8 +114,8 @@ c-----------------------------------------------------------------------
       stat = nf90_get_att(ncid, nn_id, "n", nn)
       CALL sl_check(stat)
 
-      ! Read the diagonal of delta_prime. The results will be put on a 1D temporary array.
-      stat = nf90_get_var(ncid, dp_id, delta_prime,start=(/ 1,1,1 /))
+      ! Read the diagonal of delta prime. The results will be put on a 1D temporary array.
+      stat = nf90_get_var(ncid, dp_id, dp_mat,start=(/ 1,1,1 /))
       CALL sl_check(stat)
       ! Read 1D variables
       stat = nf90_get_var(ncid, qr_id, q_rational)
@@ -133,11 +133,10 @@ c-----------------------------------------------------------------------
 
       ! Extract Diagonal, with 3rd index signifying REAL part
       DO i = 1, msing
-        Re_dp_diagonal(i) = delta_prime(i, i, 1)
-        Im_dp_diagonal(i) = delta_prime(i, i, 2)
+        Re_dp_diagonal(i) = dp_mat(i, i, 1)
+        Im_dp_diagonal(i) = dp_mat(i, i, 2)
       END DO
       ! Clean Up
-      DEALLOCATE(delta_prime)
       stat = nf90_close(ncid)
       CALL sl_check(stat)
 
@@ -263,7 +262,7 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(0:128) :: psitor, rhotor
       REAL(r8), DIMENSION(:), ALLOCATABLE :: my_rhotor,my_psitor
-
+      REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: dp_mat
       REAL(r8), DIMENSION(:), ALLOCATABLE :: Re_dp_diagonal,dr_arr,
      $           q_rational,shear,r_o,my_bt0,my_psio,mpsi_arr,
      $           omegas_e_arr,omegas_i_arr,Im_dp_diagonal,dr_vals,
@@ -281,9 +280,10 @@ c-----------------------------------------------------------------------
 c     Read in STRIDE netcdf
 c-----------------------------------------------------------------------
 
-      CALL read_stride_netcdf_diagonal(ncfile,msing,Re_dp_diagonal,
-     $           Im_dp_diagonal,q_rational,psi_n_rational,dgeo,
-     $           shear,r_o,my_bt0,my_psio,dr_vals,mpsi_arr,nn,resm)
+      CALL read_stride_netcdf_diagonal(ncfile,msing,dp_mat,
+     $           Re_dp_diagonal,Im_dp_diagonal,q_rational,
+     $           psi_n_rational,dgeo,shear,r_o,my_bt0,my_psio,dr_vals,
+     $           mpsi_arr,nn,resm)
       WRITE(*,*)"msing_out=",msing
       WRITE(*,*)"Re_dp_diagonal=",Re_dp_diagonal
       WRITE(*,*)"Im_dp_diagonal=",Im_dp_diagonal
@@ -302,7 +302,7 @@ c-----------------------------------------------------------------------
 
 c     Allocate SLAYER input type arrays
       ALLOCATE(sl_in%qval_arr(msing),sl_in%omegas_arr(msing),
-     $  sl_in%omegas_e_arr(msing),
+     $  sl_in%omegas_e_arr(msing),sl_in%dp_matrix(msing,msing),
      $  sl_in%omegas_i_arr(msing),!sl_in%chi_prof_arr(msing),
      $  sl_in%Q_e_arr(msing),sl_in%Q_i_arr(msing),
      $  sl_in%psi_n_arr(msing),
@@ -341,6 +341,9 @@ c-----------------------------------------------------------------------
      $          tfac,wefac,wpfac,.false.)
 
       CALL equil_read(out_unit)
+
+      ! Input Delta' matrix
+      sl_in%dp_matrix(:,:) = CMPLX(dp_mat(:,:,1),dp_mat(:,:,2))
 
 c-----------------------------------------------------------------------
 c     loop across singular surfaces, evaluate spline quantities.

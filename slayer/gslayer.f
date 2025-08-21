@@ -374,6 +374,46 @@ c-----------------------------------------------------------------------
       END SUBROUTINE grow_array
 c
 c
+c
+c-----------------------------------------------------------------------
+c     Subprogram 6. determinant
+c     Increase scan array size IF necessary
+c-----------------------------------------------------------------------
+      SUBROUTINE calc_determinant(matk, nk, detk)
+      IMPLICIT NONE
+            
+      ! Arguments
+      INTEGER, INTENT(IN) :: nk                           ! Matrix size (2 or 3)
+      COMPLEX(r8), DIMENSION(nk,nk), INTENT(IN) :: matk      ! Input matrix
+      COMPLEX(r8), INTENT(OUT) :: detk                        ! Determinant result
+      INTEGER :: status                     ! Status (0=success, -1=error)
+            
+      ! Local variables
+            
+      status = 0  ! Initialize status as success
+            
+      SELECT CASE (nk)
+        CASE (2)
+        ! 2x2 determinant: ad - bc
+        detk = matk(1,1) * matk(2,2) - matk(1,2) * matk(2,1)
+                    
+        CASE (3)
+        ! 3x3 determinant using cofactor expansion along first row
+        detk = matk(1,1)*(matk(2,2)*matk(3,3)-matk(2,3)
+     $      *matk(3,2))-matk(1,2)*(matk(2,1)*matk(3,3)
+     $      -matk(2,3)*matk(3,1))+matk(1,3)*(matk(2,1)
+     $      *matk(3,2)-matk(2,2)*matk(3,1))
+                    
+        CASE default
+        ! Unsupported matrix size
+            detk = (0.0, 0.0)
+            status = -1
+                    
+      END SELECT
+      RETURN
+      END SUBROUTINE calc_determinant
+c
+c
 c     Adapted from
       SUBROUTINE newton_root(g_r, g_i, verbose, fitz_flag)
       LOGICAL, INTENT(IN) :: fitz_flag

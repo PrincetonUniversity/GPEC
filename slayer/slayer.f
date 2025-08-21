@@ -31,26 +31,26 @@ c-----------------------------------------------------------------------
      $     Pe_flag,verbose,ascii_flag,bin_flag,netcdf_flag,
      $     bal_flag,stability_flag,riccatiscan_flag,input_flag,
      $     params_check,stabscan_flag,read_eq,est_gamma_flag,
-     $     match_gamma_flag,fitz_flag,br_th_flag
-      REAL(r8) :: n_e,t_e,t_i,omega,omega0,scan_radius,
-     $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,dr_val,dgeo_val
+     $     match_gamma_flag,fitz_flag,coupling_flag,br_th_flag
+      REAL(r8) :: n_e,t_e,t_i,omega,omega0,scan_width,l_n,l_t,
+     $     qval,sval,bt,rs,R0,mu_i,zeff,dr_val,dgeo_val
       REAL(r8) :: inQ,inQ_e,inQ_i,inpr,inpe,inc_beta,inds,intau,inlu
       REAL(r8) :: psi0,jxb,Q0,Q_sol,br_th,d_b,Residual
       COMPLEX(r8) :: delta,delta_n_p,dels_db,del_s,lar_gamma,
-     $               tmp_gamma,ingamma,delta_prime
+     $               tmp_gamma,ingamma,delta_prime,det_val
 
       REAL(r8) :: inQ_min,inQ_max,j_min,j_max,jpower,k_min,k_max,
      $     kpower,ing_step,ing_coarse,iing_coarse,delta_real,
      $     delta_imag,Qratio
-      REAL(r8), DIMENSION(3) :: chis
-
+      REAL(r8) :: chis(3)
+      COMPLEX(r8), ALLOCATABLE :: delta_Q(:,:),result_matrix(:,:)
 
       INTEGER, DIMENSION(:), ALLOCATABLE :: mms,nns
 
       REAL(r8), DIMENSION(:), ALLOCATABLE :: jxbl,bal,
      $        prs,n_es,t_es,t_is,omegas,l_ns,l_ts,svals,qvals,
      $        bts,rss,R0s,mu_is,zeffs,Q_soll,br_thl,pes
-      REAL(r8), DIMENSION(8) :: chi_prof
+      REAL(r8), DIMENSION(8) :: chi_p_prof, chi_t_prof, kappa_prof
       REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs
       REAL(r8), DIMENSION(:,:), ALLOCATABLE ::
      $     js,ks,psis,jxbs,Q_sols,br_ths
@@ -64,12 +64,12 @@ c-----------------------------------------------------------------------
 
       NAMELIST/slayer_input/input_flag,infile,
      $     ncfile,params_flag,mm,nn,n_e,t_e,t_i,sval,bt,rs,R0,omega,
-     $     l_t,l_n,qval,mu_i,zeff,dr_val,dgeo_val,chi_prof,inpr,inpe,
-     $     inQ,inQ_e,inQ_i,inc_beta,inds,intau,Q0,delta_prime,
-     $     delta_n_p,ingamma
-      NAMELIST/slayer_control/inum,jnum,knum,Q_num,scan_radius,
-     $     dc_type,read_eq,fitz_flag,QPscan_flag,Qscan_flag,
-     $     QPescan_flag,Qbscan_flag,onscan_flag,otscan_flag,
+     $     l_t,l_n,qval,mu_i,zeff,dr_val,dgeo_val,chi_p_prof,
+     $     chi_t_prof,kappa_prof,inpr,inpe,inQ,inQ_e,inQ_i,inc_beta,
+     $     inds,intau,Q0,delta_prime,delta_n_p,ingamma
+      NAMELIST/slayer_control/inum,jnum,knum,Q_num,scan_width,
+     $     dc_type,read_eq,fitz_flag,coupling_flag,QPscan_flag,
+     $     Qscan_flag,QPescan_flag,Qbscan_flag,onscan_flag,otscan_flag,
      $     ntscan_flag,nbtscan_flag,parflow_flag,peohmonly_flag,
      $     Pe_flag,layfac
       NAMELIST/slayer_output/verbose,ascii_flag,bin_flag,netcdf_flag,
@@ -103,7 +103,9 @@ c-----------------------------------------------------------------------
       inQ_e=0.0
       inQ_i=0.0
       inpr=0.0
-      chi_prof=0.0
+      chi_p_prof=0.0
+      chi_t_prof=0.0
+      kappa_prof=0.0
       inpe=0.0
       inc_beta=0.0
       inds=0.0
@@ -120,7 +122,7 @@ c-----------------------------------------------------------------------
       jnum=500 ! resolution for 2d scan along with Q,omega.
       knum=100 ! resolution for 2d scan alont with the other.
       Q_num=100 ! resolution for stab. scan along Re(Q) axis
-      scan_radius = 2.0
+      scan_width = 2.0
       in_unit=1
       out_unit=2
       out2_unit=3
@@ -132,6 +134,7 @@ c-----------------------------------------------------------------------
       est_gamma_flag=.FALSE.
       match_gamma_flag=.FALSE.
       fitz_flag=.FALSE.
+      coupling_flag=.FALSE.
       QPscan_flag=.FALSE. ! scan (Q,P) space for delta and torque.
       QPescan_flag=.FALSE. ! scan (Q,Pe) space for delta and torque.
       Qbscan_flag=.FALSE. ! scan (Q,beta) space for delta and torque.
@@ -177,6 +180,12 @@ c-----------------------------------------------------------------------
          sn=ADJUSTL(sn)
       ELSE
          WRITE(UNIT=sn,FMT='(I2)') nn
+      ENDIF
+      IF (mm<10) THEN
+         WRITE(UNIT=sm,FMT='(I1)') nn
+         sm=ADJUSTL(sm)
+      ELSE
+         WRITE(UNIT=sm,FMT='(I2)') nn
       ENDIF
 c-----------------------------------------------------------------------
 c     calculate parameters as needed.
@@ -484,6 +493,8 @@ c-----------------------------------------------------------------------
          END IF 
 
          ALLOCATE(re_trace(100),im_trace(100))
+         ALLOCATE(sl_out%r_trace(n_k,100),
+     $            sl_out%i_trace(n_k,100))
          DO k=1,n_k
             WRITE(*,*)
             WRITE(*,'(A,I0,A)') 'Calculating growth rate on q = ',
@@ -542,9 +553,6 @@ c            delta_eff = Re_deltaprime_arr(k)
             END IF
          ENDDO 
 
-         ALLOCATE(sl_out%r_trace(n_k,n_trace),
-     $            sl_out%i_trace(n_k,n_trace))
-
          sl_out%r_trace(k,:) = re_trace
          sl_out%i_trace(k,:) = im_trace
 
@@ -557,9 +565,9 @@ c            delta_eff = Re_deltaprime_arr(k)
             WRITE(*,*)"------------------------------------------"
             WRITE(*,'(A,F0.1)')' >>> Running [Re(Q),'//
      $            'Im(Q)] scan with radius = ',
-     $                scan_radius
+     $                scan_width
 
-            ing_step = (2.0 * scan_radius) / (Q_num - 1)
+            ing_step = (2.0 * scan_width) / (Q_num - 1)
             count = 0
       
             ALLOCATE(inQs(1:(Q_num+1)),iinQs(1:Q_num))
@@ -567,8 +575,8 @@ c            delta_eff = Re_deltaprime_arr(k)
 
             DO i = 1, (Q_num+1)
                DO j = 1, Q_num
-                  ing_coarse = -scan_radius + (i - 1) * ing_step
-                  iing_coarse = -scan_radius + (j - 1) * ing_step
+                  ing_coarse = -scan_width + (i - 1) * ing_step
+                  iing_coarse = -scan_width + (j - 1) * ing_step
                   ! Evaluate riccati function
                   g_tmp = CMPLX(ing_coarse,iing_coarse)
                   IF (fitz_flag) THEN
@@ -589,7 +597,7 @@ c            delta_eff = Re_deltaprime_arr(k)
             ENDDO
 
             OPEN(UNIT=out_unit,FILE="slayer_stability_n"//
-     $         TRIM(sn)//".out", STATUS="UNKNOWN")
+     $         TRIM(sn)//"m"//TRIM(sm)//".out", STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,4(a17))') "RE(Q)",
      $           "IM(Q)","RE(delta)","IM(delta)"
             DO i=1,Q_num+1
@@ -602,6 +610,88 @@ c            delta_eff = Re_deltaprime_arr(k)
             CLOSE(out_unit)
 
          ENDIF 
+
+         IF (coupling_flag) THEN
+            WRITE(*,*)"------------------------------------------"
+            WRITE(*,'(A,F0.1)')' >>> Running [Re(Q),'//
+     $            'Im(Q)] determinant scan with radius = ',
+     $                scan_width
+
+            ing_step = (2.0 * scan_width) / (Q_num - 1)
+            count = 0
+
+            IF (.NOT. stabscan_flag) THEN
+            ALLOCATE(inQs(1:(Q_num+1)),iinQs(1:Q_num))
+            ALLOCATE(deltas(1:(Q_num+1),1:Q_num))
+            END IF
+
+            inQs=0.0; iinQs=0.0; deltas=(0.0,0.0)
+            ALLOCATE(delta_Q(n_k,n_k))
+            delta_Q=(0.0,0.0)
+
+            DO i = 1, (Q_num+1)
+               DO j = 1, Q_num
+                  ing_coarse = -scan_width + (i - 1) * ing_step
+                  iing_coarse = -scan_width + (j - 1) * ing_step
+                  inQs(i) = ing_coarse
+                  iinQs(j) = iing_coarse
+
+                  ! Evaluate riccati function
+                  g_tmp = CMPLX(ing_coarse,iing_coarse)
+                  IF (n_k == 1) THEN
+                     WRITE(*,*)"Error: no coupling for msing = 1"
+                     stop
+                  ELSEIF (n_k == 2) THEN
+                     DO k=1,2
+                        Q_e = sl_in%Q_e_arr(k)
+                        Q_i = sl_in%Q_i_arr(k)
+                        P_perp = sl_in%P_perp_arr(k)
+                        P_tor = sl_in%P_tor_arr(k)
+                        tau = sl_in%tau_arr(k)
+                        D_norm = sl_in%D_norm_arr(k)
+                        c_beta = sl_in%c_beta_arr(k)
+                        tauk = sl_in%Qconv_arr(k)
+                        iota_e = Q_e / (Q_e - Q_i)
+
+                        ! (Deltaprime - d_crit)/S^1/3
+                        delta_eff = (sl_in%Re_dp_arr(k) - 
+     $          sl_in%d_crit_arr(k))/(sl_in%lu_arr(k)**(1.0/3.0))
+
+                        delta=riccati_f(((g_tmp*sl_in%Qconv_arr(1))/
+     $                        tauk))                   
+                        delta_Q(k,k) = delta
+                     END DO
+
+                     ! Calculate Deltaprime - Delta(Q)
+                     result_matrix = sl_in%dp_matrix - delta_Q
+                        
+                     ! Calculate determinant
+                     CALL calc_determinant(result_matrix, n_k, det_val)
+                     deltas(i,j) = det_val
+                  ELSEIF (n_k == 3) THEN
+                     WRITE(*,*)"Error: no support for msing = 3"
+                     stop
+                  ELSE
+                     WRITE(*,*)"Error: no support for msing < 3"
+                     stop
+                  END IF
+               ENDDO
+            ENDDO
+
+            OPEN(UNIT=out_unit,FILE="slayer_determinants_n"//
+     $         TRIM(sn)//".out", STATUS="UNKNOWN")
+            WRITE(out_unit,'(1x,4(a17))') "RE(Q)",
+     $           "IM(Q)","RE(det)","IM(det)"
+            DO i=1,Q_num+1
+               DO j=1,Q_num
+                  WRITE(out_unit,'(1x,4(es17.8e3))')
+     $                 inQs(i),iinQs(j),
+     $                 REAL(deltas(i,j)),AIMAG(deltas(i,j))
+               ENDDO
+            ENDDO
+            CLOSE(out_unit)
+
+         END IF
 
          CALL output_gamma(est_gamma_flag,sl_in,sl_out)
          stop
@@ -1090,8 +1180,9 @@ c-----------------------------------------------------------------------
             DO k=0,knum
                ks(j,k)=k_min+(k_max-k_min)*(REAL(k)/knum)
                
-               CALL params(n_e*ks(j,k),t_e,t_i,omega*js(j,k),chis,dr_val,
-     $      dgeo_val,l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
+               CALL params(n_e*ks(j,k),t_e,t_i,omega*js(j,k),chis,
+     $                    dr_val,dgeo_val,l_n,l_t,qval,sval,bt,rs,
+     $                    R0,mu_i,zeff,params_check)
                inQ=Q
                inQ_e=Q_e
                inQ_i=Q_i

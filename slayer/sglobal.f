@@ -35,6 +35,7 @@ c      INTEGER, PARAMETER :: r8=SELECTED_REAL_KIND(13,307)
      $      d_beta_arr(:),D_norm_arr(:),tau_arr(:),P_perp_arr(:),
      $      P_tor_arr(:),omegas_arr(:),omegas_e_arr(:),omegas_i_arr(:),
      $      gammafac_arr(:),Re_dp_arr(:),Im_dp_arr(:),d_crit_arr(:)
+          COMPLEX(r8), ALLOCATABLE :: dp_matrix(:,:)
       END TYPE slayer_inputs_type
 
       TYPE slayer_outputs_type
@@ -47,6 +48,6 @@ c      INTEGER, PARAMETER :: r8=SELECTED_REAL_KIND(13,307)
 
       COMPLEX(r8), PARAMETER :: ifac=(0,1)
 
-      CHARACTER(2) :: sn
-      
+      CHARACTER(2) :: sn,sm
+
       END MODULE sglobal_mod
