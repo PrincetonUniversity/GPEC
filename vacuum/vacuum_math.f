@@ -852,11 +852,11 @@ c$$$      REAL, DIMENSION(8):: tgaus, wgaus
 c$$$      REAL, DIMENSION(10):: cfac, wksp
 
       REAL(r8) :: gam, xxq, ysq, y, w, rhohatsq, rhohat, zk1i, zk1, 
-     $ zk1sq, zk1sqrt, zk1sqrti, errbu, ierbu, elipk, elipe, convbu, 
+     $ zk1sq, zk1sqrt, zk1sqrti, errbu, elipk, elipe, convbu, 
      $ pnp, ak, ak02, gint, gintp, agaus, bgaus, ginti, gintip, tg0,
      $ tg02, tg1, tg1p, sinhtg1, sinhtg1p, sinhtg12, sinhtg12p, dnom,
      $ dnomp, anumr, pcoef, twopi, gamn, gamp
-      INTEGER :: kcbu, kloc, ngauss, nng, ing, i, ig
+      INTEGER :: kcbu, kloc, ngauss, nng, ing, i, ig, ierbu
 
 !.... Weights and abscissae for 32 points gaussian quadrature.
 
@@ -1096,7 +1096,7 @@ c
      $  hval1, hval2, rval, sval, snorm, cnvlog
 
       INTEGER :: logcnv
-      
+
       pp     = 1.0_r8
       aa     = 1.0_r8
       bb1    = 1.0_r8
