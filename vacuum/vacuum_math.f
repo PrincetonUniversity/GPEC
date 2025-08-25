@@ -10,22 +10,24 @@ c      2. spl1d2
 c      4. search
 c      5. searchx
 c      6. green
-c      7. aleg
-c      8. trans
-c      9. transdx
-c     10. transdxx
-c     11. smooth0
-c     12. smooth
-c     13. lagp
-c     14. shft
-c     15. lagpe4
-c     16. lag
-c     17. eigen
-c     18. mult
-c     19. matmul1
-c     20. matmul3
-c     21. indef4
-c     22. atan2m
+c      7. aleg_old
+c      8. aleg
+c      9. ek3
+c     10. trans
+c     11. transdx
+c     12. transdxx
+c     13. smooth0
+c     14. smooth
+c     15. lagp
+c     16. shft
+c     17. lagpe4
+c     18. lag
+c     19. eigen
+c     20. mult
+c     21. matmul1
+c     22. matmul3
+c     23. indef4
+c     24. atan2m
 c-----------------------------------------------------------------------
 c     subprogram 1. spl1d1.
 c     spline fitting routine.
@@ -707,7 +709,11 @@ c-----------------------------------------------------------------------
       r1sq = sqrt( r14 )
       r1 = sqrt( r1sq )
       s  = (xp2 + zm2 )/r1sq
-      call aleg ( s,nloc, pm,pn,pp, aleg0,aleg1 )
+      if (use_legacy_greens_function) then
+         call aleg_old ( s,nloc, pm,pn,pp, aleg0,aleg1 )
+      else
+         call aleg ( s,nloc, pm,pn,pp, aleg0,aleg1 )
+      endif
       kloc=0
       ak=zero
       if ( nloc .eq. 0 )  go to 10
@@ -816,10 +822,14 @@ c-----------------------------------------------------------------------
       RETURN
       END
 
-c.....................................................
-      SUBROUTINE aleg(x,nloc,pm,pn,pp, aleg0,aleg1 )
-c.....................................................
-c     
+c-----------------------------------------------------------------------
+c     subprogram 8. aleg.
+c     Computes half-integral Legendre functions.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE aleg(x,nloc,pm,pn,pp, aleg0,aleg1 )     
 c     subroutine to calculate half integral legendre functions.
 c     uses upwards recurrence relations starting from elliptic
 c     integrals evaluated using Bulirsch's algorithm
@@ -911,6 +921,10 @@ c$$$      sqpi = SQRT ( pye )
 c$$$      sqtwo = SQRT(2.0)
 c$$$c      init = init + 1
 c$$$      half = 0.5
+
+c-----------------------------------------------------------------------
+c     Computations.
+c-----------------------------------------------------------------------
 
       gam = sqpi
       xxq = x*x
@@ -1059,12 +1073,19 @@ c$$$     $        nloc, x, rhohat, pn, pp
 c$$$         nwrt = nwrt + 1
 c$$$         END IF
 
+c-----------------------------------------------------------------------
+c     termination.
+c-----------------------------------------------------------------------
       RETURN
       END
-c     
-!...................................................
+c-----------------------------------------------------------------------
+c     subprogram 9. ek3.
+c     Computes complete elliptic integrals of first and second kind.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
       SUBROUTINE ek3(eta,ier,error,maxit,cel1,cel2,convg, kounter)
-!..................................................
 
 !  Compute the complete elliptic integral of first and second kind
 !      cel(kc,p,a,b).  
@@ -1112,6 +1133,9 @@ c
          RETURN
       END IF
 
+c-----------------------------------------------------------------------
+c     Computations.
+c-----------------------------------------------------------------------
 
       qcval  = SQRT(ABS(eta))
       aval0  = aa
@@ -1190,9 +1214,11 @@ c
       cel1  = pi2*(bval1 + aval1*emval) / (emval*(emval+pval))
       cel2  = pi2*(bval2 + aval2*emval) / (emval*(emval+pval))
 
+c-----------------------------------------------------------------------
+c     termination.
+c-----------------------------------------------------------------------
       RETURN
       END
-
 c-----------------------------------------------------------------------
 c     subprogram 8. trans.
 c     Interpolates input variables of length mthin to length mth.
