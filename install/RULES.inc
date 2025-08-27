@@ -47,7 +47,7 @@ FCVACUUM = $(FC) $(FFLAGS) $(ZEROFLAG) $(RECURSFLAG) $(LEGACYFLAG) -I../equil
 	$(FCVACUUM) $(MODFLAG) ../vacuum -c $< -o $@
 
 # PENTRC
-FCPENTRC = $(FC) $(FFLAGS) $(OMPFLAG) $(RECURSFLAG) -I$(MATHINC) -I$(NETCDFINC) -I../equil -I../harvest
+FCPENTRC = $(FC) $(FFLAGS) $(OMPFLAG) $(RECURSFLAG) -I$(MATHINC) -I$(NETCDFINC) -I../equil -I../deps/src/harvest
 ../pentrc/%.o: ../pentrc/%.f
 	$(FCPENTRC) $(LEGACYFLAG) $(MODFLAG) ../pentrc -c $< -o $@
 ../pentrc/%.o: ../pentrc/%.F
@@ -58,7 +58,7 @@ FCPENTRC = $(FC) $(FFLAGS) $(OMPFLAG) $(RECURSFLAG) -I$(MATHINC) -I$(NETCDFINC) 
 	$(FCPENTRC) $(MODFLAG) ../pentrc -c $< -o $@
 
 # DCON
-FCDCON = $(FC) $(FFLAGS) $(OMPFLAG) $(RECURSFLAG) $(LEGACYFLAG) -I$(MATHINC) -I$(NETCDFINC) -I../equil -I../harvest -I../pentrc -I../vacuum
+FCDCON = $(FC) $(FFLAGS) $(OMPFLAG) $(RECURSFLAG) $(LEGACYFLAG) -I$(MATHINC) -I$(NETCDFINC) -I../equil -I../deps/src/harvest -I../pentrc -I../vacuum
 ../dcon/%.o: ../dcon/%.f
 	$(FCDCON) $(MODFLAG) ../dcon -c $< -o $@
 ../dcon/%.o: ../dcon/%.F
@@ -121,7 +121,7 @@ FCCOIL = $(FC) $(FFLAGS) $(OMPFLAG) $(RECURSFLAG) -I$(MATHINC) -I$(NETCDFINC) -I
 	$(FCCOIL) $(MODFLAG) ../coil -c $< -o $@
 
 # GPEC
-FCGPEC = $(FC) $(FFLAGS) $(OMPFLAG) $(RECURSFLAG) $(LEGACYFLAG) -I$(MATHINC) -I$(NETCDFINC) -I../equil -I../vacuum -I../harvest -I../pentrc -I../coil -I../slayer
+FCGPEC = $(FC) $(FFLAGS) $(OMPFLAG) $(RECURSFLAG) $(LEGACYFLAG) -I$(MATHINC) -I$(NETCDFINC) -I../equil -I../vacuum -I../deps/src/harvest -I../pentrc -I../coil -I../slayer
 ../gpec/%.o: ../gpec/%.f
 	$(FCGPEC) $(MODFLAG) ../gpec -c $< -o $@
 ../gpec/%.o: ../gpec/%.F

@@ -5,7 +5,7 @@ BINDIR = ../bin
 
 # Harvest library
 harvest: v
-	cd ../; git submodule update --init ../deps/src/harvest
+	cd ../; git submodule update --init deps/src/harvest
 	cd ../deps/src/harvest; $(MAKE) -j1 FC='$(FC)' CC='$(CC)' GACODE_ROOT= -f Makefile libharvest.a
 	mkdir -p $(LIBDIR)
 	cp -f ../deps/src/harvest/libharvest.a $(LIBDIR)
