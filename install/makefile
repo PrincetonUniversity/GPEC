@@ -10,14 +10,15 @@ include RULES.inc
 
 # Top-level target
 all: v harvest equil lsode zlange zvode orbit vacuum pentrc dcon match rdcon rmatch \
-	multi sum xdraw slayer coil gpec stride mkbin
+	multi sum xdraw slayer coil gpec stride
 
 # Fortran only
 allf: v harvest equil lsode zlange zvode orbit vacuum pentrc dcon match rdcon rmatch \
-	multi sum slayer coil gpec stride mkbin
+	multi sum slayer coil gpec stride
 
 # Print verbose info
-v:
+.PHONY: v
+v: | FORCE
 	@echo "------------------------------------------------------------"
 	@echo "Defaults tailored for platform $(if $(PLATFORM),$(PLATFORM),NULL) on host $(if $(HOST),$(HOST),NULL)"
 	@echo "Compiling with FC = $(FC)"
@@ -34,6 +35,8 @@ v:
 	@echo
 	@echo "Set environment FC,LAPACKHOME,NETCDFHOME to change these"
 	@echo "------------------------------------------------------------"
+
+FORCE:
 
 # Cleaning
 clean:
@@ -53,7 +56,7 @@ clean:
 	cd ../coil; rm -f *.o *.mod *.a *.original *.out *.bin sum.dat *.diff
 	cd ../gpec; rm -f *.o *.mod *.a *.original *.out *.bin sum.dat *.diff gpec
 	cd ../stride; rm -f *.o *.mod *.a *.original *.out *.bin sum.dat *.diff stride
-	cd ../bin; rm *
+	rm -rf ../bin/*
 	cd ../harvest; make clean
 
 # Remove example outputs

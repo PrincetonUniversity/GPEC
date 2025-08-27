@@ -1,7 +1,7 @@
 # Dependencies for all targets
 
 # Equil
-../equil/local.o: ../equil/io.o harvest
+../equil/local.o: ../equil/io.o
 ../equil/utils.o: ../equil/local.o
 ../equil/jacobi.o: ../equil/local.o
 ../equil/grid.o: ../equil/local.o ../equil/spline.o
@@ -13,6 +13,7 @@
 ../equil/global.o: ../equil/bicube.o ../equil/cspline.o
 ../equil/inverse.o: ../equil/global.o ../equil/utils.o ../equil/grid.o
 ../equil/direct.o: ../equil/global.o
+../equil/chease.o: ../equil/inverse.o
 ../equil/read_eq.o: ../equil/inverse.o ../equil/direct.o
 ../equil/lar.o: ../equil/inverse.o
 ../equil/gsec.o: ../equil/inverse.o
@@ -21,13 +22,36 @@
 ../equil/equil_out.o: ../equil/global.o
 
 # LSODE
-# No dependencies
+../lsode/daxpy.o: ../equil/local.o
+../lsode/dcopy.o: ../equil/local.o
+../lsode/dewset.o: ../equil/local.o
+../lsode/dgbsl.o: ../equil/local.o
+../lsode/dgesl.o: ../equil/local.o
+../lsode/dprepj.o: ../equil/local.o
+../lsode/dsolsy.o: ../equil/local.o
+../lsode/dstode.o: ../equil/local.o
+../lsode/dvnorm.o: ../equil/local.o
+../lsode/iumach.o: ../equil/local.o
+../lsode/lsode.o: ../equil/local.o
+../lsode/xsetf.o: ../equil/local.o
+../lsode/dcfode.o: ../equil/local.o
+../lsode/ddot.o: ../equil/local.o
+../lsode/dgbfa.o: ../equil/local.o
+../lsode/dgefa.o: ../equil/local.o
+../lsode/dintdy.o: ../equil/local.o
+../lsode/dscal.o: ../equil/local.o
+../lsode/dsrcom.o: ../equil/local.o
+../lsode/dumach.o: ../equil/local.o
+../lsode/idamax.o: ../equil/local.o
+../lsode/ixsav.o: ../equil/local.o
+../lsode/xerrwd.o: ../equil/local.o
+../lsode/xsetun.o: ../equil/local.o
 
 # ZLANGE
-# No dependencies
+../zlange/zlange.o: ../equil/local.o
 
 # ZVODE
-# No dependencies
+../zvode/zvode.o: ../equil/local.o
 
 # Orbit
 ../orbit/orbit_mod.o: ../equil/equil.o ../equil/equil_out.o
@@ -48,6 +72,8 @@
 ../vacuum/vacuum_sprk2.o: ../vacuum/vacuum_global.o
 ../vacuum/vacuum_ut.o: ../vacuum/vacuum_global.o
 ../vacuum/vacuum_vac.o: ../vacuum/vacuum_global.o
+../vacuum/debug.o: ../vacuum/vacuum_global.o
+../vacuum/vacuum_penn.o: ../equil/local.o
 
 # PENTRC
 ../pentrc/lsode1.o: ../equil/local.o ../lsode/lsode.o
@@ -57,7 +83,7 @@
 ../pentrc/special.o: ../equil/local.o ../pentrc/params.o ../pentrc/utilities.o
 ../pentrc/dcon_interface.o: ../equil/local.o ../pentrc/params.o ../pentrc/utilities.o ../equil/spline.o ../equil/fspline.o ../equil/cspline.o ../equil/bicube.o
 ../pentrc/inputs.o:  ../equil/local.o ../pentrc/params.o ../pentrc/utilities.o ../pentrc/special.o ../pentrc/dcon_interface.o
-../pentrc/energy.o:  ../equil/local.o ../pentrc/params.o ../pentrc/utilities.o ../pentrc/lsode2.o
+../pentrc/energy.o:  ../equil/local.o ../pentrc/params.o ../pentrc/utilities.o ../pentrc/lsode2.o ../pentrc/dcon_interface.o
 ../pentrc/pitch.o:   ../equil/local.o ../pentrc/params.o ../pentrc/utilities.o ../pentrc/lsode1.o ../pentrc/energy.o ../pentrc/special.o
 ../pentrc/torque.o:  ../equil/local.o ../pentrc/params.o ../pentrc/utilities.o ../pentrc/lsode1.o ../pentrc/special.o ../pentrc/dcon_interface.o ../pentrc/inputs.o ../pentrc/energy.o ../pentrc/pitch.o
 ../pentrc/diagnostics.o: ../equil/local.o ../pentrc/params.o ../pentrc/special.o ../pentrc/energy.o ../pentrc/pitch.o
@@ -66,12 +92,12 @@
 
 # DCON
 ../dcon/dcon_mod.o: ../equil/local.o ../equil/spline.o ../equil/global.o \
-	../equil/equil.o ../equil/equil_out.o ../pentrc/dcon_interface.o
+	../equil/equil.o ../equil/equil_out.o ../pentrc/dcon_interface.o ../pentrc/pentrc_interface.o
 ../dcon/mercier.o: ../equil/local.o ../dcon/dcon_mod.o
 ../dcon/bal.o: ../equil/local.o ../dcon/dcon_mod.o
 ../dcon/fourfit.o: ../equil/local.o ../equil/fspline.o ../equil/global.o \
 	../pentrc/pentrc_interface.o ../pentrc/utilities.o ../pentrc/torque.o ../pentrc/inputs.o \
-	../pentrc/energy_integration.o ../pentrc/pitch_integration.o ../pentrc/dcon_interface.o \
+	../pentrc/energy.o ../pentrc/pitch.o ../pentrc/dcon_interface.o \
 	../dcon/dcon_mod.o
 ../dcon/sing.o: ../equil/local.o ../dcon/fourfit.o
 ../dcon/debug.o: ../equil/local.o
@@ -101,6 +127,7 @@
 ../rdcon/gal.o: ../equil/jacobi.o ../rdcon/sing.o ../rdcon/free.o
 ../rdcon/lib_interface.o: ../equil/local.o ../equil/global.o ../equil/utils.o ../equil/inverse.o
 ../rdcon/dcon.o: ../rdcon/bal.o ../rdcon/mercier.o ../rdcon/ode.o ../rdcon/resist.o ../rdcon/gal.o ../rdcon/lib_interface.o
+../rdcon/debug.o: ../equil/local.o
 
 # STRIDE
 ../stride/dcon_mod.o: ../equil/spline.o ../equil/global.o \
@@ -115,14 +142,18 @@
 ../stride/stride_netcdf.o: ../stride/dcon_mod.o
 ../stride/free.o: ../stride/ode.o ../stride/stride_netcdf.o
 ../stride/stride.o: ../stride/bal.o ../stride/free.o ../stride/mercier.o
+../stride/debug.o: ../equil/local.o
 
 # Match
 ../match/debug.o: ../equil/local.o
 ../match/gamma.o: ../equil/local.o
+../match/lar.o: ../equil/inverse.o
+../match/qsort.o: ../equil/local.o
 ../match/deltar.o: ../match/gamma.o
 ../match/root.o: ../equil/local.o
+../match/zroot.o: ../equil/local.o
 ../match/match_mod.o: ../match/deltar.o ../match/root.o ../equil/utils.o
-../match/ideal.o: ../match/match_mod.o
+../match/ideal.o: ../match/match_mod.o ../equil/cspline.o
 ../match/matrix.o: ../match/match_mod.o ../match/debug.o
 ../match/resist.o: ../match/matrix.o
 ../match/match.o: ../match/ideal.o ../match/resist.o
@@ -154,7 +185,7 @@
 ../sum/sum.o: ../equil/utils.o ../equil/local.o
 
 # COIL
-../coil/coil.o: ../equil/local.o coilversion
+../coil/coil.o: ../equil/local.o ../equil/bicube.o coilversion
 ../coil/field.o: ../coil/coil.o
 
 # GPEC
@@ -168,7 +199,7 @@
 ../gpec/gpdiag.o: ../gpec/gpresp.o ../gpec/gpvacuum.o
 ../gpec/gpout.o: ../gpec/gpdiag.o ../gpec/gpresp.o ../gpec/gpvacuum.o ../coil/field.o ../coil/coil.o \
     ../equil/equil.o ../equil/equil_out.o \
-    ../pentrc/pentrc_interface.mod ../pentrc/inputs.mod \
+    ../pentrc/pentrc_interface.o ../pentrc/inputs.o \
     ../slayer/gslayer.o \
 	gpecversion 
 ../gpec/gpec.o: ../gpec/gpdiag.o ../gpec/gpout.o ../gpec/rdcon.o
