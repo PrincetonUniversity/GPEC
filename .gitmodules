@@ -1,3 +1,15 @@
-[submodule "harvest"]
-	path = harvest
+[submodule "deps/src/harvest"]
+	path = deps/src/harvest
 	url = git@github.com:gafusion/harvest_client.git
+[submodule "deps/src/OpenBLAS"]
+	path = deps/src/OpenBLAS
+	url = git@github.com:OpenMathLib/OpenBLAS.git
+[submodule "deps/src/netcdf-c"]
+	path = deps/src/netcdf-c
+	url = git@github.com:Unidata/netcdf-c.git
+[submodule "deps/src/netcdf-fortran"]
+	path = deps/src/netcdf-fortran
+	url = git@github.com:Unidata/netcdf-fortran.git
+[submodule "deps/src/hdf5"]
+	path = deps/src/hdf5
+	url = git@github.com:HDFGroup/hdf5.git

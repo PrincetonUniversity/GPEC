@@ -106,19 +106,19 @@ FCMULTI = $(FC) $(FFLAGS) -I../equil
 ../multi/%.o: ../multi/%.F
 	$(FCMULTI) $(MODFLAG) ../multi -c $< -o $@
 
-# COIL
-FCCOIL = $(FC) $(FFLAGS) $(OMPFLAG) $(RECURSFLAG) -I$(MATHINC) -I$(NETCDFINC) -I../equil
-../coil/%.o: ../coil/%.f
-	$(FCCOIL) $(MODFLAG) ../coil -c $< -o $@
-../coil/%.o: ../coil/%.F
-	$(FCCOIL) $(MODFLAG) ../coil -c $< -o $@
-
 # SLAYER
 FCSLAYER = $(FC) $(FFLAGS) $(OMPFLAG) -I$(MATHINC) -I$(NETCDFINC) -I../equil
 ../slayer/%.o: ../slayer/%.f
 	$(FCSLAYER) $(MODFLAG) ../slayer -c $< -o $@
 ../slayer/%.o: ../slayer/%.F
 	$(FCSLAYER) $(MODFLAG) ../slayer -c $< -o $@
+
+# COIL
+FCCOIL = $(FC) $(FFLAGS) $(OMPFLAG) $(RECURSFLAG) -I$(MATHINC) -I$(NETCDFINC) -I../equil
+../coil/%.o: ../coil/%.f
+	$(FCCOIL) $(MODFLAG) ../coil -c $< -o $@
+../coil/%.o: ../coil/%.F
+	$(FCCOIL) $(MODFLAG) ../coil -c $< -o $@
 
 # GPEC
 FCGPEC = $(FC) $(FFLAGS) $(OMPFLAG) $(RECURSFLAG) $(LEGACYFLAG) -I$(MATHINC) -I$(NETCDFINC) -I../equil -I../vacuum -I../harvest -I../pentrc -I../coil -I../slayer

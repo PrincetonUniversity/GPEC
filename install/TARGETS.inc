@@ -1,14 +1,14 @@
 # Lower level targets
 
-LIBDIR = ../lib
+LIBDIR = ../deps/lib
 BINDIR = ../bin
 
 # Harvest library
 harvest: v
-	cd ../; git submodule init; git submodule update
-	cd ../harvest; $(MAKE) -j1 FC='$(FC)' CC='$(CC)' GACODE_ROOT= -f Makefile libharvest.a
+	cd ../; git submodule update --init ../deps/src/harvest
+	cd ../deps/src/harvest; $(MAKE) -j1 FC='$(FC)' CC='$(CC)' GACODE_ROOT= -f Makefile libharvest.a
 	mkdir -p $(LIBDIR)
-	cp -f ../harvest/libharvest.a $(LIBDIR)
+	cp -f ../deps/src/harvest/libharvest.a $(LIBDIR)
 
 # Equilibrium library
 equil: v harvest $(EQUIL_OBJS)

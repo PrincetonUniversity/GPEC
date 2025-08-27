@@ -1,3 +1,31 @@
+#---------------------------------------------------------------------------
+# GPEC Build System - Top-level Makefile
+#
+# This Makefile coordinates the build of all major GPEC modules.
+# Included files:
+#   DEFAULTS.inc     -- System/compiler defaults and library paths
+#   SOURCES.inc      -- Source file auto-discovery
+#   RULES.inc        -- Compilation rules for each module
+#   TARGETS.inc      -- How to build libraries and executables
+#   DEPENDENCIES.inc -- Inter-module dependencies
+#
+# Usage:
+#   make [target]
+#   Common targets:
+#       all          -- Build all main executables and libraries
+#       allf         -- Build all Fortran-only modules
+#       clean        -- Remove built files and modules
+#       clear        -- Remove example outputs (docs/examples)
+#       realclean    -- Deep clean (libs, bins, modules)
+#       v            -- Print build configuration
+#       <module>     -- Build a specific module (e.g., pentrc, gpec)
+#       print-VAR    -- Print the value of a Makefile variable (for debugging)
+#
+#
+# See README_BUILD.md for more details.
+#---------------------------------------------------------------------------
+
+
 include DEFAULTS.inc
 include SOURCES.inc
 
@@ -57,7 +85,9 @@ clean:
 	cd ../gpec; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff gpec
 	cd ../stride; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff stride
 	rm -rf ../bin/*
-	cd ../harvest; make clean
+	if [ -d ../deps/src/harvest ]; then cd ../deps/src/harvest && make clean; fi
+	if [ -d ../deps/src/OpenBLAS ]; then cd ../deps/src/OpenBLAS && make clean; fi
+
 
 # Remove example outputs
 clear:
@@ -75,7 +105,7 @@ clear:
 
 # Revert to clean state
 realclean: clean clear
-	rm -rf ../lib ../bin
+	rm -rf ../deps/lib ../bin
 
 # Debug
 print-% : ; $(info $* is a $(flavor $*) variable set to [$($*)]) @true

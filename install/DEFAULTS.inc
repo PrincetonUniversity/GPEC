@@ -1,6 +1,22 @@
 #------------------------------------------------------------------------------
-# This file is used to dynamically set some default compiler options
-# based on what libraries are available on the current machine.
+# DEFAULTS.inc
+#
+# Purpose:
+#   Sets up compiler options, library paths, and platform-specific defaults.
+#
+# What it does:
+#   - Detects math libraries (MKL, LAPACK, ACML, etc.)
+#   - Sets Fortran compiler flags and paths for netCDF, math, and compiler libraries
+#   - Adapts to different systems (Linux, Mac, cluster, etc.) via environment variables
+#   - Selects appropriate OpenMP, module, and legacy flags for your compiler
+#
+# How to use:
+#   - Usually you don't need to modify this file!
+#   - To change compiler or library settings, set environment variables before running `make` (see README_BUILD.md).
+#   - If your platform is not supported, contact the code maintainer or add your system to this file.
+#
+# See also: PLATFORMS.md for detailed platform-specific instructions.
+#------------------------------------------------------------------------------
 #
 # Prior to version 1.2, GPEC could be compiled using ifort, pgf, gfortran,
 # or lfc. All public releases on portal were compiled using lfc, which
@@ -14,64 +30,30 @@
 # to label the version at compilation time. Thus, you must have a working git
 # command in order to compile.
 #
-# On portal.pppl.gov
-#   Users can run GPEC on portal using the public module. Note, portal now "hides" such modules behind a mod_* gateway module
+# On flux.pppl.gov
+#   Users can run GPEC on flux using the public module. Note, flux "hides" such modules behind a mod_* gateway module
 #     $ module load mod_gpec gpec
 #   Developers may want to load the development branch module to get the latest compiler settings if they've changed since the last release
 #     $ module load mod_gpec gpec/0.0
-#   Alternatively, we can manually load the 2018 intel compiler with supporting libraries,
-#     $ module load intel/2018.u1 netcdf-fortran/4.4.4 acml/5.3.1/ifort64 git
-#   Note that before the netcdf module was properly set up, we had to manually load supporting modules
-#     $ module load intel/2018.u1 szip hdf hdf5-parallel/1.10.2 curl netcdf-c/4.6.0 netcdf-fortran/4.4.4 acml/5.3.1/ifort64 git
-#   Any of these should properly set up your LD_LIBRARY_PATH and PATH. Executing,
+#   Any of these versions should properly set up your LD_LIBRARY_PATH and PATH. Executing,
 #     $ make v
 #   in this install directory should produce the following verbose message,
 #
 #   ------------------------------------------------------------
 #   Defaults tailored for
-#   Compiling with FC = /usr/pppl/intel/2018.u1/bin/ifort
-#      using math libraries -lacml
-#      from /usr/pppl/acml/5.3.1/ifort64/lib
-#      including /usr/pppl/acml/5.3.1/ifort64/include
+#   Compiling with FC = ifort
+#      using math libraries -lmkl_rt
+#      from /opt/hpc/compiler/intel/2023.2.0/mkl/2023.2.0/lib/intel64
+#      including /opt/hpc/compiler/intel/2023.2.0/mkl/2023.2.0/include/intel64/lp64
 #      and netcdf libraries -lnetcdff -lnetcdf
-#      from /usr/pppl/intel/2018-pkgs/netcdf-fortran-4.4.4/lib /usr/pppl/intel/2018-pkgs/netcdf-c-4.6.0/lib
-#      including /usr/pppl/intel/2018-pkgs/netcdf-fortran-4.4.4/include
-#      and compiler libraries -lintlc -limf
-#      from /usr/pppl/intel/2018.u1/lib/intel64
-#      including /usr/pppl/intel/2018.u1/include/intel64
-#
-#
+#      from /opt/pppl/software/spack/linux-rocky9-zen/intel-2023.2.0/netcdf-fortran-4.6.1-cepgoinrjitqdehlejpd7lrpn3l3pqwd/lib /opt/pppl/software/spack/linux-rocky9-zen/intel-2023.2.0/netcdf-c-4.9.2-6quyygg2fm4loweejpk2xnc6htvvxiuc/lib
+#      including /opt/pppl/software/spack/linux-rocky9-zen/intel-2023.2.0/netcdf-fortran-4.6.1-cepgoinrjitqdehlejpd7lrpn3l3pqwd/include
+#      and compiler libraries
+#      from .
+#      including .
+#      and using OMPFLAG -qopenmp
+#  
 #   Set environment FC,LAPACKHOME,NETCDFHOME to change these
-#   ------------------------------------------------------------
-#
-#   Now compiling using
-#    $ make
-#   Should set all the right flags and run through.
-#
-#   Developers can also load the default intel/11.0.081 and associated libraries,
-#     $ module load intel netcdf acml/5.3.1/ifort64 git
-#   This should properly set up your LD_LIBRARY_PATH and PATH. Executing,
-#     $ make v
-#   in this install directory should produce the following verbose message.
-#
-#   ------------------------------------------------------------
-#   Defaults tailored for
-#   Compiling with FC = /usr/pppl/intel/11.0/081/bin/intel64/ifort
-#      using math libraries -lacml
-#      from /usr/pppl/acml/5.3.1/ifort64/lib
-#      including /usr/pppl/acml/5.3.1/ifort64/include
-#      and netcdf libraries -lnetcdf -lnetcdff
-#      from /usr/pppl/intel/11-pkgs/netcdf-3.6.3/lib
-#      including /usr/pppl/intel/11-pkgs/netcdf-3.6.3/include
-#      and compiler libraries -lintlc -limf
-#      from /usr/pppl/intel/11.0/081/lib/intel64
-#      including /usr/pppl/intel/11.0/081/include/intel64
-#
-#   Set environment FC,LAPACKHOME,NETCDFHOME to change these
-#   ------------------------------------------------------------
-#
-#   In this case, one should compile using
-#    $ make FFLAGS="-openmp -vec_report0" 2>&1 | tee make.log
 #
 # On ukstar
 #   Developers should use the default intel compiler and load the netcdf_intel module
