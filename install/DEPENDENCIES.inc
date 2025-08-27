@@ -161,7 +161,7 @@
 # Rmatch
 ../rmatch/msing.o: ../equil/local.o
 ../rmatch/gamma.o: ../equil/local.o
-../rmatch/deltar.o: ../rmatch/gamma.o
+../rmatch/deltar.o: ../rmatch/gamma.o ../equil/spline.o
 ../rmatch/inps.o:  ../equil/local.o ../equil/utils.o
 ../rmatch/inpso.o: ../rmatch/inps.o ../rmatch/deltar.o
 ../rmatch/deltac.o: ../equil/jacobi.o ../rmatch/inpso.o
