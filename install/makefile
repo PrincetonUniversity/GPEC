@@ -37,11 +37,11 @@ include RULES.inc
 # Targets
 
 # Top-level target
-all: v harvest equil lsode zlange zvode orbit vacuum pentrc dcon match rdcon rmatch \
+all: v neededdeps equil lsode zlange zvode orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum xdraw slayer coil gpec stride
 
 # Fortran only
-allf: v harvest equil lsode zlange zvode orbit vacuum pentrc dcon match rdcon rmatch \
+allf: v neededdeps equil lsode zlange zvode orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum slayer coil gpec stride
 
 # Print verbose info
@@ -85,8 +85,6 @@ clean:
 	cd ../gpec; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff gpec
 	cd ../stride; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff stride
 	rm -rf ../bin/*
-	if [ -d ../deps/src/harvest ]; then cd ../deps/src/harvest && make clean; fi
-	if [ -d ../deps/src/OpenBLAS ]; then cd ../deps/src/OpenBLAS && make clean; fi
 
 
 # Remove example outputs
@@ -105,7 +103,12 @@ clear:
 
 # Revert to clean state
 realclean: clean clear
-	rm -rf ../deps/lib ../bin
+	rm -rf ../deps/lib/* ../deps/hdf5 ../deps/include/* ../deps/bin/* ../deps/share ../bin
+	if [ -d ../deps/src/harvest ]; then cd ../deps/src/harvest && make clean; fi
+	if [ -d ../deps/src/OpenBLAS/Makefile ]; then cd ../deps/src/OpenBLAS && make clean; fi
+	if [ -d ../deps/src/hdf5/Makefile ]; then cd ../deps/src/hdf5 && make clean; fi
+	if [ -d ../deps/src/netcdf-c/Makefile ]; then cd ../deps/src/netcdf-c && make clean; fi
+	if [ -d ../deps/src/netcdf-fortran/Makefile ]; then cd ../deps/src/netcdf-fortran && make clean; fi
 
 # Debug
 print-% : ; $(info $* is a $(flavor $*) variable set to [$($*)]) @true

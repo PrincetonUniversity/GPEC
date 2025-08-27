@@ -1,4 +1,18 @@
-# Rules for building sub-modules
+#------------------------------------------------------------------------------
+# RULES.inc
+#
+# Purpose:
+#   Defines the rules for compiling source files into object files for each module.
+#
+# What it does:
+#   - Specifies compiler and flags per module (Fortran and C)
+#   - Handles different file extensions (.f, .f90, .F, .F90, .c)
+#   - Sets include paths, OpenMP, legacy, and optimization flags as needed
+#
+# How to use:
+#   - Normally you don't need to edit these rules.
+#   - If you add a new module, copy/paste a rule block and update it for your module.
+#------------------------------------------------------------------------------
 
 # EQUIL
 FCEQUIL = $(FC) $(FFLAGS) $(RECURSFLAG)

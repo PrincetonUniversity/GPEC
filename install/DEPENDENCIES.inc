@@ -1,4 +1,17 @@
-# Dependencies for all targets
+#------------------------------------------------------------------------------
+# DEPENDENCIES.inc
+#
+# Purpose:
+#   Specifies dependencies between object files and modules.
+#
+# What it does:
+#   - Ensures files and modules are built in the correct order
+#   - Lists which object files depend on others (e.g. ../equil/grid.o depends on ../equil/local.o)
+#
+# How to use:
+#   - If you add a new object file or module that depends on others, add its dependencies here.
+#   - Keeping this file up-to-date helps avoid build errors from missing dependencies.
+#------------------------------------------------------------------------------
 
 # Equil
 ../equil/local.o: ../equil/io.o
@@ -168,21 +181,21 @@
 ../rmatch/inner.o: ../rmatch/deltac.o ../equil/local.o
 ../rmatch/match.o: ../rmatch/deltar.o ../rmatch/deltac.o ../rmatch/inner.o ../rmatch/msing.o
 
+# Sum
+../sum/local.o: ../sum/io.o
+../sum/utils.o: ../sum/local.o
+../sum/sum.o: ../equil/utils.o ../equil/local.o
+
+# Multi
+../multi/local.o: ../multi/io.o
+../multi/multi.o: ../equil/local.o
+
 # SLAYER
 ../slayer/sglobal.o: ../equil/local.o
 ../slayer/params.o : ../slayer/sglobal.o
 ../slayer/delta.o : ../slayer/sglobal.o
 ../slayer/gslayer.o : ../slayer/sglobal.o ../slayer/delta.o
 ../slayer/slayer.o : ../slayer/sglobal.o ../slayer/params.o ../slayer/delta.o
-
-# Multi
-../multi/local.o: ../multi/io.o
-../multi/multi.o: ../equil/local.o
-
-# Sum
-../sum/local.o: ../sum/io.o
-../sum/utils.o: ../sum/local.o
-../sum/sum.o: ../equil/utils.o ../equil/local.o
 
 # COIL
 ../coil/coil.o: ../equil/local.o ../equil/bicube.o coilversion
@@ -203,3 +216,9 @@
     ../slayer/gslayer.o \
 	gpecversion 
 ../gpec/gpec.o: ../gpec/gpdiag.o ../gpec/gpout.o ../gpec/rdcon.o
+
+# XDraw
+# no dependencies
+
+# Full project dependencies
+$(ALL_OBJS): v neededdeps

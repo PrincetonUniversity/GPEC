@@ -15,7 +15,6 @@
 #   - To change compiler or library settings, set environment variables before running `make` (see README_BUILD.md).
 #   - If your platform is not supported, contact the code maintainer or add your system to this file.
 #
-# See also: PLATFORMS.md for detailed platform-specific instructions.
 #------------------------------------------------------------------------------
 #
 # Prior to version 1.2, GPEC could be compiled using ifort, pgf, gfortran,
@@ -314,6 +313,14 @@
 # general defaults
 #-----------------------------------------------------------------
 
+# List of needed dependencies, will be appended if math or netcdf
+# libraries are not found
+NEEDED_DEPS = harvest
+
+# Platform and host information
+PLATFORM := $(shell uname -s)
+HOST := $(shell hostname)
+
 # The new modules on portal at PPPL now use LAPACK_HOME instead of LAPACKHOME
 ifndef LAPACKHOME
    ifdef LAPACK_HOME
@@ -339,6 +346,10 @@ else ifdef ACML_HOME
     MATHLIBS = -lacml
 else
     $(info "Math libraries require MKLROOT, LAPACKHOME, OPENBLASHOME, or ACML_HOME")
+    $(info "Automatically using OpenBLAS")
+    NEEDED_DEPS += OpenBLAS
+    MATHHOME = $(realpath ../deps)
+    MATHLIBS = -lopenblas
 endif
 
 # specifics of which libraries are used
@@ -381,6 +392,9 @@ else
     ifndef NETCDFHOME
         ifndef NETCDF_DIR
             $(info "Must set NETCDF_FORTRAN_HOME, NETCDFHOME, or NETCDF_DIR")
+            $(info "Automatically building netCDF-c and netCDF-Fortran")
+            NEEDED_DEPS += netcdf
+            NETCDFHOME = $(realpath ../deps)
         else
             NETCDFHOME = $(NETCDF_DIR)
         endif
