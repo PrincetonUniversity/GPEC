@@ -741,7 +741,14 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
 c     subprogram 7. aleg_old.
-c     computes Legendre functions, out-of-date.
+c     computes Legendre functions, using [Chance Phys. Plasmas 1997].
+c
+c     subroutine to calculate half integral legendre functions.
+c     uses upwards recurrence relations starting from elliptic
+c     integrals evaluated using Bulirsch's algorithm
+c     these expressions are very bad for large values of nloc.
+c     zkisq is ths the 1 - k**2 in Elliptic integeral parlance.
+c.    This is now replaced by the new aleg subroutine below.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
@@ -824,7 +831,8 @@ c-----------------------------------------------------------------------
 
 c-----------------------------------------------------------------------
 c     subprogram 8. aleg.
-c     Computes half-integral Legendre functions.
+c     Computes half-integral Legendre functions, using methods outlined
+c     in Chance J. Comp. Phys 221 (2007) 330-348.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
@@ -856,10 +864,8 @@ c...  Sum of ak_i = pi/2. Sum of ae_i = pi/2 - 1.0
 
 !     This stuff for Gaussian Itegration:
 
-c$$$      REAL, DIMENSION(8):: tgaus, wgaus 
       REAL(r8), DIMENSION(32):: tg32, wg32, xg32
       REAL(r8), DIMENSION(5):: xu, xl
-c$$$      REAL, DIMENSION(10):: cfac, wksp
 
       REAL(r8) :: gam, xxq, ysq, y, w, rhohatsq, rhohat, zk1i, zk1, 
      $ zk1sq, zk1sqrt, zk1sqrti, errbu, elipk, elipe, convbu, 
@@ -914,14 +920,6 @@ c$$$      REAL, DIMENSION(10):: cfac, wksp
          xg32(16+i) = - xg32(17-i)
       END DO
 
-!::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-c$$$      pii = 2.0 / pye
-c$$$      sqpi = SQRT ( pye )
-c$$$      sqtwo = SQRT(2.0)
-c$$$c      init = init + 1
-c$$$      half = 0.5
-
 c-----------------------------------------------------------------------
 c     Computations.
 c-----------------------------------------------------------------------
@@ -936,7 +934,7 @@ c-----------------------------------------------------------------------
       rhohat = SQRT (rhohatsq)
 
       zk1i = w              
-      zk1 = 1.0_r8/w           ! This is k1 = SQRT(1-k**2) = SQRT(m_1)
+      zk1 = 1.0_r8/w        ! This is k1 = SQRT(1-k**2) = SQRT(m_1)
       zk1sq = zk1**2        ! This is m_1
       zk1sqrt = SQRT(zk1)   ! This is m_1^(1/4)
       zk1sqrti = SQRT(zk1i) ! This is m_1^(-1/4)
@@ -954,11 +952,7 @@ c-----------------------------------------------------------------------
       aleg1 = pp
 
 c... Use Gaussian Integration if ...
-
       IF ( nloc*rhohat >= 0.1 ) GO TO 100
-
-c      GO TO 100
-c 85    CONTINUE
 
       kloc=0
       ak = 0.0_r8
@@ -1049,13 +1043,6 @@ c   gamp is  Gamma[1/2-(n+1)]
          gamn = sqpi /
      $        PRODUCT( (/ ( -(i-1)-0.5, i = 1, nloc ) /) )
          gamp = - gamn / (nloc+0.5)
-
-c$$$         nwrt = 1
-c$$$         IF ( nwrt == 1 ) THEN
-c$$$         WRITE (6, '("nloc, gamn, gamp = ", i3, 2es12.4)' )
-c$$$     $        nloc, gamn, gamp
-c$$$         nwrt = nwrt + 1
-c$$$         END IF
          
       END IF
 
@@ -1065,13 +1052,6 @@ c$$$         END IF
       pp = gintp  ! P(n+1)
 
  500  CONTINUE
-c$$$
-c$$$         nwrt = 1
-c$$$         IF ( nwrt == 1 ) THEN
-c$$$            WRITE (23, '("nloc, x, rhohat, pn, pp = ", i3, 4es12.4)' )
-c$$$     $        nloc, x, rhohat, pn, pp
-c$$$         nwrt = nwrt + 1
-c$$$         END IF
 
 c-----------------------------------------------------------------------
 c     termination.
