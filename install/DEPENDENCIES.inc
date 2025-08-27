@@ -154,7 +154,7 @@
 ../match/zroot.o: ../equil/local.o
 ../match/match_mod.o: ../match/deltar.o ../match/root.o ../equil/utils.o
 ../match/ideal.o: ../match/match_mod.o ../equil/cspline.o
-../match/matrix.o: ../match/match_mod.o ../match/debug.o
+../match/matrix.o: ../match/match_mod.o ../match/debug.o ../match/qsort.o ../equil/local.o
 ../match/resist.o: ../match/matrix.o
 ../match/match.o: ../match/ideal.o ../match/resist.o
 
@@ -163,7 +163,7 @@
 ../rmatch/gamma.o: ../equil/local.o
 ../rmatch/deltar.o: ../rmatch/gamma.o
 ../rmatch/inps.o:  ../equil/local.o ../equil/utils.o
-../rmatch/inpso.o: ../rmatch/inps.o
+../rmatch/inpso.o: ../rmatch/inps.o ../rmatch/deltar.o
 ../rmatch/deltac.o: ../equil/jacobi.o ../rmatch/inpso.o
 ../rmatch/inner.o: ../rmatch/deltac.o ../equil/local.o
 ../rmatch/match.o: ../rmatch/deltar.o ../rmatch/deltac.o ../rmatch/inner.o ../rmatch/msing.o

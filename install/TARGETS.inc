@@ -287,7 +287,7 @@ XDRAW_LIBS = \
 	-lm \
 	-lX11
 XDRAW_LIBDIRS = \
-	L/usr/X11R6/lib64 \
+	-L/usr/X11R6/lib64 \
 	-L/opt/local/include \
 	-L/opt/homebrew/include \
 	$(X11_LIB_DIR)
