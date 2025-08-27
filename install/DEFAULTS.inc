@@ -468,25 +468,30 @@ ifeq ($(findstring ifort,$(FC)),ifort)
 	OMPFLAG ?= -qopenmp
     ZEROFLAG ?= -zero
     RECURSFLAG ?= -recursive
+    MODFLAG ?= -module
     LEGACYFLAG ?=
 else ifeq ($(findstring ifx,$(FC)),ifx)
 	OMPFLAG ?= -qopenmp
     ZEROFLAG ?= -zero
     RECURSFLAG ?= -recursive
+    MODFLAG ?= -module
     LEGACYFLAG ?=
 else ifeq ($(findstring gfortran,$(FC)),gfortran)
 	OMPFLAG ?= -fopenmp
     ZEROFLAG ?= -finit-local-zero
     RECURSFLAG ?= -frecursive
+    MODFLAG ?= -J
     LEGACYFLAG ?= -std=legacy
 else ifeq ($(findstring pgfortran,$(FC)),pgfortran)
 	OMPFLAG ?= -mp
     ZEROFLAG ?= -zeroinit
     RECURSFLAG ?= -Mrecursive
+    MODFLAG ?= -J
     LEGACYFLAG ?= -std=legacy
 else
     ZEROFLAG ?= -zero
 	OMPFLAG ?= -openmp
     RECURSFLAG ?= -recursive
+    MODFLAG ?= -module
     LEGACYFLAG ?= -std=legacy
 endif

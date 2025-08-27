@@ -9,6 +9,7 @@
 *.mod
 *.pyc
 *~
+*.i
 *.out
 *.bin
 *.nc

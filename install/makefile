@@ -40,22 +40,22 @@ FORCE:
 
 # Cleaning
 clean:
-	cd ../equil; rm -f *.o *.mod *.a *.original *.out *.bin sum.dat *.diff
-	cd ../lsode; rm -f *.o *.mod *.a *.original *.out *.bin sum.dat *.diff
-	cd ../zlange; rm -f *.o *.mod *.a *.original *.out *.bin sum.dat *.diff
-	cd ../zvode; rm -f *.o *.mod *.a *.original *.out *.bin sum.dat *.diff
-	cd ../orbit; rm -f *.o *.mod *.a *.original *.out *.bin sum.dat *.diff orbit
-	cd ../vacuum; rm -f *.o *.mod *.a *.original *.out *.bin sum.dat *.diff
-	cd ../dcon; rm -f *.o *.mod *.a *.original *.out *.bin sum.dat *.diff dcon
-	cd ../match; rm -f *.o *.mod *.a *.original *.out *.bin sum.dat *.diff match
-	cd ../rdcon; rm -f *.o *.mod *.a *.original *.out *.bin sum.dat *.diff rdcon
-	cd ../rmatch; rm -f *.o *.mod *.a *.original *.out *.bin sum.dat *.diff rmatch
-	cd ../xdraw; rm -f *.o *.mod *.a *.original *.out *.bin sum.dat *.diff xdraw
-	cd ../sum; rm -f *.o *.mod *.a *.original *.out *.bin sum.dat *.diff sum
-	cd ../slayer; rm -f *.o *.mod *.a *.original *.out *.bin sum.dat *.diff slayer
-	cd ../coil; rm -f *.o *.mod *.a *.original *.out *.bin sum.dat *.diff
-	cd ../gpec; rm -f *.o *.mod *.a *.original *.out *.bin sum.dat *.diff gpec
-	cd ../stride; rm -f *.o *.mod *.a *.original *.out *.bin sum.dat *.diff stride
+	cd ../equil; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff
+	cd ../lsode; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff
+	cd ../zlange; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff
+	cd ../zvode; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff
+	cd ../orbit; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff orbit
+	cd ../vacuum; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff
+	cd ../dcon; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff dcon
+	cd ../match; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff match
+	cd ../rdcon; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff rdcon
+	cd ../rmatch; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff rmatch
+	cd ../xdraw; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff xdraw
+	cd ../sum; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff sum
+	cd ../slayer; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff slayer
+	cd ../coil; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff
+	cd ../gpec; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff gpec
+	cd ../stride; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff stride
 	rm -rf ../bin/*
 	cd ../harvest; make clean
 
