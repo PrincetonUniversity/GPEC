@@ -122,8 +122,9 @@ ORBIT_LIBDIRS = \
 	-L$(MATHDIR) \
 	-L$(FCDIR)
 orbit: neededdeps $(ORBIT_OBJS)
+	rm -f ../orbit/orbit
 	mkdir -p $(BINDIR)
-	$(FCORBIT) -o $(BINDIR)/orbit $(ORBIT_OBJS) $(ORBIT_LIBDIRS) $(ORBIT_LIBS) $(LDFLAGS)
+	$(FCORBIT) -o ../orbit/orbit $(ORBIT_OBJS) $(ORBIT_LIBDIRS) $(ORBIT_LIBS) $(LDFLAGS)
 
 # Vacuum code
 vacuum: v neededdeps $(VACUUM_OBJS) equil lsode
@@ -158,7 +159,8 @@ PENTRC_LIBDIRS = \
 	-L$(FCDIR)
 pentrc: v neededdeps $(PENTRC_OBJS) lsode equil harvest
 	mkdir -p $(BINDIR)
-	$(FCPENTRC) -o $(BINDIR)/pentrc $(PENTRC_OBJS) $(PENTRC_LIBDIRS) $(PENTRC_LIBS) $(LDFLAGS)
+	rm -f ../pentrc/pentrc
+	$(FCPENTRC) -o ../pentrc/pentrc $(PENTRC_OBJS) $(PENTRC_LIBDIRS) $(PENTRC_LIBS) $(LDFLAGS)
 	mkdir -p $(LIBDIR)
 	ar -r $(LIBDIR)/libpentrc.a $(PENTRC_OBJS)
 
@@ -180,7 +182,8 @@ DCON_LIBDIRS = \
 	-L$(FCDIR)
 dcon: v neededdeps $(DCON_OBJS) equil lsode vacuum pentrc harvest
 	mkdir -p $(BINDIR)
-	$(FCDCON) -o $(BINDIR)/dcon $(DCON_OBJS) $(DCON_LIBDIRS) $(DCON_LIBS) $(LDFLAGS)
+	rm -f ../dcon/dcon
+	$(FCDCON) -o ../dcon/dcon $(DCON_OBJS) $(DCON_LIBDIRS) $(DCON_LIBS) $(LDFLAGS)
 
 # RDCON code
 ifeq ($(wildcard ../rdcon/version.inc),)
@@ -211,7 +214,8 @@ RDCON_LIBDIRS = \
 	-L$(FCDIR)
 rdcon: v neededdeps $(RDCON_OBJS) equil lsode vacuum
 	mkdir -p $(BINDIR)
-	$(FCRDCON) -o $(BINDIR)/rdcon $(RDCON_OBJS) $(RDCON_LIBDIRS) $(RDCON_LIBS) $(LDFLAGS)
+	rm -f ../rdcon/rdcon
+	$(FCRDCON) -o ../rdcon/rdcon $(RDCON_OBJS) $(RDCON_LIBDIRS) $(RDCON_LIBS) $(LDFLAGS)
 
 # STRIDE code
 ifeq ($(wildcard ../stride/version.inc),)
@@ -241,7 +245,8 @@ STRIDE_LIBDIRS = \
 	-L$(NETCDFDIR)
 stride: v neededdeps $(STRIDE_OBJS) zlange zvode lsode equil vacuum
 	mkdir -p $(BINDIR)
-	$(FCSTRIDE) -o $(BINDIR)/stride $(STRIDE_OBJS) $(STRIDE_LIBDIRS) $(STRIDE_LIBS) $(LDFLAGS)
+	rm -f ../stride/stride
+	$(FCSTRIDE) -o ../stride/stride $(STRIDE_OBJS) $(STRIDE_LIBDIRS) $(STRIDE_LIBS) $(LDFLAGS)
 
 # match
 MATCH_LIBS = \
@@ -255,7 +260,8 @@ MATCH_LIBDIRS = \
 	-L$(FCDIR)
 match: v neededdeps $(MATCH_OBJS) equil lsode
 	mkdir -p $(BINDIR)
-	$(FCMATCH) -o $(BINDIR)/match $(MATCH_OBJS) $(MATCH_LIBDIRS) $(MATCH_LIBS) $(LDFLAGS)
+	rm -f ../match/match
+	$(FCMATCH) -o ../match/match $(MATCH_OBJS) $(MATCH_LIBDIRS) $(MATCH_LIBS) $(LDFLAGS)
 
 # rmatch
 RMATCH_LIBS = \
@@ -272,7 +278,8 @@ RMATCH_LIBDIRS = \
 	-L$(FCDIR)
 rmatch: v neededdeps $(RMATCH_OBJS) equil lsode
 	mkdir -p $(BINDIR)
-	$(FCRMATCH) -o $(BINDIR)/rmatch $(RMATCH_OBJS) $(RMATCH_LIBDIRS) $(RMATCH_LIBS) $(LDFLAGS)
+	rm -f ../rmatch/rmatch
+	$(FCRMATCH) -o ../rmatch/rmatch $(RMATCH_OBJS) $(RMATCH_LIBDIRS) $(RMATCH_LIBS) $(LDFLAGS)
 
 # SLAYER
 SLAYER_LIBS = \
@@ -287,7 +294,8 @@ SLAYER_LIBDIRS = \
 	-L$(NETCDFDIR)
 slayer: v neededdeps $(SLAYER_OBJS) lsode equil
 	mkdir -p $(BINDIR)
-	$(FCSLAYER) -o $(BINDIR)/slayer $(SLAYER_OBJS) $(SLAYER_LIBDIRS) $(SLAYER_LIBS) $(LDFLAGS)
+	rm -f ../slayer/slayer
+	$(FCSLAYER) -o ../slayer/slayer $(SLAYER_OBJS) $(SLAYER_LIBDIRS) $(SLAYER_LIBS) $(LDFLAGS)
 	ar -r $(LIBDIR)/libslayer.a $(SLAYER_OBJS)
 
 # multi
@@ -297,7 +305,8 @@ MULTI_LIBDIRS = \
 	-L$(LIBDIR)
 multi: v neededdeps $(MULTI_OBJS) equil
 	mkdir -p $(BINDIR)
-	$(FCMULTI) -o $(BINDIR)/multi $(MULTI_OBJS) $(MULTI_LIBDIRS) $(MULTI_LIBS) $(LDFLAGS)
+	rm -f ../multi/multi
+	$(FCMULTI) -o ../multi/multi $(MULTI_OBJS) $(MULTI_LIBDIRS) $(MULTI_LIBS) $(LDFLAGS)
 
 # sum
 SUM_LIBS = \
@@ -308,7 +317,8 @@ SUM_LIBDIRS = \
 	-L$(FCDIR)
 sum: v neededdeps $(SUM_OBJS) equil
 	mkdir -p $(BINDIR)
-	$(FCSUM) -o $(BINDIR)/sum $(SUM_OBJS) $(SUM_LIBDIRS) $(SUM_LIBS) $(LDFLAGS)
+	rm -f ../sum/sum
+	$(FCSUM) -o ../sum/sum $(SUM_OBJS) $(SUM_LIBDIRS) $(SUM_LIBS) $(LDFLAGS)
 
 # Coil library
 ifeq ($(wildcard ../coil/version.inc),)
@@ -360,7 +370,8 @@ GPEC_LIBDIRS = \
 	-L$(NETCDFDIR)
 gpec: v neededdeps $(GPEC_OBJS) pentrc lsode equil vacuum harvest slayer coil
 	mkdir -p $(BINDIR)
-	$(FCGPEC) -o $(BINDIR)/gpec $(GPEC_OBJS) $(GPEC_LIBDIRS) $(GPEC_LIBS) $(LDFLAGS)
+	rm -f ../gpec/gpec
+	$(FCGPEC) -o ../gpec/gpec $(GPEC_OBJS) $(GPEC_LIBDIRS) $(GPEC_LIBS) $(LDFLAGS)
 
 # Xdraw
 XDRAW_LIBS = \
@@ -374,10 +385,26 @@ XDRAW_LIBDIRS = \
 xdraw: v xdraw_main pspack
 xdraw_main: v $(XDRAW_OBJS1)
 	mkdir -p $(BINDIR)
-	$(CCXDRAW) -o $(BINDIR)/xdraw $(XDRAW_OBJS1) $(XDRAW_LIBDIRS) $(XDRAW_LIBS) $(LDFLAGS)
+	rm -f ../xdraw/xdraw
+	$(CCXDRAW) -o ../xdraw/xdraw $(XDRAW_OBJS1) $(XDRAW_LIBDIRS) $(XDRAW_LIBS) $(LDFLAGS)
 pspack: v $(XDRAW_OBJS2)
 	mkdir -p $(BINDIR)
-	$(CCXDRAW) -o $(BINDIR)/pspack $(XDRAW_OBJS2) $(XDRAW_LIBDIRS) $(XDRAW_LIBS) $(LDFLAGS)
+	rm -f ../xdraw/pspack
+	$(CCXDRAW) -o ../xdraw/pspack $(XDRAW_OBJS2) $(XDRAW_LIBDIRS) $(XDRAW_LIBS) $(LDFLAGS)
 
 # Misc
 force: v
+
+mkbin: pentrc dcon rdcon stride match rmatch slayer multi sum gpec
+	rm -f $(BINDIR)/*
+	mkdir -p $(BINDIR)
+	cp ../pentrc/pentrc $(BINDIR)
+	cp ../dcon/dcon $(BINDIR)
+	cp ../rdcon/rdcon $(BINDIR)
+	cp ../stride/stride $(BINDIR)
+	cp ../match/match $(BINDIR)
+	cp ../rmatch/rmatch $(BINDIR)
+	cp ../slayer/slayer $(BINDIR)
+	cp ../multi/multi $(BINDIR)
+	cp ../sum/sum $(BINDIR)
+	cp ../gpec/gpec $(BINDIR)

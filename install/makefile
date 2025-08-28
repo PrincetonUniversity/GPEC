@@ -37,11 +37,11 @@ include RULES.inc
 # Targets
 
 # Top-level target
-all: v neededdeps equil lsode zlange zvode orbit vacuum pentrc dcon match rdcon rmatch \
-	multi sum xdraw slayer coil gpec stride
+all: v neededdeps xdraw equil lsode zlange zvode orbit vacuum pentrc dcon match rdcon rmatch \
+	multi sum slayer coil gpec stride
 
 # Fortran only
-allf: v neededdeps equil lsode zlange zvode orbit vacuum pentrc dcon match rdcon rmatch \
+allf: v neededdeps xdraw equil lsode zlange zvode orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum slayer coil gpec stride
 
 # Print verbose info

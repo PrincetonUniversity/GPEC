@@ -395,6 +395,7 @@ else
             $(info "Automatically building netCDF-c and netCDF-Fortran")
             NEEDED_DEPS += netcdf
             NETCDFHOME = $(realpath ../deps)
+            NETCDF_C_HOME = $(realpath ../deps)
         else
             NETCDFHOME = $(NETCDF_DIR)
         endif
