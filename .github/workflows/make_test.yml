@@ -160,7 +160,7 @@ jobs:
           git config --file .gitmodules submodule."deps/src/hdf5".url https://github.com/HDFGroup/hdf5.git
           git config --file .gitmodules submodule."deps/src/OpenBLAS".url https://github.com/OpenMathLib/OpenBLAS.git
           git submodule sync
-          git submodule update --init --recursive
+          git submodule update --init --recursive "deps/src/harvest"
           
       - name: Install Dependencies
         run: |
@@ -241,8 +241,8 @@ jobs:
           git config --file .gitmodules submodule."deps/src/netcdf-c".url https://github.com/Unidata/netcdf-c.git
           git config --file .gitmodules submodule."deps/src/netcdf-fortran".url https://github.com/Unidata/netcdf-fortran.git
           git config --file .gitmodules submodule."deps/src/hdf5".url https://github.com/HDFGroup/hdf5.git
-          git config --file .gitmodules submodule."deps/src/OpenBLAS".url https://github.com/OpenMathLib/OpenBLAS.git          git submodule sync
-          git submodule update --init --recursive
+          git config --file .gitmodules submodule."deps/src/OpenBLAS".url https://github.com/OpenMathLib/OpenBLAS.git
+          git submodule update --init --recursive "deps/src/harvest"
 
       - name: Compile
         run: |
