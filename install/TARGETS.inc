@@ -39,32 +39,41 @@ harvest: v
 netcdf: v netcdf-c netcdf-fortran hdf5
 
 netcdf-c: v hdf5
-	cd ../; git submodule update --init deps/src/netcdf-c
+	cd ../; git submodule update --init deps/src/netcdf-c;
+	if [ -d ../deps/src/netcdf-c/Makefile ]; then \
+		cd ../deps/src/netcdf-c; \
+			CPPFLAGS="-I$(realpath $(DEPSINSTALLDIR))/include" \
+			LDFLAGS="-L$(realpath $(DEPSINSTALLDIR))/lib" \
+			./configure --prefix=$(realpath $(DEPSINSTALLDIR)); \
+	fi
 	cd ../deps/src/netcdf-c; \
-		CPPFLAGS="-I$(realpath $(DEPSINSTALLDIR))/include" \
-		LDFLAGS="-L$(realpath $(DEPSINSTALLDIR))/lib" \
-		./configure --prefix=$(realpath $(DEPSINSTALLDIR)); \
-		$(MAKE); \
-		$(MAKE) install
+	$(MAKE); \
+	$(MAKE) install
 
 netcdf-fortran: v netcdf-c
-	cd ../; git submodule update --init deps/src/netcdf-fortran
+	cd ../; git submodule update --init deps/src/netcdf-fortran;
+	if [ -d ../deps/src/netcdf-fortran/Makefile ]; then \
+		cd ../deps/src/netcdf-fortran; \
+			CPPFLAGS="-I$(realpath $(DEPSINSTALLDIR))/include" \
+			LDFLAGS="-L$(realpath $(DEPSINSTALLDIR))/lib" \
+			./configure --prefix=$(realpath $(DEPSINSTALLDIR)); \
+	fi
 	cd ../deps/src/netcdf-fortran; \
-		CPPFLAGS="-I$(realpath $(DEPSINSTALLDIR))/include" \
-		LDFLAGS="-L$(realpath $(DEPSINSTALLDIR))/lib" \
-		./configure --prefix=$(realpath $(DEPSINSTALLDIR)); \
-		$(MAKE); \
-		$(MAKE) install
+	$(MAKE); \
+	$(MAKE) install
 
 hdf5: v
-	cd ../; git submodule update --init deps/src/hdf5
-	cd ../deps/src/hdf5; \
+	cd ../; git submodule update --init deps/src/hdf5;
+	if [ -d ../deps/src/hdf5/Makefile ]; then \
+		cd ../deps/src/hdf5; \
 		./configure --prefix=$(realpath $(DEPSINSTALLDIR)); \
-		$(MAKE); \
-		$(MAKE) install
+	fi
+	cd ../deps/src/hdf5; \
+	$(MAKE); \
+	$(MAKE) install;
 
 OpenBLAS: v
-	cd ../; git submodule update --init deps/src/OpenBLAS
+	cd ../; git submodule update --init deps/src/OpenBLAS;
 	cd ../deps/src/OpenBLAS; \
 		PREFIX=$(realpath $(DEPSINSTALLDIR)) $(MAKE); \
 		PREFIX=$(realpath $(DEPSINSTALLDIR)) $(MAKE) install;

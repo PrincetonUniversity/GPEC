@@ -60,6 +60,7 @@ v: | FORCE
 	@echo "   from $(FCDIR)"
 	@echo "   including $(FCINC)"
 	@echo "   and using OMPFLAG $(OMPFLAG)"
+	@echo "   Compiling supporting modules $(NEEDED_DEPS)"
 	@echo
 	@echo "Set environment FC,LAPACKHOME,NETCDFHOME to change these"
 	@echo "------------------------------------------------------------"
@@ -74,6 +75,7 @@ clean:
 	cd ../zvode; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff
 	cd ../orbit; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff orbit
 	cd ../vacuum; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff
+	cd ../pentrc; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff pentrc
 	cd ../dcon; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff dcon
 	cd ../match; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff match
 	cd ../rdcon; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff rdcon
