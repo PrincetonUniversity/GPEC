@@ -26,10 +26,9 @@ c-----------------------------------------------------------------------
       IMPLICIT NONE
 
       REAL(r8), DIMENSION(:,:,:,:), ALLOCATABLE :: w,v
-      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: jacobian
 
-      TYPE(bicube_type):: shear, curvature, B_magnitude
-
+      TYPE(bicube_type):: shear, curvature, B_squared
+      TYPE(bicube_type):: bernstein_k, sigma
       LOGICAL :: shear_flag=.TRUE.
       LOGICAL :: curvature_flag=.TRUE.
 
@@ -41,31 +40,16 @@ c     components w_ij).
 c-----------------------------------------------------------------------
       SUBROUTINE metric_calculation
 
-      REAL(r8), PARAMETER :: pi = 3.141592653589793_r8
-      REAL(r8), PARAMETER :: twopi = 2.0_r8 * pi
-      REAL(r8), PARAMETER :: r_eps = 1e-10_r8  ! r = 0 
       INTEGER :: ipsi, itheta, i, j
 
       REAL(r8) :: theta, psi
-      REAL(r8) :: r_minor_sq, eta_periodic_part, nu_func
-      REAL(r8) :: dr2_dpsi, dr2_dtheta,
-     $              deta_p_dpsi, deta_p_dtheta,
-     $              dnu_dpsi, dnu_dtheta, jacobian_ij
-      REAL(r8) :: eta_norm, deta_dpsi, deta_dtheta
-      REAL(r8) :: r_minor, R_major, eta_rad, cos_eta, sin_eta
-      REAL(r8) :: inv_J, inv_r, inv_2rJ, inv_rJ, inv_2pi
-
-      REAL(r8), PARAMETER :: small_r = 1.0E-9_r8
+      REAL(r8) :: rfac,eta,r,jacfac
 
       ALLOCATE(w(0:rzphi%mx, 0:rzphi%my, 3, 3))
       ALLOCATE(v(0:rzphi%mx, 0:rzphi%my, 3, 3))
-      ALLOCATE(jacobian(0:rzphi%mx, 0:rzphi%my))
 
-      DO itheta = 0, rzphi%my
-         theta = rzphi%ys(itheta)
-         DO ipsi = 0, rzphi%mx
-            psi = rzphi%xs(ipsi)
-            jacobian(ipsi, itheta) = 0.0
+      DO ipsi = 0, mpsi
+         DO itheta = 0, mtheta
             DO i = 1, 3
                w(ipsi, itheta, i, 1) = 0.0
                w(ipsi, itheta, i, 2) = 0.0
@@ -74,82 +58,45 @@ c-----------------------------------------------------------------------
                v(ipsi, itheta, i, 1) = 0.0
                v(ipsi, itheta, i, 2) = 0.0
                v(ipsi, itheta, i, 3) = 0.0
-
             END DO
          END DO
       END DO
 
-      DO itheta = 0, rzphi%my
-         theta = rzphi%ys(itheta)
-         DO ipsi = 0, rzphi%mx
-            psi = rzphi%xs(ipsi)
-            
-            CALL bicube_eval(rzphi, psi, theta, 1)
-
-            r_minor_sq        = rzphi%f(1)
-            eta_periodic_part = rzphi%f(2)
-            nu_func           = rzphi%f(3)
-            jacobian_ij = rzphi%f(4)
-            dr2_dpsi    = rzphi%fx(1)
-            deta_p_dpsi = rzphi%fx(2)
-            dnu_dpsi    = rzphi%fx(3)
-            dr2_dtheta    = rzphi%fy(1)
-            deta_p_dtheta = rzphi%fy(2)
-            dnu_dtheta    = rzphi%fy(3)
-
-            eta_norm    = eta_periodic_part + theta
-            deta_dpsi   = deta_p_dpsi
-            deta_dtheta = deta_p_dtheta + 1.0_r8
-
-            r_minor = SQRT(MAX(0.0_r8, r_minor_sq))
-            eta_rad = eta_norm * twopi
-            cos_eta = COS(eta_rad)
-            sin_eta = SIN(eta_rad)
-            R_major = ro + r_minor * cos_eta
-
-            inv_J = 1.0_r8 / jacobian_ij
-            inv_2pi = 1.0_r8 / twopi
-            IF (r_minor > small_r) THEN
-                  inv_r = 1.0_r8 / r_minor
-            ELSE
-                  inv_r = 0.0_r8
-            ENDIF
-            inv_2rJ = 0.5_r8 * inv_r * inv_J
-            inv_rJ  = inv_r * inv_J
-
-            jacobian(ipsi, itheta) = jacobian_ij
+      DO ipsi = 0, mpsi
+         DO itheta = 0, mtheta
+            CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),1)
+            jacfac = rzphi%f(4)
+            rfac=SQRT(rzphi%f(1)) ! minor radius
+            eta=(rzphi%ys(itheta)+rzphi%f(2))
+            r=ro+rfac*COS(twopi*eta) ! major radius
 c-----------------------------------------------------------------------
-            v(ipsi, itheta, 1, 1) = inv_2rJ * dr2_dpsi
-            v(ipsi, itheta, 1, 2) = inv_J * (r_minor*twopi) * deta_dpsi
-            v(ipsi, itheta, 1, 3) = inv_J * R_major * dnu_dpsi
-            v(ipsi, itheta, 2, 1) = inv_2rJ * dr2_dtheta
-            v(ipsi, itheta, 2, 2) = inv_J 
-     $                          * (r_minor*twopi) * deta_dtheta
-            v(ipsi, itheta, 2, 3) = inv_J * R_major * dnu_dtheta
-            v(ipsi, itheta, 3, 3) = inv_J * R_major * twopi
+            v(ipsi, itheta, 1, 1) = rzphi%fx(1)/(2*rfac*jacfac)
+            v(ipsi, itheta, 1, 2) = rzphi%fx(2)*twopi*rfac/jacfac
+            v(ipsi, itheta, 1, 3) = rzphi%fx(3)*r/jacfac
 
-            w(ipsi, itheta, 1, 1) = (twopi**2*r_minor*R_major*inv_J)
-     $                      * deta_dtheta
-            w(ipsi, itheta, 1, 2) = (-pi * R_major * inv_rJ) 
-     $                           * dr2_dtheta
-            w(ipsi, itheta, 2, 1) = (-twopi**2*r_minor*R_major*inv_J)
-     $                      * deta_dpsi
-            w(ipsi, itheta, 2, 2) = (pi * R_major * inv_rJ) * dr2_dpsi
-            w(ipsi, itheta, 3, 1) = inv_2pi 
-     $                        * (-dnu_dpsi*w(ipsi, itheta, 1, 1)
-     $                      - dnu_dtheta*w(ipsi, itheta, 2, 1))
-            w(ipsi, itheta, 3, 2) = inv_2pi 
-     $                        * (-dnu_dpsi*w(ipsi, itheta, 1, 2)
-     $                      - dnu_dtheta*w(ipsi, itheta, 2, 2))
-            w(ipsi, itheta, 3, 3) = inv_2pi * ((1.0_r8 / R_major)
-     $                      - dnu_dpsi*w(ipsi, itheta, 1, 3)
-     $                      - dnu_dtheta*w(ipsi, itheta, 2, 3))
+            v(ipsi, itheta, 2, 1) = rzphi%fy(1)/(2*rfac*jacfac)
+            v(ipsi, itheta, 2, 2) = (1+rzphi%fy(2))*twopi*rfac/jacfac
+            v(ipsi, itheta, 2, 3) = rzphi%fy(3)*r/jacfac
+
+            v(ipsi, itheta, 3, 3) = twopi*r/jacfac
+c-----------------------------------------------------------------------
+            w(ipsi, itheta, 1, 1) = (1+rzphi%fy(2))*
+     $                              twopi**2*rfac*r/jacfac
+            w(ipsi, itheta, 1, 2) = -rzphi%fy(1)*pi*r/(rfac*jacfac)
+
+            w(ipsi, itheta, 2, 1) = -twopi**2*rfac*r*rzphi%fx(2)/jacfac
+            w(ipsi, itheta, 2, 2) = pi*r*rzphi%fx(1)/(rfac*jacfac)
+
+            w(ipsi, itheta, 3, 1) = (twopi*r*rfac/jacfac)*
+     $            (rzphi%fx(2)*rzphi%fy(3)-rzphi%fx(3)*(1+rzphi%fy(2)))
+            w(ipsi, itheta, 3, 2) = (r/(2*rfac*jacfac))*
+     $             (rzphi%fx(3)*rzphi%fy(1)-rzphi%fx(1)*rzphi%fy(3))
+            w(ipsi, itheta, 3, 3) = 1/(twopi*r)
          END DO
       END DO
 
       PRINT *, ' > bernstein_compute: metric calculation finshed'
-      PRINT *, ' > v(0,0,1,1) = ', v(0, 0, 1, 1)
-      PRINT *, ' > w(0,0,1,1) = ', w(0, 0, 1, 1)
+      
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -163,40 +110,60 @@ c-----------------------------------------------------------------------
       SUBROUTINE shear_calculation
 
       INTEGER :: ipsi, itheta, shear_unit
-      REAL(r8) :: psi, theta, g_psi_g_theta, g_psi_g_zeta, g_psi_g_psi
-      REAL(r8) :: r2, r, eta, R_val, Z, q_val,f_psi, r_minor, eta_norm
-      REAL(r8) :: R_major_local, chi_prime, q_prime, dTerm_dtheta
-      INTEGER, PARAMETER :: out_unit = 98
-      REAL(r8), PARAMETER :: pi = 3.141592653589793_r8
-      REAL(r8), PARAMETER :: twopi = 2.0_r8 * pi
+      REAL(r8) :: psi, theta, rfac, eta, r, z
+      REAL(r8) :: chi_prime,q, q_prime, jacfac
+      REAL(r8) :: g_psi_g_psi, g_psi_g_theta, g_psi_g_zeta
+      REAL(r8) :: dterm_dtheta
+      REAL(r8) :: v11, v12, v13, v21, v22, v23, v31, v32, v33
+      REAL(r8) :: w11, w12, w13, w21, w22, w23, w31, w32, w33
 
       TYPE(bicube_type) :: temp 
-      !this is for q(gpsipsi)-(gpsitheta)/(gpsizeta)
 
-      CALL bicube_alloc(shear, rzphi%mx, rzphi%my, 1)
-
+      CALL bicube_alloc(shear, rzphi%mx, rzphi%my, 3)
       shear%xs = rzphi%xs
       shear%ys = rzphi%ys
       shear%name = "shear"
+      shear%title = (/"  S  "," r ", "z"/)
       shear%xtitle = "psi"
       shear%ytitle = "theta"
 
-      CALL bicube_alloc(temp, rzphi%mx, rzphi%my, 1)
-
+      CALL bicube_alloc(temp, rzphi%mx, rzphi%my, 5)
       temp%name="temporary_term"
       temp%xs=rzphi%xs
       temp%ys=rzphi%ys
       temp%xtitle = "psi"
       temp%ytitle = "theta"
       PRINT *, ' > shear calcuation'
-      DO itheta = 0, rzphi%my
-         theta = rzphi%ys(itheta)
-         DO ipsi = 0, rzphi%mx
+
+      chi_prime = psio * twopi
+
+      PRINT *, 'psio, chi_prime = ', psio, chi_prime
+
+      DO ipsi = 0, mpsi
+         CALL spline_eval(sq,sq%xs(ipsi),0)
+         q = sq%f(4)
+         DO itheta = 0, mtheta
             psi = rzphi%xs(ipsi)
+            theta = rzphi%ys(itheta)
+
+            CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),1)
+            jacfac = rzphi%f(4)
+            rfac=SQRT(rzphi%f(1)) ! minor radius
+            eta=(rzphi%ys(itheta)+rzphi%f(2))
+            r=ro+rfac*COS(twopi*eta) ! major radius
+
+            v11 = v(ipsi,itheta,1,1)
+            v12 = v(ipsi,itheta,1,2)
+            v13 = v(ipsi,itheta,1,3)
+            v21 = v(ipsi,itheta,2,1)
+            v22 = v(ipsi,itheta,2,2)
+            v23 = v(ipsi,itheta,2,3)
+            v31 = v(ipsi,itheta,3,1)
+            v32 = v(ipsi,itheta,3,2)
+            v33 = v(ipsi,itheta,3,3)
 
             g_psi_g_psi = w(ipsi,itheta,1,1)**2
      $                    +w(ipsi,itheta,1,2)**2
-     $                    +w(ipsi,itheta,1,3)**2   
 
             g_psi_g_theta = w(ipsi,itheta,1,1)*w(ipsi,itheta,2,1)
      $                    +w(ipsi,itheta,1,2)*w(ipsi,itheta,2,2)
@@ -204,51 +171,52 @@ c-----------------------------------------------------------------------
             g_psi_g_zeta = w(ipsi,itheta,1,1)*w(ipsi,itheta,3,1)
      $                    +w(ipsi,itheta,1,2)*w(ipsi,itheta,3,2)
 
-            CALL spline_eval(sq, psi, 0)
-            q_val = sq%f(4)
+            temp%fs(ipsi, itheta, 1) = twopi*r*jacfac
+     $           * (-(v11*v21+v12*v22)*(v23+q*v33)+v13*(v21**2+v22**2))
+            temp%fs(ipsi, itheta, 2) = (q* g_psi_g_theta - g_psi_g_zeta) 
+            temp%fs(ipsi, itheta, 3) = g_psi_g_psi
+            temp%fs(ipsi, itheta, 4) = twopi**2 * r**2 
+     $           * (v21**2 + v22**2)
 
-            IF (g_psi_g_psi > 1.0E-12_r8) THEN
-              temp%fs(ipsi, itheta, 1) = 
-     $             (q_val * g_psi_g_theta - g_psi_g_zeta) / g_psi_g_psi
-            ELSE
-              temp%fs(ipsi, itheta, 1) = 0.0_r8
-            ENDIF
-
-            r_minor = SQRT(MAX(0.0_r8, rzphi%fs(ipsi,itheta,1)))
-            eta_norm = rzphi%fs(ipsi,itheta,2) + theta
-            R_major_local = ro + r_minor * COS(eta_norm * twopi)
-         
+            temp%fs(ipsi, itheta, 5) = 
+     $               temp%fs(ipsi,itheta,1)/temp%fs(ipsi,itheta,4)
          END DO
       END DO
-      PRINT *, ' > shear calcuation'
+
       CALL bicube_fit(temp, "extrap", "periodic")
 
-      chi_prime = psio * twopi
-      DO itheta = 0, rzphi%my
-         theta = rzphi%ys(itheta)
-         DO ipsi = 0, rzphi%mx
+      DO ipsi = 0, mpsi
+         CALL spline_eval(sq,sq%xs(ipsi),1)
+         q_prime = sq%f1(4)
+         DO itheta = 0, mtheta
             psi = rzphi%xs(ipsi)
-            CALL spline_eval(sq, psi, 1)
-            q_prime = sq%f1(4)
+            theta = rzphi%ys(itheta)
+
+            CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),1)
+            jacfac = rzphi%f(4)
+            rfac=SQRT(rzphi%f(1)) ! minor radius
+            eta=(rzphi%ys(itheta)+rzphi%f(2))
+            r=ro+rfac*COS(twopi*eta) ! major radius
+            z=zo+rfac*SIN(twopi*eta)
 
             CALL bicube_eval(temp, psi, theta, 1)
-            dTerm_dtheta = temp%fy(1)
+            dterm_dtheta = temp%fy(5)
 
-            shear%fs(ipsi, itheta, 1) = (chi_prime**2 
-     $                                 / jacobian(ipsi,itheta)) 
-     $                               * (q_prime + dTerm_dtheta)
+            shear%fs(ipsi, itheta, 1) = (twopi**2 / jacfac)
+     $                               * (q_prime + dterm_dtheta)
+            shear%fs(ipsi, itheta, 2) = r
+            shear%fs(ipsi, itheta, 3) = z
          END DO
       END DO
-      PRINT *, ' > shear calcuation'
+      PRINT *, ' > shear calcuation finished'
       CALL bicube_fit(shear, "extrap", "periodic")
 
-      shear_unit = 101
-      IF (shear_flag) THEN
-         CALL ascii_open(shear_unit, "shear.out", "UNKNOWN")
-         CALL bicube_write_xy(shear, .TRUE., .FALSE.
-     $       , shear_unit, 0, .FALSE.)
-         CALL ascii_close(shear_unit)
-      ENDIF
+      shear_unit=58
+      CALL ascii_open(shear_unit, "shear.out", "UNKNOWN")
+      CALL bicube_write_xy(shear, .TRUE., .FALSE.,
+     $                            shear_unit, 0, .FALSE.) 
+      CALL ascii_close(shear_unit)
+
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -263,100 +231,73 @@ c-----------------------------------------------------------------------
 
       INTEGER :: ipsi, itheta, curvature_unit
       REAL(r8) :: psi, theta
-      REAL(r8) :: B_squared, grad_psi_squared, grad_psi_dot_grad_theta
-      REAL(r8) :: dB2_dpsi, dB2_dtheta, p_prime, mu0_p_prime
-      REAL(r8) :: kappa_dot_grad_psi
-      REAL(r8) :: q_val, f_psi, r_minor, eta_norm, R_major_local
-      REAL(r8) :: B_T, B_P, g_psipsi
-      REAL(r8), PARAMETER :: pi = 3.141592653589793_r8
-      REAL(r8), PARAMETER :: twopi = 2.0_r8 * pi
-      REAL(r8), PARAMETER :: mu0 = 1.0_r8 
-
-      TYPE(bicube_type) :: B_magnitude_spline
+      REAL(r8) :: q,f,chi_prime, rfac, eta, r, jacfac, p_prime
+      REAL(r8) :: kappa_dot_grad_psi, grad_psi_squared
+      REAL(r8) ::delpsi, B_squared2,grad_psi_dot_grad_theta
 
       CALL bicube_alloc(curvature, rzphi%mx, rzphi%my, 1)
-      CALL bicube_alloc(B_magnitude_spline, rzphi%mx, rzphi%my, 1)
-
       curvature%xs = rzphi%xs
       curvature%ys = rzphi%ys
       curvature%name = "curvature"
       curvature%xtitle = "psi"
       curvature%ytitle = "theta"
 
-      B_magnitude_spline%xs = rzphi%xs
-      B_magnitude_spline%ys = rzphi%ys
-      B_magnitude_spline%name = "B_magnitude"
+      CALL bicube_alloc(B_squared, rzphi%mx, rzphi%my, 2)
+      B_squared%xs = rzphi%xs
+      B_squared%ys = rzphi%ys
+      B_squared%name = "B^2"
+      B_squared%xtitle = "psi"
+      B_squared%ytitle = "theta"
 
       PRINT *, ' > curvature calculation: computing B²'
+      chi_prime = psio * twopi
 
-      DO itheta = 0, rzphi%my
-         theta = rzphi%ys(itheta)
-         DO ipsi = 0, rzphi%mx
-            psi = rzphi%xs(ipsi)
+       DO ipsi = 0, mpsi
+         CALL spline_eval(sq,sq%xs(ipsi),0)
+         q= sq%f(4)
+         DO itheta = 0, mtheta
+            CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),1)
+
+            rfac=SQRT(rzphi%f(1)) ! minor radius
+            eta=twopi*(itheta/REAL(mtheta,r8)+rzphi%f(2))
+            r=ro+rfac*COS(eta) ! major radius
+            jacfac=rzphi%f(4) ! Jacobian
             
-            CALL spline_eval(sq, psi, 0)
-            q_val = sq%f(4)
-            f_psi = sq%f(1) / twopi
-            
-            ! geometry
-            r_minor = SQRT(MAX(0.0_r8, rzphi%fs(ipsi,itheta,1)))
-            eta_norm = rzphi%fs(ipsi,itheta,2) + theta
-            R_major_local = ro + r_minor * COS(eta_norm * twopi)
-            
-            ! |∇ψ|² = g^psi,psi
-            g_psipsi = w(ipsi,itheta,1,1)**2 + 
-     $                 w(ipsi,itheta,1,2)**2 + 
-     $                 w(ipsi,itheta,1,3)**2
-            
-            ! B field 
-            IF (R_major_local > 1.0E-9_r8) THEN
-               B_T = f_psi / R_major_local
-               B_P = SQRT(g_psipsi) / R_major_local
-               B_magnitude_spline%fs(ipsi, itheta, 1) = B_T**2 + B_P**2
-            ELSE
-               B_magnitude_spline%fs(ipsi, itheta, 1) = 0.0_r8
-            ENDIF
+            delpsi = SQRT(w(ipsi,itheta,1,1)**2 +
+     $                      w(ipsi,itheta,1,2)**2 +
+     $                      w(ipsi,itheta,1,3)**2)
+            B_squared%fs(ipsi,itheta,1) = (((chi_prime*delpsi)**2+
+     $           sq%f(1)**2)/(twopi*r)**2)
+            B_squared%fs(ipsi,itheta,2) = eqfun%fs(ipsi,itheta,1)**2
+
          END DO
       END DO
 
-c-----------------------------------------------------------------------
-c     B² spline fitting
-c-----------------------------------------------------------------------
-      CALL bicube_fit(B_magnitude_spline, "extrap", "periodic")
+      CALL bicube_fit(B_squared, "extrap", "periodic")
 
       PRINT *, ' > curvature calculation: computing κ·∇ψ'
 
-      DO itheta = 0, rzphi%my
-         theta = rzphi%ys(itheta)
-         DO ipsi = 0, rzphi%mx
+       DO ipsi = 0, mpsi
+         DO itheta = 0, mtheta
             psi = rzphi%xs(ipsi)
-            
-            grad_psi_squared = w(ipsi,itheta,1,1)**2 + 
-     $                         w(ipsi,itheta,1,2)**2 + 
-     $                         w(ipsi,itheta,1,3)**2
-            
-            grad_psi_dot_grad_theta = 
-     $           w(ipsi,itheta,1,1)*w(ipsi,itheta,2,1) +
-     $           w(ipsi,itheta,1,2)*w(ipsi,itheta,2,2) +
-     $           w(ipsi,itheta,1,3)*w(ipsi,itheta,2,3)
-            
-            CALL bicube_eval(B_magnitude_spline, psi, theta, 1)
-            B_squared = B_magnitude_spline%f(1)
-            dB2_dpsi = B_magnitude_spline%fx(1)
-            dB2_dtheta = B_magnitude_spline%fy(1)
+            theta = rzphi%ys(itheta)
+
+            g_psi_g_psi = w(ipsi,itheta,1,1)**2
+     $                    +w(ipsi,itheta,1,2)**2
+
+            g_psi_g_theta = w(ipsi,itheta,1,1)*w(ipsi,itheta,2,1)
+     $                    +w(ipsi,itheta,1,2)*w(ipsi,itheta,2,2)
             
             CALL spline_eval(sq, psi, 1)
             p_prime = sq%f1(2)
-            mu0_p_prime = mu0 * p_prime
 
-            IF (grad_psi_squared > 1.0E-12_r8) THEN
-               kappa_dot_grad_psi = (grad_psi_squared/B_squared) * 
-     $            (mu0_p_prime + 0.5_r8 * dB2_dpsi + 
-     $             0.5_r8 * dB2_dtheta * grad_psi_dot_grad_theta / 
-     $             grad_psi_squared)
-            ELSE
-               kappa_dot_grad_psi = 0.0_r8
-            ENDIF
+            CALL bicube_eval(B_squared, psi, theta, 1)
+
+            kappa_dot_grad_psi = (g_psi_g_psi* twopi**4) * 
+     $          (p_prime + 0.5_r8 * B_squared%fx(1) +
+     $             0.5_r8 * B_squared%fy(1)*  
+     $             _psi_g_theta / g_psi_g_psi)
+     $            / B_squared%f(1)
             
             curvature%fs(ipsi, itheta, 1) = kappa_dot_grad_psi
          END DO
@@ -370,7 +311,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     file print
 c-----------------------------------------------------------------------
-      curvature_unit = 102
+      curvature_unit = 59
       IF (curvature_flag) THEN
          CALL ascii_open(curvature_unit, "curvature.out", "UNKNOWN")
          CALL bicube_write_xy(curvature, .TRUE., .FALSE.,
@@ -379,11 +320,89 @@ c-----------------------------------------------------------------------
       ENDIF
 
       PRINT *, ' > curvature calculation finished'
-      PRINT *, ' > curvature(0,0) = ', curvature%fs(0,0,1)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE curvature_calculation
 
+c-----------------------------------------------------------------------
+c     subprogram 3. bernstein_calculation.
+c-----------------------------------------------------------------------
+      SUBROUTINE bernstein_calculation
+
+      INTEGER :: ipsi, itheta
+      REAL(r8) :: psi, theta
+
+      REAL(r8) :: J, chi_p, q, f_p, p_p
+      REAL(r8) :: e1(3), e2(3), e3(3)                         ! e_psi, e_theta, e_zeta
+      REAL(r8) :: G11, G22, G33, G12, G13, G23                ! metric G_ij = e_i·e_j
+      REAL(r8) :: Bth, Bze, jth, jze, B_squared, B_squared2
+      REAL(r8), parameter :: eps_chi = 1.0e-12_r8
+      REAL(r8), parameter :: eps_B2  = 1.0e-20_r8
+
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: jdotb
+
+      ALLOCATE(jdotb(0:rzphi%mx, 0:rzphi%my))
+
+      chi_p = psio * twopi
+
+      CALL metric_calculation
+      CALL shear_calculation
+      CALL curvature_calculation
+
+      CALL bicube_alloc(sigma, rzphi%mx, rzphi%my, 1)
+
+      sigma%xs = rzphi%xs
+      sigma%ys = rzphi%ys
+      sigma%name = "sigma"
+      sigma%xtitle = "psi"
+      sigma%ytitle = "theta"
+
+      CALL bicube_alloc(bernstein_k, rzphi%mx, rzphi%my, 1)
+
+      bernstein_k%name="bernstein_k"
+      bernstein_k%xs=rzphi%xs
+      bernstein_k%ys=rzphi%ys
+      bernstein_k%xtitle = "psi"
+      bernstein_k%ytitle = "theta"
+      bernstein_k%title = (/"  K  "," term1 "," term2 ","  term3 "/)
+
+      DO itheta = 0, rzphi%my
+         theta = rzphi%ys(itheta)
+         DO ipsi = 0, rzphi%mx
+            psi = rzphi%xs(ipsi)
+
+            CALL spline_eval(sq, psi, 0)
+            f_p   = sq%f1(1) / twopi
+            p_p   = sq%f1(2)
+            q    = sq%f(4)
+
+            ! ---- covariant basis e_i components from w ----
+            e1(:) = w(ipsi, itheta, 1, 1:3)   ! e_psi
+            e2(:) = w(ipsi, itheta, 2, 1:3)   ! e_theta
+            e3(:) = w(ipsi, itheta, 3, 1:3)   ! e_zeta
+
+            G11 = e1(1)*e1(1) + e1(2)*e1(2) + e1(3)*e1(3)
+            G22 = e2(1)*e2(1) + e2(2)*e2(2) + e2(3)*e2(3)
+            G33 = e3(1)*e3(1) + e3(2)*e3(2) + e3(3)*e3(3)
+            G12 = e1(1)*e2(1) + e1(2)*e2(2) + e1(3)*e2(3)
+            G13 = e1(1)*e3(1) + e1(2)*e3(2) + e1(3)*e3(3)
+            G23 = e2(1)*e3(1) + e2(2)*e3(2) + e2(3)*e3(3)
+
+            Bth  = chi_p / J
+            Bze  = q * chi_p / J
+
+         END DO
+      END DO
+      
+
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE bernstein_calculation
+c-----------------------------------------------------------------------
+c     module end
+c-----------------------------------------------------------------------
       END MODULE bernstein_mod

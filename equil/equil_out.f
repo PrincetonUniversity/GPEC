@@ -892,9 +892,7 @@ c-----------------------------------------------------------------------
       SUBROUTINE equil_out_bernstien
 c     PRINT *, ' Computing bernstien form '
 
-      CALL metric_calculation
-      CALL shear_calculation
-      CALL curvature_calculation
+      CALL bernstein_calculation
 
 c-----------------------------------------------------------------------
 c     terminate.
