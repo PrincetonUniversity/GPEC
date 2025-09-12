@@ -376,7 +376,9 @@ c-----------------------------------------------------------------------
          t_e = kin%f(4)/e
          n_i = kin%f(1)
          t_i = kin%f(3)/e
-         zeff = kin%f(9)
+
+         zeff = 2.0!kin%f(9)
+         
          omega = kin%f(5)
          my_qval = q_rational(ising)!sq%f(4)
          my_sval = shear(ising)

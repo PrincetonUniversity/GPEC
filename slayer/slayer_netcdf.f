@@ -102,11 +102,15 @@ c -----------------------------------------------------------------------
       !WRITE(*,*)"netcdf qval=",qval
       WRITE(*,*)">>> Writing results to NetCDF output file"
 
+         !CALL check( nf90_def_dim(ncid,"r",msing,r_dim) )
+         !CALL check( nf90_def_var(ncid,"r",nf90_int,r_dim,r_id))
       IF(msing>0)THEN
-         CALL sl_check( nf90_def_dim(ncid,"qsing",msing,qsing_dim) ) !r_dim = q_rational
+         CALL sl_check( nf90_def_dim(ncid,"r",msing,qsing_dim) ) !r_dim = q_rational
          CALL sl_check( nf90_def_dim(ncid, "i", 2, i_dim) )
-         CALL sl_check( nf90_def_var(ncid,"q_rational",nf90_int,
+         CALL sl_check( nf90_def_var(ncid,"r",nf90_int,
      $    qsing_dim,qsing_id))
+         CALL sl_check( nf90_def_var(ncid,"q_rational",nf90_int,
+     $    qsing_dim,qr_id))
          CALL sl_check( nf90_def_dim(ncid, "step", SIZE(re_trace), 
      $                  tr_dim) )
          CALL sl_check( nf90_def_var(ncid,"omegas",nf90_double,
@@ -157,7 +161,7 @@ c -----------------------------------------------------------------------
 c      set variables
 c -----------------------------------------------------------------------
       CALL sl_check( nf90_put_var(ncid,qsing_id, sl_in%qval_arr))
-      !CALL sl_check( nf90_put_var(ncid,qr_id, sl_in%qval_arr))
+      CALL sl_check( nf90_put_var(ncid,qr_id, sl_in%qval_arr))
       CALL sl_check( nf90_put_var(ncid,pr_id, sl_in%psi_n_arr))
       CALL sl_check( nf90_put_var(ncid,omegas_id, sl_in%omegas_arr))
       CALL sl_check( nf90_put_var(ncid,S_id, sl_in%lu_arr))

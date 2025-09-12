@@ -181,12 +181,6 @@ c-----------------------------------------------------------------------
       ELSE
          WRITE(UNIT=sn,FMT='(I2)') nn
       ENDIF
-      IF (mm<10) THEN
-         WRITE(UNIT=sm,FMT='(I1)') nn
-         sm=ADJUSTL(sm)
-      ELSE
-         WRITE(UNIT=sm,FMT='(I2)') nn
-      ENDIF
 c-----------------------------------------------------------------------
 c     calculate parameters as needed.
 c-----------------------------------------------------------------------
@@ -495,6 +489,10 @@ c-----------------------------------------------------------------------
          ALLOCATE(re_trace(100),im_trace(100))
          ALLOCATE(sl_out%r_trace(n_k,100),
      $            sl_out%i_trace(n_k,100))
+
+         !--------------
+         n_k = 1
+         !--------------
          DO k=1,n_k
             WRITE(*,*)
             WRITE(*,'(A,I0,A)') 'Calculating growth rate on q = ',
@@ -508,6 +506,18 @@ c-----------------------------------------------------------------------
             c_beta = sl_in%c_beta_arr(k)
             tauk = sl_in%Qconv_arr(k)
             iota_e = Q_e / (Q_e - Q_i)
+
+            WRITE(*,*)"slayer.f Q_e: ",Q_e
+            WRITE(*,*)"slayer.f Q_i: ",Q_i
+            WRITE(*,*)"slayer.f P_perp: ",P_perp
+            WRITE(*,*)"slayer.f P_tor: ",P_tor
+            WRITE(*,*)"slayer.f tau: ",tau
+            WRITE(*,*)"slayer.f D_norm: ",D_norm
+            WRITE(*,*)"slayer.f tauk: ",tauk
+
+            WRITE(*,*)"slayer.f iota_e: ",iota_e
+            WRITE(*,*)"slayer.f D_prime: ",sl_in%Re_dp_arr(k)
+            WRITE(*,*)"slayer.f D_crit: ",sl_in%d_crit_arr(k)
 
             ! (Deltaprime - d_crit)/S^1/3
             delta_eff = (sl_in%Re_dp_arr(k) - 
@@ -545,12 +555,71 @@ c            delta_eff = Re_deltaprime_arr(k)
             IF (fitz_flag) THEN
                re_trace = re_trace/tauk
                im_trace = im_trace/tauk
-               sl_out%gamma_sol_arr(k) = g_r/tauk! THIS IS FOR PLOT
+               sl_out%gamma_sol_arr(k) = 0.0!g_r/tauk! THIS IS FOR PLOT
             ELSE
                re_trace = re_trace/tauk
                im_trace = -im_trace/tauk
-               sl_out%gamma_sol_arr(k) = -g_r/tauk! THIS IS FOR PLOT
+               sl_out%gamma_sol_arr(k) = 0.0!-g_r/tauk! THIS IS FOR PLOT
             END IF
+
+            IF (stabscan_flag) THEN
+               WRITE(*,*)"------------------------------------------"
+               WRITE(*,'(A,F0.1)')' >>> Running [Re(Q),'//
+     $            'Im(Q)] scan with radius = ',
+     $                scan_width
+
+               ing_step = (2.0 * scan_width) / (Q_num - 1)
+               count = 0
+         
+               ALLOCATE(inQs(1:(Q_num+1)),iinQs(1:Q_num))
+               ALLOCATE(deltas(1:(Q_num+1),1:Q_num))
+
+               DO i = 1, (Q_num+1)
+                  DO j = 1, Q_num
+                     ing_coarse = -scan_width + (i - 1) * ing_step
+                     iing_coarse = -scan_width + (j - 1) * ing_step
+                     ! Evaluate riccati function
+                     g_tmp = CMPLX(ing_coarse,iing_coarse)
+                     IF (fitz_flag) THEN
+                        delta=riccati_f(g_tmp)
+                     ELSE
+                        delta=riccati(iing_coarse,Q_e,Q_i,P_perp,
+     $                             c_beta,D_norm,tau,pe,
+     $                             iinQ=ing_coarse)
+                     END IF
+                     inQs(i) = ing_coarse
+                     IF (fitz_flag) THEN
+                        iinQs(j) = iing_coarse
+                     ELSE
+                        iinQs(j) = -iing_coarse
+                     END IF
+                     deltas(i,j) = delta
+                  ENDDO
+               ENDDO
+
+
+               IF (k<10) THEN
+                  WRITE(UNIT=sm,FMT='(I1)') sl_in%qval_arr(k)
+                  sm=ADJUSTL(sm)
+               ELSE
+                  WRITE(UNIT=sm,FMT='(I2)') sl_in%qval_arr(k)
+               ENDIF
+
+               OPEN(UNIT=out_unit,FILE="slayer_stability_n"//
+     $         TRIM(sn)//"m"//TRIM(sm)//".out", STATUS="UNKNOWN")
+               WRITE(out_unit,'(1x,4(a17))') "RE(Q)",
+     $           "IM(Q)","RE(delta)","IM(delta)"
+               DO i=1,Q_num+1
+                  DO j=1,Q_num
+                     WRITE(out_unit,'(1x,4(es17.8e3))')
+     $                 inQs(i),iinQs(j),
+     $                 REAL(deltas(i,j)),AIMAG(deltas(i,j))
+                  ENDDO
+               ENDDO
+               CLOSE(out_unit)
+
+            DEALLOCATE(inQs,iinQs,deltas)
+            ENDIF 
          ENDDO 
 
          sl_out%r_trace(k,:) = re_trace
@@ -561,56 +630,6 @@ c            delta_eff = Re_deltaprime_arr(k)
             sl_out%dels_db_arr = (/ 0. /)
          END IF
 
-         IF (stabscan_flag) THEN
-            WRITE(*,*)"------------------------------------------"
-            WRITE(*,'(A,F0.1)')' >>> Running [Re(Q),'//
-     $            'Im(Q)] scan with radius = ',
-     $                scan_width
-
-            ing_step = (2.0 * scan_width) / (Q_num - 1)
-            count = 0
-      
-            ALLOCATE(inQs(1:(Q_num+1)),iinQs(1:Q_num))
-            ALLOCATE(deltas(1:(Q_num+1),1:Q_num))
-
-            DO i = 1, (Q_num+1)
-               DO j = 1, Q_num
-                  ing_coarse = -scan_width + (i - 1) * ing_step
-                  iing_coarse = -scan_width + (j - 1) * ing_step
-                  ! Evaluate riccati function
-                  g_tmp = CMPLX(ing_coarse,iing_coarse)
-                  IF (fitz_flag) THEN
-                     delta=riccati_f(g_tmp)
-                  ELSE
-                     delta=riccati(iing_coarse,Q_e,Q_i,P_perp,
-     $                             c_beta,D_norm,tau,pe,
-     $                             iinQ=ing_coarse)
-                  END IF
-                  inQs(i) = ing_coarse
-                  IF (fitz_flag) THEN
-                     iinQs(j) = iing_coarse
-                  ELSE
-                     iinQs(j) = -iing_coarse
-                  END IF
-                  deltas(i,j) = delta
-               ENDDO
-            ENDDO
-
-            OPEN(UNIT=out_unit,FILE="slayer_stability_n"//
-     $         TRIM(sn)//"m"//TRIM(sm)//".out", STATUS="UNKNOWN")
-            WRITE(out_unit,'(1x,4(a17))') "RE(Q)",
-     $           "IM(Q)","RE(delta)","IM(delta)"
-            DO i=1,Q_num+1
-               DO j=1,Q_num
-                  WRITE(out_unit,'(1x,4(es17.8e3))')
-     $                 inQs(i),iinQs(j),
-     $                 REAL(deltas(i,j)),AIMAG(deltas(i,j))
-               ENDDO
-            ENDDO
-            CLOSE(out_unit)
-
-         ENDIF 
-
          IF (coupling_flag) THEN
             WRITE(*,*)"------------------------------------------"
             WRITE(*,'(A,F0.1)')' >>> Running [Re(Q),'//
@@ -620,10 +639,10 @@ c            delta_eff = Re_deltaprime_arr(k)
             ing_step = (2.0 * scan_width) / (Q_num - 1)
             count = 0
 
-            IF (.NOT. stabscan_flag) THEN
+            !IF (.NOT. stabscan_flag) THEN
             ALLOCATE(inQs(1:(Q_num+1)),iinQs(1:Q_num))
             ALLOCATE(deltas(1:(Q_num+1),1:Q_num))
-            END IF
+            !END IF
 
             inQs=0.0; iinQs=0.0; deltas=(0.0,0.0)
             ALLOCATE(delta_Q(n_k,n_k))
@@ -691,6 +710,7 @@ c            delta_eff = Re_deltaprime_arr(k)
             ENDDO
             CLOSE(out_unit)
 
+         DEALLOCATE(inQs,iinQs,deltas)
          END IF
 
          CALL output_gamma(est_gamma_flag,sl_in,sl_out)

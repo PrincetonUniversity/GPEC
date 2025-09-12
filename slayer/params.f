@@ -24,6 +24,10 @@ c-----------------------------------------------------------------------
      $            chi_par_smfp,chi_par_lmfp,chi_par
       INTEGER :: wit
 
+      WRITE(*,*)"params.f n_e: ",n_e
+      WRITE(*,*)"params.f t_e: ",t_e
+      WRITE(*,*)"params.f t_i: ",t_i
+
       lnLamb = 24 + 3.0*LOG(10.0) - 0.5*LOG(n_e) + LOG(t_e)
 
       ! mu_i: ion mass ratio to proton
@@ -108,6 +112,7 @@ c-----------------------------------------------------------------------
       vte = SQRT((2.0*(t_e*chag))/m_e)
       chi_par_smfp = (1.581*tau_ee*(vte**2.0))/
      $               (1.0+0.2535*Zeff)
+      WRITE(*,*)"params.f Zeff: ",Zeff
 
       ! chis(1) = chi_perp
       Wd = 0.1
@@ -118,7 +123,16 @@ c-----------------------------------------------------------------------
      $              (chi_par_smfp+chi_par_lmfp)
           Wd = SQRT(8.0)*((chis(1)/chi_par)**0.25)*
      $         (1.0/SQRT((rs/R0)*sval*nr))
+
       END DO
+      WRITE(*,*)"params.f Wd: ",Wd
+      WRITE(*,*)"params.f chis(1): ",chis(1)
+      WRITE(*,*)"params.f chis(2): ",chis(2)
+      WRITE(*,*)"params.f chis(3): ",chis(3)
+      WRITE(*,*)"params.f rs: ",rs
+      WRITE(*,*)"params.f R0: ",R0
+      WRITE(*,*)"params.f sval: ",sval
+      WRITE(*,*)"params.f nr: ",nr
 
       SELECT CASE(dc_type)
             CASE("lar")
@@ -132,6 +146,10 @@ c-----------------------------------------------------------------------
             CASE default
                dc_tmp = 0.0
       END SELECT
+
+      WRITE(*,*)"params.f dr_val: ",dr_val
+      WRITE(*,*)"params.f dgeo_val: ",dgeo_val
+      WRITE(*,*)"params.f dc_tmp: ",dc_tmp
 
       ELSE
       dc_tmp = 0.0
