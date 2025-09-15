@@ -59,5 +59,6 @@ lar.o: inverse.o
 gsec.o: inverse.o
 sol.o: direct.o
 equil.o: read_eq.o lar.o gsec.o sol.o
-bernstein.o: global.o bicube.o spline.o
-equil_out.o: global.o bernstein.o
+bernstein.o: global.o bicube.o spline.o \
+		../dcon/dcon_mod.mod ../dcon/free_mod.mod ../dcon/sing_mod.mod ../dcon/dcon_mod.mod
+equil_out.o: global.o

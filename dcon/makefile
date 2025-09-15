@@ -68,7 +68,8 @@ clean:
 # dependencies
 
 dcon_mod.o: ../equil/spline_mod.mod ../equil/global_mod.mod \
-	../equil/equil_mod.mod ../equil/equil_out_mod.mod ../pentrc/dcon_interface.mod
+	../equil/equil_mod.mod ../equil/equil_out_mod.mod \
+	../equil/bernstein_mod.mod ../pentrc/dcon_interface.mod
 mercier.o: dcon_mod.o
 bal.o: dcon_mod.o
 fourfit.o: ../equil/fspline_mod.mod ../equil/global_mod.mod \
@@ -80,8 +81,9 @@ debug.o: ../equil/local_mod.mod
 ode_output.o: dcon_mod.o sing.o debug.o
 ode.o: ode_output.o free.o
 dcon_netcdf.o: dcon_mod.o
-free.o: ../equil/global_mod.mod dcon_netcdf.o ode_output.o
+free.o: ../equil/global_mod.mod dcon_netcdf.o ode_output.o 
 resist.o: dcon_mod.o
 dcon.o: ../equil/equil_mod.mod ../equil/equil_out_mod.mod \
 	../pentrc/inputs.o ../pentrc/pentrc_interface.o \
+	../equil/bernstein_mod.mod \
 	bal.o mercier.o ode.o free.o resist.o

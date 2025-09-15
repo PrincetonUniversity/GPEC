@@ -13,7 +13,6 @@ c     4. equil_out_qfind.
 c     5. equil_out_sep_find.
 c     6. equil_out_gse.
 c     7. equil_out_dump.
-c     8. equil_out_bernstien.
 c-----------------------------------------------------------------------
 c     subprogram 0. equil_out_mod
 c     module declarations.
@@ -881,23 +880,6 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE equil_out_dump
-c-----------------------------------------------------------------------
-c     subprogram 8. equil_out_bernstien.
-c     writes bernstein coefficients.
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     declarations.
-c-----------------------------------------------------------------------
-      SUBROUTINE equil_out_bernstien
-c     PRINT *, ' Computing bernstien form '
-
-      CALL bernstein_calculation
-
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE equil_out_bernstien      
+      END SUBROUTINE equil_out_dump  
 
       END MODULE equil_out_mod
