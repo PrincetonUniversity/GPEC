@@ -299,7 +299,6 @@ c-----------------------------------------------------------------------
 c     define poloidal mode numbers.
 c-----------------------------------------------------------------------
       CALL sing_find
-      CALL sing_lim
       IF(cyl_flag)THEN
          mlow=delta_mlow
          mhigh=delta_mhigh
