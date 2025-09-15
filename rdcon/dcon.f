@@ -277,23 +277,23 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     optionally reform the eq splines to concentrate at true truncation
 c-----------------------------------------------------------------------
-      IF (reform_eq_with_psilim .OR. qlow > sq%xs(0)) THEN
-         CALL sing_lim  ! determine if qhigh is truncating before psihigh
-         CALL sing_min
-         IF(.NOT. reform_eq_with_psilim)THEN
-            PRINT *, "** qlow is forcing reformation of equil splines."
-            PRINT *, "  > Forcing reform_eq_with_psilim = t"
-         ENDIF
-         IF(psilim /= psihigh .OR. psilow /= sq%xs(0))THEN
-            psilow_tmp = psilow
-            psilim_tmp = psilim
-            CALL equil_read(out_unit, psilim_tmp, psilow_tmp)
-            CALL equil_out_global
-            CALL equil_out_qfind
-            sas_flag=.FALSE. ! Avoid removing another surface due to 
-            ! floating point error placing qmax slightly below the 
-            ! sasflag cut-off.
-         ENDIF
+      CALL sing_lim  ! determine if qhigh is truncating before psihigh
+      CALL sing_min  ! dettermine if qlow excludes more of the core
+      ! Unlike DCON, we force a resplining.
+      ! The galerkin method defines its domain boundaries using psihigh,
+      ! psilow, and the sq spline.
+      IF(.NOT. reform_eq_with_psilim)THEN
+         PRINT *, "** RDCON requires reformation of equil splines "//
+     $            "on q-based sub-interval."
+         PRINT *, "  > Forcing reform_eq_with_psilim=t"
+         reform_eq_with_psilim = .TRUE.
+      ENDIF
+      IF(psilim /= psihigh .OR. psilow /= sq%xs(0))THEN
+         psilow_tmp = psilow  ! if we feed psilow directly, it get's overwritten by namelist read
+         psilim_tmp = psilim
+         CALL equil_read(out_unit, psilim_tmp, psilow_tmp)
+         CALL equil_out_global
+         CALL equil_out_qfind
       ENDIF
 c-----------------------------------------------------------------------
 c     define poloidal mode numbers.
