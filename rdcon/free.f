@@ -368,7 +368,7 @@ c-----------------------------------------------------------------------
          CALL bicube_eval(rzphi,psifac,theta(itheta),0)
          rfac(itheta)=SQRT(rzphi%f(1))
          angle(itheta)=twopi*(theta(itheta)+rzphi%f(2))
-         delta(itheta)=-rzphi%f(3)/qa
+         delta(itheta)=-rzphi%f(3)/qlim
       ENDDO
       r=ro+rfac*COS(angle)
       z=zo+rfac*SIN(angle)
@@ -376,6 +376,7 @@ c-----------------------------------------------------------------------
 c     invert values for nn < 0.
 c-----------------------------------------------------------------------
       n=nn
+      qa=qlim
       IF(nn < 0)THEN
          qa=-qa
          delta=-delta
