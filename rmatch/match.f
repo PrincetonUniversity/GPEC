@@ -100,7 +100,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: scan_x0,scan_x1,relax_fac,scan_e0,scan_e1
       REAL(r8), DIMENSION(:), ALLOCATABLE :: taur_save
       REAL(r8), DIMENSION(:), ALLOCATABLE :: zo_out,zi_in
-      COMPLEX(r8) :: initguess
+      COMPLEX(r8) :: initguess, rpec_eigenvalue
       COMPLEX(r8), DIMENSION(:),ALLOCATABLE :: cofout,cofin,q_in
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: delta,deltar
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: deltaf
@@ -129,15 +129,16 @@ c-----------------------------------------------------------------------
       
       NAMELIST/rmatch_input/ deltabin_filename,galsol_filename,
      $                         galsol_filename_cut,rotation,ntor,
-     $                         initguess,msing,eta,sol_flag,massden,
-     $                         nstep,rtol,atol,fmin,fmax,lam,
-     $                         scan_flag,scan_x0,scan_x1,scan_nstep,
-     $                         model,qscan_ising,qscan_flag,qscan_out,
-     $                         deltar_flag,deltac_flag,deltaj_flag,
-     $                         deflate,nroot,match_flag,ising_output,
-     $                         match_sol,matrix_diagnose,fulldomain,
-     $                         coil,itermax,relax_fac,init_scan_flag,
-     $                         scan_e0,scan_e1,eqscan_flag,scan_estep
+     $                         initguess,rpec_eigenvalue,msing,eta,
+     $                         sol_flag,massden,nstep,rtol,atol,fmin,
+     $                         fmax,lam,scan_flag,scan_x0,scan_x1,
+     $                         scan_nstep,model,qscan_ising,qscan_flag,
+     $                         qscan_out,deltar_flag,deltac_flag,
+     $                         deltaj_flag,deflate,nroot,match_flag,
+     $                         ising_output,match_sol,matrix_diagnose,
+     $                         fulldomain,coil,itermax,relax_fac,
+     $                         init_scan_flag,scan_e0,scan_e1,
+     $                         eqscan_flag,scan_estep
       NAMELIST/rmatch_output/ bin_rpecsol,out_rpecsol
       NAMELIST/nyquist_input/nyquist
 10    FORMAT(1x,"Eigenvalue=",1p,2e11.3)
@@ -179,6 +180,10 @@ c-----------------------------------------------------------------------
       IF (totmsing.LT.msing) THEN
          WRITE(*,*)"msing is larger than totmsing."
          msing=totmsing
+      ELSE IF (totmsing.GT.msing.AND.coil%rpec_flag) THEN
+         WRITE(*,*)"Setting msing=totmsing for RPEC."
+         ! This is needed because RPEC needs all surfaces
+         msing=totmsing
       ENDIF
       IF( ANY(eta(1:msing)==0.0) ) THEN
          write(*,'(A,I3,A)') " ERROR: eta requires ",
@@ -219,6 +224,9 @@ c-----------------------------------------------------------------------
      $         restype(ising)%taua
          WRITE(*,'(2x,a,es10.3E2,a,es10.3E2)') 'taur =',
      $         restype(ising)%taur
+         WRITE(*,'(2x,a,es10.3E2,a,es10.3E2)') 'eta =',eta(ising)
+         WRITE(*,'(2x,a,es10.3E2,a,es10.3E2)') 'S =', ! Lundquist number
+     $         restype(ising)%taur/restype(ising)%taua 
          WRITE(*,'(2x,a,es10.3E2,a,es10.3E2)') 'v1 =',restype(ising)%v1
       ENDDO
       CLOSE(UNIT=bin_unit)
@@ -1317,7 +1325,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute inner region matching data.
 c-----------------------------------------------------------------------
-         CALL deltac_run(restype(ising),initguess,deltar(ising,:),
+         WRITE(*,*) 'eigenvalue = ',rpec_eigenvalue
+         CALL deltac_run(restype(ising),rpec_eigenvalue,deltar(ising,:),
      $                   deltaf(ising,:,:))
          delta1=deltar(ising,1)
          delta2=deltar(ising,2)
@@ -1530,6 +1539,33 @@ c-----------------------------------------------------------------------
          outtotsol=outtotsol+outs%sols(:,:,csol)
       ENDIF
       outtotsol_cut=outtotsol_cut+outs%sols_cut(:,:,csol)
+      IF(out_rpecsol)THEN
+         WRITE(filename1,*) TRIM(filename)//'_out.out'
+         CALL ascii_open(match_unit,TRIM(filename1),"REPLACE")
+         WRITE (match_unit,10) 'psifac'
+         DO m=outs%mlow,outs%mhigh
+            WRITE (tmp,"(I4)") m
+            tmp=ADJUSTL(tmp)
+            WRITE (comp_tittle,*) 'REAL(',TRIM(tmp),')'
+            WRITE (match_unit,10) TRIM(comp_tittle)
+            WRITE (comp_tittle,*) 'IMAG(',TRIM(tmp),')'
+            WRITE (match_unit,10) TRIM(comp_tittle)
+         ENDDO
+10       FORMAT (1P,A15,$)
+         WRITE (match_unit,*)
+         DO ip=0,outs%tot_grids
+            IF (outs%issing(ip)) CYCLE
+            WRITE (match_unit,20) outs%psi(ip)
+20          FORMAT (1P,E20.10,$)
+            DO ipert=1,outs%mpert
+               WRITE (match_unit,20)
+     $               REAL(outs%sols(ipert,ip,csol)),
+     $               IMAG(outs%sols(ipert,ip,csol))
+            ENDDO
+            WRITE (match_unit,*)
+         ENDDO
+         CALL ascii_close(match_unit)
+      ENDIF
 c-----------------------------------------------------------------------
 c     construct inner region solutions for each singular surface.
 c-----------------------------------------------------------------------
