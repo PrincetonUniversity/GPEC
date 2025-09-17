@@ -273,6 +273,7 @@ c-----------------------------------------------------------------------
       IF (match_flag) THEN
          nroot=1
          eigval=initguess
+         WRITE(*,*) "match_run: match_flag is true."
          CALL match_newton(match_delta,eigval,err,iter)
          WRITE (*,10) eigval
          WRITE(out_unit,10) eigval
@@ -465,6 +466,10 @@ c-----------------------------------------------------------------------
          idx2=ising*2
          idx3=idx1+2*msing
          idx4=idx2+2*msing
+         WRITE(*,*) "rotation=",rotation(ising)," ntor=",ntor
+         WRITE(*,*) "ising=",ising," eta=",eta(ising)
+         WRITE(*,*) "guess=",guess
+         WRITE(*,*) "guess_modify=",guess_modify
          guess_modify=guess+ifac*ntor*rotation(ising)
 c-----------------------------------------------------------------------
 c     compute inner region matching data.
@@ -1647,23 +1652,23 @@ c-----------------------------------------------------------------------
       IF(out_rpecsol)THEN
          WRITE(filename1,*) TRIM(filename)//'_out.out'
          CALL ascii_open(match_unit,TRIM(filename1),"REPLACE")
-         WRITE (match_unit,10) 'psifac'
+         WRITE (match_unit,11) 'psifac'
          DO m=outs%mlow,outs%mhigh
             WRITE (tmp,"(I4)") m
             tmp=ADJUSTL(tmp)
             WRITE (comp_tittle,*) 'REAL(',TRIM(tmp),')'
-            WRITE (match_unit,10) TRIM(comp_tittle)
+            WRITE (match_unit,11) TRIM(comp_tittle)
             WRITE (comp_tittle,*) 'IMAG(',TRIM(tmp),')'
-            WRITE (match_unit,10) TRIM(comp_tittle)
+            WRITE (match_unit,11) TRIM(comp_tittle)
          ENDDO
-10       FORMAT (1P,A15,$)
+11       FORMAT (1P,A15,$)
          WRITE (match_unit,*)
          DO ip=0,outs%tot_grids
             IF (outs%issing(ip)) CYCLE
-            WRITE (match_unit,20) outs%psi(ip)
-20          FORMAT (1P,E20.10,$)
+            WRITE (match_unit,21) outs%psi(ip)
+21          FORMAT (1P,E20.10,$)
             DO ipert=1,outs%mpert
-               WRITE (match_unit,20)
+               WRITE (match_unit,21)
      $               REAL(outtotsol(ipert,ip)),
      $               IMAG(outtotsol(ipert,ip))
             ENDDO
