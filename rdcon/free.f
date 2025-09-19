@@ -360,15 +360,15 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute output.
 c-----------------------------------------------------------------------
-      CALL spline_eval(sq,psifac,1)
-      qa=sq%f(4)
+
+      qa=qlim
 
       theta=rzphi%ys
       DO itheta=0,mtheta
          CALL bicube_eval(rzphi,psifac,theta(itheta),0)
          rfac(itheta)=SQRT(rzphi%f(1))
          angle(itheta)=twopi*(theta(itheta)+rzphi%f(2))
-         delta(itheta)=-rzphi%f(3)/qlim
+         delta(itheta)=-rzphi%f(3)/qa
       ENDDO
       r=ro+rfac*COS(angle)
       z=zo+rfac*SIN(angle)
@@ -376,7 +376,6 @@ c-----------------------------------------------------------------------
 c     invert values for nn < 0.
 c-----------------------------------------------------------------------
       n=nn
-      qa=qlim
       IF(nn < 0)THEN
          qa=-qa
          delta=-delta
