@@ -21,6 +21,7 @@ c     12. sing_der.
 c     13. sing_matvec.
 c     14. sing_log.
 c     15. sing_ua_diagnose.
+c     16. sing_min.
 c-----------------------------------------------------------------------
 c     subprogram 0. rdcon_sing_mod.
 c     module declarations.
@@ -142,6 +143,7 @@ c-----------------------------------------------------------------------
             q1sing(ising)=sq%f1(4)
             psising(ising)=psifac
             m=m+dm
+            IF(REAL(m,r8)/nn > qlim)EXIT
          ENDDO
       ENDDO
 c-----------------------------------------------------------------------
@@ -177,50 +179,58 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute psilim and qlim.
 c-----------------------------------------------------------------------
-      qlim=qmax
+      qlim=MIN(qmax,qhigh)
       q1lim=sq%fs1(mpsi,4)
       psilim=psihigh
-      IF(.NOT. sas_flag)RETURN
+      IF(sas_flag)THEN
 c-----------------------------------------------------------------------
 c     normalze dmlim to interval [0,1).
 c-----------------------------------------------------------------------
-      DO
-         IF(dmlim < 1)EXIT
-         dmlim=dmlim-1
-      ENDDO
-      DO
-         IF(dmlim >= 0)EXIT
-         dmlim=dmlim+1
-      ENDDO
+         DO
+            IF(dmlim < 1)EXIT
+            dmlim=dmlim-1
+         ENDDO
+         DO
+            IF(dmlim >= 0)EXIT
+            dmlim=dmlim+1
+         ENDDO
 c-----------------------------------------------------------------------
 c     compute qlim.
 c-----------------------------------------------------------------------
-      qlim=(INT(nn*qlim)+dmlim)/nn
-      DO
-         IF(qlim <= qmax)EXIT
-         qlim=qlim-1._r8/nn
-      ENDDO
+         qlim=(INT(nn*qlim)+dmlim)/nn
+         DO
+            IF(qlim <= qmax)EXIT
+            qlim=qlim-1._r8/nn
+         ENDDO
+      ENDIF
 c-----------------------------------------------------------------------
 c     use newton iteration to find psilim.
 c-----------------------------------------------------------------------
-      jpsi=MINLOC(ABS(sq%fs(:,4)-qlim))
-      psilim=sq%xs(jpsi(1))
-      it=0
-      DO
-         it=it+1
-         CALL spline_eval(sq,psilim,1)
-         q=sq%f(4)
-         q1=sq%f1(4)
-         dpsi=(qlim-q)/q1
-         psilim=psilim+dpsi
-         IF(ABS(dpsi) < eps*ABS(psilim) .OR. it > itmax)EXIT
-      ENDDO
-      q1lim=q1
+      IF(qlim<qmax)THEN
+         jpsi=MINLOC(ABS(sq%fs(:,4)-qlim))
+         IF (jpsi(1)>= mpsi) jpsi(1)=mpsi-1
+         psilim=sq%xs(jpsi(1))
+         it=0
+         DO
+            it=it+1
+            CALL spline_eval(sq,psilim,1)
+            q=sq%f(4)
+            q1=sq%f1(4)
+            dpsi=(qlim-q)/q1
+            psilim=psilim+dpsi
+            IF(ABS(dpsi) < eps*ABS(psilim) .OR. it > itmax)EXIT
+         ENDDO
+         q1lim=q1
 c-----------------------------------------------------------------------
 c     abort if not found.
 c-----------------------------------------------------------------------
-      IF(it > itmax)THEN
-         CALL program_stop("Can't find psilim.")
+         IF(it > itmax)THEN
+            CALL program_stop("Can't find psilim.")
+         ENDIF
+      ELSE
+         qlim = qmax
+         q1lim=sq%fs1(mpsi,4)
+         psilim=psihigh
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1279,5 +1289,42 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE sing_get_ua_cut
+c-----------------------------------------------------------------------
+c     subprogram 16. sing_min.
+c     checks for lower truncation point in equilibrium based on qlow.
+c     if found, changes psilow to match qlow.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE sing_min
+         INTEGER :: jpsi,it,itmax=50
+         REAL(r8) :: axisPsi,dpsi,q,q1,eps=1e-10
+
+         ! use newton iteration to find starting psi if qlow it is above q0
+         IF(qlow > qmin)THEN
+            ! start check from the edge for robustness in reverse shear cores
+            DO jpsi = sq%mx-1, 1, -1
+               IF(sq%fs(jpsi - 1, 4) < qlow) EXIT
+            ENDDO
+            axisPsi=sq%xs(jpsi)
+            it=0
+            DO
+               it=it+1
+               CALL spline_eval(sq,axisPsi,1)
+               q=sq%f(4)
+               q1=sq%f1(4)
+               dpsi=(qlow-q)/q1
+               axisPsi=axisPsi+dpsi
+               IF(ABS(dpsi) < eps*ABS(axisPsi) .OR. it > itmax)EXIT
+            ENDDO
+            psilow = axisPsi
+         ENDIF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE sing_min
+
 
       END MODULE rdcon_sing_mod

@@ -221,8 +221,8 @@ c-----------------------------------------------------------------------
      $     delta_mlow,delta_mhigh,delta_mband,thmax0,nstep,ksing,
      $     tol_nr,tol_r,crossover,ucrit,singfac_min,singfac_max,
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,sort_type,
-     $     gal_flag,regrid_flag,sing1_flag,
-     $     sing_order_ceiling,degen_tol,coil,Zeff
+     $     gal_flag,regrid_flag,sing1_flag,qlow,qhigh,
+     $     sing_order_ceiling,degen_tol,coil,Zeff,reform_eq_with_psilim
       NAMELIST/rdcon_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
@@ -275,10 +275,30 @@ c-----------------------------------------------------------------------
       CALL equil_out_global
       CALL equil_out_qfind
 c-----------------------------------------------------------------------
+c     optionally reform the eq splines to concentrate at true truncation
+c-----------------------------------------------------------------------
+      CALL sing_lim  ! determine if qhigh is truncating before psihigh
+      CALL sing_min  ! dettermine if qlow excludes more of the core
+      ! Unlike DCON, we force a resplining.
+      ! The galerkin method defines its domain boundaries using psihigh,
+      ! psilow, and the sq spline.
+      IF(.NOT. reform_eq_with_psilim)THEN
+         PRINT *, "** RDCON requires reformation of equil splines "//
+     $            "on q-based sub-interval."
+         PRINT *, "  > Forcing reform_eq_with_psilim=t"
+         reform_eq_with_psilim = .TRUE.
+      ENDIF
+      IF(psilim /= psihigh .OR. psilow /= sq%xs(0))THEN
+         psilow_tmp = psilow  ! if we feed psilow directly, it get's overwritten by namelist read
+         psilim_tmp = psilim
+         CALL equil_read(out_unit, psilim_tmp, psilow_tmp)
+         CALL equil_out_global
+         CALL equil_out_qfind
+      ENDIF
+c-----------------------------------------------------------------------
 c     define poloidal mode numbers.
 c-----------------------------------------------------------------------
       CALL sing_find
-      CALL sing_lim
       IF(cyl_flag)THEN
          mlow=delta_mlow
          mhigh=delta_mhigh
