@@ -297,7 +297,7 @@
 #     LIBS += -lX11
 #
 # If your platform is not properly included in this make file
-# contact nlogan@pppl.gov with your operating system, compiler, and
+# contact nikolas.logan@columbia.edu with your operating system, compiler, and
 # library installation details.
 #
 #   ---------------------------------------------------------------

@@ -21,7 +21,7 @@ module energy_integration
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
-    ! EMAIL: nlogan@pppl.gov
+    ! EMAIL: nikolas.logan@columbia.edu
     !-----------------------------------------------------------------------
     
     use params, only : r8, mp, me, e, npsi_out, nell_out, nlambda_out, &

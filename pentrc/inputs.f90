@@ -26,7 +26,7 @@ module inputs
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
-    ! EMAIL: nlogan@pppl.gov
+    ! EMAIL: nikolas.logan@columbia.edu
     !-----------------------------------------------------------------------
     
     use params, only : r8,xj,mp,me,e,mu0,twopi

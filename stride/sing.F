@@ -1217,8 +1217,8 @@ c-----------------------------------------------------------------------
       END SUBROUTINE sing_derL
 c-----------------------------------------------------------------------
 c     subprogram 13. sing_min.
-c     evaluates the differential equations of DCON: U'=LU
-c     using FM of Sol'ns. Gives output L, (not L*x as in x'=Lx).
+c     checks for lower truncation point in equilibrium based on qlow.
+c     if found, changes psilow to match qlow.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
