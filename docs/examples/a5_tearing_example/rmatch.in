@@ -26,7 +26,7 @@
     ! Resistive MHD options
     eta=1e-9,            ! Resistivity at each rational surface, starting from the core
     massden=2.67e-7      ! Mass density (kg/m^3) at each rational surface, starting from the core. 3.3e-7 is ni=1e20 m^-3.
-    rpec_eigenvalue=(0,10)  ! Eigenvalue -- i f 2pi (where f is doppler frequency between plasma and external perturbation) -- (gamma in Wang et al 2020 eq 1) for RPEC solve
+    rotation=1,          ! Rotation frequency f in Hz at each rational surface, starting from the core. (2pi f = omega, i omega = gamma in Wang et al 2020 eq 1)
     model="deltac"       ! Which method to use for computing inner layer response. Options are "deltar", "deltac", "deltaj". 
 
     match_sol%flag=t     ! Write outsol_qpert.bin

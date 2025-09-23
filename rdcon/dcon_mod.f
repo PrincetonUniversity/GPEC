@@ -128,6 +128,12 @@ c-----------------------------------------------------------------------
       REAL(r8) :: psilim,qlim,q1lim,dmlim=.5_r8,qhigh=1e3,qlow=0
       REAL(r8) :: psilow_tmp, psilim_tmp
 
+      ! for recording dw(q) near the boundary
+      REAL(r8) :: psiedge = 1.0
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: q_edge, psi_edge
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: dw_edge
+      INTEGER :: nperq_edge=20, size_edge=0, pre_edge=1, i_edge=1
+
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: delta
       TYPE(cellinfo_type) :: cellinfos
 

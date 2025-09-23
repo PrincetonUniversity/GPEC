@@ -94,13 +94,14 @@ c-----------------------------------------------------------------------
       LOGICAL :: bin_rpecsol=.FALSE.,out_rpecsol=.FALSE.
       CHARACTER(10) :: model="deltac"
       INTEGER :: msing,totmsing,nstep=32,qscan_ising=1
-      INTEGER :: scan_nstep, scan_estep
+      INTEGER :: scan_nstep, scan_estep, ntor
       INTEGER :: nroot=1,iroot,totnsol,ising_output=1,itermax=500
-      REAL(r8) :: eta(20),dlim=1000,massden(20),rotation(20)=0,ntor=1
+      REAL(r8) :: eta(20),dlim=1000,massden(20),rotation(20)=0
+      COMPLEX(r8) :: rpec_eigenvalues(20)=0
       REAL(r8) :: scan_x0,scan_x1,relax_fac,scan_e0,scan_e1
       REAL(r8), DIMENSION(:), ALLOCATABLE :: taur_save
       REAL(r8), DIMENSION(:), ALLOCATABLE :: zo_out,zi_in
-      COMPLEX(r8) :: initguess, rpec_eigenvalue
+      COMPLEX(r8) :: initguess
       COMPLEX(r8), DIMENSION(:),ALLOCATABLE :: cofout,cofin,q_in
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: delta,deltar
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: deltaf
@@ -128,8 +129,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8) :: eigval
       
       NAMELIST/rmatch_input/ deltabin_filename,galsol_filename,
-     $                         galsol_filename_cut,rotation,ntor,
-     $                         initguess,rpec_eigenvalue,msing,eta,
+     $                         galsol_filename_cut,rotation,
+     $                         initguess,msing,eta,
      $                         sol_flag,massden,nstep,rtol,atol,fmin,
      $                         fmax,lam,scan_flag,scan_x0,scan_x1,
      $                         scan_nstep,model,qscan_ising,qscan_flag,
@@ -166,7 +167,7 @@ c-----------------------------------------------------------------------
       CLOSE(UNIT=in_unit)      
       OPEN(UNIT=bin_unit,FILE=deltabin_filename,STATUS="UNKNOWN",
      $     FORM="UNFORMATTED")
-      READ(bin_unit)totmsing,totnsol,coil%rpec_flag
+      READ(bin_unit)ntor,totmsing,totnsol,coil%rpec_flag
       CALL deltac_read_parameters("rmatch.in")
       ALLOCATE (delta(totnsol,2*totmsing))
       ALLOCATE (deltar(totmsing,2),restype(totmsing))
@@ -226,7 +227,11 @@ c-----------------------------------------------------------------------
      $         restype(ising)%taur
          WRITE(*,'(2x,a,es10.3E2,a,es10.3E2)') 'eta =',eta(ising)
          WRITE(*,'(2x,a,es10.3E2,a,es10.3E2)') 'S =', ! Lundquist number
-     $         restype(ising)%taur/restype(ising)%taua 
+     $         restype(ising)%taur/restype(ising)%taua
+         IF (coil%rpec_flag) THEN
+            WRITE(*,'(2x,a,es10.3E2,a,es10.3E2)') 'rpec_eigenvalue = i',
+     $                     REAL(ntor,r8)*rotation(ising)*2*pi
+         ENDIF
          WRITE(*,'(2x,a,es10.3E2,a,es10.3E2)') 'v1 =',restype(ising)%v1
       ENDDO
       CLOSE(UNIT=bin_unit)
@@ -245,6 +250,7 @@ c     resistive perturbed equilibrium reconstruction.
 c-----------------------------------------------------------------------
       IF (coil%rpec_flag) THEN
          coil%mcoil=totnsol-2*msing
+         WRITE(*,*) "RPEC: mcoil=",coil%mcoil
          coil%m1=2*msing+1
          coil%m2=totnsol
          CALL match_rpec
@@ -470,7 +476,7 @@ c-----------------------------------------------------------------------
          WRITE(*,*) "ising=",ising," eta=",eta(ising)
          WRITE(*,*) "guess=",guess
          WRITE(*,*) "guess_modify=",guess_modify
-         guess_modify=guess+ifac*ntor*rotation(ising)
+         guess_modify=guess+ifac*REAL(ntor,r8)*rotation(ising)
 c-----------------------------------------------------------------------
 c     compute inner region matching data.
 c-----------------------------------------------------------------------
@@ -1315,7 +1321,7 @@ c-----------------------------------------------------------------------
       mat=0
       rmat=0
       mat(2*msing+1:4*msing,1:2*msing)
-     $     =TRANSPOSE(delta(1:2*msing,1:2*msing))
+     $     =TRANSPOSE(delta(1:2*msing,1:2*msing)) ! Delta_out
       rmat(2*msing+1:4*msing,1:coil%mcoil)
      $     =-TRANSPOSE(delta(coil%m1:coil%m2,1:2*msing))
       deltar=0
@@ -1330,9 +1336,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute inner region matching data.
 c-----------------------------------------------------------------------
-         WRITE(*,*) 'eigenvalue = ',rpec_eigenvalue
-         CALL deltac_run(restype(ising),rpec_eigenvalue,deltar(ising,:),
-     $                   deltaf(ising,:,:))
+         rpec_eigenvalues(ising)=2*pi*rotation(ising)*REAL(ntor,r8)*ifac
+         CALL deltac_run(restype(ising),rpec_eigenvalues(ising),
+     $                   deltar(ising,:),deltaf(ising,:,:))
          delta1=deltar(ising,1)
          delta2=deltar(ising,2)
 c-----------------------------------------------------------------------
@@ -1344,7 +1350,7 @@ c-----------------------------------------------------------------------
          mat(idx1,idx4)=1
          mat(idx2,idx3)=-1
          mat(idx2,idx4)=-1
-         mat(idx3,idx3)=-delta1
+         mat(idx3,idx3)=-delta1 ! Delta_in
          mat(idx3,idx4)=delta2
          mat(idx4,idx3)=-delta1
          mat(idx4,idx4)=-delta2
@@ -1352,8 +1358,24 @@ c-----------------------------------------------------------------------
 c     finish loop over singular surfaces.
 c-----------------------------------------------------------------------
       ENDDO
+      WRITE(*,*) "Finished loop over singular surfaces."
+      WRITE(*,*) "Writing mat to mat.out"
+
+      OPEN(UNIT=119,FILE="mat.out",STATUS="REPLACE")
+      DO ip=1,4*msing
+         WRITE(119,'(i4,1p,100e15.5)')ip,mat(ip,:)
+      ENDDO
+      CLOSE(UNIT=119)
+      WRITE(*,*) "Finished writing mat to mat.out"
+      WRITE(*,*) " Writing rmat to rmat.out"
+      OPEN(UNIT=120,FILE="rmat.out",STATUS="REPLACE")
+      DO ip=1,4*msing
+         WRITE(120,'(i4,1p,100e15.5)')ip,rmat(ip,:)
+      ENDDO
+      CLOSE(UNIT=120)
+      WRITE(*,*) "Finished writing rmat to rmat.out"
 c-----------------------------------------------------------------------
-c     compute the coefficients of outter and inner region solutions.
+c     compute the coefficients of outer and inner region solutions.
 c-----------------------------------------------------------------------
       cmat=mat
       cof=rmat
@@ -1362,10 +1384,25 @@ c-----------------------------------------------------------------------
       CALL zgetrs('N',nmat,coil%mcoil,cmat,nmat,ipiv,cof,nmat,info)
       cout=cof(1:2*msing,:)
       cin=cof(2*msing+1:4*msing,:)
+      WRITE(*,*) "Finished solving matrix equation."
+      WRITE(*,*) "Writing cout to cout.out"
+      OPEN(UNIT=121,FILE="cout.out",STATUS="REPLACE")
+      DO ip=1,2*msing
+         WRITE(121,'(i4,1p,100e15.5)')ip,cout(ip,:)
+      ENDDO
+      CLOSE(UNIT=121)
+      WRITE(*,*) "Finished writing cout to cout.out"
+      WRITE(*,*) "Writing cin to cin.out"
+      OPEN(UNIT=122,FILE="cin.out",STATUS="REPLACE")
+      DO ip=1,2*msing
+         WRITE(122,'(i4,1p,100e15.5)')ip,cin(ip,:)
+      ENDDO
+      CLOSE(UNIT=122)
+      WRITE(*,*) "Finished writing cin to cin.out"
 c-----------------------------------------------------------------------
 c     output inner and outer regions' solutions.
 c-----------------------------------------------------------------------
-      CALL match_alloc_sol(initguess)
+      CALL match_alloc_sol(rpec_eigenvalues)
       ALLOCATE (globalsol(outs%mpert,0:outs%tot_grids,coil%mcoil))
       jsol=0
       DO isol=coil%m1,coil%m2
@@ -1385,7 +1422,11 @@ c-----------------------------------------------------------------------
       ENDDO
       CALL bin_open(bin_unit,"globalsol.bin","REPLACE","REWIND","none")
       WRITE (bin_unit) outs%mpert,outs%tot_grids-countsing,coil%mcoil,
-     $                 outs%mlow,outs%mhigh 
+     $                 outs%mlow,outs%mhigh,msing
+      DO ising=1,msing
+         WRITE (bin_unit) restype(ising)%taur,restype(ising)%taua,
+     $                    eta(ising),rpec_eigenvalues(ising)
+      ENDDO
       WRITE (bin_unit) outs%psi
       DO isol=1,coil%mcoil
          DO ip=0,outs%tot_grids
@@ -1415,9 +1456,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------      
-      SUBROUTINE match_alloc_sol(eig)
-      COMPLEX(r8), INTENT(IN) :: eig
-      
+      SUBROUTINE match_alloc_sol(eigs)
+      COMPLEX(r8), DIMENSION(20), INTENT(IN) :: eigs
+
       INTEGER isol,ising
       COMPLEX(r8), DIMENSION(2) :: deltai
       COMPLEX(r8), DIMENSION(2,2) :: df
@@ -1459,7 +1500,7 @@ c-----------------------------------------------------------------------
       DO ising=1,msing
          sol => ins%sols(ising)
          ALLOCATE (sol%xvar(0:ins%tot_g),sol%sol(3,0:ins%tot_g,2))
-         CALL deltac_run(restype(ising),eig,deltai,df)
+         CALL deltac_run(restype(ising),eigs(ising),deltai,df)
       ENDDO
       output_sol=.FALSE.
 c-----------------------------------------------------------------------
@@ -1593,6 +1634,9 @@ c-----------------------------------------------------------------------
      $                        +sol%sol(comp,ip,2)*cin(2*ising-1)
          ENDDO
       ENDDO
+      ! WRITE(*,*) "intotsol", intotsol(0,1)
+      ! WRITE(*,*) "sol", sol%sol(comp,0,1), sol%sol(comp,0,2)
+      ! WRITE(*,*) "cin", cin(2*1), cin(2*1)
 c-----------------------------------------------------------------------
 c     convert xi to b field.
 c-----------------------------------------------------------------------      
@@ -1631,7 +1675,8 @@ c     write full outer region solutions, binary.
 c-----------------------------------------------------------------------
       IF(bin_rpecsol)THEN
          WRITE(filename1,*) TRIM(filename)//'_out.bin'
-         CALL bin_open(bin_unit,filename1,"REPLACE","REWIND","none")
+         CALL bin_open(bin_unit,TRIM(ADJUSTL(filename1)),
+     $                         "REPLACE","REWIND","none")
          DO ipert=1,outs%mpert
             DO ip=0,outs%tot_grids
                IF (outs%issing(ip)) THEN
@@ -1651,7 +1696,7 @@ c     write full outer region solutions, ascii.
 c-----------------------------------------------------------------------
       IF(out_rpecsol)THEN
          WRITE(filename1,*) TRIM(filename)//'_out.out'
-         CALL ascii_open(match_unit,TRIM(filename1),"REPLACE")
+         CALL ascii_open(match_unit,TRIM(ADJUSTL(filename1)),"REPLACE")
          WRITE (match_unit,11) 'psifac'
          DO m=outs%mlow,outs%mhigh
             WRITE (tmp,"(I4)") m
@@ -1698,7 +1743,8 @@ c-----------------------------------------------------------------------
          ENDDO
          CALL cspline_fit(outcut_sp,"extrap")
          WRITE(filename1,*) TRIM(filename)//'_in.bin'
-         CALL bin_open(bin_unit,filename1,"REPLACE","REWIND","none")
+         CALL bin_open(bin_unit,TRIM(ADJUSTL(filename1)),
+     $                                 "REPLACE","REWIND","none")
          DO ising=1,msing
             DO ip=-ins%tot_g,ins%tot_g
                IF (match_sol%uniform) THEN
@@ -1735,8 +1781,9 @@ c     write resonant outer region solutions, binary.
 c-----------------------------------------------------------------------
       IF (match_sol%flag .AND. bin_rpecsol) THEN
          WRITE(filename1,*) TRIM(filename)//'_out_qpert.bin'
-         CALL bin_open(bin_unit,filename1,"REPLACE","REWIND","none")
-         DO ip=0,outs%tot_grids                
+         CALL bin_open(bin_unit,TRIM(ADJUSTL(filename1)),
+     $                            "REPLACE","REWIND","none")
+         DO ip=0,outs%tot_grids
             IF (outs%issing(ip)) THEN
 c               WRITE(bin_unit)
                CYCLE
@@ -1817,6 +1864,7 @@ c-----------------------------------------------------------------------
          CALL cspline_fit(insp(ising),"extrap")
          psibou(1)=psising(ising-1)
          psibou(2)=psising(ising+1)
+         WRITE(*,*) "psibou",psibou(1),psibou(2)
          IF (psibou(1) < inpsifac(-ins%tot_g,ising)) THEN
             psibou(1)=inpsifac(-ins%tot_g,ising)
          ENDIF
@@ -1847,12 +1895,14 @@ c-----------------------------------------------------------------------
             CALL cspline_eval(insp(ising),psifac,0)
             outsols=outtotsol(ipert,ipsi)
             insols=insp(ising)%f(1)+outsols-u0
+            WRITE(*,*) "ipsi,dpsi,insols,outsols",ipsi,dpsi,
+     $                 REAL(insols),REAL(outsols)
             diffsols=(outsols-insols)/insols
             IF (psifac<psibou(1)) THEN
                WRITE(*,*) "ising=",ising,"csol=",csol
                WRITE(*,*) "threshold or inpsifac maybe too small."
+               CALL program_stop("psifac<psibou(1).")
                EXIT
-c               CALL program_stop("psifac<psibou(1).")
             ENDIF
             IF (ABS(diffsols)<match_sol%connect_threshold) THEN
                idxconnect(ising,1)=ipsi
@@ -1879,8 +1929,8 @@ c               CALL program_stop("psifac<psibou(1).")
             IF (psifac>psibou(2)) THEN
                WRITE(*,*) "ising=",ising,"csol=",csol
                WRITE(*,*) "threshold or inpsifac  maybe too small."
+               CALL program_stop("psifac>psibou(2).")
                EXIT
-c               CALL program_stop("psifac>psibou(2).")
             ENDIF
             IF (ABS(diffsols)<match_sol%connect_threshold) THEN
                idxconnect(ising,2)=ipsi

@@ -1499,7 +1499,7 @@ c-----------------------------------------------------------------------
       OPEN(UNIT=gal_bin_unit,FILE=TRIM(name)//".dat",STATUS="UNKNOWN",
      $     FORM="UNFORMATTED")
       nsol=SIZE(delta,1)
-      WRITE(gal_bin_unit)msing,nsol,coil%rpec_flag
+      WRITE(gal_bin_unit)nn,msing,nsol,coil%rpec_flag
       WRITE(gal_bin_unit)delta
       DO ising=1,msing
          singp => sing(ising)
@@ -1575,7 +1575,7 @@ c         WRITE(gal_bin_unit) galwt
 c         CALL bin_close(gal_bin_unit)
       ELSEIF (vac_flag) THEN
          CALL free_get_wvac
-         wv=wvac*psio**2
+         wv=wvac*psio**2.0_r8
          cell%mat(:,:,3,3)=cell%mat(:,:,3,3)+wv
       ELSE
          cell%mat(:,:,3,:)=0.0

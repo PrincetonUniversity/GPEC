@@ -92,5 +92,4 @@
     sing_nout=100        ! msing_write control: number of points at which to compute inner region equations for printing (?)
     us_flag=t            ! msing_write control: whether to compute small asymptotic solution for printing (?)
     ul_flag=t            ! msing_write control: whether to compute large asymptotic solution for printing (?)
-
 /

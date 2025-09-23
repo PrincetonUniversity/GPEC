@@ -24,9 +24,9 @@
     qscan_out=f          ! Output delta from Q scan?
 
     ! Resistive MHD options
-    eta=8e-8,8e-8,8e-8,8e-8   ! Resistivity at each rational surface, starting from the core
+    eta=8e-18,8e-18,8e-18,8e-18   ! Resistivity at each rational surface, starting from the core
     massden=3.3e-07,3.3e-07,3.3e-07,3.3e-07   ! Mass density (kg/m^3) at each rational surface, starting from the core. 3.3e-7 is ni=1e20 m^-3.
-    rpec_eigenvalue=(0,10)    ! Eigenvalue -- i f 2pi (where f is doppler frequency between plasma and external perturbation) -- (gamma in Wang et al 2020 eq 1) for RPEC solve
+    rotation=1,1,1,1     ! Rotation frequency f in Hz at each rational surface, starting from the core. (2pi f = omega, i omega = gamma in Wang et al 2020 eq 1)
     model="deltac"       ! Which method to use for computing inner layer response. Options are "deltar", "deltac", "deltaj". 
 
     match_sol%flag=t     ! Write outsol_qpert.bin
@@ -38,8 +38,8 @@
     coil%ideal_flag=f    ! Write ideal galerkin solution instead of resistive -- combined with GPEC this is physically equivalent to running regular DCON
 /
 &RMATCH_OUTPUT
-    bin_rpecsol=f        ! Write outer and inner solutions to binary files
-    out_rpecsol=f        ! Write outer and inner solutions to ascii files 
+    bin_rpecsol=t        ! Write outer and inner solutions to binary files
+    out_rpecsol=f        ! Write outer and inner solutions to ascii files
 /
 
 &DELTAC_LIST
@@ -64,8 +64,8 @@
     cutoff=20            ! The number of elements include the large solution as the driving term
 
     interp_np=5          ! The number of interpretation points for outputting Galerkin solution
-    order_pow=20         ! The order of polynomial expansion of large solution in asymptotic matching
-    order_exp=20         ! The order of exponential expansion of small solution in asymptotic matching
+    order_pow=100        ! The order of polynomial expansion of large solution in asymptotic matching
+    order_exp=50         ! The order of exponential expansion of small solution in asymptotic matching
 
     diagnose_res=f       ! Diagnose asymptotic solutions in ua.out/ua.bin
 
