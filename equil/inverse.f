@@ -125,7 +125,12 @@ c-----------------------------------------------------------------------
 c     prepare new spline type for surface quantities.
 c-----------------------------------------------------------------------
       IF(grid_type == "original" .OR. grid_type == "orig")mpsi=sq_in%mx
-      CALL spline_alloc(sq,mpsi,4)
+      IF(.NOT. sq%allocated)THEN
+         CALL spline_alloc(sq,mpsi,4)
+      ELSE
+         CALL spline_dealloc(sq)
+         CALL spline_alloc(sq,mpsi,4)
+      ENDIF
       sq%name="  sq  "
       sq%title=(/"psifac","twopif","mu0 p ","dvdpsi","  q   "/)
 c-----------------------------------------------------------------------
@@ -461,7 +466,12 @@ c-----------------------------------------------------------------------
 c     prepare new spline type for surface quantities.
 c-----------------------------------------------------------------------
       IF(grid_type == "original" .OR. grid_type == "orig")mpsi=sq_in%mx
-      CALL spline_alloc(sq,mpsi,4)
+      IF(.NOT. sq%allocated)THEN
+         CALL spline_alloc(sq,mpsi,4)
+      ELSE
+         CALL spline_dealloc(sq)
+         CALL spline_alloc(sq,mpsi,4)
+      ENDIF
       sq%name="  sq  "
       sq%title=(/"psifac","twopif","mu0 p ","dvdpsi","  q   "/)
 c-----------------------------------------------------------------------
