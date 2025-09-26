@@ -97,8 +97,18 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     allocate arrays.
 c-----------------------------------------------------------------------
-      CALL spline_alloc(sq_in,ma,4)
-      CALL bicube_alloc(rz_in,ma,mtau,2)
+      IF(.NOT. sq_in%allocated)THEN
+         CALL spline_alloc(sq_in,ma,4)
+      ELSE
+         CALL spline_dealloc(sq)
+         CALL spline_alloc(sq_in,ma,4)
+      ENDIF
+      IF(.NOT. rz_in%allocated)THEN
+         CALL bicube_alloc(rz_in,ma,mtau,2)
+      ELSE
+         CALL bicube_dealloc(rz_in)
+         CALL bicube_alloc(rz_in,ma,mtau,2)
+      ENDIF
       ALLOCATE(r2(0:ma),temp(0:nstep,0:8))
       r2=0
 c-----------------------------------------------------------------------
@@ -166,7 +176,12 @@ c-----------------------------------------------------------------------
 c     fit to cubic splines.
 c-----------------------------------------------------------------------
       mstep=istep
-      CALL spline_alloc(spl,mstep,8)
+      IF(.NOT. spl%allocated)THEN
+         CALL spline_alloc(spl,mstep,8)
+      ELSE
+         CALL spline_dealloc(spl)
+         CALL spline_alloc(spl,mstep,8)
+      ENDIF
       spl%xs=temp(0:mstep,0)
       spl%fs=temp(0:mstep,1:8)
       CALL spline_fit(spl,"extrap")
