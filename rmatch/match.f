@@ -108,6 +108,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: oldroots
             
       TYPE(resist_type),DIMENSION(:),POINTER :: restype
+      TYPE(singbounds_type),DIMENSION(:),POINTER :: singbounds
       TYPE(nyquist_type) :: nyquist
       TYPE(match_sol_type), SAVE :: match_sol
       TYPE(coil_type), SAVE :: coil
@@ -171,6 +172,7 @@ c-----------------------------------------------------------------------
       CALL deltac_read_parameters("rmatch.in")
       ALLOCATE (delta(totnsol,2*totmsing))
       ALLOCATE (deltar(totmsing,2),restype(totmsing))
+      ALLOCATE (singbounds(totmsing))
       ALLOCATE (deltaf(totmsing,2,2))
       ALLOCATE (taur_save(totmsing))
       ALLOCATE (zi_in(msing),zo_out(msing),q_in(msing))
@@ -208,6 +210,12 @@ c-----------------------------------------------------------------------
      $        eta1,rho1,
      $        restype(ising)%taua,restype(ising)%taur,
      $        restype(ising)%v1
+         READ(bin_unit)
+     $   singbounds(ising)%idealresleft,singbounds(ising)%idealresright,
+     $   singbounds(ising)%idealextleft,singbounds(ising)%idealextright,
+     $   singbounds(ising)%idealauxextleft,
+     $   singbounds(ising)%idealauxextright
+
          taur_save(ising)=restype(ising)%taur*eta1
          restype(ising)%taur=taur_save(ising)/eta(ising)
          restype(ising)%taua=restype(ising)%taua/sqrt(rho1)
@@ -472,10 +480,10 @@ c-----------------------------------------------------------------------
          idx2=ising*2
          idx3=idx1+2*msing
          idx4=idx2+2*msing
-         WRITE(*,*) "rotation=",rotation(ising)," ntor=",ntor
-         WRITE(*,*) "ising=",ising," eta=",eta(ising)
-         WRITE(*,*) "guess=",guess
-         WRITE(*,*) "guess_modify=",guess_modify
+         ! WRITE(*,*) "rotation=",rotation(ising)," ntor=",ntor
+         ! WRITE(*,*) "ising=",ising," eta=",eta(ising)
+         ! WRITE(*,*) "guess=",guess
+         ! WRITE(*,*) "guess_modify=",guess_modify
          guess_modify=guess+ifac*REAL(ntor,r8)*rotation(ising)
 c-----------------------------------------------------------------------
 c     compute inner region matching data.
@@ -1864,7 +1872,7 @@ c-----------------------------------------------------------------------
          CALL cspline_fit(insp(ising),"extrap")
          psibou(1)=psising(ising-1)
          psibou(2)=psising(ising+1)
-         WRITE(*,*) "psibou",psibou(1),psibou(2)
+         ! WRITE(*,*) "psibou",psibou(1),psibou(2)
          IF (psibou(1) < inpsifac(-ins%tot_g,ising)) THEN
             psibou(1)=inpsifac(-ins%tot_g,ising)
          ENDIF
@@ -1895,8 +1903,8 @@ c-----------------------------------------------------------------------
             CALL cspline_eval(insp(ising),psifac,0)
             outsols=outtotsol(ipert,ipsi)
             insols=insp(ising)%f(1)+outsols-u0
-            WRITE(*,*) "ipsi,dpsi,insols,outsols",ipsi,dpsi,
-     $                 REAL(insols),REAL(outsols)
+   !          WRITE(*,*) "ipsi,dpsi,insols,outsols",ipsi,dpsi,
+   !   $                 REAL(insols),REAL(outsols)
             diffsols=(outsols-insols)/insols
             IF (psifac<psibou(1)) THEN
                WRITE(*,*) "ising=",ising,"csol=",csol
@@ -1939,6 +1947,8 @@ c-----------------------------------------------------------------------
             outtotsol(ipert,ipsi)=insols
          ENDDO
       ENDDO
+
+      WRITE(*,*) "SUCCESSFULLY AUTO CONNECTED INNER AND OUTER REGIONS."
 c-----------------------------------------------------------------------
 c     deallocate.
 c-----------------------------------------------------------------------      

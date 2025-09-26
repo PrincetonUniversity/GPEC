@@ -36,14 +36,22 @@ c-----------------------------------------------------------------------
       USE jacobi_mod
       USE inps_mod
       USE inpso_mod
+      USE msing_mod, ONLY: msing_bounds
       IMPLICIT NONE
 
       TYPE :: hermite_type
       REAL(r8), DIMENSION(0:3) :: pb,qb
       END TYPE hermite_type
 
+      TYPE :: singbounds_type
+      REAL(r8) :: idealresleft,idealresright,idealextleft,idealextright,
+     $    idealauxextleft,idealauxextright
+      REAL(r8) :: innerresleft,innerresright,innerextleft,innerextright,
+     $    innerauxextleft,innerauxextright 
+      END TYPE singbounds_type
+
       TYPE :: cell_type
-      CHARACTER(6) :: etype
+      CHARACTER(6) :: extra,etype
       INTEGER :: np
       INTEGER, DIMENSION(:), ALLOCATABLE :: emap
       INTEGER, DIMENSION(:,:), ALLOCATABLE :: map
@@ -178,7 +186,7 @@ c-----------------------------------------------------------------------
          xmin=-xmax
       CASE DEFAULT
          WRITE(message,'(a,i2)') 
-     $        "deltac_run: invalide value fulldomain = ",fulldomain
+     $        "deltac_run: invalid value fulldomain = ",fulldomain
       END SELECT
       IF(diagnose_res)CALL inpso_ua_diagnose
 c-----------------------------------------------------------------------
@@ -251,7 +259,6 @@ c-----------------------------------------------------------------------
          ENDDO
          WRITE(array_unit,40)
          CLOSE(UNIT=array_unit)
-         CALL program_stop("deltac_solver: abort after diagnose.")
       ENDIF
 c-----------------------------------------------------------------------
 c     solve the galerkin matrix.
@@ -264,6 +271,25 @@ c-----------------------------------------------------------------------
      $        gal%ldab,gal%ipiv,gal%sol(:,isol),gal%ndim,infos)
       ENDDO
 c-----------------------------------------------------------------------
+c     write out gal%sol.
+c-----------------------------------------------------------------------
+      IF(diagnose)THEN
+         OPEN(UNIT=124,FILE="galsol.out",STATUS="REPLACE")
+         !gal%sol(gal%ndim,gal%msol))
+         WRITE(*,*) "Writing galsol.out with ",gal%ndim," rows and ",
+     $     gal%msol," columns." 
+         WRITE(124,*) gal%ndim,gal%msol
+         DO isol=1,gal%msol
+            WRITE(124,*) (REAL(gal%sol(ix,isol)),ix=1,gal%ndim)
+         ENDDO
+         DO isol=1,gal%msol
+            WRITE(124,*)
+            WRITE(124,*) (AIMAG(gal%sol(ix,isol)),ix=1,gal%ndim)
+         ENDDO
+         CLOSE(UNIT=124)
+         CALL program_stop("deltac_solver: abort after diagnose")
+      ENDIF
+c-----------------------------------------------------------------------
 c     compute and write delta.
 c-----------------------------------------------------------------------
       SELECT CASE (gal_method)
@@ -274,7 +300,7 @@ c-----------------------------------------------------------------------
                imap=gal%intvl%cell(nx)%map(1,4)
                delta(isol)=gal%sol(imap,isol)
             ENDDO
-c     WRITE(*,*)"delta1=",delta(1),"delta2=",delta(2)
+      ! WRITE(*,*)"delta1=",delta(1),"delta2=",delta(2)
 c     CALL program_stop("delta+- stop")
          CASE (1,2)
             DO isol=1,gal%msol
@@ -299,7 +325,7 @@ c     $        ("Finish full domain comptation with normal method.")
             ENDDO
          ENDDO
       END SELECT
-      
+      ! WRITE(*,*)"output solution =",output_sol
       IF(output_sol)CALL deltac_output_solution(gal)
 c-----------------------------------------------------------------------
 c     deallocate arrays and finish.
@@ -1672,6 +1698,7 @@ c-----------------------------------------------------------------------
          ENDIF
       ENDDO
       sol=0.0
+      u=0.0
 c-----------------------------------------------------------------------
 c     construct non-resonant solution (normal solution).
 c-----------------------------------------------------------------------

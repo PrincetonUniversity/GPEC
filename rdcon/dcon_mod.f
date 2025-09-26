@@ -98,6 +98,8 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(2) :: r2
       INTEGER, DIMENSION(:), POINTER :: n1,n2
       REAL(r8) :: psifac,rho,q,q1,di
+      REAL(r8) :: auxextleft,extleft,resleft,resright,extright,
+     $                                               auxextright
       COMPLEX(r8) :: alpha,beta
       COMPLEX(r8), DIMENSION(:), POINTER :: power
       COMPLEX(r8), DIMENSION(:,:,:,:), POINTER :: vmatr,mmatr,

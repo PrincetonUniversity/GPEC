@@ -229,7 +229,7 @@ c-----------------------------------------------------------------------
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
      $     out_fl,bin_fl,out_evals,bin_evals,bin_euler,euler_stride,
      $     bin_vac,ahb_flag,mthsurf0,msol_ahb,diagnose_fixup,verbose,
-     $     out_ahg2msc,MRE_flag,geom_flag
+     $     out_ahg2msc,MRE_flag,geom_flag,netcdf_out
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -435,7 +435,8 @@ c-----------------------------------------------------------------------
          ALLOCATE(mx0(mpert,mpert),vx0(mpert))
          mx0=0
          vx0=0
-         CALL rdcon_netcdf_out(mx0,mx0,mx0,mx0,vx0,vx0,vx0)
+         IF (netcdf_out)
+     $    CALL rdcon_netcdf_out(mx0,mx0,mx0,mx0,vx0,vx0,vx0)
       ENDIF
       IF(mat_flag .OR. ode_flag)DEALLOCATE(amat,bmat,cmat,ipiva,jmat)
       IF(bin_euler)CALL bin_close(euler_bin_unit)
