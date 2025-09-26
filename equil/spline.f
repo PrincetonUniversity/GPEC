@@ -67,13 +67,11 @@ c-----------------------------------------------------------------------
 
       INTEGER, INTENT(IN) :: mx,nqty
       TYPE(spline_type), INTENT(INOUT) :: spl
-      ! IF(spl%allocated) CALL spline_dealloc(spl)
 c-----------------------------------------------------------------------
 c     safety check.
 c-----------------------------------------------------------------------
       IF(spl%allocated)
      $   CALL program_stop("spline_alloc: spline already allocated")
-      
 c-----------------------------------------------------------------------
 c     set scalars.
 c-----------------------------------------------------------------------
@@ -146,6 +144,8 @@ c-----------------------------------------------------------------------
 
       TYPE(spline_type), INTENT(INOUT) :: spl
       CHARACTER(*), INTENT(IN) :: endmode
+      IF(.NOT.spl%allocated)
+     $   CALL program_stop("spline_fit: spline not allocated") 
 c-----------------------------------------------------------------------
 c     switch between two spline_fit.
 c-----------------------------------------------------------------------
