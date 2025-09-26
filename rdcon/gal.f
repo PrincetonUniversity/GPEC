@@ -1294,7 +1294,23 @@ c-----------------------------------------------------------------------
      $            +SUM(CONJG(ua(:,isol+mpert,1))
      $            *(MATMUL(f,du2)+MATMUL(k,u2)))
       ENDIF
-
+c-----------------------------------------------------------------------
+c     Assign sing cell bound values for gpec.
+c-----------------------------------------------------------------------
+      SELECT CASE (cell%extra)
+      CASE ("left")
+         IF (cell%etype == "ext2") THEN
+            sing(jsing)%auxextleft=cell%x(1)
+         ELSE IF (cell%etype == "ext") THEN
+            sing(jsing)%extleft=cell%x(1)
+         ENDIF
+      CASE ("right")
+         IF (cell%etype == "ext2") THEN
+            sing(jsing)%auxextright=cell%x(2)
+         ELSE IF (cell%etype == "ext") THEN
+            sing(jsing)%extright=cell%x(2)
+         ENDIF
+      END SELECT
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -1337,8 +1353,10 @@ c-----------------------------------------------------------------------
                SELECT CASE(cell%extra)
                CASE("left")
                   jsing=ising+1
+                  sing(jsing)%resleft=cell%x(1)
                CASE("right")
                   jsing=ising
+                  sing(jsing)%resright=cell%x(2)
                END SELECT
                CALL gal_lsode_int(u_res,u_hermite)
                cell%erhs=-u_res(1)
@@ -1510,6 +1528,10 @@ c-----------------------------------------------------------------------
      $        singp%restype%eta,singp%restype%rho,
      $        singp%restype%taua,singp%restype%taur,
      $        singp%restype%v1
+         WRITE(gal_bin_unit)
+     $        singp%resleft,singp%resright,
+     $        singp%extleft,singp%extright,
+     $        singp%auxextleft,singp%auxextright
       ENDDO      
       CLOSE(UNIT=gal_bin_unit)
 c-----------------------------------------------------------------------
