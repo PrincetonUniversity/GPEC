@@ -105,6 +105,7 @@ c-----------------------------------------------------------------------
       CALL bin_open(bin_unit,rdconfile,"OLD","REWIND","none")
       READ(bin_unit) galsol%mpert,galsol%tot_grids,galsol%mtot,
      $                 galsol%mlow,galsol%mhigh,galsol%msing
+      galmpert = galsol%mpert
       IF (galsol%msing /= msing) THEN
          PRINT *,"RDCON msing = ",galsol%msing
          PRINT *,"GPEC  msing = ",msing

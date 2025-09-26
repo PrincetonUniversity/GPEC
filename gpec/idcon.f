@@ -468,28 +468,18 @@ c-----------------------------------------------------------------------
       u2%fs=0
       u3%fs=0
       u4%fs=0
+      ! Find the solution given edge boundary condition
       IF (galsol%gal_flag) THEN
-         ! direct solutions from rmatch (single m at boundary)
-         !DO istep=0,galsol%tot_grids
-         !   u1%fs(istep,:) = galsol%u(:,istep,egnum)
-         !ENDDO
-
-         ! convert rdcon solutions with single m at psilim
-         ! to energy ranked solutions with multiple m at psilim
-         istep=galsol%tot_grids
-         DO ipert=1,galsol%mpert
-            temp2(:,ipert)=galsol%u(:,istep,ipert)
-         ENDDO
+         ! use galerkin solutions from rmatch
+         temp2 = galsol%u(:,galsol%tot_grids,1:galmpert)
          CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
-         tuedge=uedge
-         CALL zgetrs('N',mpert,1,temp2,mpert,ipiv,tuedge,mpert,info)
+         CALL zgetrs('N',mpert,1,temp2,mpert,ipiv,uedge,mpert,info)
+         temp1=uedge
          DO istep=0,galsol%tot_grids
-            DO ipert=1,galsol%mpert
-               u1%fs(istep,:)=u1%fs(istep,:)
-     $                       +galsol%u(:,istep,ipert)*tuedge(ipert)
-            ENDDO
+            u1%fs(istep,:)=MATMUL(galsol%u(:,istep,1:galmpert),temp1)
          ENDDO
       ELSE
+         ! use dcon solutions from euler.bin
          temp2=soltype(mstep)%u(:,1:mpert,1)
          CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
          CALL zgetrs('N',mpert,1,temp2,mpert,ipiv,uedge,mpert,info)
