@@ -25,7 +25,7 @@
 
     ! Resistive MHD options
     eta=8e-8             ! Resistivity at each rational surface, starting from the core
-    massden=5.0e-06   ! Mass density (kg/m^3) at each rational surface, starting from the core. 3.3e-7 is ni=1e20 m^-3.
+    massden=5.0e-06      ! Mass density (kg/m^3) at each rational surface, starting from the core. 3.3e-7 is ni=1e20 m^-3.
     rotation=1.0         ! Rotation frequency f in Hz at each rational surface, starting from the core. (2pi f = omega, i omega = gamma in Wang et al 2020 eq 1)
     model="deltac"       ! Which method to use for computing inner layer response. Options are "deltar", "deltac", "deltaj"
 
@@ -35,11 +35,11 @@
     match_sol%auto_connect=f ! run match.f/match_auto_connect; false in examples, unknown precise behavior
     match_sol%connect_threshold=1e-3 ! Proportional difference between outer and inner solutions for match_auto_connect to connect them
     match_sol%b_flag=f   ! Write solutions in terms of b instead of xi
-    coil%ideal_flag=t    ! Write ideal galerkin solution instead of resistive -- combined with GPEC this is physically equivalent to running regular DCON
+    coil%ideal_flag=f    ! Write ideal galerkin solution instead of resistive -- combined with GPEC this is physically equivalent to running regular DCON
 /
 &RMATCH_OUTPUT
     bin_rpecsol=t        ! Write outer and inner solutions to binary files
-    out_rpecsol=f        ! Write outer and inner solutions to ascii files
+    out_rpecsol=t        ! Write outer and inner solutions to ascii files
 /
 
 &DELTAC_LIST
@@ -66,7 +66,6 @@
     interp_np=5          ! The number of interpretation points for outputting Galerkin solution
     order_pow=100        ! The order of polynomial expansion of large solution in asymptotic matching
     order_exp=20         ! The order of exponential expansion of small solution in asymptotic matching
-    inps_type="inps"
     diagnose_res=f       ! Diagnose asymptotic solutions in ua.out/ua.bin
 
     x0_ua=0.3            ! Starting distance from rational surface to begin evaluating the convergence of the asymptotic approximation of the inner region equations in function inpso_ua_diagnose

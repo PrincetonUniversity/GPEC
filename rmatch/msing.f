@@ -36,6 +36,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: us_flag=.TRUE.,ul_flag=.TRUE.
       CHARACTER(80) :: vmat_filename
       INTEGER, PRIVATE :: mpert,msing
+      INTEGER :: msing_bounds
       TYPE(sing_type), DIMENSION(:), POINTER, PRIVATE :: sing
       TYPE(sing_type), POINTER, PRIVATE :: singp
 
@@ -59,6 +60,7 @@ c-----------------------------------------------------------------------
       OPEN(UNIT=debug_unit,FILE=TRIM(vmat_filename),STATUS="OLD",
      $     FORM="UNFORMATTED")
       READ(debug_unit)mpert,msing
+      msing_bounds=msing
       ALLOCATE(sing(msing))
       DO ising=1,msing
          singp => sing(ising)
