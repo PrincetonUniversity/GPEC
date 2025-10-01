@@ -22,7 +22,6 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE equil_out_mod
       USE global_mod
-      USE bernstein_mod 
 
       IMPLICIT NONE
 

@@ -138,7 +138,7 @@ c-----------------------------------------------------------------------
       CALL equil_out_diagnose(.FALSE.,out_unit)
       CALL equil_out_write_2d
       IF (bernstien_flag) THEN
-            CALL bernstein_calculation
+          CALL bernstein_calculation
       END IF
       IF(dump_flag .AND. eq_type /= "dump")CALL equil_out_dump
       IF(direct_flag)CALL bicube_dealloc(psi_in)
