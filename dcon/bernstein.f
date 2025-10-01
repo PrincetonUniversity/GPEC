@@ -371,7 +371,7 @@ c     subprogram 3. bernstein_calculation.
 c-----------------------------------------------------------------------
       SUBROUTINE bernstein_calculation
 
-      INTEGER :: ipsi, itheta
+      INTEGER :: ipsi, itheta, k_unit
       REAL(r8) :: psi, theta
 
       REAL(r8) :: jacfac, chi1, q, f1, p1
@@ -475,6 +475,16 @@ c-----------------------------------------------------------------------
       END DO
 
       PRINT *, ' > K value calculation started3'
+c-----------------------------------------------------------------------
+c     file print
+c-----------------------------------------------------------------------
+      k_unit = 60
+      CALL ascii_open(k_unit, "bernstein_k.out", "UNKNOWN")
+      CALL bicube_write_xy(bernstein_k, .TRUE., .FALSE.,
+     $                     k_unit, 0, .FALSE.)
+         CALL ascii_close(k_unit)
+
+      PRINT *, ' > K calculation finished'
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
