@@ -273,8 +273,7 @@ c-----------------------------------------------------------------------
       INTEGER :: ipsi, itheta, curvature_unit
       REAL(r8) :: psi, theta
       REAL(r8) :: q,f,chi1, rfac, eta, r, jacfac, p1
-      REAL(r8) :: kappa_dot_grad_psi, delpsi, B_squared2
-      REAL(r8) :: g_psi_g_psi, g_psi_g_theta
+      REAL(r8) :: kappa_psi, delpsi, g_psi_g_theta
 
       CALL bicube_alloc(curvature, rzphi%mx, rzphi%my, 1)
       curvature%xs = rzphi%xs
@@ -298,11 +297,10 @@ c-----------------------------------------------------------------------
          q= sq%f(4)
          DO itheta = 0, mtheta
             CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),1)
-
+            jacfac = rzphi%f(4)
             rfac=SQRT(rzphi%f(1)) ! minor radius
-            eta=twopi*(itheta/REAL(mtheta,r8)+rzphi%f(2))
-            r=ro+rfac*COS(eta) ! major radius
-            jacfac=rzphi%f(4) ! Jacobian
+            eta=(rzphi%ys(itheta)+rzphi%f(2))
+            r=ro+rfac*COS(twopi*eta) ! major radius
             
             delpsi = SQRT(w(ipsi,itheta,1,1)**2 +
      $                      w(ipsi,itheta,1,2)**2 +
@@ -323,8 +321,9 @@ c-----------------------------------------------------------------------
             psi = rzphi%xs(ipsi)
             theta = rzphi%ys(itheta)
 
-            g_psi_g_psi = w(ipsi,itheta,1,1)**2
-     $                    +w(ipsi,itheta,1,2)**2
+            delpsi = SQRT(w(ipsi,itheta,1,1)**2 +
+     $                      w(ipsi,itheta,1,2)**2 +
+     $                      w(ipsi,itheta,1,3)**2)
 
             g_psi_g_theta = w(ipsi,itheta,1,1)*w(ipsi,itheta,2,1)
      $                    +w(ipsi,itheta,1,2)*w(ipsi,itheta,2,2)
@@ -333,13 +332,13 @@ c-----------------------------------------------------------------------
             p1 = sq%f1(2)
 
             CALL bicube_eval(B_squared, psi, theta, 1)
-            kappa_dot_grad_psi = (g_psi_g_psi* twopi**4) * 
+            kappa_psi = (delpsi*twopi*chi1)**2 * 
      $          (p1 + 0.5_r8 * B_squared%fx(1) +
      $             0.5_r8 * B_squared%fy(1)*  
-     $             g_psi_g_theta / g_psi_g_psi)
+     $             g_psi_g_theta / (delpsi**2))
      $            / B_squared%f(1)
             
-            curvature%fs(ipsi, itheta, 1) = kappa_dot_grad_psi
+            curvature%fs(ipsi, itheta, 1) = kappa_psi
          END DO
       END DO
 
@@ -372,15 +371,11 @@ c-----------------------------------------------------------------------
       SUBROUTINE bernstein_calculation
 
       INTEGER :: ipsi, itheta, k_unit
-      REAL(r8) :: psi, theta
+      REAL(r8) :: psi, theta, curvature_psi
 
       REAL(r8) :: jacfac, chi1, q, f1, p1
       REAL(r8) :: Bth, Bze, jth, jze, bsq, delpsi
-      REAL(r8) :: g22, g23, g33
-
-      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: jdotb
-
-      ALLOCATE(jdotb(0:rzphi%mx, 0:rzphi%my))
+      REAL(r8) :: g22, g23, g33, rfac, eta, r, z
 
       chi1 = psio * twopi
 
@@ -395,7 +390,7 @@ c-----------------------------------------------------------------------
       sigma%xtitle = "psi"
       sigma%ytitle = "theta"
 
-      CALL bicube_alloc(bernstein_k, rzphi%mx, rzphi%my, 4)
+      CALL bicube_alloc(bernstein_k, rzphi%mx, rzphi%my, 6)
       bernstein_k%name="bernstein_k"
       bernstein_k%xs=rzphi%xs
       bernstein_k%ys=rzphi%ys
@@ -404,7 +399,7 @@ c-----------------------------------------------------------------------
       ! term1 = sigma * Shear * (delChi)^2
       ! term2 = B^2*sigma^2
       ! term3 = kappa·∇ψ * 2 * p'
-      bernstein_k%title = (/"  K  "," term1 "," term2 ","  term3 "/)
+      bernstein_k%title = (/" K ","term1","term2","term3","r","z"/)
 
       PRINT *, ' > K value calculation started'
 
@@ -421,8 +416,8 @@ c-----------------------------------------------------------------------
             CAll bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),0)
             jacfac = rzphi%f(4)
 
-            jth = -sq%f1(1)/jacfac
-            jze = q*jth - p1*chi1
+            jth = -f1*twopi/jacfac
+            jze = q*jth - p1/chi1
 
             Bth  = chi1/ jacfac
             Bze  = q * chi1 / jacfac
@@ -449,30 +444,42 @@ c-----------------------------------------------------------------------
             psi = rzphi%xs(ipsi)
             theta = rzphi%ys(itheta)
 
+            CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),1)
+            jacfac = rzphi%f(4)
+            rfac=SQRT(rzphi%f(1)) ! minor radius
+            eta=(rzphi%ys(itheta)+rzphi%f(2))
+            r=ro+rfac*COS(twopi*eta) ! major radius
+            z=zo+rfac*SIN(twopi*eta)
+
             delpsi = SQRT(w(ipsi,itheta,1,1)**2 +
      $                      w(ipsi,itheta,1,2)**2 +
      $                      w(ipsi,itheta,1,3)**2)
 
-            bernstein_k%fs(ipsi,itheta,2)= twopi**2 * delpsi**2 *
+            bernstein_k%fs(ipsi,itheta,2)= delpsi**2 * chi1**2 *
      $           sigma%fs(ipsi,itheta,1) * shear%fs(ipsi,itheta,1)
 
             CALL bicube_eval(B_squared, psi,theta,0)
             bernstein_k%fs(ipsi,itheta,3)= B_squared%f(1) *
      $           sigma%fs(ipsi,itheta,1)**2   
 
-            CALL bicube_eval(curvature, psi,theta,0)
+            CALL bicube_eval(curvature, psi, theta, 0)
             CALL spline_eval(sq, psi, 1)
             p1   = sq%f1(2)
-            bernstein_k%fs(ipsi,itheta,4)= curvature%fs(ipsi,itheta,1)
-     $           * 2.0_r8 * p1
+            curvature_psi = curvature%f(1)
+            bernstein_k%fs(ipsi,itheta,4)= curvature_psi * 2.0_r8 * p1
 
             bernstein_k%fs(ipsi,itheta,1)=
      $            bernstein_k%fs(ipsi,itheta,2) + 
      $            bernstein_k%fs(ipsi,itheta,3) +
      $            bernstein_k%fs(ipsi,itheta,4)
 
+            bernstein_k%fs(ipsi, itheta, 5) = r
+            bernstein_k%fs(ipsi, itheta, 6) = z
+
          END DO
-      END DO
+       END DO
+
+       CALL bicube_fit(bernstein_k, "extrap", "periodic")
 
       PRINT *, ' > K value calculation started3'
 c-----------------------------------------------------------------------
@@ -482,7 +489,7 @@ c-----------------------------------------------------------------------
       CALL ascii_open(k_unit, "bernstein_k.out", "UNKNOWN")
       CALL bicube_write_xy(bernstein_k, .TRUE., .FALSE.,
      $                     k_unit, 0, .FALSE.)
-         CALL ascii_close(k_unit)
+      CALL ascii_close(k_unit)
 
       PRINT *, ' > K calculation finished'
 c-----------------------------------------------------------------------
