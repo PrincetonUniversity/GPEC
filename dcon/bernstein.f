@@ -33,7 +33,7 @@ c-----------------------------------------------------------------------
 
       TYPE(bicube_type):: shear, curvature, B_squared, temp
       TYPE(bicube_type):: g
-      TYPE(bicube_type):: bernstein_k, sigma
+      TYPE(bicube_type):: k, sigma
       LOGICAL :: shear_flag=.TRUE.
       LOGICAL :: curvature_flag=.TRUE.
       REAL(r8) :: phi_level=0
@@ -113,7 +113,7 @@ c-----------------------------------------------------------------------
 
       DO ipsi = 0, mpsi
          DO itheta = 0, mtheta
-            CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),1)
+            CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),0)
             jacfac = rzphi%f(4)
 c-----------------------------------------------------------------------
             g%fs(ipsi,itheta,1) = (v(ipsi,itheta,1,1)**2+
@@ -122,8 +122,8 @@ c-----------------------------------------------------------------------
             g%fs(ipsi,itheta,2) = (v(ipsi,itheta,2,1)**2+
      $                            v(ipsi,itheta,2,2)**2+
      $                            v(ipsi,itheta,2,3)**2)*jacfac*jacfac
-            g%fs(ipsi,itheta,3) = v(ipsi,itheta,3,1)**2*+
-     $                            v(ipsi,itheta,3,2)**2*+
+            g%fs(ipsi,itheta,3) = v(ipsi,itheta,3,1)**2+
+     $                            v(ipsi,itheta,3,2)**2+
      $                            v(ipsi,itheta,3,3)**2*jacfac*jacfac
             g%fs(ipsi,itheta,4) = (v(ipsi,itheta,2,1)*v(ipsi,itheta,3,1)
      $                           +v(ipsi,itheta,2,2)*v(ipsi,itheta,3,2)
@@ -384,9 +384,9 @@ c-----------------------------------------------------------------------
 
       chi1 = psio * twopi
 
-      CALL metric_calculation
-      CALL shear_calculation
-      CALL curvature_calculation
+      CALL bernstein_metric
+      CALL bernstein_shear
+      CALL bernstein_curvature
 
       CALL bicube_alloc(sigma, rzphi%mx, rzphi%my, 1)
       sigma%xs = rzphi%xs
@@ -395,16 +395,16 @@ c-----------------------------------------------------------------------
       sigma%xtitle = "psi"
       sigma%ytitle = "theta"
 
-      CALL bicube_alloc(bernstein_k, rzphi%mx, rzphi%my, 6)
-      bernstein_k%name="bernstein_k"
-      bernstein_k%xs=rzphi%xs
-      bernstein_k%ys=rzphi%ys
-      bernstein_k%xtitle = "psi"
-      bernstein_k%ytitle = "theta"
+      CALL bicube_alloc(k, rzphi%mx, rzphi%my, 6)
+      k%name="bernstein_k"
+      k%xs=rzphi%xs
+      k%ys=rzphi%ys
+      k%xtitle = "psi"
+      k%ytitle = "theta"
       ! term1 = sigma * Shear * (delChi)^2
       ! term2 = j dot B
       ! term3 = kappa dot ∇ψ * 2 * p'
-      bernstein_k%title = (/" K ","term1","term2","term3","r","z"/)
+      k%title = (/" K ","term1","term2","term3","r","z"/)
 
       PRINT *, ' > K value calculation started'
 
@@ -460,39 +460,39 @@ c-----------------------------------------------------------------------
      $                      w(ipsi,itheta,1,2)**2 +
      $                      w(ipsi,itheta,1,3)**2)
 
-            bernstein_k%fs(ipsi,itheta,2)= delpsi**2 * chi1**2 *
+            k%fs(ipsi,itheta,2)= delpsi**2 * chi1**2 *
      $           sigma%fs(ipsi,itheta,1) * shear%fs(ipsi,itheta,1)
 
             CALL bicube_eval(B_squared, psi,theta,0)
-            bernstein_k%fs(ipsi,itheta,3)= B_squared%f(1) *
+            k%fs(ipsi,itheta,3)= B_squared%f(1) *
      $           sigma%fs(ipsi,itheta,1)**2   
 
             CALL bicube_eval(curvature, psi, theta, 0)
             CALL spline_eval(sq, psi, 1)
             p1   = sq%f1(2)
             curvature_psi = curvature%f(1)
-            bernstein_k%fs(ipsi,itheta,4)= curvature_psi * 2.0_r8 * p1
+            k%fs(ipsi,itheta,4)= curvature_psi * 2.0_r8 * p1
 
-            bernstein_k%fs(ipsi,itheta,1)=
-     $            bernstein_k%fs(ipsi,itheta,2) + 
-     $            bernstein_k%fs(ipsi,itheta,3) +
-     $            bernstein_k%fs(ipsi,itheta,4)
+            k%fs(ipsi,itheta,1)=
+     $            k%fs(ipsi,itheta,2) + 
+     $            k%fs(ipsi,itheta,3) +
+     $            k%fs(ipsi,itheta,4)
 
-            bernstein_k%fs(ipsi, itheta, 5) = r
-            bernstein_k%fs(ipsi, itheta, 6) = z
+            k%fs(ipsi, itheta, 5) = r
+            k%fs(ipsi, itheta, 6) = z
 
          END DO
        END DO
 
-       CALL bicube_fit(bernstein_k, "extrap", "periodic")
+       CALL bicube_fit(k, "extrap", "periodic")
 
       PRINT *, ' > K value calculation started3'
 c-----------------------------------------------------------------------
 c     file print
 c-----------------------------------------------------------------------
       k_unit = 60
-      CALL ascii_open(k_unit, "bernstein_k.out", "UNKNOWN")
-      CALL bicube_write_xy(bernstein_k, .TRUE., .FALSE.,
+      CALL ascii_open(k_unit, "k.out", "UNKNOWN")
+      CALL bicube_write_xy(k, .TRUE., .FALSE.,
      $                     k_unit, 0, .FALSE.)
       CALL ascii_close(k_unit)
 
@@ -612,13 +612,13 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     subprogram 4. K integral
 c-----------------------------------------------------------------------
-      SUBROUTINE bernstein_k
+       SUBROUTINE bernstein_k
 
        INTEGER:: mstep, mthet
 
        INTEGER :: ipsi, itheta
        REAL(r8) :: psi, theta
-       REAL(r8) :: jacfac, k, delpsi, k_1, k_2, k_3
+       REAL(r8) :: jacfac, k_sum, delpsi, k_1, k_2, k_3
        COMPLEX(r8) :: xipsi
        TYPE(bicube_type):: temp
 
@@ -639,16 +639,16 @@ c-----------------------------------------------------------------------
      $                      w(ipsi,itheta,1,2)**2 +
      $                      w(ipsi,itheta,1,3)**2)
               CALL bicube_eval(rzphi, psi, theta, 1)
-              CALL bicube_eval(bernstein_k, psi, theta, 1)
+              CALL bicube_eval(k, psi, theta, 1)
               jacfac = rzphi%f(4)
-              k = bernstein_k%f(1)
-              k_1 = bernstein_k%f(2)
-              k_2 = bernstein_k%f(3)
-              k_3 = bernstein_k%f(4)
+              k_sum = k%f(1)
+              k_1 = k%f(2)
+              k_2 = k%f(3)
+              k_3 = k%f(4)
 
               xipsi=xi_psi(ipsi, itheta)
 
-              temp%fs(ipsi, itheta, 1) = jacfac*k*ABS(xipsi)**2
+              temp%fs(ipsi, itheta, 1) = jacfac*k_sum*ABS(xipsi)**2
      $                     /(delpsi**2)
 
               temp%fs(ipsi, itheta, 2) = jacfac*k_1*ABS(xipsi)**2
