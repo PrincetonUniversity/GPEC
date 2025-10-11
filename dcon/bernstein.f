@@ -6,12 +6,12 @@ c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
 c     0. bernstein_mod.
-c     1. metric_calculation.
-c     2. shear_calculation.
-c     3. curvature_calculation.
+c     1. bernstein_metric.
+c     2. bernstein_shear.
+c     3. bernstein_curvature.
 c     4. bernstein_calculation.
-c     5. bernstein_xi
-c     5. bernstein_k_calculation
+c     5. bernstein_xi.
+c     6. bernstein_k.
 c     7. bernstein_out.
 c-----------------------------------------------------------------------
 c     subprogram 0. bernstein_mod.
@@ -31,8 +31,8 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(:,:,:,:), ALLOCATABLE :: w,v 
 
-      TYPE(bicube_type):: shear, curvature, B_squared
-      TYPE(bicube_type):: g, temp
+      TYPE(bicube_type):: shear, curvature, B_squared, temp
+      TYPE(bicube_type):: g
       TYPE(bicube_type):: bernstein_k, sigma
       LOGICAL :: shear_flag=.TRUE.
       LOGICAL :: curvature_flag=.TRUE.
@@ -42,11 +42,11 @@ c-----------------------------------------------------------------------
 
       CONTAINS
 c-----------------------------------------------------------------------
-c     subprogram 1. metric_calculation.
+c     subprogram 1. bernstein_metric.
 c     compute the metric (covariant componentsv_ij and contravariant 
 c     components w_ij).
 c-----------------------------------------------------------------------
-      SUBROUTINE metric_calculation
+      SUBROUTINE bernstein_metric
 
       INTEGER :: ipsi, itheta, i, j
 
@@ -108,6 +108,13 @@ c-----------------------------------------------------------------------
             w(ipsi, itheta, 3, 2) = (r/(2*rfac*jacfac))*
      $             (rzphi%fx(3)*rzphi%fy(1)-rzphi%fx(1)*rzphi%fy(3))
             w(ipsi, itheta, 3, 3) = 1/(twopi*r)
+         END DO
+      END DO
+
+      DO ipsi = 0, mpsi
+         DO itheta = 0, mtheta
+            CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),1)
+            jacfac = rzphi%f(4)
 c-----------------------------------------------------------------------
             g%fs(ipsi,itheta,1) = (v(ipsi,itheta,1,1)**2+
      $                            v(ipsi,itheta,1,2)**2+
@@ -141,17 +148,17 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE metric_calculation
+      END SUBROUTINE bernstein_metric
 
 c-----------------------------------------------------------------------
-c     subprogram 2. shear_calculation.
+c     subprogram 2. bernstein_shear.
 c     computes local magnetic shear S(ψ, θ) from Eq. (29) of GPEC Notes.
 c-----------------------------------------------------------------------
-      SUBROUTINE shear_calculation
+      SUBROUTINE bernstein_shear
 
       INTEGER :: ipsi, itheta, shear_unit
       REAL(r8) :: psi, theta, rfac, eta, r, z
-      REAL(r8) :: chi_prime,q, q_prime, jacfac
+      REAL(r8) :: chi1, q, q1, jacfac
       REAL(r8) :: g_psi_g_psi, g_psi_g_theta, g_psi_g_zeta
       REAL(r8) :: dterm_dtheta
       REAL(r8) :: v11, v12, v13, v21, v22, v23, v31, v32, v33
@@ -173,9 +180,7 @@ c-----------------------------------------------------------------------
       temp%ytitle = "theta"
       PRINT *, ' > shear calcuation'
 
-      chi_prime = psio * twopi
-
-      PRINT *, 'psio, chi_prime = ', psio, chi_prime
+      chi1 = psio * twopi
 
       DO ipsi = 0, mpsi
          CALL spline_eval(sq,sq%xs(ipsi),0)
@@ -225,7 +230,7 @@ c-----------------------------------------------------------------------
 
       DO ipsi = 0, mpsi
          CALL spline_eval(sq,sq%xs(ipsi),1)
-         q_prime = sq%f1(4)
+         q1 = sq%f1(4)
          DO itheta = 0, mtheta
             psi = rzphi%xs(ipsi)
             theta = rzphi%ys(itheta)
@@ -241,7 +246,7 @@ c-----------------------------------------------------------------------
             dterm_dtheta = temp%fy(5)
 
             shear%fs(ipsi, itheta, 1) = (twopi**2 / jacfac)
-     $                               * (q_prime + dterm_dtheta)
+     $                               * (q1 + dterm_dtheta)
             shear%fs(ipsi, itheta, 2) = r
             shear%fs(ipsi, itheta, 3) = z
          END DO
@@ -262,13 +267,13 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE shear_calculation
+      END SUBROUTINE bernstein_shear
 c-----------------------------------------------------------------------
-c     subprogram 3. curvature_calculation
+c     subprogram 3. bernstein_curvature
 c     CAUTION - this does not calculate curvature it only cal kappa dot (delpsi)
 c     κ·∇ψ = (|∇ψ|²/B²)[μ₀p' + (1/2)(∂B²/∂ψ) + (1/2)(∂B²/∂θ)(∇ψ·∇ψ)/(∇ψ·∇θ)]
 c-----------------------------------------------------------------------
-      SUBROUTINE curvature_calculation
+      SUBROUTINE bernstein_curvature
 
       INTEGER :: ipsi, itheta, curvature_unit
       REAL(r8) :: psi, theta
@@ -363,7 +368,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE curvature_calculation
+      END SUBROUTINE bernstein_curvature
 
 c-----------------------------------------------------------------------
 c     subprogram 3. bernstein_calculation.
@@ -397,8 +402,8 @@ c-----------------------------------------------------------------------
       bernstein_k%xtitle = "psi"
       bernstein_k%ytitle = "theta"
       ! term1 = sigma * Shear * (delChi)^2
-      ! term2 = B^2*sigma^2
-      ! term3 = kappa·∇ψ * 2 * p'
+      ! term2 = j dot B
+      ! term3 = kappa dot ∇ψ * 2 * p'
       bernstein_k%title = (/" K ","term1","term2","term3","r","z"/)
 
       PRINT *, ' > K value calculation started'
@@ -607,7 +612,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     subprogram 4. K integral
 c-----------------------------------------------------------------------
-      SUBROUTINE bernstein_k_int
+      SUBROUTINE bernstein_k
 
        INTEGER:: mstep, mthet
 
@@ -660,7 +665,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE bernstein_k_int
+      END SUBROUTINE bernstein_k
 
 c-----------------------------------------------------------------------
 c     module end
