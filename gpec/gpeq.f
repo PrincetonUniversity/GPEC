@@ -100,6 +100,11 @@ c-----------------------------------------------------------------------
       bwp_mn=(chi1*singfac*twopi*ifac*xsp_mn)
       bwt_mn=-(chi1*xsp1_mn+twopi*ifac*nn*xss_mn)
       bwz_mn=-(chi1*(q1*xsp_mn+sq%f(4)*xsp1_mn)+twopi*ifac*mfac*xss_mn)
+      IF(galsol%gal_flag) THEN
+         CALL cspline_eval(bpsi,psi,0)
+         bwp_mn_rmatch=bpsi%f
+         ! bwp_mn=bwp_mn_rmatch
+      ENDIF
 c-----------------------------------------------------------------------
 c     compute derivative of b fields.
 c-----------------------------------------------------------------------

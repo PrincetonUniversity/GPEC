@@ -470,6 +470,7 @@ c-----------------------------------------------------------------------
       u4%fs=0
       ! Find the solution given edge boundary condition
       IF (galsol%gal_flag) THEN
+         bpsi%fs=0
          ! use galerkin solutions from rmatch
          temp2 = galsol%u(:,galsol%tot_grids,1:galmpert)
          CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
@@ -477,6 +478,8 @@ c-----------------------------------------------------------------------
          temp1=uedge
          DO istep=0,galsol%tot_grids
             u1%fs(istep,:)=MATMUL(galsol%u(:,istep,1:galmpert),temp1)
+            bpsi%fs(istep,:)=MATMUL(galsol%bpsi(:,istep,1:galmpert)
+     $                                                           ,temp1)
          ENDDO
       ELSE
          ! use dcon solutions from euler.bin
@@ -503,10 +506,12 @@ c-----------------------------------------------------------------------
       u2%xs=psifac
       u3%xs=psifac
       u4%xs=psifac
+      bpsi%xs=psifac
       CALL cspline_fit(u1,"extrap")
       CALL cspline_fit(u2,"extrap")
       CALL cspline_fit(u3,"extrap")
       CALL cspline_fit(u4,"extrap")
+      CALL cspline_fit(bpsi,"extrap")
       IF(debug_flag) PRINT *, "->Leaving idcon_build"
 c-----------------------------------------------------------------------
 c     terminate.

@@ -621,11 +621,11 @@ c-----------------------------------------------------------------------
          dx1dx2_flag=.TRUE.
          gal_method="resonant"
          CALL inps_xmax(inps_eps,inps_xmaxx)
+         dx1=inps_xmaxx(2)-inps_xmaxx(1)
+         dx2=dx1/2
          inps_xmaxx(1)=inps_xmaxx(1)*inps_xfac
          inps_xmaxx(2)=inps_xmaxx(2)*inps_xfac
          xmax=inps_xmaxx(2)
-         dx1=inps_xmaxx(2)-inps_xmaxx(1)
-         dx2=dx1/2
          IF(grid_diagnose)WRITE(*,'(a,3es10.3)')
      $        " inps_xmaxx = ",inps_xmaxx
 c-----------------------------------------------------------------------

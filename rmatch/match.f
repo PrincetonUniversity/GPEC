@@ -200,6 +200,11 @@ c-----------------------------------------------------------------------
          write(*,*) "  massden=",massden(1:msing)
          stop
       ENDIF
+      IF(match_sol%b_flag) THEN
+         write(*,*) "b_flag is deprecated. Fields will be output in ",
+     $           "same binary file as RPEC solution."   
+         match_sol%b_flag=.FALSE.
+      ENDIF 
       ALLOCATE (cofout(2*msing),cofin(2*msing))
       READ(bin_unit)delta
       DO ising=1,totmsing
@@ -1318,7 +1323,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(4*msing,coil%mcoil) :: cof,rmat
       COMPLEX(r8), DIMENSION(4*msing,4*msing) :: mat,cmat
       COMPLEX(r8), DIMENSION(2*msing,coil%mcoil) :: cout,cin
-      COMPLEX(r8), DIMENSION(:,:,:),ALLOCATABLE :: globalsol
+      COMPLEX(r8), DIMENSION(:,:,:),ALLOCATABLE :: globalsol,globalsol_b
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -1411,7 +1416,8 @@ c-----------------------------------------------------------------------
 c     output inner and outer regions' solutions.
 c-----------------------------------------------------------------------
       CALL match_alloc_sol(rpec_eigenvalues)
-      ALLOCATE (globalsol(outs%mpert,0:outs%tot_grids,coil%mcoil))
+      ALLOCATE  (globalsol(outs%mpert,0:outs%tot_grids,coil%mcoil))
+      ALLOCATE(globalsol_b(outs%mpert,0:outs%tot_grids,coil%mcoil))
       jsol=0
       DO isol=coil%m1,coil%m2
          jsol=jsol+1
@@ -1419,7 +1425,9 @@ c-----------------------------------------------------------------------
          filename(2)=ADJUSTL(filename(2))
          WRITE(filename(1),*) 'rpec_sol_'//TRIM(filename(2))
          CALL match_output_solution(cout(:,jsol),cin(:,jsol),isol,
-     $                              globalsol(:,:,jsol),filename(1))
+     $                              globalsol(:,:,jsol),
+     $                              globalsol_b(:,:,jsol),
+     $                              filename(1))
       ENDDO
 c-----------------------------------------------------------------------
 c     output for coupling to the coil (final rpec run).
@@ -1435,7 +1443,12 @@ c-----------------------------------------------------------------------
          WRITE (bin_unit) restype(ising)%taur,restype(ising)%taua,
      $                    eta(ising),rpec_eigenvalues(ising)
       ENDDO
-      WRITE (bin_unit) outs%psi
+      DO ip=0,outs%tot_grids
+         IF (outs%issing(ip)) THEN
+            CYCLE
+         ENDIF 
+         WRITE (bin_unit) outs%psi(ip),outs%q(ip)
+      ENDDO
       DO isol=1,coil%mcoil
          DO ip=0,outs%tot_grids
             IF (outs%issing(ip)) THEN
@@ -1446,10 +1459,20 @@ c-----------------------------------------------------------------------
             ENDDO
          ENDDO
       ENDDO
+      DO isol=1,coil%mcoil
+         DO ip=0,outs%tot_grids
+            IF (outs%issing(ip)) THEN
+               CYCLE
+            ENDIF 
+            DO ipert=1,outs%mpert
+               WRITE (bin_unit) globalsol_b(ipert,ip,isol)
+            ENDDO
+         ENDDO
+      ENDDO
       CALL bin_close(bin_unit)
 c-----------------------------------------------------------------------
 c     deallocate.
-c-----------------------------------------------------------------------     
+c-----------------------------------------------------------------------
       CALL match_dealloc_sol
       DEALLOCATE (globalsol)
 c-----------------------------------------------------------------------
@@ -1463,7 +1486,7 @@ c     allocate and read inner and outer region solutions.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       SUBROUTINE match_alloc_sol(eigs)
       COMPLEX(r8), DIMENSION(20), INTENT(IN) :: eigs
 
@@ -1501,8 +1524,10 @@ c-----------------------------------------------------------------------
       CALL bin_close(bin_unit)
 c-----------------------------------------------------------------------
 c     get inner region solutions
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       ALLOCATE(ins%sols(msing))
+      ! interp_np=INT(interp_np*inps_xfac)
+      IF (inps_type == 'inps') nx = INT(nx*inps_xfac)
       ins%tot_g=interp_np*nx
       output_sol=.TRUE.
       DO ising=1,msing
@@ -1552,11 +1577,13 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE match_output_solution(cout,cin,csol,globalsol,filename)
+      SUBROUTINE match_output_solution(cout,cin,csol,globalsol,
+     $    globalsol_b,filename)
       CHARACTER(*),INTENT(IN) :: filename
       INTEGER, INTENT(IN) :: csol
       COMPLEX(r8), DIMENSION(:), INTENT(IN) :: cout,cin
       COMPLEX(r8), DIMENSION(:,0:), INTENT(OUT) :: globalsol
+      COMPLEX(r8), DIMENSION(:,0:), INTENT(OUT) :: globalsol_b
       
       CHARACTER(100) :: filename1
       CHARACTER(100) :: comp_tittle,tmp
@@ -1566,23 +1593,31 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: inpsifac
       COMPLEX(r8) :: insol,x0
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: outtotsol
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: outtotsol_b
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: outtotsol_b_cut
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: outtotsol_cut,tmp_cut
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: intotsol
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: intotsol_b
       TYPE(cspline_type) :: outcut_sp,q_sp
 c-----------------------------------------------------------------------
 c     allocate.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       ALLOCATE(outtotsol(outs%mpert,0:outs%tot_grids))
+      ALLOCATE(outtotsol_b(outs%mpert,0:outs%tot_grids))
       ALLOCATE(singfac(outs%mpert))
       ALLOCATE(outtotsol_cut(outs%mpert,0:outs%tot_grids),
      $   tmp_cut(outs%mpert,0:outs%tot_grids),psi_cut(0:outs%tot_grids))
+      ALLOCATE(outtotsol_b_cut(outs%mpert,0:outs%tot_grids))
       ALLOCATE(intotsol(-ins%tot_g:ins%tot_g,msing),
      $   inpsifac(-ins%tot_g:ins%tot_g,msing))
+      ALLOCATE(intotsol_b(-ins%tot_g:ins%tot_g,msing))
 c-----------------------------------------------------------------------
-c     construct linear combination of outer region solutions with cofout.
+c     construct linear combination of outer region solutions w/ cofout.
 c-----------------------------------------------------------------------
       outtotsol=0
+      outtotsol_b=0
       outtotsol_cut=0
+      outtotsol_b_cut=0
       DO isol=1,2*msing
          outtotsol=outtotsol+cout(isol)*outs%sols(:,:,isol)
          outtotsol_cut=outtotsol_cut+cout(isol)*outs%sols_cut(:,:,isol)
@@ -1623,12 +1658,10 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     construct inner region solutions for each singular surface.
 c-----------------------------------------------------------------------
+      ! Set component and sign for inner solution xi. 
+      ! See Glasser/Wang PoP 2020, Eq. 2.
       comp=2
       sig=1
-      IF (match_sol%b_flag) THEN
-         sig=-1
-         comp=1
-      ENDIF
       DO ising=1,msing
          sol => ins%sols(ising)          
          DO ip=-ins%tot_g,-1
@@ -1642,13 +1675,23 @@ c-----------------------------------------------------------------------
      $                        +sol%sol(comp,ip,2)*cin(2*ising-1)
          ENDDO
       ENDDO
-      ! WRITE(*,*) "intotsol", intotsol(0,1)
-      ! WRITE(*,*) "sol", sol%sol(comp,0,1), sol%sol(comp,0,2)
-      ! WRITE(*,*) "cin", cin(2*1), cin(2*1)
+      ! Set component and sign for inner solution b.
+      comp=1
+      sig=-1
+      DO ising=1,msing
+         sol => ins%sols(ising)
+         DO ip=-ins%tot_g,-1
+            intotsol_b(ip,ising)=-sol%sol(comp,-ip,1)*cin(2*ising)*sig
+     $                         +sol%sol(comp,-ip,2)*cin(2*ising-1)*sig
+         ENDDO
+         DO ip=0,ins%tot_g
+            intotsol_b(ip,ising)=sol%sol(comp,ip,1)*cin(2*ising)
+     $                        +sol%sol(comp,ip,2)*cin(2*ising-1)
+         ENDDO
+      ENDDO
 c-----------------------------------------------------------------------
 c     convert xi to b field.
-c-----------------------------------------------------------------------      
-      IF (match_sol%b_flag) THEN
+c-----------------------------------------------------------------------
       CALL cspline_alloc(q_sp,outs%tot_grids,1)
       q_sp%xs=outs%psi
       q_sp%fs(:,1)=outs%q
@@ -1657,30 +1700,33 @@ c-----------------------------------------------------------------------
       DO ip=0,outs%tot_grids
             singfac=outs%mlow-outs%nn*outs%q(ip)
      $             +(/(ipert,ipert=0,outs%mpert-1)/)
-            outtotsol(:,ip)=chi1*ifac*singfac*outtotsol(:,ip)
-            outtotsol_cut(:,ip)=chi1*ifac*singfac*outtotsol_cut(:,ip)
+            outtotsol_b(:,ip)=chi1*ifac*singfac*outtotsol(:,ip)
+            outtotsol_b_cut(:,ip)=chi1*ifac*singfac*
+     $          outtotsol_cut(:,ip)
       ENDDO
       DO ising=1,msing
          CALL cspline_eval(q_sp,outs%qpsifac(ising),1)
          q1=q_sp%f1(1)
          sfac=restype(ising)%taur/restype(ising)%taua
          x0=sfac**(-1._r8/3._r8)
-         intotsol(:,ising)=intotsol(:,ising)*chi1*ifac*outs%nn*q1*x0
+         intotsol_b(:,ising)=intotsol_b(:,ising)*chi1*ifac*outs%nn*q1*x0
       ENDDO
-      ENDIF
 c-----------------------------------------------------------------------
 c     final construction of perturbed equilibrium.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       IF (coil%ideal_flag) THEN
       ELSE
          IF (match_sol%auto_connect) THEN
             CALL match_auto_connect (csol,cout,inpsifac,
      $                               intotsol,outtotsol)
+            CALL match_auto_connect (csol,cout,inpsifac,
+     $                               intotsol_b,outtotsol_b)
          ENDIF
       ENDIF
 c-----------------------------------------------------------------------
 c     write full outer region solutions, binary.
 c-----------------------------------------------------------------------
+      outtotsol_b = outtotsol_b*twopi
       IF(bin_rpecsol)THEN
          WRITE(filename1,*) TRIM(filename)//'_out.bin'
          CALL bin_open(bin_unit,TRIM(ADJUSTL(filename1)),
@@ -1690,10 +1736,30 @@ c-----------------------------------------------------------------------
                IF (outs%issing(ip)) THEN
                   CYCLE
                ENDIF
+               CALL cspline_eval(q_sp, outs%psi(ip), 1)
                WRITE (bin_unit) REAL(outs%psi(ip),4),
+     $                          REAL(q_sp%f(1),4),
      $                          REAL(outtotsol(ipert,ip),4),
      $                          REAL(IMAG(outtotsol(ipert,ip)),4),
      $                          floored_log(outtotsol(ipert,ip))
+            ENDDO
+            WRITE(bin_unit)
+         ENDDO
+         CALL bin_close(bin_unit)
+         WRITE(filename1,*) TRIM(filename)//'_b_out.bin'
+         CALL bin_open(bin_unit,TRIM(ADJUSTL(filename1)),
+     $                         "REPLACE","REWIND","none")
+         DO ipert=1,outs%mpert
+            DO ip=0,outs%tot_grids
+               IF (outs%issing(ip)) THEN
+                  CYCLE
+               ENDIF
+               CALL cspline_eval(q_sp, outs%psi(ip), 1)
+               WRITE (bin_unit) REAL(outs%psi(ip),4),
+     $                          REAL(q_sp%f(1),4),
+     $                          REAL(outtotsol_b(ipert,ip),4),
+     $                          REAL(IMAG(outtotsol_b(ipert,ip)),4),
+     $                          floored_log(outtotsol_b(ipert,ip))
             ENDDO
             WRITE(bin_unit)
          ENDDO
@@ -1731,7 +1797,7 @@ c-----------------------------------------------------------------------
       ENDIF
 c-----------------------------------------------------------------------
 c     write inner region solutions, binary.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       IF(bin_rpecsol)THEN
          tmp_cut=outtotsol_cut
          outtotsol_cut=0
@@ -1755,8 +1821,8 @@ c-----------------------------------------------------------------------
      $                                 "REPLACE","REWIND","none")
          DO ising=1,msing
             DO ip=-ins%tot_g,ins%tot_g
+               inpsi=inpsifac(ip,ising)
                IF (match_sol%uniform) THEN
-                  inpsi=inpsifac(ip,ising)
                   DO jsing=1,outs%msing
                      IF (outs%xext(ising,1)<inpsi .AND.
      $                   inpsi<outs%xext(ising,2)) THEN
@@ -1764,7 +1830,9 @@ c-----------------------------------------------------------------------
      $                        -outs%mlow+1
                         CALL cspline_eval(outcut_sp,inpsi,0)
                         insol=outcut_sp%f(ipert)+intotsol(ip,ising)
-                        WRITE (bin_unit) REAL(inpsifac(ip,ising),4),
+                        CALL cspline_eval(q_sp, inpsi, 1)
+                        WRITE (bin_unit) REAL(inpsi,4),
+     $                                   REAL(q_sp%f(1),4), 
      $                                   REAL(insol,4),
      $                                   REAL(IMAG(insol),4),
      $                                   floored_log(insol)
@@ -1772,7 +1840,64 @@ c-----------------------------------------------------------------------
                   ENDDO
                ELSE
                   insol=intotsol(ip,ising)
-                  WRITE (bin_unit) REAL(inpsifac(ip,ising),4),
+                  CALL cspline_eval(q_sp, inpsi, 1)
+                  WRITE (bin_unit) REAL(inpsi,4),
+     $                             REAL(q_sp%f(1),4),
+     $                             REAL(insol,4),
+     $                             REAL(IMAG(insol),4),
+     $                             floored_log(insol)
+
+               ENDIF
+            ENDDO
+            WRITE(bin_unit)
+         ENDDO
+         CALL bin_close(bin_unit)
+         CALL cspline_dealloc(outcut_sp)
+         
+         tmp_cut=outtotsol_b_cut
+         outtotsol_b_cut=0
+         eff_grids=-1
+         DO ip=0,outs%tot_grids
+            IF (outs%issing(ip)) THEN
+               CYCLE
+            ENDIF
+            eff_grids=eff_grids+1
+            outtotsol_b_cut(:,eff_grids)=tmp_cut(:,ip)
+            psi_cut(eff_grids)=outs%psi(ip)
+         ENDDO
+         CALL cspline_alloc(outcut_sp,eff_grids,outs%mpert)
+         outcut_sp%xs(0:eff_grids)=psi_cut(0:eff_grids)
+         DO ip=0,eff_grids
+            outcut_sp%fs(ip,:)=outtotsol_b_cut(:,ip)
+         ENDDO
+         CALL cspline_fit(outcut_sp,"extrap")
+         WRITE(filename1,*) TRIM(filename)//'_b_in.bin'
+         CALL bin_open(bin_unit,TRIM(ADJUSTL(filename1)),
+     $                                 "REPLACE","REWIND","none")
+         DO ising=1,msing
+            DO ip=-ins%tot_g,ins%tot_g
+               inpsi=inpsifac(ip,ising)
+               IF (match_sol%uniform) THEN
+                  DO jsing=1,outs%msing
+                     IF (outs%xext(ising,1)<inpsi .AND.
+     $                   inpsi<outs%xext(ising,2)) THEN
+                        ipert=NINT(outs%nn*outs%qsing(ising))
+     $                        -outs%mlow+1
+                        CALL cspline_eval(outcut_sp,inpsi,0)
+                        insol=outcut_sp%f(ipert)+intotsol_b(ip,ising)
+                        CALL cspline_eval(q_sp, inpsi, 1)
+                        WRITE (bin_unit) REAL(inpsi,4),
+     $                                   REAL(q_sp%f(1),4), 
+     $                                   REAL(insol,4),
+     $                                   REAL(IMAG(insol),4),
+     $                                   floored_log(insol)
+                     ENDIF
+                  ENDDO
+               ELSE
+                  insol=intotsol_b(ip,ising)
+                  CALL cspline_eval(q_sp, inpsi, 1)
+                  WRITE (bin_unit) REAL(inpsi,4),
+     $                             REAL(q_sp%f(1),4),
      $                             REAL(insol,4),
      $                             REAL(IMAG(insol),4),
      $                             floored_log(insol)
@@ -1809,12 +1934,17 @@ c-----------------------------------------------------------------------
 c     save to global solution for coulping to coils.
 c-----------------------------------------------------------------------      
       globalsol=outtotsol
+      globalsol_b=outtotsol_b
 c-----------------------------------------------------------------------
 c     deallocate.
 c-----------------------------------------------------------------------
+      CALL cspline_dealloc(q_sp)
       DEALLOCATE(outtotsol)
+      DEALLOCATE(outtotsol_b)
+      DEALLOCATE(outtotsol_b_cut)
       DEALLOCATE(outtotsol_cut,tmp_cut,psi_cut)
       DEALLOCATE(intotsol,inpsifac,singfac)
+      DEALLOCATE(intotsol_b)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -1951,7 +2081,7 @@ c-----------------------------------------------------------------------
       WRITE(*,*) "SUCCESSFULLY AUTO CONNECTED INNER AND OUTER REGIONS."
 c-----------------------------------------------------------------------
 c     deallocate.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       DO ising=1,msing
          CALL cspline_dealloc(insp(ising))
       ENDDO

@@ -558,8 +558,11 @@ c-----------------------------------------------------------------------
       smat=RESHAPE((/one,zero,zero,xfac/),(/2,2/))
       qsy=MATMUL(q,MATMUL(smat,y))
       ua=MATMUL(pp,qsy)
-      IF(PRESENT(tflag) .AND. tflag .OR. .NOT. PRESENT(tflag))
-     $     ua=MATMUL(tmat,ua)
+      IF(PRESENT(tflag))THEN
+         IF (tflag) ua=MATMUL(tmat,ua)
+      ELSE
+         ua=MATMUL(tmat,ua)
+      ENDIF
 c-----------------------------------------------------------------------
 c     back substitution for dua.
 c-----------------------------------------------------------------------

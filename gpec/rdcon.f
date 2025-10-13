@@ -119,9 +119,14 @@ c-----------------------------------------------------------------------
      $                  singtype(ising)%restype%eta,
      $                  singtype(ising)%restype%eigenvalue
       ENDDO
-      ALLOCATE (galsol%psifac(0:galsol%tot_grids),
-     $          galsol%u(galsol%mpert,0:galsol%tot_grids,galsol%mtot))
-      READ(bin_unit) galsol%psifac
+      ALLOCATE(galsol%psifac(0:galsol%tot_grids),
+     $         galsol%q(0:galsol%tot_grids),
+     $         galsol%u(galsol%mpert,0:galsol%tot_grids,galsol%mtot),
+     $         galsol%bpsi(galsol%mpert,0:galsol%tot_grids,galsol%mtot))
+      ALLOCATE(utemp(galsol%mpert,galsol%mtot))
+      DO ip=0,galsol%tot_grids
+         READ(bin_unit) galsol%psifac(ip),galsol%q(ip)
+      ENDDO
       DO isol=1,galsol%mtot
          DO ip=0,galsol%tot_grids
             DO ipert=1,galsol%mpert
@@ -129,6 +134,14 @@ c-----------------------------------------------------------------------
             ENDDO
          ENDDO
       ENDDO
+      DO isol=1,galsol%mtot
+         DO ip=0,galsol%tot_grids
+            DO ipert=1,galsol%mpert
+               READ(bin_unit) galsol%bpsi(ipert,ip,isol)
+            ENDDO
+         ENDDO
+      ENDDO
+      WRITE(*,*) "RDCON solutions read."
       CALL bin_close(bin_unit)
 c-----------------------------------------------------------------------
 c     force global variables
@@ -169,10 +182,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(psifac(0:mstep),rhofac(0:mstep),qfac(0:mstep))
       psifac = galsol%psifac
       rhofac = SQRT(psifac)
-      DO ip=0,mstep
-         CALL spline_eval(sq,psifac(ip),0)
-         qfac(ip) = sq%f(4)
-      ENDDO
+      qfac = galsol%q
       ! m's must already match
       IF(galsol%mpert/=mpert) THEN
          PRINT *,'Galerkin mpert = ',galsol%mpert
@@ -188,6 +198,7 @@ c-----------------------------------------------------------------------
       CALL cspline_alloc(u2,mstep,mpert)
       CALL cspline_alloc(u3,mstep,mpert)
       CALL cspline_alloc(u4,mstep,mpert)
+      CALL cspline_alloc(bpsi,mstep,mpert)
 
 c-----------------------------------------------------------------------
 c     terminate.

@@ -72,7 +72,8 @@ c-----------------------------------------------------------------------
      $     xno_mn,xta_mn,xpa_mn,bno_mn,bta_mn,bpa_mn,
      $     xrr_mn,xrz_mn,xrp_mn,brr_mn,brz_mn,brp_mn,
      $     chi_mn,che_mn,kax_mn,sbno_mn,sbno_fun,edge_mn,edge_fun,
-     $     chy_mn,chx_mn,chw_mn,kaw_mn,mutual_indev,mutual_indinvev
+     $     chy_mn,chx_mn,chw_mn,kaw_mn,mutual_indev,mutual_indinvev,
+     $     bwp_mn_rmatch
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: wt,wt0,chp_mn,kap_mn,
      $     permeabev,chimats,chemats,flxmats,kaxmats,singbno_mn,
      $     plas_indev,plas_indinvev,reluctev,indrelev,permeabsv,
@@ -90,7 +91,7 @@ c-----------------------------------------------------------------------
 
       TYPE(spline_type) :: sq
       TYPE(bicube_type) :: psi_in,eqfun,rzphi
-      TYPE(cspline_type) :: u1,u2,u3,u4,u5
+      TYPE(cspline_type) :: u1,u2,u3,u4,u5,bpsi
       TYPE(cspline_type) :: smats,tmats,xmats,ymats,zmats
       TYPE(fspline_type) :: metric
 
@@ -107,8 +108,9 @@ c-----------------------------------------------------------------------
       TYPE :: galsol_type
       LOGICAL :: gal_flag
       INTEGER :: mpert, tot_grids,mlow,mhigh,mtot,msing
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: psifac
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: psifac,q
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: u
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: bpsi
       END TYPE galsol_type
 
       TYPE :: fixfac_type
@@ -160,7 +162,7 @@ c-----------------------------------------------------------------------
       CALL cspline_dealloc(u1)
       CALL cspline_dealloc(u2)
       CALL fspline_dealloc(metric)
-
+      IF(bpsi%allocated) CALL cspline_dealloc(bpsi)
       IF(ALLOCATED(soltype))THEN
          DO istep=0,mstep
             DEALLOCATE(soltype(istep)%u)

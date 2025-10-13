@@ -3158,7 +3158,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: p_id,t_id,i_id,m_id,mp_id,r_id,z_id,bm_id,b_id,
-     $   wm_id,pwm_id, xm_id,x_id,rv_id,zv_id,mpv_id,rzstat
+     $   wm_id,wmr_id,pwm_id, xm_id,x_id,rv_id,zv_id,mpv_id,rzstat
 
       INTEGER :: i,istep,ipert,itheta,tout
       REAL(r8) :: ximax,rmax,area
@@ -3167,7 +3167,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,bwp_fun
 
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: xmns,ymns,
-     $     xnomns,bnomns,bwpmns
+     $     xnomns,bnomns,bwpmns,bwpmns_rmatch
 
       INTEGER :: mlow_pest,mhigh_pest,mpert_pest
       INTEGER, DIMENSION(:), ALLOCATABLE :: mfac_pest
@@ -3187,7 +3187,8 @@ c-----------------------------------------------------------------------
      $   rss(mstep,0:mthsurf),zss(mstep,0:mthsurf),
      $   xnofuns(mstep,0:mthsurf),bnofuns(mstep,0:mthsurf))
       ALLOCATE(xmns(mstep,lmpert),ymns(mstep,lmpert),
-     $   xnomns(mstep,lmpert),bnomns(mstep,lmpert),bwpmns(mstep,lmpert))
+     $   xnomns(mstep,lmpert),bnomns(mstep,lmpert),bwpmns(mstep,lmpert),
+     $   bwpmns_rmatch(mstep,lmpert))
       IF (msing>0) ALLOCATE(intbwpmns(mstep,lmpert))
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
@@ -3285,6 +3286,13 @@ c-----------------------------------------------------------------------
             bwpmns(istep,:)=0
             bwpmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=bwp_mn
 
+            IF(galsol%gal_flag) THEN
+               ! use rmatch bwp_mn if available
+               bwp_mn_rmatch=bwp_mn_rmatch/area
+               bwpmns_rmatch(istep,:)=0
+               bwpmns_rmatch(istep,mlow-lmlow+1:mlow-lmlow+mpert)=
+     $                                                     bwp_mn_rmatch
+            ENDIF
             IF (msing>0) THEN
                interpbwn=interpbwn/area
                intbwpmns(istep,:)=0
@@ -3518,6 +3526,15 @@ c-----------------------------------------------------------------------
      $      "the perturbed field") )
          CALL check( nf90_put_att(fncid,wm_id,"units","Tesla") )
          CALL check( nf90_put_att(fncid,wm_id,"jacobian",jac_out) )
+         IF(galsol%gal_flag)THEN
+            CALL check( nf90_def_var(fncid, "Jbgradpsi_rmatch",
+     $                nf90_double,(/p_id,m_id,i_id/),wmr_id) )
+            CALL check( nf90_put_att(fncid,wmr_id,"long_name",
+     $      "Jacobian weighted contravariant psi component of "//
+     $      "the perturbed field") )
+            CALL check( nf90_put_att(fncid,wmr_id,"units","Tesla") )
+            CALL check( nf90_put_att(fncid,wmr_id,"jacobian",jac_out) )
+         ENDIF
          IF(TRIM(jac_out)/="pest" .AND. bwp_pest_flag)THEN
             CALL check( nf90_def_dim(fncid,"m_pest",mpert_pest,mp_id) )
             CALL check( nf90_def_var(fncid, "m_pest", nf90_int, mp_id,
@@ -3560,6 +3577,11 @@ c-----------------------------------------------------------------------
      $                AIMAG(bnomns)/),(/mstep,lmpert,2/))) )
          CALL check( nf90_put_var(fncid,wm_id,RESHAPE((/REAL(bwpmns),
      $                AIMAG(bwpmns)/),(/mstep,lmpert,2/))) )
+         IF(galsol%gal_flag)THEN
+            CALL check( nf90_put_var(fncid,wmr_id,RESHAPE((/
+     $          REAL(bwpmns_rmatch),AIMAG(bwpmns_rmatch)/),
+     $          (/mstep,lmpert,2/))) )
+         ENDIF          
          IF(TRIM(jac_out)/="pest" .AND. bwp_pest_flag)THEN
             CALL check( nf90_put_var(fncid,mpv_id,mfac_pest) )
             CALL check( nf90_put_var(fncid,pwm_id,RESHAPE((/
