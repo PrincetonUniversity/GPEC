@@ -506,12 +506,15 @@ c-----------------------------------------------------------------------
       u2%xs=psifac
       u3%xs=psifac
       u4%xs=psifac
-      bpsi%xs=psifac
       CALL cspline_fit(u1,"extrap")
       CALL cspline_fit(u2,"extrap")
       CALL cspline_fit(u3,"extrap")
       CALL cspline_fit(u4,"extrap")
-      CALL cspline_fit(bpsi,"extrap")
+      IF (galsol%gal_flag) THEN
+         bpsi%xs=psifac
+         CALL cspline_fit(bpsi,"extrap")
+      ENDIF
+c-----------------------------------------------------------------------
       IF(debug_flag) PRINT *, "->Leaving idcon_build"
 c-----------------------------------------------------------------------
 c     terminate.
