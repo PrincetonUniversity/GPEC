@@ -74,7 +74,7 @@ c-----------------------------------------------------------------------
       TYPE(jacobi_type) :: quad
       TYPE(hermite2_type) :: hermite
       END TYPE gal_type
-      
+
       LOGICAL, PRIVATE :: diagnose_map=.FALSE.,diagnose_grid=.FALSE.,
      $     diagnose_lsode=.FALSE.,diagnose_integrand=.FALSE.,
      $     diagnose_mat=.FALSE.,dx1dx2_flag=.TRUE.,
@@ -84,7 +84,7 @@ c-----------------------------------------------------------------------
       CHARACTER(1), DIMENSION(2) :: side=(/"l","r"/)
       CHARACTER(128), PRIVATE :: format1,format2
       CHARACTER(20) :: solver="cholesky"
-      INTEGER :: nx,nq,cutoff=1 
+      INTEGER :: nx,nq,cutoff=1
       INTEGER :: ndiagnose=12,interp_np=3,interp_np_res=60
       INTEGER, PRIVATE :: jsing,np=3
       REAL(r8) :: dx0,dx1,dx2,pfac
@@ -101,7 +101,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE gal_alloc(gal,nx,nq,dx0,dx1,dx2,pfac)
-      
+
       TYPE(gal_type), INTENT(OUT) :: gal
       INTEGER, INTENT(IN) :: nx,nq
       REAL(r8), INTENT(IN) :: dx0,dx1,dx2,pfac
@@ -193,7 +193,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE gal_dealloc(gal)
-      
+
       TYPE(gal_type), INTENT(INOUT) :: gal
 
       INTEGER :: ising,ix
@@ -229,8 +229,8 @@ c-----------------------------------------------------------------------
       SUBROUTINE gal_hermite(x,x0,x1,hermite)
 
       REAL(r8),INTENT(IN) :: x,x0,x1
-      TYPE(hermite2_type),INTENT(INOUT) :: hermite 
-      
+      TYPE(hermite2_type),INTENT(INOUT) :: hermite
+
       REAL(r8) :: dx,t0,t1,t02,t12
 c-----------------------------------------------------------------------
 c     compute variables.
@@ -447,7 +447,7 @@ c-----------------------------------------------------------------------
       intvl%x(ixmax)=x1
       intvl%dx(0)=0
       intvl%dx(1:nx)=intvl%x(1:nx)-intvl%x(0:nx-1)
-      
+
       DO ix=1,nx
          intvl%cell(ix)%x=(/intvl%x(ix-1),intvl%x(ix)/)
       ENDDO
@@ -674,7 +674,7 @@ c-----------------------------------------------------------------------
                gal%rhs(imap,isol)=gal%rhs(imap,isol)
      $              +cell%erhs
             ENDIF
-            
+
          ENDDO
       ENDDO
 c-----------------------------------------------------------------------
@@ -725,7 +725,7 @@ c-----------------------------------------------------------------------
                            IF (j>i) CYCLE
                            gal%mat(offset+i-j,j)=gal%mat(offset+i-j,j)
      $                          +cell%mat(ipert,jpert,ip,jp)
-                        ENDIF                        
+                        ENDIF
                      ENDDO
                   ENDDO
 c-----------------------------------------------------------------------
@@ -799,11 +799,11 @@ c-----------------------------------------------------------------------
       itol=1
       mf=10
       liw=20
-      lrw=20+16*neq     
+      lrw=20+16*neq
       istate=1
       itask=5
       iopt=1
-      
+
       istep=0
       nstep=5000
       rtol=gal_tol
@@ -871,7 +871,7 @@ c-----------------------------------------------------------------------
          CALL lsode(gal_lsode_der,neq,u,x,x1,itol,rtol,atol,
      $        itask,istate,iopt,rwork,lrw,iwork,liw,jac,mf)
       ENDDO
-      IF (istep >= nstep) THEN 
+      IF (istep >= nstep) THEN
          WRITE (*,*)"Warning: LSODE exceeds nstep."
          WRITE (*,*)"  ABS(t-1)=",ABS(t-1)," > gal_tol=",gal_tol
       ENDIF
@@ -1178,7 +1178,7 @@ c-----------------------------------------------------------------------
          ELSEIF (cell%extra == "right") THEN
             w1=1.0
             w2=0.0
-         ENDIF         
+         ENDIF
       ENDIF
       isol=NINT(nn*sing(jsing)%q)-mlow+1
 c-----------------------------------------------------------------------
@@ -1191,9 +1191,9 @@ c-----------------------------------------------------------------------
          CALL sing_get_ua(jsing,x,ua)
          CALL sing_get_dua(jsing,x,dua)
          u=ua(:,isol+mpert,1)
-         du=dua(:,isol+mpert,1)  
-         cell%emat=0.0    
-         cell%ediag=0.0            
+         du=dua(:,isol+mpert,1)
+         cell%emat=0.0
+         cell%ediag=0.0
          DO ipert=1,mpert
             cell%emat=cell%emat
      $           +cell%mat(:,ipert,:,jp)*u(ipert)
@@ -1206,8 +1206,8 @@ c-----------------------------------------------------------------------
          ENDDO
 c-----------------------------------------------------------------------
 c     surface term.
-c-----------------------------------------------------------------------            
-         CALL gal_hermite(x,cell%x(1),cell%x(2),hermite) 
+c-----------------------------------------------------------------------
+         CALL gal_hermite(x,cell%x(1),cell%x(2),hermite)
          CALL gal_get_fkg(x,f,k,g)
          DO ip=0,np
             cell%emat(:,ip)=cell%emat(:,ip)
@@ -1222,12 +1222,12 @@ c-----------------------------------------------------------------------
       CALL sing_get_ua(jsing,cell%x(1),ua)
       CALL sing_get_dua(jsing,cell%x(1),dua)
       u1=ua(:,isol,1)
-      du1=dua(:,isol,1)         
+      du1=dua(:,isol,1)
       CALL sing_get_ua(jsing,cell%x(2),ua)
       CALL sing_get_dua(jsing,cell%x(2),dua)
       u2=ua(:,isol,1)
       du2=dua(:,isol,1)
-      cell%rhs=0.0   
+      cell%rhs=0.0
       IF (cell%etype == "ext" .OR. cell%etype == "ext1") THEN
          cell%erhs=0.0
          DO iq=0,quad%np
@@ -1269,8 +1269,8 @@ c-----------------------------------------------------------------------
       ENDIF
 c-----------------------------------------------------------------------
 c     surface term.
-c-----------------------------------------------------------------------            
-      CALL gal_hermite(cell%x(1),cell%x(1),cell%x(2),hermite) 
+c-----------------------------------------------------------------------
+      CALL gal_hermite(cell%x(1),cell%x(1),cell%x(2),hermite)
       CALL gal_get_fkg(cell%x(1),f,k,g)
       CALL sing_get_ua(jsing,cell%x(1),ua)
       DO ip=0,np
@@ -1282,9 +1282,9 @@ c-----------------------------------------------------------------------
      $            -SUM(CONJG(ua(:,isol+mpert,1))
      $            *(MATMUL(f,du1)+MATMUL(k,u1)))
       ENDIF
-      CALL gal_hermite(cell%x(2),cell%x(1),cell%x(2),hermite) 
+      CALL gal_hermite(cell%x(2),cell%x(1),cell%x(2),hermite)
       CALL gal_get_fkg(cell%x(2),f,k,g)
-      CALL sing_get_ua(jsing,cell%x(2),ua)      
+      CALL sing_get_ua(jsing,cell%x(2),ua)
       DO ip=0,np
          cell%rhs(:,ip)=cell%rhs(:,ip)
      $  +(MATMUL(f,du2)+MATMUL(k,u2))*hermite%pb(ip)*w2
@@ -1420,7 +1420,7 @@ c-----------------------------------------------------------------------
          CALL zpbtrf('L',gal%ndim,gal%kl,gal%mat,gal%ldab,info)
          WRITE(*,*)"Calculating Galerkin matrix solution"
          CALL zpbtrs('L',gal%ndim,gal%kl,gal%nsol,gal%mat,gal%ldab,
-     $        gal%sol,gal%ndim,info)     
+     $        gal%sol,gal%ndim,info)
       ENDIF
 c-----------------------------------------------------------------------
 c     compute and write delta from small resonant coefficients.
@@ -1532,12 +1532,12 @@ c-----------------------------------------------------------------------
      $        singp%resleft,singp%resright,
      $        singp%extleft,singp%extright,
      $        singp%auxextleft,singp%auxextright
-      ENDDO      
+      ENDDO
       CLOSE(UNIT=gal_bin_unit)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      RETURN      
+      RETURN
       END SUBROUTINE gal_write_delta
 c-----------------------------------------------------------------------
 c     subprogram 20. gal_set_boundary.
@@ -1545,14 +1545,14 @@ c     set boundary condition.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       SUBROUTINE gal_set_boundary(gal)
       TYPE(gal_type), INTENT(INOUT) :: gal
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
       INTEGER :: idx,imap,ipert,egnum
 c-----------------------------------------------------------------------
 c     set boundary u(0).
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       cell=>gal%intvl(0)%cell(1)
       cell%mat(:,:,0,:)=0.0
       IF (solver == "cholesky") THEN
@@ -1560,10 +1560,10 @@ c-----------------------------------------------------------------------
       ENDIF
       DO idx=1,mpert
          cell%mat(idx,idx,0,0)=1.0
-      ENDDO    
+      ENDDO
 c-----------------------------------------------------------------------
 c     set boundary u(1).
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       cell=>gal%intvl(msing)%cell(gal%nx)
       IF (coil%rpec_flag) THEN
          cell%mat(:,:,3,:)=0.0
@@ -1611,7 +1611,7 @@ c         CALL bin_close(gal_bin_unit)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      RETURN        
+      RETURN
       END SUBROUTINE gal_set_boundary
 c-----------------------------------------------------------------------
 c     subprogram 21. gal_diagnose_mat.
@@ -1619,18 +1619,18 @@ c     diagnose the global matrix.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
-c-----------------------------------------------------------------------            
+c-----------------------------------------------------------------------
       SUBROUTINE gal_diagnose_mat(gal,m1,m2,name)
       INTEGER, INTENT(IN) :: m1,m2
       CHARACTER(*), INTENT(IN) :: name
       TYPE(gal_type), INTENT(INOUT) :: gal
-      
+
       INTEGER :: idx,jdx,i,j,offset
       COMPLEX(r8) :: val
       IF (.NOT.diagnose_mat) RETURN
 c-----------------------------------------------------------------------
 c     output gal%mat and gal%rhs.
-c-----------------------------------------------------------------------       
+c-----------------------------------------------------------------------
       IF (solver == "cholesky") RETURN
       OPEN(UNIT=gal_out_unit,FILE=TRIM(name)//".out",STATUS="UNKNOWN")
       offset=gal%kl+gal%ku+1
@@ -1659,7 +1659,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      RETURN              
+      RETURN
       END SUBROUTINE gal_diagnose_mat
 c-----------------------------------------------------------------------
 c     subprogram 22. gal_spline_pack.
@@ -1667,7 +1667,7 @@ c     sets up grid for spline.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       SUBROUTINE gal_spline_pack (nx,dx1,dx2,pfac,sx)
       INTEGER,INTENT(IN) :: nx
       REAL(r8),INTENT(IN) :: dx1,dx2,pfac
@@ -1677,13 +1677,13 @@ c-----------------------------------------------------------------------
       TYPE(interval_type),DIMENSION(:),ALLOCATABLE :: intvl
 c-----------------------------------------------------------------------
 c     distribute nodes between two resonant surface.
-c-----------------------------------------------------------------------           
+c-----------------------------------------------------------------------
       ALLOCATE(intvl(0:msing))
       DO ising=0,msing
          ALLOCATE(intvl(ising)%x(0:nx),
      $            intvl(ising)%dx(0:nx),intvl(ising)%cell(nx))
          CALL gal_make_grid(ising,nx,0.0_8,dx1,dx2,pfac,intvl(ising))
-      ENDDO 
+      ENDDO
       ix=0
       sx=0.0
       DO ising=0,msing
@@ -1706,7 +1706,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      RETURN      
+      RETURN
       END SUBROUTINE gal_spline_pack
 c-----------------------------------------------------------------------
 c     subprogram 23. gal_read_input.
@@ -1714,7 +1714,7 @@ c     read inputs of gal_input.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       SUBROUTINE gal_read_input
       NAMELIST/gal_input/nx,nq,dx0,dx1,dx2,pfac,diagnose_map,solver,
      $     diagnose_grid,diagnose_lsode,ndiagnose,diagnose_integrand,
@@ -1733,7 +1733,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE gal_read_input   
+      END SUBROUTINE gal_read_input
 c-----------------------------------------------------------------------
 c     subprogram 24. gal_write_pest3_data.
 c     writes delta matrix.
@@ -1745,7 +1745,7 @@ c-----------------------------------------------------------------------
 
       COMPLEX(r8), DIMENSION(:,:), INTENT(IN) :: delta
       CHARACTER(*), INTENT(IN) :: name
-      
+
       INTEGER :: ising,jsing
       COMPLEX(r8), DIMENSION(msing,msing) :: ap,bp,gammap,deltap
 c-----------------------------------------------------------------------
@@ -1798,7 +1798,7 @@ c-----------------------------------------------------------------------
      $           REAL(gammap(ising,jsing)),REAL(deltap(ising,jsing))
          ENDDO
       ENDDO
-      CLOSE(UNIT=gal_out_unit)      
+      CLOSE(UNIT=gal_out_unit)
 
       OPEN(UNIT=gal_out_unit,FILE=TRIM(name)//"_im.out",
      $     STATUS="UNKNOWN")
@@ -1812,11 +1812,11 @@ c-----------------------------------------------------------------------
      $           IMAG(gammap(ising,jsing)),IMAG(deltap(ising,jsing))
          ENDDO
       ENDDO
-      CLOSE(UNIT=gal_out_unit)  
+      CLOSE(UNIT=gal_out_unit)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      RETURN      
+      RETURN
       END SUBROUTINE gal_write_pest3_data
 c-----------------------------------------------------------------------
 c     subprogram 25. gal_get_solution.
@@ -1834,20 +1834,20 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:), INTENT(IN) :: deltaij
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: sol
       TYPE(gal_type), INTENT(IN) :: gal
-      
+
       INTEGER :: i,ising,ipert0,jsol
       REAL(r8) :: tmp,xext
       COMPLEX(r8) :: delta
       INTEGER, DIMENSION(mpert,0:np) :: umap
       REAL(r8), DIMENSION(2) :: epb
       REAL(r8), DIMENSION(0:np) :: pb
-      COMPLEX(r8),DIMENSION(mpert,0:np) :: u 
+      COMPLEX(r8),DIMENSION(mpert,0:np) :: u
       COMPLEX(r8), DIMENSION(mpert,2*mpert,2) :: ua,uaext,duaext
       TYPE(cell_type), POINTER :: cell
       TYPE(hermite2_type) :: hermite
 c-----------------------------------------------------------------------
 c     find the cell and interval containing x.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       IF (x.LT.psilow.OR.x.GT.psihigh) THEN
          CALL program_stop("x is out of range.")
       ENDIF
@@ -1876,7 +1876,7 @@ c-----------------------------------------------------------------------
          IF (iintvl.EQ.msing.AND.icell.EQ.gal%nx) THEN
             tmp=pb(2)
             pb(2)=pb(3)
-            pb(3)=tmp   
+            pb(3)=tmp
          ENDIF
          DO i=0,np
             u(:,i)=gal%sol(umap(:,i),isol)
@@ -1901,7 +1901,7 @@ c-----------------------------------------------------------------------
          epb(1)=hermite%pb(0)
          epb(2)=hermite%pb(1)
          xext=cell%x(1)
-      END SELECT      
+      END SELECT
       IF (cell%etype=="res".OR.cell%etype=="ext".OR.cell%etype=="ext1")
      $   CALL sing_get_ua(ising,x,ua)
       IF (cell%etype=="ext".OR.cell%etype=="ext2") THEN
@@ -1924,7 +1924,7 @@ c-----------------------------------------------------------------------
          IF ( (isol==ising*2-1.AND.cell%extra=="left")
      $        .OR.
      $        (isol==ising*2.AND.cell%extra=="right")
-     $      ) THEN     
+     $      ) THEN
          SELECT CASE(cell%etype)
             CASE ("res","ext","ext1")
                sol=sol+ua(:,ipert0,1)
@@ -1937,7 +1937,7 @@ c-----------------------------------------------------------------------
       ENDIF
 c-----------------------------------------------------------------------
 c     prepare for uniform solution matching.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       IF (cut_flag) THEN
          SELECT CASE (cell%extra)
          CASE("left")
@@ -1955,11 +1955,11 @@ c-----------------------------------------------------------------------
      $      ) THEN
                sol=sol-ua(:,ipert0,1)
             ENDIF
-         ENDIF 
+         ENDIF
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gal_get_solution
 c-----------------------------------------------------------------------
@@ -1972,7 +1972,7 @@ c-----------------------------------------------------------------------
       SUBROUTINE gal_output_solution (delta,gal)
       COMPLEX(r8), DIMENSION(:,:), INTENT(IN) :: delta
       TYPE(gal_type), INTENT(IN) :: gal
-      
+
       INTEGER :: icell, iintvl,ip,tot_grids,isol,ising,j,ipert,m
       LOGICAL, DIMENSION(:), ALLOCATABLE :: issing
       CHARACTER(100) :: comp_tittle,tmp
@@ -1981,7 +1981,7 @@ c-----------------------------------------------------------------------
       REAL(r8), PARAMETER :: eps=1e-4
       REAL(r8), DIMENSION(interp_np) :: xvar
       REAL(r8), DIMENSION(interp_np_res) :: xvarres
-      REAL(r8), DIMENSION(mpert) :: singfac      
+      REAL(r8), DIMENSION(mpert) :: singfac
       REAL(r8), DIMENSION(:), ALLOCATABLE :: psi,q
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: xext
       COMPLEX(r8),DIMENSION(:,:,:), ALLOCATABLE :: sol,sol_cut
@@ -2033,7 +2033,7 @@ c-----------------------------------------------------------------------
             cellinfos%iintvl(iintvl*gal%nx+icell)=iintvl
             cellinfos%x1(iintvl*gal%nx+icell)=cell%x(1)
             cellinfos%x2(iintvl*gal%nx+icell)=cell%x(2)
-            IF (cell%extra=="right".AND.cell%etype=="res") 
+            IF (cell%extra=="right".AND.cell%etype=="res")
      $         issing(ip)=.TRUE.
             IF (cell%etype=="res".OR.cell%etype=="ext") THEN
                ip=ip+interp_np_res
@@ -2051,7 +2051,7 @@ c-----------------------------------------------------------------------
       ENDDO
 c-----------------------------------------------------------------------
 c     get solution.
-c-----------------------------------------------------------------------       
+c-----------------------------------------------------------------------
       DO isol=1,gal%nsol
          iintvl=0
          icell=1
@@ -2075,7 +2075,7 @@ c-----------------------------------------------------------------------
      $                        psio,tot_grids
          DO isol=1,msing
             WRITE(gal_bin_unit) sing(isol)%psifac,sing(isol)%q
-         ENDDO 
+         ENDDO
          WRITE (gal_bin_unit) psi,issing,q
          DO isol=1,gal%nsol
             WRITE (gal_bin_unit) sol(:,:,isol)
@@ -2103,7 +2103,7 @@ c-----------------------------------------------------------------------
          DO isol=1,gal%nsol
             WRITE (gal_bin_unit) sol_cut(:,:,isol)
          ENDDO
-         CALL bin_close(gal_bin_unit)                
+         CALL bin_close(gal_bin_unit)
       ENDIF
 c-----------------------------------------------------------------------
 c     convert to perturbed b in radial direction.
@@ -2176,7 +2176,7 @@ c-----------------------------------------------------------------------
                CALL bin_open(gal_bin_unit,TRIM(filename(j)),"UNKNOWN",
      $                        "REWIND","none")
                DO ipert=1,mpert
-                  DO ip=0,tot_grids                
+                  DO ip=0,tot_grids
                      IF (issing(ip)) THEN
                         WRITE(gal_bin_unit)
                         CYCLE
@@ -2205,7 +2205,7 @@ c-----------------------------------------------------------------------
                CALL bin_open(gal_bin_unit,TRIM(filename(1)),"UNKNOWN",
      $                       "REWIND","none")
                DO ipert=1,mpert
-                  DO ip=0,tot_grids                
+                  DO ip=0,tot_grids
                      IF (issing(ip)) THEN
                         WRITE(gal_bin_unit)
                         CYCLE
@@ -2230,5 +2230,5 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE gal_output_solution 
+      END SUBROUTINE gal_output_solution
       END MODULE gal_mod

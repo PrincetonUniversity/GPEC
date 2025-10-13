@@ -802,7 +802,7 @@ c         dpsi=singp%psifac-psifac
          dpsi=singp%psifac-psifac
       ELSE
          vmat => singp%vmatr
-         dpsi=psifac-singp%psifac         
+         dpsi=psifac-singp%psifac
       ENDIF
       r1 => singp%r1
       r2 => singp%r2
@@ -1262,7 +1262,7 @@ c         dpsi=singp%psifac-psifac
          dpsi=singp%psifac-psifac
       ELSE
          vmat => singp%vmatr
-         dpsi=psifac-singp%psifac         
+         dpsi=psifac-singp%psifac
       ENDIF
       r1 => singp%r1
       r2 => singp%r2

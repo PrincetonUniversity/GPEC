@@ -890,12 +890,12 @@ c-----------------------------------------------------------------------
       nths2=nths*2
       nfm2=mpert*2
       IF(verbose) WRITE(*,*)"Calculating vacuum energy matrices"
-      
+
       ahg_fname='ahg2msc_gpec.out'
       CALL ahg_write(psilim,ahg_fname)
 
       ALLOCATE(grri(nths2,nfm2),grre(nths2,nfm2),
-     $        griw(nths2,nfm2),grrw(nths2,nfm2),xzpts(nths,4))     
+     $        griw(nths2,nfm2),grrw(nths2,nfm2),xzpts(nths,4))
       IF(debug_flag) PRINT *,'mscvac - ',mthvac,mtheta,mthsurf,nths2
       farwal_flag=.TRUE.
       kernelsignin = -1.0
@@ -906,7 +906,7 @@ c-----------------------------------------------------------------------
      $      kernelsignin,wall_flag,farwal_flag,grre,xzpts,ahg_fname)
       IF(wv_farwall_flag)THEN
          temp=wv
-      ENDIF        
+      ENDIF
 
       farwal_flag=.FALSE.
       kernelsignin = -1.0
@@ -918,7 +918,7 @@ c-----------------------------------------------------------------------
       IF(wv_farwall_flag)THEN
          wv=temp
       ENDIF
-      
+
       if (vac_memory) CALL unset_dcon_params
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1126,7 +1126,7 @@ c-----------------------------------------------------------------------
       INTEGER :: i,itheta,rtheta,vn,lwork
       REAL(r8) :: qa,kernelsignin
       CHARACTER(1), PARAMETER :: tab=CHAR(9)
-      LOGICAL, PARAMETER :: complex_flag=.TRUE.,wall_flag=.FALSE.      
+      LOGICAL, PARAMETER :: complex_flag=.TRUE.,wall_flag=.FALSE.
       LOGICAL, PARAMETER :: farwal_flag=.TRUE.
 
       INTEGER, DIMENSION(mpert) :: ipiv

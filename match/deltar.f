@@ -1,9 +1,9 @@
 c-----------------------------------------------------------------------
 c     program deltar.
-c     integrates the 4th-order fourier-transformed equations for the 
-c     singular layer from large values to small values of the 
-c     independent variable t, fits the solutions to asymptotic 
-c     solutions to evaluate asymptotic coefficients, and uses these 
+c     integrates the 4th-order fourier-transformed equations for the
+c     singular layer from large values to small values of the
+c     independent variable t, fits the solutions to asymptotic
+c     solutions to evaluate asymptotic coefficients, and uses these
 c     coefficients to construct the asymptotic ratios dlrp and dlrm.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -42,7 +42,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(neqc,neqc), PRIVATE :: v,d1,d1inv,u,up,
      $     al1,d0,d0inv
       COMPLEX(r8), DIMENSION(neqc,neqc,nmax), PRIVATE :: ups,vps
-      
+
       TYPE :: resist_type
       REAL(r8) :: e,f,h,m,g,k,eta,rho,taua,taur,di,dr,sfac,deltac
       END TYPE resist_type
@@ -56,7 +56,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE deltar_run(restype,s,deltar)
-      
+
       TYPE(resist_type), INTENT(IN) :: restype
       COMPLEX(r8), INTENT(IN) :: s
       COMPLEX(r8), DIMENSION(2), INTENT(OUT) :: deltar
@@ -165,12 +165,12 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE deltar_der(n,t,y,dy)
-      
+
       INTEGER, INTENT(IN) :: n
       REAL(r8), INTENT(IN) :: t
       COMPLEX(r8), DIMENSION(neqc,nsol), INTENT(IN) :: y
       COMPLEX(r8), DIMENSION(neqc,nsol), INTENT(OUT) :: dy
-      
+
       INTEGER :: i
 c-----------------------------------------------------------------------
 c     evaluate derivatives, new way.
@@ -193,11 +193,11 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE deltar_upsfit(t,y,c0)
-      
+
       REAL(r8), INTENT(IN) :: t
       COMPLEX(r8), DIMENSION(neqc,nsol), INTENT(IN) :: y
       COMPLEX(r8), DIMENSION(neqc,nsol), INTENT(OUT) :: c0
-      
+
       INTEGER :: i,j,k,info
       INTEGER, DIMENSION(neqc) :: ipiv
       REAL(r8) :: t2
@@ -236,11 +236,11 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE deltar_vpsfit(t,y,c1)
-      
+
       REAL(r8), INTENT(IN) :: t
       COMPLEX(r8), DIMENSION(neqc,nsol), INTENT(IN) :: y
       COMPLEX(r8), DIMENSION(neqc,nsol), INTENT(OUT) :: c1
-      
+
       INTEGER :: i,j,k,info
       INTEGER, DIMENSION(neqc) :: ipiv
       REAL(r8) :: err,t2,tfac1,trmrat,trmrat1,trmrat2
@@ -293,7 +293,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE deltar_origin
-      
+
       LOGICAL :: out
       INTEGER :: i,j,k,l
       REAL(r8) :: aminus,aplus,pminus,unmax
@@ -450,7 +450,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE deltar_infinity
-      
+
       INTEGER :: i,j,j1,j2,j3,j4,jlam,k,l
       COMPLEX(r8) :: a1,bb,cc,dd,ddsq,kk1,lamda,lamdaq,lamfac,q3,sigma,
      $     stfac,tau

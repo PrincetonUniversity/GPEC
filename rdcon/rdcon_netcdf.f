@@ -193,7 +193,7 @@ c-----------------------------------------------------------------------
          CALL check( nf90_def_var(ncid,"psi_n_rational",nf90_double,
      $                 r_dim, pr_id) )
          CALL check( nf90_put_att(ncid,pr_id,"long_name",
-     $       "Normalized Poloidal Flux at Rational Surfaces") )    
+     $       "Normalized Poloidal Flux at Rational Surfaces") )
          CALL check( nf90_def_var(ncid,"q_rational",nf90_double,
      $                 r_dim, qr_id) )
          CALL check( nf90_put_att(ncid,qr_id,"long_name",
@@ -249,7 +249,7 @@ c-----------------------------------------------------------------------
          CALL check( nf90_def_var(ncid,
      $     "avg_Bp", nf90_double, p_dim, bpo_id))
          CALL check( nf90_def_var(ncid,
-     $     "avg_r", nf90_double, p_dim, mir_id)) 
+     $     "avg_r", nf90_double, p_dim, mir_id))
          CALL check( nf90_def_var(ncid,
      $     "avg_R", nf90_double, p_dim, mar_id))
          CALL check( nf90_def_var(ncid,
@@ -280,7 +280,7 @@ c-----------------------------------------------------------------------
             CALL check( nf90_def_var(ncid,
      $     "avg_16", nf90_double, p_dim, a16_id))
             CALL check( nf90_def_var(ncid,
-     $     "avg_17", nf90_double, p_dim, a17_id))     
+     $     "avg_17", nf90_double, p_dim, a17_id))
             CALL check( nf90_def_var(ncid,
      $     "avg_18", nf90_double, p_dim, a18_id))
             CALL check( nf90_def_var(ncid,
@@ -327,7 +327,7 @@ c-----------------------------------------------------------------------
      $    ic_dim, iivl_id) )
       CALL check( nf90_put_att(ncid,iivl_id,"long_name",
      $       "Interval index per cell") )
-      CALL check( nf90_def_var(ncid, "etypes", nf90_int,  
+      CALL check( nf90_def_var(ncid, "etypes", nf90_int,
      $    ic_dim, et_id) )
       CALL check( nf90_put_att(ncid,et_id,"long_name",
      $       "Cell type (1=res, 2=ext, 3=ext1, 4=ext2, 0=none)") )
@@ -439,7 +439,7 @@ c-----------------------------------------------------------------------
          ENDIF
       ENDIF
 
-      IF(ode_flag .AND. vac_flag)THEN !Shift to .OR. 
+      IF(ode_flag .AND. vac_flag)THEN !Shift to .OR.
         IF(debug_flag) PRINT *," - Putting matrix variables in netcdf"
         CALL check( nf90_put_var(ncid,wp_id,RESHAPE((/REAL(wp),
      $             AIMAG(wp)/),(/mpert,mpert,2/))) )
@@ -457,7 +457,7 @@ c-----------------------------------------------------------------------
      $             AIMAG(et)/),(/mpert,2/))) )
         CALL check( nf90_put_var(ncid,wt0_id,RESHAPE((/REAL(wt0),
      $             AIMAG(wt0)/),(/mpert,mpert,2/))) )
-      ENDIF      
+      ENDIF
       IF(debug_flag) PRINT *," - Putting cellinfo variables in netcdf"
       CALL check( nf90_put_var(ncid,ic_id,(/(i,i=1,cellinfos%ncell)/)) )
       CALL check( nf90_put_var(ncid,iic_id,cellinfos%icell) )
@@ -516,7 +516,7 @@ c-----------------------------------------------------------------------
 
 
          ENDIF
-      ENDIF   
+      ENDIF
 c-----------------------------------------------------------------------
 c     close file
 c-----------------------------------------------------------------------

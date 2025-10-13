@@ -47,7 +47,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: idealresleft,idealresright,idealextleft,idealextright,
      $    idealauxextleft,idealauxextright
       REAL(r8) :: innerresleft,innerresright,innerextleft,innerextright,
-     $    innerauxextleft,innerauxextright 
+     $    innerauxextleft,innerauxextright
       END TYPE singbounds_type
 
       TYPE :: cell_type
@@ -56,7 +56,7 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(:), ALLOCATABLE :: emap
       INTEGER, DIMENSION(:,:), ALLOCATABLE :: map
       REAL(r8) :: x_lsode
-      REAL(r8), DIMENSION(2) :: x 
+      REAL(r8), DIMENSION(2) :: x
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: rhs
       COMPLEX(r8), DIMENSION(:,:,:,:), ALLOCATABLE :: mat
       END TYPE cell_type
@@ -65,12 +65,12 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), ALLOCATABLE :: x,dx
       TYPE(cell_type), DIMENSION(:), POINTER :: cell
       END TYPE interval_type
-      
+
       TYPE :: solution_type
       REAL(r8),DIMENSION(:), ALLOCATABLE :: xvar
       COMPLEX(r8), DIMENSION(:,:,:),ALLOCATABLE :: sol
       END TYPE solution_type
-      
+
       TYPE :: gal_type
       INTEGER :: nx,nq,ndim,kl,ku,ldab,msol
       INTEGER, DIMENSION(:), ALLOCATABLE :: ipiv
@@ -100,13 +100,13 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(4), PRIVATE:: tid=(/3,5,6,4/)
       REAL(r8) :: xmin=0,deltac_tol=1e-5,pfac=1
       COMPLEX(r8) :: q_deltac
-      TYPE(cell_type), POINTER :: cell  
+      TYPE(cell_type), POINTER :: cell
       TYPE(solution_type), POINTER :: sol
       TYPE(gal_type) :: gal
 
 c     following flag need to be removed after the test
 
-      CONTAINS    
+      CONTAINS
 c-----------------------------------------------------------------------
 c     subprogram 1. deltac_run.
 c     sets up and solve inner layer.
@@ -146,7 +146,7 @@ c-----------------------------------------------------------------------
       in%v1=restype%v1
       in%ising=restype%ising
       in%eig=eig
-      
+
       in%dr=in%e+in%f+in%h*in%h
       in%di=in%e+in%f+in%h-0.25
       in%p1=SQRT(-in%di)
@@ -184,7 +184,7 @@ c-----------------------------------------------------------------------
       CASE(1,2)
          xmin=-xmax
       CASE DEFAULT
-         WRITE(message,'(a,i2)') 
+         WRITE(message,'(a,i2)')
      $        "deltac_run: invalid value fulldomain = ",fulldomain
       END SELECT
       IF(diagnose_res)CALL inpso_ua_diagnose
@@ -276,7 +276,7 @@ c-----------------------------------------------------------------------
          OPEN(UNIT=124,FILE="galsol.out",STATUS="REPLACE")
          !gal%sol(gal%ndim,gal%msol))
          WRITE(*,*) "Writing galsol.out with ",gal%ndim," rows and ",
-     $     gal%msol," columns." 
+     $     gal%msol," columns."
          WRITE(124,*) gal%ndim,gal%msol
          DO isol=1,gal%msol
             WRITE(124,*) (REAL(gal%sol(ix,isol)),ix=1,gal%ndim)
@@ -343,7 +343,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE deltac_alloc(gal,nx,nq,dx1,dx2,pfac)
-      
+
       TYPE(gal_type), INTENT(OUT) :: gal
       INTEGER, INTENT(IN) :: nx,nq
       REAL(r8), INTENT(IN) :: dx1,dx2,pfac
@@ -377,7 +377,7 @@ c-----------------------------------------------------------------------
          ALLOCATE(intvl%x(-nx:nx),intvl%dx(-nx:nx),intvl%cell(-nx:nx))
          ixmin=-nx
       CASE DEFAULT
-         WRITE(*,'(a,i2)') 
+         WRITE(*,'(a,i2)')
      $        "deltac_run: invalide value fulldomain = ",fulldomain
          STOP
       END SELECT
@@ -445,15 +445,15 @@ c-----------------------------------------------------------------------
                   ALLOCATE(cell%rhs(mpert,0:np+1))
                   cell%np=np
                   ENDIF
-               ELSE 
+               ELSE
                   ALLOCATE(cell%map(mpert,0:np),cell%emap(3))
                   ALLOCATE(cell%mat(mpert,mpert,0:np,0:np))
                   ALLOCATE(cell%rhs(mpert,0:np))
 
-                  cell%np=np-1               
+                  cell%np=np-1
                ENDIF
                cell%emap=0.0
-               cell%rhs=0.0               
+               cell%rhs=0.0
                cell%x_lsode=0.0
 c-----------------------------------------------------------------------
 c     allocate extension element only has driving term.
@@ -478,17 +478,17 @@ c-----------------------------------------------------------------------
                      ALLOCATE(cell%map(mpert,0:np))
                      ALLOCATE(cell%mat(mpert,mpert,0:np,0:np))
                      ALLOCATE(cell%rhs(mpert,0:np))
-                  ENDIF               
+                  ENDIF
                END SELECT
                cell%np=np
                cell%rhs=0.0
                cell%x_lsode=0.0
             END SELECT
          ELSE
-         
+
          ENDIF
          cell%map=0.0
-         cell%mat=0.0         
+         cell%mat=0.0
       ENDDO
 
 c      IF(diagnose_grid)CALL deltac_diagnose_grid(gal)
@@ -498,7 +498,7 @@ c-----------------------------------------------------------------------
       IF (basis_type==0) THEN
          CALL deltac_make_map_hermite(gal)
       ELSE
-      
+
       ENDIF
 c-----------------------------------------------------------------------
 c     allocate global arrays for LU solver.
@@ -515,7 +515,7 @@ c-----------------------------------------------------------------------
          ENDIF
       END SELECT
       gal%ku=gal%kl
-      gal%ldab=2*gal%kl+gal%ku+1    
+      gal%ldab=2*gal%kl+gal%ku+1
       gal%msol=msol
       ALLOCATE(gal%rhs(gal%ndim,gal%msol),gal%sol(gal%ndim,gal%msol))
       ALLOCATE(gal%mat(gal%ldab,gal%ndim,2),gal%ipiv(gal%ndim))
@@ -523,7 +523,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE deltac_alloc      
+      END SUBROUTINE deltac_alloc
 c-----------------------------------------------------------------------
 c     subprogram 4. deltac_dealloc.
 c     deallocates arrays.
@@ -532,7 +532,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE deltac_dealloc(gal)
-      
+
       TYPE(gal_type), INTENT(INOUT) :: gal
 
       INTEGER :: ix,ixmin
@@ -551,7 +551,7 @@ c-----------------------------------------------------------------------
          DEALLOCATE(cell%map,cell%mat)
          IF(cell%etype /= "none") DEALLOCATE(cell%rhs)
          IF(cell%etype == "res"  .OR.  cell%etype == "ext")
-     $      DEALLOCATE(cell%emap)            
+     $      DEALLOCATE(cell%emap)
       ENDDO
       DEALLOCATE(intvl%x,intvl%dx,intvl%cell)
       DEALLOCATE(gal%rhs,gal%sol,gal%mat,gal%ipiv,gal%intvl)
@@ -560,7 +560,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE deltac_dealloc      
+      END SUBROUTINE deltac_dealloc
 c-----------------------------------------------------------------------
 c     subprogram 5. deltac_make_grid.
 c     sets up grid in the interval.
@@ -604,7 +604,7 @@ c-----------------------------------------------------------------------
       ELSE
          ixmax=nx
       ENDIF
-      
+
       SELECT CASE (gal_method)
       CASE("normal")
          intvl%cell(nx)%etype="ext1"
@@ -613,7 +613,7 @@ c-----------------------------------------------------------------------
          ENDDO
       CASE("resonant")
          intvl%cell(nx-1)%etype="ext"
-         intvl%cell(nx)%etype="res"      
+         intvl%cell(nx)%etype="res"
          DO ix=nx-2,nx-cutoff,-1
             intvl%cell(ix)%etype="ext1"
          ENDDO
@@ -630,7 +630,7 @@ c-----------------------------------------------------------------------
       xm=(intvl%x(ixmax)+intvl%x(ixmin))/2
       dx=(intvl%x(ixmax)-intvl%x(ixmin))/2
       mx=(ixmax-ixmin)/2
-c     check pack output      
+c     check pack output
       IF(pfac < 1) side="left"
       intvl%x(ixmin:ixmax)=xm+dx*deltac_pack(mx,pfac,side)
       intvl%x(ixmin)=x0
@@ -671,7 +671,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE deltac_make_grid      
+      END SUBROUTINE deltac_make_grid
 c-----------------------------------------------------------------------
 c     subprogram 6. deltac_pack.
 c     computes packed grid on (0,1).
@@ -735,7 +735,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END FUNCTION deltac_pack      
+      END FUNCTION deltac_pack
 c-----------------------------------------------------------------------
 c     subprogram 7. deltac_hermite.
 c     computes hermite cubic basis functions and their derivatives.
@@ -746,8 +746,8 @@ c-----------------------------------------------------------------------
       SUBROUTINE deltac_hermite(x,x0,x1,hermite)
 
       REAL(r8),INTENT(IN) :: x,x0,x1
-      TYPE(hermite_type),INTENT(INOUT) :: hermite 
-      
+      TYPE(hermite_type),INTENT(INOUT) :: hermite
+
       REAL(r8) :: dx,t0,t1,t02,t12
 c-----------------------------------------------------------------------
 c     compute variables.
@@ -775,7 +775,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE deltac_hermite      
+      END SUBROUTINE deltac_hermite
 c-----------------------------------------------------------------------
 c     subprogram 8. deltac_make_map_hermite.
 c     creates local-to-global mapping.
@@ -814,7 +814,7 @@ c-----------------------------------------------------------------------
                DO ipert=1,mpert
                   cell%map(ipert,ip)=imap
                   imap=imap+1
-               ENDDO   
+               ENDDO
             ENDDO
             ixmin=-nx+1
          ENDIF
@@ -871,7 +871,7 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE deltac_make_map_hermite
-            
+
 c-----------------------------------------------------------------------
 c     subprogram 9. deltac_make_arrays.
 c     computes matrix and rhs.
@@ -887,12 +887,12 @@ c-----------------------------------------------------------------------
       REAL(r8) :: x1
       COMPLEX(r8), DIMENSION(3,4) :: u_res
       COMPLEX(r8), DIMENSION(mpert,0:1,1:4) :: u_h1
-      COMPLEX(r8), DIMENSION(mpert,1:3,0:1) :: u_h2  
+      COMPLEX(r8), DIMENSION(mpert,1:3,0:1) :: u_h2
       COMPLEX(r8), DIMENSION(1,1) :: term
       COMPLEX(r8), DIMENSION(1,3) :: ua1
       COMPLEX(r8), DIMENSION(3,3) :: imat,umat,vmat
       COMPLEX(r8), DIMENSION(3,1) :: dua1
-      COMPLEX(r8), DIMENSION(3,6) :: ua,dua      
+      COMPLEX(r8), DIMENSION(3,6) :: ua,dua
       TYPE(interval_type), POINTER :: intvl
 c-----------------------------------------------------------------------
 c     start loops over grid cells.
@@ -932,7 +932,7 @@ c-----------------------------------------------------------------------
      $                    +u_h2(:,ip,jp)
                   ENDDO
                ENDDO
-               
+
                cell%mat(:,:,ep,ep)=cell%mat(:,:,ep,ep)+u_res(:,1:3)
                cell%rhs(:,0:1)=cell%rhs(:,0:1)-u_h1(:,:,4)
                cell%rhs(:,ep)=cell%rhs(:,ep)-u_res(:,4)
@@ -958,16 +958,16 @@ c-----------------------------------------------------------------------
          cell%mat(1,1,2,2)=1
          cell%mat(2,2,2,2)=1
          cell%mat(3,3,2,2)=1
-         cell%mat(:,1,2,ep)=-ua(:,tid(1))         
-         cell%mat(:,2,2,ep)=-ua(:,tid(2))         
-         cell%mat(:,3,2,ep)=-ua(:,tid(3))         
-         
+         cell%mat(:,1,2,ep)=-ua(:,tid(1))
+         cell%mat(:,2,2,ep)=-ua(:,tid(2))
+         cell%mat(:,3,2,ep)=-ua(:,tid(3))
+
          cell%mat(1,1,ep,3)=1
          cell%mat(2,2,ep,3)=1
          cell%mat(3,3,ep,3)=1
-         cell%mat(:,1,ep,ep)=-dua(:,tid(1))         
-         cell%mat(:,2,ep,ep)=-dua(:,tid(2))         
-         cell%mat(:,3,ep,ep)=-dua(:,tid(3))         
+         cell%mat(:,1,ep,ep)=-dua(:,tid(1))
+         cell%mat(:,2,ep,ep)=-dua(:,tid(2))
+         cell%mat(:,3,ep,ep)=-dua(:,tid(3))
 
          cell%rhs(:,2)=0
          cell%rhs(:,ep)=0
@@ -983,16 +983,16 @@ C           CHECK EP
             cell%mat(1,1,0,0)=1
             cell%mat(2,2,0,0)=1
             cell%mat(3,3,0,0)=1
-            cell%mat(:,1,0,ep)=-ua(:,tid(1))         
-            cell%mat(:,2,0,ep)=-ua(:,tid(2))         
-            cell%mat(:,3,0,ep)=-ua(:,tid(3))         
-         
+            cell%mat(:,1,0,ep)=-ua(:,tid(1))
+            cell%mat(:,2,0,ep)=-ua(:,tid(2))
+            cell%mat(:,3,0,ep)=-ua(:,tid(3))
+
             cell%mat(1,1,ep,1)=1
             cell%mat(2,2,ep,1)=1
             cell%mat(3,3,ep,1)=1
-            cell%mat(:,1,ep,ep)=-dua(:,tid(1))         
-            cell%mat(:,2,ep,ep)=-dua(:,tid(2))         
-            cell%mat(:,3,ep,ep)=-dua(:,tid(3))         
+            cell%mat(:,1,ep,ep)=-dua(:,tid(1))
+            cell%mat(:,2,ep,ep)=-dua(:,tid(2))
+            cell%mat(:,3,ep,ep)=-dua(:,tid(3))
 
             cell%rhs(:,0)=0
             cell%rhs(:,ep)=0
@@ -1017,7 +1017,7 @@ c-----------------------------------------------------------------------
             dua1(:,1)=dua(:,tid(4))
             term=MATMUL(ua1,MATMUL(imat,dua1))
             cell%rhs(ip,ep)=cell%rhs(ip,ep)+term(1,1)
-         ENDDO      
+         ENDDO
       END SELECT
 c-----------------------------------------------------------------------
 c     assemble matrix and rhs.
@@ -1066,7 +1066,7 @@ c-----------------------------------------------------------------------
             pb=hermite%pb
             qb=hermite%qb
          ELSE
-         
+
          ENDIF
 c-----------------------------------------------------------------------
 c     compute gaussian quadratures.
@@ -1077,7 +1077,7 @@ c-----------------------------------------------------------------------
      $              =cell%mat(:,:,ip,jp)
      $              +w*(imat*qb(ip)*qb(jp)
      $              +vmat*pb(ip)*qb(jp)
-     $              +umat*pb(ip)*pb(jp))     
+     $              +umat*pb(ip)*pb(jp))
             ENDDO
          ENDDO
 c-----------------------------------------------------------------------
@@ -1088,7 +1088,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE deltac_gauss_quad   
+      END SUBROUTINE deltac_gauss_quad
 c-----------------------------------------------------------------------
 c     subprogram 11. deltac_assemble_mat.
 c     assembles global matrix.
@@ -1120,7 +1120,7 @@ c-----------------------------------------------------------------------
          SELECT CASE (gal_method)
          CASE("resonant")
             IF (cell%etype == "ext"  .OR.  cell%etype == "res") THEN
-               npp=cell%np+1 
+               npp=cell%np+1
             ENDIF
          CASE("normal")
             IF (cell%etype == "ext1") THEN
@@ -1257,7 +1257,7 @@ c-----------------------------------------------------------------------
                mat(:,:,0,:)=0.0
                mat(1,1,0,1)=1.0
                mat(2,2,0,0)=1.0
-               mat(3,3,0,0)=1.0               
+               mat(3,3,0,0)=1.0
             ELSE
 c-----------------------------------------------------------------------
 c     set boundary condition for even modes.
@@ -1284,12 +1284,12 @@ c-----------------------------------------------------------------------
                ENDDO
             ENDDO
          ENDIF
-      ENDDO      
+      ENDDO
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      RETURN        
-      END SUBROUTINE deltac_set_boundary    
+      RETURN
+      END SUBROUTINE deltac_set_boundary
 c-----------------------------------------------------------------------
 c     subprogram 14. deltac_extension.
 c     computes extension terms of matrix and rhs.
@@ -1310,7 +1310,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(1,mpert) :: term2,ua2,dua2
       COMPLEX(r8), DIMENSION(3,6) :: ua,dua,uax,duax
       COMPLEX(r8), DIMENSION(mpert,mpert) :: umat,vmat,imat
-      
+
       TYPE(hermite_type) :: hermite
 c-----------------------------------------------------------------------
 c     computation.
@@ -1321,7 +1321,7 @@ c     get asymptotic solutions and derivatives at cell boundary.
 c-----------------------------------------------------------------------
          x=cell%x(2)
          CALL inpso_get_ua(x,ua)
-         CALL inpso_get_dua(x,dua)      
+         CALL inpso_get_dua(x,dua)
 c-----------------------------------------------------------------------
 c     set extension element.
 c-----------------------------------------------------------------------
@@ -1332,7 +1332,7 @@ c-----------------------------------------------------------------------
             x=x0+dx*quad%node(iq)
             w=dx*quad%weight(iq)
             CALL inpso_get_ua(x,uax)
-            CALL inpso_get_dua(x,duax)               
+            CALL inpso_get_dua(x,duax)
             CALL inpso_get_uv(x,imat,umat,vmat)
             CALL deltac_hermite(x,cell%x(1),cell%x(2),hermite)
             pb=hermite%pb
@@ -1377,7 +1377,7 @@ c     $                     +CONJG(dua(:,tid(ip)))*qb(3)
                   dua2(1,:)=ua(:,tid(ip))*qb(2)+dua(:,tid(ip))*qb(3)
                   ua1(:,1)=ua(:,tid(jp))*pb(2)+dua(:,tid(jp))*pb(3)
                   dua1(:,1)=ua(:,tid(jp))*qb(2)+dua(:,tid(jp))*qb(3)
-                  
+
                   term=MATMUL(dua2,MATMUL(imat,dua1))
      $                +MATMUL(ua2,MATMUL(vmat,dua1))
      $                +MATMUL(ua2,MATMUL(umat,ua1))
@@ -1389,8 +1389,8 @@ c-----------------------------------------------------------------------
 c     fill rhs for ext
 c-----------------------------------------------------------------------
             ua1(:,1)=uax(:,tid(4))
-            dua1(:,1)=duax(:,tid(4)) 
-            DO ip=0,cell%np   
+            dua1(:,1)=duax(:,tid(4))
+            DO ip=0,cell%np
                term1=qb(ip)*MATMUL(imat,dua1)+pb(ip)*MATMUL(vmat,dua1)
      $              +pb(ip)*MATMUL(umat,ua1)
                cell%rhs(:,ip)=cell%rhs(:,ip)-term1(:,1)*w
@@ -1405,10 +1405,10 @@ c     $                  +CONJG(dua(:,tid(ip)))*qb(3)
 
                term=MATMUL(dua2,MATMUL(imat,dua1))
      $             +MATMUL(ua2,MATMUL(vmat,dua1))
-     $             +MATMUL(ua2,MATMUL(umat,ua1))   
+     $             +MATMUL(ua2,MATMUL(umat,ua1))
                cell%rhs(ip,ep)=cell%rhs(ip,ep)-term(1,1)*w
             ENDDO
-         ENDDO                 
+         ENDDO
 c-----------------------------------------------------------------------
 c     surface term.
 c-----------------------------------------------------------------------
@@ -1430,23 +1430,23 @@ c-----------------------------------------------------------------------
             SELECT CASE (cell%etype)
             CASE ("ext1")
                CALL inpso_get_ua(x,ua)
-               CALL inpso_get_dua(x,dua)    
+               CALL inpso_get_dua(x,dua)
                ua1(:,1)=ua(:,tid(4))
                dua1(:,1)=dua(:,tid(4))
             CASE ("ext2")
                IF (x>=0) THEN
                   CALL inpso_get_ua(cell%x(2),ua)
-                  CALL inpso_get_dua(cell%x(2),dua)  
+                  CALL inpso_get_dua(cell%x(2),dua)
                   ua1(:,1)=ua(:,tid(4))*pb(2)+dua(:,tid(4))*pb(3)
                   dua1(:,1)=ua(:,tid(4))*qb(2)+dua(:,tid(4))*qb(3)
                ELSE
                   CALL inpso_get_ua(cell%x(1),ua)
-                  CALL inpso_get_dua(cell%x(1),dua)  
+                  CALL inpso_get_dua(cell%x(1),dua)
                   ua1(:,1)=ua(:,tid(4))*pb(0)+dua(:,tid(4))*pb(1)
                   dua1(:,1)=ua(:,tid(4))*qb(0)+dua(:,tid(4))*qb(1)
                ENDIF
             END SELECT
-            DO ip=0,cell%np   
+            DO ip=0,cell%np
                term1=qb(ip)*MATMUL(imat,dua1)+pb(ip)*MATMUL(vmat,dua1)
      $              +pb(ip)*MATMUL(umat,ua1)
                cell%rhs(:,ip)=cell%rhs(:,ip)-term1(:,1)*w
@@ -1459,7 +1459,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE deltac_extension    
+      END SUBROUTINE deltac_extension
 c-----------------------------------------------------------------------
 c     subprogram 15. deltac_lsode_int.
 c     computes resonant quadratures with lsode.
@@ -1471,7 +1471,7 @@ c-----------------------------------------------------------------------
 
       COMPLEX(r8), DIMENSION(3,4), INTENT(INOUT) :: u_res
       COMPLEX(r8), DIMENSION(mpert,0:1,1:4),INTENT(INOUT) :: u_h1
-      COMPLEX(r8), DIMENSION(mpert,1:3,0:1),INTENT(INOUT) :: u_h2  
+      COMPLEX(r8), DIMENSION(mpert,1:3,0:1),INTENT(INOUT) :: u_h2
       INTEGER :: ip
       INTEGER :: nstep
       INTEGER :: neq,itol,itask,istate,iopt,lrw,liw,jac,mf,istep
@@ -1491,7 +1491,7 @@ c-----------------------------------------------------------------------
       itol=2
       mf=10
       liw=20
-      lrw=20+16*neq     
+      lrw=20+16*neq
       istate=1
       itask=5
       iopt=1
@@ -1537,7 +1537,7 @@ c-----------------------------------------------------------------------
          CALL lsode(deltac_lsode_der,neq,u,x,x1,itol,rtol,atol,
      $        itask,istate,iopt,rwork,lrw,iwork,liw,jac,mf)
       ENDDO
-      IF (istep >= nstep) THEN 
+      IF (istep >= nstep) THEN
          WRITE (*,*)"Warning: LSODE exceeds nstep. x=",x
       ENDIF
 c-----------------------------------------------------------------------
@@ -1578,9 +1578,9 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(3,6) :: ua,dua
       COMPLEX(r8), DIMENSION(mpert,0:1,1:4) :: du_h1
       COMPLEX(r8), DIMENSION(mpert,1:3,0:1) :: du_h2
-      
+
       COMPLEX(r8), DIMENSION(3,3) :: umat,vmat,imat
-      TYPE(hermite_type) :: hermite      
+      TYPE(hermite_type) :: hermite
 c-----------------------------------------------------------------------
 c     compute basis functions
 c-----------------------------------------------------------------------
@@ -1670,13 +1670,13 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: x
       TYPE(gal_type), INTENT(IN) :: gal
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: sol
-      
+
       INTEGER :: i,ndelta
       REAL(r8) :: xext
       COMPLEX(r8), DIMENSION(mpert) :: delta
       REAL(r8), DIMENSION(2) :: epb
       REAL(r8), DIMENSION(0:np) :: pb
-      COMPLEX(r8),DIMENSION(mpert,0:np) :: u 
+      COMPLEX(r8),DIMENSION(mpert,0:np) :: u
       COMPLEX(r8), DIMENSION(mpert,6) :: ua,uaext,duaext
       TYPE(cell_type), POINTER :: cell
       TYPE(hermite_type) :: hermite
@@ -1730,7 +1730,7 @@ c-----------------------------------------------------------------------
      $     (cell%etype == "ext" .OR. cell%etype == "res"))THEN
          IF (gal_method=="resonant".AND.noexp) THEN
             delta(1)=gal%sol(cell%emap(1),isol)
-            ndelta=1            
+            ndelta=1
          ELSE
             delta=gal%sol(cell%emap,isol)
             ndelta=3
@@ -1745,10 +1745,10 @@ c-----------------------------------------------------------------------
                sol=sol+delta(i)*
      $             (epb(1)*uaext(:,tid(i))
      $            +epb(2)*duaext(:,tid(i)))
-            ENDDO 
+            ENDDO
          END SELECT
       ENDIF
-      IF (restore_ul) THEN   
+      IF (restore_ul) THEN
          i=4
          SELECT CASE(cell%etype)
       CASE ("res","ext","ext1")
@@ -1774,7 +1774,7 @@ c-----------------------------------------------------------------------
       SUBROUTINE deltac_output_solution (gal)
 
       TYPE(gal_type), INTENT(IN) :: gal
-      
+
       INTEGER :: icell, ip,tot_grids,isol,ipert,m
       CHARACTER(100) :: comp_tittle,tmp
       CHARACTER(100),DIMENSION(3) :: filename
@@ -1859,20 +1859,20 @@ c-----------------------------------------------------------------------
      $           //TRIM(filename(2))//'_sol_'//TRIM(filename(3))//'.bin'
             OPEN(UNIT=deltac_bin_unit,FILE=TRIM(filename(1)),
      $           STATUS="REPLACE",FORM="UNFORMATTED")
-            DO ip=0,tot_grids                
+            DO ip=0,tot_grids
                WRITE (deltac_bin_unit) REAL(sol%xvar(ip),4),
      $              REAL(sol%sol(:,ip,isol),4)
             ENDDO
             WRITE(deltac_bin_unit)
             CLOSE(deltac_bin_unit)
          ENDDO
-         
+
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE deltac_output_solution  
+      END SUBROUTINE deltac_output_solution
 c-----------------------------------------------------------------------
 c     subprogram 19. deltac_read_parameters.
 c     read the parameters for deltac run.
@@ -1900,5 +1900,5 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      END SUBROUTINE deltac_read_parameters  
+      END SUBROUTINE deltac_read_parameters
       END MODULE deltac_mod

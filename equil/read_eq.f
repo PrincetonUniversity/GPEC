@@ -692,7 +692,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE read_eq_rsteq
-      
+
       INTEGER :: i,j,nw,nh,ia,mr,mz,ma
       INTEGER ::  nrst
 c-----------------------------------------------------------------------
@@ -1657,10 +1657,10 @@ c-----------------------------------------------------------------------
       psio=chi(ns)-chi(0)
       svec=1/(/(SQRT(REAL(is,r8)/ns),is=0,ns)/)
       svec(0)=0
-      
+
 c
 c     factor out sqrt(s) from m-odd coefficients
-c      
+c
       DO is=1,ns-1
          jds=REAL(is,r8)/ns
          jds=SQRT(jds)
@@ -1682,7 +1682,7 @@ c
             END IF
          END IF
       END DO
-      
+
       DO is=0,ns-1
          DO js=0,ns1
             ks=is*ns1+js

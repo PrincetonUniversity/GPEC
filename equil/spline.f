@@ -145,7 +145,7 @@ c-----------------------------------------------------------------------
       TYPE(spline_type), INTENT(INOUT) :: spl
       CHARACTER(*), INTENT(IN) :: endmode
       IF(.NOT.spl%allocated)
-     $   CALL program_stop("spline_fit: spline not allocated") 
+     $   CALL program_stop("spline_fit: spline not allocated")
 c-----------------------------------------------------------------------
 c     switch between two spline_fit.
 c-----------------------------------------------------------------------

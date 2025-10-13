@@ -11,8 +11,8 @@
       REAL(r8) :: eta,visc,rho_s,lu,omega_e,omega_i,
      $            delta_n,layfac
       COMPLEX(r8) :: Q
-     
-      REAL(r8), PARAMETER :: pi=3.1415926535897932385, mu0=4e-7*pi, 
+
+      REAL(r8), PARAMETER :: pi=3.1415926535897932385, mu0=4e-7*pi,
      $     m_e=9.1094e-31,m_p=1.6726e-27,chag=1.6022e-19,
      $     kval=1.3807e-23,lnLamb=17.0
 
@@ -21,5 +21,5 @@
       COMPLEX(r8), PARAMETER :: ifac=(0,1)
 
       CHARACTER(2) :: sn
-      
+
       END MODULE sglobal_mod

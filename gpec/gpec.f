@@ -150,7 +150,7 @@ c-----------------------------------------------------------------------
       brzphi_flag=.FALSE.
       xrzphi_flag=.FALSE.
       vbrzphi_flag=.FALSE.
-      pbrzphi_flag=.FALSE.      
+      pbrzphi_flag=.FALSE.
       vvbrzphi_flag=.FALSE.
       bin_flag=.TRUE.
       bin_2d_flag=.TRUE.
@@ -164,7 +164,7 @@ c-----------------------------------------------------------------------
       flux_flag=.FALSE.
       max_linesout=0
       vsbrzphi_flag=.FALSE.
-      DO i=1,100 
+      DO i=1,100
          ss_flag(i)=.FALSE.
       ENDDO
       arzphifun_flag=.FALSE.
@@ -203,7 +203,7 @@ c-----------------------------------------------------------------------
       m3mode=2
       resol=INT(1e4)
       smallwidth=1e-6
-      
+
       timeit = .FALSE.
       verbose = .TRUE.
       debug_flag = .FALSE.
@@ -332,7 +332,7 @@ c-----------------------------------------------------------------------
          power_bin=0
          power_bpin=1
          power_rin=0
-         power_rcin=1         
+         power_rcin=1
       CASE("other")
       CASE DEFAULT
       END SELECT
@@ -367,7 +367,7 @@ c-----------------------------------------------------------------------
          power_bout=0
          power_bpout=1
          power_rout=0
-         power_rcout=1         
+         power_rcout=1
       CASE("other")
       CASE DEFAULT
       END SELECT
@@ -426,7 +426,7 @@ c-----------------------------------------------------------------------
       IF(bt_direction=="negative")btd=-1.0
       helicity=ipd*btd
       IF (coil_flag) THEN
-                
+
          IF(verbose) WRITE(*,*)
      $            "Calculating field on the boundary from coils"
          CALL coil_read(idconfile)
@@ -585,7 +585,7 @@ c-----------------------------------------------------------------------
          IF (msing==0) THEN
             PRINT *,"!! WARNING: no rationals for singcoup_flag"
             singcoup_flag = .FALSE.
-         ELSE         
+         ELSE
             CALL gpout_singcoup(sing_spot,sing_npsi,power_rout,
      $           power_bpout,power_bout,power_rcout,tmag_out)
          ENDIF
@@ -653,7 +653,7 @@ c-----------------------------------------------------------------------
          CALL gpout_vbnormal(power_rout,power_bpout,power_bout,
      $        power_rcout,tmag_out)
       ENDIF
-      IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
+      IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR.
      $     vbrzphi_flag .OR. vvbrzphi_flag .OR. pbrzphi_flag) THEN
          CALL gpout_xbrzphi(mode,xspmn,nr,nz,finmn,foutmn)
       ENDIF
@@ -687,7 +687,7 @@ c-----------------------------------------------------------------------
       IF (pmodbmn_flag) THEN
          CALL gpdiag_pmodb(mode,xspmn)
          CALL gpdiag_pmodbmn(mode,xspmn)
-      ENDIF            
+      ENDIF
       IF (rzphibx_flag) THEN
          CALL gpdiag_rzphibx(mode,xspmn)
       ENDIF
@@ -724,10 +724,10 @@ c-----------------------------------------------------------------------
       IF (rzpgrid_flag) THEN
          CALL gpdiag_rzpgrid(nr,nz)
       ENDIF
-      
+
       IF (m3d_flag) THEN
          normpsi=1.0
-         fp=1e-3         
+         fp=1e-3
          fxmn=0
          fxmn(m3mode-mlow+1)=fp*normpsi
          CALL gpeq_fcoords(psilim,fxmn,mfac,mpert,0,1,0,1,0,0)
@@ -743,7 +743,7 @@ c-----------------------------------------------------------------------
 
       IF (cas3d_flag) THEN
          fp = -1e-2
-         
+
          fxmn=0
          fxmn(m3mode-mlow+1)=fp
          ! temporary override of output options
@@ -788,7 +788,7 @@ c-----------------------------------------------------------------------
      $        "real2","imag1","imag2"
          DO i=1,99
             WRITE(*,*)i
-            foutmn=fxmn 
+            foutmn=fxmn
             normpsi = REAL(i)/100.0
             CALL gpeq_bcoords(normpsi,foutmn,mfac,mpert,2,0,0,0,0,0)
             CALL gpeq_fcoords(normpsi,foutmn,mfac,mpert,2,0,0,0,0,0)

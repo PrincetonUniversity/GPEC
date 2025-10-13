@@ -45,7 +45,7 @@ c-----------------------------------------------------------------------
       !    WRITE(message,'(a)')"GPEC needs the same msing number"
       !    CALL gpec_stop(message)
       ! ENDIF
-      ! ALLOCATE(rsoltype(rsing),rpsifac(0:rnx)) 
+      ! ALLOCATE(rsoltype(rsing),rpsifac(0:rnx))
       ! rsoltype(:)%msol=rsing
       ! READ(in_unit)rpsifac
       ! DO ising=1,rsing
@@ -62,9 +62,9 @@ c-----------------------------------------------------------------------
    !   $           "rsol1.bin","UNKNOWN","REWIND","none")
    !        DO ipert=1,rnqty
    !          DO istep=0,rnx
-   !             IF (.NOT.(ABS(rsoltype(3)%u(ipert,istep,1)) .LT. 1e4)) 
+   !             IF (.NOT.(ABS(rsoltype(3)%u(ipert,istep,1)) .LT. 1e4))
    !   $            cycle
-   !             IF (.NOT.(ABS(rsoltype(3)%u(ipert,istep,2)) .LT. 1e4)) 
+   !             IF (.NOT.(ABS(rsoltype(3)%u(ipert,istep,2)) .LT. 1e4))
    !   $            cycle
    !             CALL spline_eval(sq,rpsifac(istep),0)
    !             singfac(ipert)=mfac(ipert)-nn*sq%f(4)
@@ -123,7 +123,6 @@ c-----------------------------------------------------------------------
      $         galsol%q(0:galsol%tot_grids),
      $         galsol%u(galsol%mpert,0:galsol%tot_grids,galsol%mtot),
      $         galsol%bpsi(galsol%mpert,0:galsol%tot_grids,galsol%mtot))
-      ALLOCATE(utemp(galsol%mpert,galsol%mtot))
       DO ip=0,galsol%tot_grids
          READ(bin_unit) galsol%psifac(ip),galsol%q(ip)
       ENDDO

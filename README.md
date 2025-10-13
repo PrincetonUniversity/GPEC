@@ -20,7 +20,7 @@ On the PPPL portal computers, navigate to a directory in which you want to do yo
    git checkout -b develop
    git pull origin develop
 
-This will create a directory 'gpec' and with the developmental branch of the repository in it. For more on branches, see the workflow section below. For compile instructions, see the install section. Now you are free to add/edit files in this branch. Be sure to use:: 
+This will create a directory 'gpec' and with the developmental branch of the repository in it. For more on branches, see the workflow section below. For compile instructions, see the install section. Now you are free to add/edit files in this branch. Be sure to use::
 
    git add <new-file>
 
@@ -48,7 +48,7 @@ The highlights are,
   - There are two permanent branches: master and develop
   - The master branch is only updated for at release ready stages
   - New features should be developed in short-lived (days) branches coming off of and merging back to the development branch.
-  
+
 Specific instructions are given in the link above as to exactly how to branch and merge these various branches. For example, the --no-ff option should be used when merging in order to keep branch histories. Just follow the examples and you wont go wrong!
 
 
@@ -76,7 +76,7 @@ The very first time, starting from the root of the repo::
 
     cd docs
     make init
-    
+
 This creates a new gpec-docs directory in the same directory that contains the local repository (not in the repository itself) and checks out a devoted documentation branch. With that set up, the following will build the documentation and push it to the proper place::
 
     make ghpages

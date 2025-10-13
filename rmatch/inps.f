@@ -43,7 +43,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(6,2), PRIVATE :: pp,dpp
       COMPLEX(r8), DIMENSION(6,6), PRIVATE :: tmat,tinv
       COMPLEX(r8), DIMENSION(6,6,0:2), PRIVATE :: amat,jmat
-      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE, PRIVATE :: 
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE, PRIVATE ::
      $     k2mat,k6mat,bmat,pmat,qmat,cmat,dmat,ymat,emat,zmat
       TYPE(resist_type_inps) :: rt
 
@@ -64,12 +64,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     copy input values.
 c-----------------------------------------------------------------------
-      rt%e=rt_in%e 
+      rt%e=rt_in%e
       rt%f=rt_in%f
       rt%h=rt_in%h
       rt%g=rt_in%g
-      rt%k=rt_in%k 
-      rt%q=rt_in%q 
+      rt%k=rt_in%k
+      rt%q=rt_in%q
 c-----------------------------------------------------------------------
 c     compute powers.
 c-----------------------------------------------------------------------
@@ -112,7 +112,7 @@ c-----------------------------------------------------------------------
       SUBROUTINE inps_cmatwrite(mat,name,unit)
 
       COMPLEX(r8), DIMENSION(:,:), INTENT(IN) :: mat
-      CHARACTER(*), INTENT(IN) :: name 
+      CHARACTER(*), INTENT(IN) :: name
       INTEGER, INTENT(IN) :: unit
 
       INTEGER :: m,n,i,j
@@ -346,9 +346,9 @@ c-----------------------------------------------------------------------
          IF(k <= 2)
      $        CALL inps_cmatwrite(jmat(:,:,k),"jmat"//order,split_unit)
          CALL inps_cmatwrite(k6mat(:,:,k),"k6mat"//order,split_unit)
-         CALL inps_cmatwrite(bmat(:,:,k),"bmat"//order,split_unit) 
+         CALL inps_cmatwrite(bmat(:,:,k),"bmat"//order,split_unit)
          CALL inps_cmatwrite(pmat(:,:,k),"pmat"//order,split_unit)
-         CALL inps_cmatwrite(errmat(:,:,k),"errmat"//order,split_unit) 
+         CALL inps_cmatwrite(errmat(:,:,k),"errmat"//order,split_unit)
          WRITE(order,'(a,i2.2,a)')"(",k,")"
          WRITE(split_unit,'(a,es10.3/)')
      $        " error"//order//" = ",error(k)
@@ -460,10 +460,10 @@ c-----------------------------------------------------------------------
       DO k=1,kmax+2
          WRITE(coefs_unit,'(a,g0/)')" k = ",k
          WRITE(order,'(a,g0,a)')"(",k,")"
-         CALL inps_cmatwrite(k2mat(:,:,k),"k2mat"//order,coefs_unit) 
-         CALL inps_cmatwrite(qmat(:,:,k),"qmat"//order,coefs_unit) 
-         CALL inps_cmatwrite(cmat(:,:,k),"cmat"//order,coefs_unit) 
-         CALL inps_cmatwrite(qcemat(:,:,k),"qcemat"//order,coefs_unit) 
+         CALL inps_cmatwrite(k2mat(:,:,k),"k2mat"//order,coefs_unit)
+         CALL inps_cmatwrite(qmat(:,:,k),"qmat"//order,coefs_unit)
+         CALL inps_cmatwrite(cmat(:,:,k),"cmat"//order,coefs_unit)
+         CALL inps_cmatwrite(qcemat(:,:,k),"qcemat"//order,coefs_unit)
          WRITE(order,'(a,i2.2,a)')"(",k,")"
          WRITE(coefs_unit,'(a,es10.3/)')" qcerr"//order//" = ",qcerr(k)
       ENDDO
@@ -482,9 +482,9 @@ c-----------------------------------------------------------------------
          yerror=MAXVAL(ABS(yerrmat))
          WRITE(coefs_unit,'(a,g0/)')" k = ",k
          WRITE(order,'(a,g0,a)')"(",k,")"
-         CALL inps_cmatwrite(zmat(:,:,k),"zmat"//order,coefs_unit) 
-         CALL inps_cmatwrite(ymat(:,:,k),"ymat"//order,coefs_unit) 
-         CALL inps_cmatwrite(yerrmat,"yerrmat"//order,coefs_unit) 
+         CALL inps_cmatwrite(zmat(:,:,k),"zmat"//order,coefs_unit)
+         CALL inps_cmatwrite(ymat(:,:,k),"ymat"//order,coefs_unit)
+         CALL inps_cmatwrite(yerrmat,"yerrmat"//order,coefs_unit)
          WRITE(order,'(a,g0,a)')"(",k,")"
          WRITE(coefs_unit,'(a,es10.3/)')" yerror"//order//" = ",yerror
       ENDDO
@@ -714,7 +714,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE inps_delta(x,delta)
-      
+
       REAL(r8), INTENT(IN) :: x
       REAL(r8), DIMENSION(2), INTENT(OUT) :: delta
 

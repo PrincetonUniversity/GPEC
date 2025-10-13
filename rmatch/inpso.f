@@ -29,12 +29,12 @@ c-----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      
+
 c      TYPE :: resist_type
 c      INTEGER :: ising
 c      REAL(r8) :: e,f,g,h,k,m,taua,taur,v1
 c      END TYPE resist_type
-      
+
       TYPE :: asymp_type
       REAL(r8), DIMENSION(2) :: p
       COMPLEX(r8), DIMENSION(2):: s
@@ -65,11 +65,11 @@ c      END TYPE resist_type
       TYPE(asymp_type) :: asp
       TYPE(resist_type_inps) :: rt_in
 
-      CONTAINS    
+      CONTAINS
 c-----------------------------------------------------------------------
 c     subprogram 1. inpso_init.
 c     initialize the asymptotic solutions at large x.
-c     coefficients of two power series and two small exponential  
+c     coefficients of two power series and two small exponential
 c     solutions are solved.
 c     GJT Appendix A.
 c-----------------------------------------------------------------------
@@ -77,7 +77,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE inpso_init
-      
+
       INTEGER :: i,j,l,t,order
       INTEGER :: info
       INTEGER, DIMENSION(3) :: ipiv
@@ -196,10 +196,10 @@ c-----------------------------------------------------------------------
             l=j+1
 
             asp%v(1,t,l)=1
-            
+
             matb(1)=-1.0/q
             matb(2)=-(q-h/sq)
-            
+
             asp%v(2:3,t,l)=matb(1:2)
             mat=mata
             CALL zgesv(2,1,mat(1:2,2:3),2,ipiv(1:2),
@@ -209,10 +209,10 @@ c     solve high order.
 c-----------------------------------------------------------------------
             DO j=1,order_exp
                l=j+1
-               
+
                mata(2,2)=-q*sq*(2*s(i)-4*j+1)
                mata(3,3)=-q*q*(g+k*f)-sq*(2.0*s(i)-4*j+1.0)
-               
+
                matb(1)=((2.0*s(i)-4.0*j+3)/sq+q)*asp%v(1,t,l-1)
                matb(1)=matb(1)+h*(s(i)-2*j+2)*asp%v(3,t,l-1)
                IF (j > 1) matb(1)=-(s(i)+3-2*j)*(s(i)+2-2*j)
@@ -228,7 +228,7 @@ c-----------------------------------------------------------------------
                asp%v(:,t,l)=matb
                CALL zgesv(3,1,mat,3,ipiv,asp%v(:,t,l),3,info)
             ENDDO
-         ENDDO     
+         ENDDO
 c-----------------------------------------------------------------------
 c     abort.
 c-----------------------------------------------------------------------
@@ -239,7 +239,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-         RETURN      
+         RETURN
          END SUBROUTINE inpso_init
 c-----------------------------------------------------------------------
 c     subprogram 2. inpso_get_ua.
@@ -290,16 +290,16 @@ c-----------------------------------------------------------------------
                l=j+1
                xj=x**(-2.0*j)
                t=2+i
-               ua(:,t)=ua(:,t)+asp%v(:,t,l)*xj         
+               ua(:,t)=ua(:,t)+asp%v(:,t,l)*xj
             ENDDO
-            
+
             DO j=0, order_exp
                l=j+1
                xj=x**(-2.0*j)
                t=4+i
                ua(:,t)=ua(:,t)+asp%v(:,t,l)*xj
             ENDDO
-            
+
             t=2+i
             ua(:,t)=xp*ua(:,t)
             ua(1,t)=x*ua(1,t)
@@ -375,7 +375,7 @@ c-----------------------------------------------------------------------
                dua(1,t)=dua(1,t)+asp%v(1,t,l)*(p(i)+1-2*j)*xj
                dua(2:3,t)=dua(2:3,t)+asp%v(2:3,t,l)*(p(i)-2*j)*xj
             ENDDO
-            DO j=0, order_exp            
+            DO j=0, order_exp
                l=j+1
                t=4+i
                xj=x**(-2.0*j)
@@ -411,7 +411,7 @@ c-----------------------------------------------------------------------
 
       REAL(r8),INTENT(IN) :: x
       COMPLEX(r8),DIMENSION(3,6),INTENT(OUT) :: d2ua
-      
+
       INTEGER i,j,t,l
       REAL(r8),DIMENSION(2) :: p
       REAL(r8) :: x2,x3
@@ -452,7 +452,7 @@ c-----------------------------------------------------------------------
          ENDIF
          DO j=0, order_pow
             l=j+1
-            xj=x**(-2.0-2.0*j)            
+            xj=x**(-2.0-2.0*j)
             t=2+i
             d2ua(1,t)=d2ua(1,t)+asp%v(1,t,l)*(p(i)+1-2*j)*(p(i)-2*j)
      $           *xj
@@ -460,7 +460,7 @@ c-----------------------------------------------------------------------
      $           +asp%v(2:3,t,l)*(p(i)-2*j)*(p(i)-2*j-1)*xj
          ENDDO
          DO j=0, order_exp
-            l=j+1   
+            l=j+1
             t=4+i
             xj=x**(-2.0*j)
             d2ua(1,t)=d2ua(1,t)
@@ -488,7 +488,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE inpso_get_d2ua      
+      END SUBROUTINE inpso_get_d2ua
 c-----------------------------------------------------------------------
 c     subprogram 5. inpso_get_uv.
 c     computes U, V matrices.
@@ -509,22 +509,22 @@ c-----------------------------------------------------------------------
       imat(1,1)=1.0
       imat(2,2)=in%q*in%q
       imat(3,3)=in%q
-      
+
       umat=RESHAPE((/ in%q,   -x/in%q,             -x/in%q,
      $     -in%q*x, x*x/in%q,   -(in%g-in%k*in%e)*in%q,
      $     zero,-(in%e+in%f)/(in%q*in%q), x*x/in%q+(in%g+in%k*in%f)*in%q
      $     /),SHAPE(umat))
 
-      
-      vmat=RESHAPE((/  zero,   -in%h/(in%q*in%q),  in%h*in%k*in%q,   
+
+      vmat=RESHAPE((/  zero,   -in%h/(in%q*in%q),  in%h*in%k*in%q,
      $     zero,            zero,   zero,
      $     dcmplx(in%h),    zero,   zero/)
      $     ,SHAPE(vmat))
-      
+
       umat(2,:)=umat(2,:)*in%q*in%q
-      umat(3,:)=umat(3,:)*in%q    
+      umat(3,:)=umat(3,:)*in%q
       vmat(2,:)=vmat(2,:)*in%q*in%q
-      vmat(3,:)=vmat(3,:)*in%q    
+      vmat(3,:)=vmat(3,:)*in%q
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -669,7 +669,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE inpso_delta(x,delta)
-      
+
       REAL(r8), INTENT(IN) :: x
       REAL(r8), DIMENSION(2), INTENT(OUT) :: delta
 

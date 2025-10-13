@@ -546,7 +546,7 @@ c-----------------------------------------------------------------------
       IF (any(temp1 /= 0)) then
          CALL zgetrf(mpert,mpert,temp1,mpert,ipiv,info)
          CALL zgetrs('N',mpert,mpert,temp1,mpert,ipiv,temp2,mpert,info)
-      
+
          temp1=TRANSPOSE(temp2)
          mutual_indmats=temp1
          work=0
