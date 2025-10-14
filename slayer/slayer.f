@@ -491,7 +491,7 @@ c-----------------------------------------------------------------------
      $            sl_out%i_trace(n_k,100))
 
          !--------------
-         n_k = 1
+         !n_k = 1
          !--------------
          DO k=1,n_k
             WRITE(*,*)
@@ -555,11 +555,11 @@ c            delta_eff = Re_deltaprime_arr(k)
             IF (fitz_flag) THEN
                re_trace = re_trace/tauk
                im_trace = im_trace/tauk
-               sl_out%gamma_sol_arr(k) = 0.0!g_r/tauk! THIS IS FOR PLOT
+               sl_out%gamma_sol_arr(k) = g_r/tauk! THIS IS FOR PLOT
             ELSE
                re_trace = re_trace/tauk
                im_trace = -im_trace/tauk
-               sl_out%gamma_sol_arr(k) = 0.0!-g_r/tauk! THIS IS FOR PLOT
+               sl_out%gamma_sol_arr(k) = -g_r/tauk! THIS IS FOR PLOT
             END IF
 
             IF (stabscan_flag) THEN
@@ -673,9 +673,12 @@ c            delta_eff = Re_deltaprime_arr(k)
                         iota_e = Q_e / (Q_e - Q_i)
 
                         ! (Deltaprime - d_crit)/S^1/3
+      !                  delta_eff = (sl_in%Re_dp_arr(k) - 
+      !$          sl_in%d_crit_arr(k))/(sl_in%lu_arr(k)**(1.0/3.0)) ! NO DELTA_CRIT
+
                         delta_eff = (sl_in%Re_dp_arr(k) - 
      $          sl_in%d_crit_arr(k))/(sl_in%lu_arr(k)**(1.0/3.0))
-
+     
                         delta=riccati_f(((g_tmp*sl_in%Qconv_arr(1))/
      $                        tauk))                   
                         delta_Q(k,k) = delta

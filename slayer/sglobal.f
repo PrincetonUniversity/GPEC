@@ -44,26 +44,6 @@ c      INTEGER, PARAMETER :: r8=SELECTED_REAL_KIND(13,307)
           REAL(r8), ALLOCATABLE :: r_trace(:,:),i_trace(:,:)
       END TYPE slayer_outputs_type
 
-                real(dp), parameter :: UNCOMPUTED = -huge(1.0_dp)
-          
-          ! Data structure for storing computed points
-          type :: grid_point
-              real(dp) :: omega
-              real(dp) :: gamma
-              complex(dp) :: delta
-              logical :: computed
-              real(dp) :: distance_to_contour  ! minimum distance to any contour
-          end type grid_point
-          
-          ! Main grid structure
-          type :: adaptive_grid
-              type(grid_point), allocatable :: points(:)
-              integer :: npoints
-              integer :: capacity
-              real(dp) :: omega_min, omega_max
-              real(dp) :: gamma_min, gamma_max
-          end type adaptive_grid
-
       ! lnLamb will be updated.
 
       COMPLEX(r8), PARAMETER :: ifac=(0,1)

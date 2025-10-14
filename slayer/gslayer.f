@@ -412,331 +412,249 @@ c-----------------------------------------------------------------------
       END SELECT
       RETURN
       END SUBROUTINE calc_determinant
+c
+c
+c     Adapted from
+      SUBROUTINE newton_root(g_r, g_i, verbose, fitz_flag)
+      LOGICAL, INTENT(IN) :: fitz_flag
+      REAL(r8), INTENT(INOUT) :: g_r, g_i
+      INTEGER, INTENT(IN) :: verbose
       
-      !===========================================================================
-      ! Initialize the adaptive grid
-      !===========================================================================
-      subroutine init_grid(grid, omega_min, omega_max, gamma_min, gamma_max, initial_capacity)
-          type(adaptive_grid), intent(out) :: grid
-          real(dp), intent(in) :: omega_min, omega_max, gamma_min, gamma_max
-          integer, intent(in) :: initial_capacity
-          
-          grid%omega_min = omega_min
-          grid%omega_max = omega_max
-          grid%gamma_min = gamma_min
-          grid%gamma_max = gamma_max
-          grid%capacity = initial_capacity
-          grid%npoints = 0
-          
-          allocate(grid%points(initial_capacity))
-          
-      end subroutine init_grid
+      REAL(r8) :: F1, F2, J11, J12, J21, J22, det, iJ11, iJ12
+      REAL(r8) :: iJ21, iJ22, dx1, dx2, dx, f, g1, g2, lambda,
+     $            Residual
+      INTEGER :: iter
       
-      !===========================================================================
-      ! Add a point to the grid (with automatic reallocation if needed)
-      !===========================================================================
-      subroutine add_point(grid, omega, gamma, delta_val)
-          type(adaptive_grid), intent(inout) :: grid
-          real(dp), intent(in) :: omega, gamma
-          complex(dp), intent(in) :: delta_val
-          
-          type(grid_point), allocatable :: temp(:)
-          integer :: new_capacity
-          
-          ! Check if we need to reallocate
-          if (grid%npoints >= grid%capacity) then
-              new_capacity = grid%capacity * 2
-              allocate(temp(new_capacity))
-              temp(1:grid%npoints) = grid%points(1:grid%npoints)
-              call move_alloc(temp, grid%points)
-              grid%capacity = new_capacity
-          end if
-          
-          ! Add the new point
-          grid%npoints = grid%npoints + 1
-          grid%points(grid%npoints)%omega = omega
-          grid%points(grid%npoints)%gamma = gamma
-          grid%points(grid%npoints)%delta = delta_val
-          grid%points(grid%npoints)%computed = .true.
-          grid%points(grid%npoints)%distance_to_contour = huge(1.0_dp)
-          
-      end subroutine add_point
+      REAL(r8), PARAMETER :: Eps = 1.0e-12    ! Tolerance PARAMETER
+      REAL(r8), PARAMETER :: Smin = 1.0e-07   ! Min step size
+      REAL(r8), PARAMETER :: Smax = 0.02     ! Max step size
+      INTEGER, PARAMETER :: MaxIter = 100             ! Maximum iterations
       
-      !===========================================================================
-      ! Check if a point already exists in the grid (within tolerance)
-      !===========================================================================
-      logical function point_exists(grid, omega, gamma, tol)
-          type(adaptive_grid), intent(in) :: grid
-          real(dp), intent(in) :: omega, gamma, tol
-          integer :: i
+      iter = 0
+      DO
+          CALL newton_function(g_r, g_i, F1, F2, fitz_flag)
           
-          point_exists = .false.
-          do i = 1, grid%npoints
-              if (abs(grid%points(i)%omega - omega) < tol .and. &
-                  abs(grid%points(i)%gamma - gamma) < tol) then
-                  point_exists = .true.
-                  return
-              end if
-          end do
+          CALL newton_jacobian(g_r, g_i, J11, J12, J21, J22,
+     $                          fitz_flag)
           
-      end function point_exists
+          det = J11 * J22 - J12 * J21
+          
+          iJ11 =  J22 / det
+          iJ12 = -J12 / det
+          iJ21 = -J21 / det
+          iJ22 =  J11 / det
+          
+          dx1 = -(iJ11 * F1 + iJ12 * F2)
+          dx2 = -(iJ21 * F1 + iJ22 * F2)
+          
+          dx = sqrt(dx1*dx1 + dx2*dx2)
+          
+          f = 0.5 * (F1*F1 + F2*F2)
+          
+          g1 = F1*J11 + F2*J21
+          g2 = F1*J12 + F2*J22
+          
+          CALL newton_backtrack(g_r,g_i,dx1,dx2,dx,f,g1,g2,lambda, 
+     $                         fitz_flag)
+          
+          CALL newton_function(g_r, g_i, F1, F2, fitz_flag)
+          
+          Residual = sqrt(F1*F1 + F2*F2)
+          
+          n_trace = n_trace + 1
+
+          IF (n_trace < 100) THEN
+             re_trace(n_trace) = g_r
+             im_trace(n_trace) = g_i
+          END IF 
+
+          IF (verbose .ne. 0) THEN
+              WRITE(*, '(A, ES10.3, A, ES10.3, A, A, ES10.3)')
+     $              'Q step = (', g_r, ' + ', 
+     $              g_i, 'j ),', '    Residual =', Residual
+          ENDIF
+          
+          iter = iter + 1
+          
+          IF (Residual<=Eps .or. dx<=Smin .or. iter>=MaxIter) exit
+      ENDDO
       
-      !===========================================================================
-      ! Perform initial coarse scan
-      !===========================================================================
-      subroutine coarse_scan(grid, delta_function, n_omega, n_gamma)
-          type(adaptive_grid), intent(inout) :: grid
-          interface
-              function delta_function(omega, gamma) result(delta)
-                  import :: dp
-                  real(dp), intent(in) :: omega, gamma
-                  complex(dp) :: delta
-              end function delta_function
-          end interface
-          integer, intent(in) :: n_omega, n_gamma
+      END SUBROUTINE newton_root
+      
+c-----------------------------------------------------------------------
+c     Function to backtrack along Newton step IN order to minimize f = (F1*F1 + F2*F2) /2
+c     Press, Teukolsky, Vetterling, and Flannery, Numerical Recipies IN C (Cambridge, 1992), Sect. 9.7
+c     Adapted from
+c-----------------------------------------------------------------------
+      SUBROUTINE newton_backtrack(g_r, g_i, dx1, dx2, dx, f, g1, g2, 
+     $                          lambda, fitz_flag)
+      LOGICAL, INTENT(IN) :: fitz_flag
+      REAL(r8), INTENT(INOUT) :: g_r, g_i, dx, lambda
+      REAL(r8), INTENT(INOUT) :: dx1, dx2, f, g1, g2
+      
+      REAL(r8) :: x1old, x2old, dxold, fold, slope, F1, F2
+      REAL(r8) :: tmplam, rhs1, rhs2, a, b, disc, lambd2, mf2
+      INTEGER :: i
+      
+      REAL(r8), PARAMETER :: Smin = 1.0d-10   ! Min step size
+      REAL(r8), PARAMETER :: Smax = 0.02     ! Max step size
+      REAL(r8), PARAMETER :: alpha = 1.0d-4   ! Line search PARAMETER
+      INTEGER, PARAMETER :: Maxiter = 100     ! Maximum iterations
+      
+      x1old = g_r
+      x2old = g_i
+      dxold = dx
+      fold = f
+      
+      IF (dxold > Smax) THEN
+          dx1 = dx1 * Smax / dxold
+          dx2 = dx2 * Smax / dxold
+          dxold = Smax
+      ENDIF
+      
+      slope = g1*dx1 + g2*dx2
+      
+      IF (slope >= 0.0d0) THEN
+          WRITE(*,*) "NewtonBackTrack: Error - roundoff problem"
+      ENDIF
+      
+      lambda = 1.0d0
+      
+      DO i = 0, Maxiter
+          g_r = x1old + lambda * dx1
+          g_i = x2old + lambda * dx2
           
-          real(dp) :: omega, gamma, domega, dgamma
-          complex(dp) :: delta_val
-          integer :: i, j
+          CALL newton_function(g_r, g_i, F1, F2, fitz_flag)
           
-          domega = (grid%omega_max - grid%omega_min) / real(n_omega - 1, dp)
-          dgamma = (grid%gamma_max - grid%gamma_min) / real(n_gamma - 1, dp)
+          f = 0.5 * (F1*F1 + F2*F2)
           
-          do i = 1, n_omega
-              omega = grid%omega_min + real(i-1, dp) * domega
-              do j = 1, n_gamma
-                  gamma = grid%gamma_min + real(j-1, dp) * dgamma
+          IF (f <= fold + alpha * lambda * slope .or. 
+     $       lambda * dxold < Smin) THEN
+              dx = lambda * dxold
+              RETURN
+          ELSE
+              IF (lambda == 1.0d0) THEN
+                  tmplam = -slope / 2.0d0 / (f - fold - slope)
+              ELSE
+                  rhs1 = f - fold - lambda * slope
+                  rhs2 = mf2 - fold - lambd2 * slope
                   
-                  ! Compute delta at this point
-                  delta_val = delta_function(omega, gamma)
-                  call add_point(grid, omega, gamma, delta_val)
+                  a = (rhs1/lambda/lambda - rhs2/lambd2/lambd2)
+     $               / (lambda - lambd2)
+                  b = (-lambd2 * rhs1/lambda/lambda + lambda * 
+     $               rhs2/lambd2/lambd2) / (lambda - lambd2)
                   
-              end do
-          end do
-          
-          print *, 'Coarse scan complete. Points computed:', grid%npoints
-          
-      end subroutine coarse_scan
-      
-      !===========================================================================
-      ! Identify contour regions based on sign changes
-      !===========================================================================
-      subroutine identify_contour_regions(grid, deltaprime, contour_tol)
-          type(adaptive_grid), intent(inout) :: grid
-          complex(dp), intent(in) :: deltaprime
-          real(dp), intent(in) :: contour_tol
-          
-          integer :: i
-          real(dp) :: dist_real, dist_imag, min_dist
-          
-          ! For each point, compute distance to contours
-          do i = 1, grid%npoints
-              dist_real = abs(real(grid%points(i)%delta) - real(deltaprime))
-              dist_imag = abs(aimag(grid%points(i)%delta) - aimag(deltaprime))
-              min_dist = min(dist_real, dist_imag)
-              grid%points(i)%distance_to_contour = min_dist
-          end do
-          
-      end subroutine identify_contour_regions
-      
-      !===========================================================================
-      ! Adaptive refinement around contours
-      !===========================================================================
-      subroutine adaptive_refine(grid, delta_function, deltaprime, &
-                                refinement_width, refinement_levels, min_spacing)
-          type(adaptive_grid), intent(inout) :: grid
-          interface
-              function delta_function(omega, gamma) result(delta)
-                  import :: dp
-                  real(dp), intent(in) :: omega, gamma
-                  complex(dp) :: delta
-              end function delta_function
-          end interface
-          complex(dp), intent(in) :: deltaprime
-          real(dp), intent(in) :: refinement_width
-          integer, intent(in) :: refinement_levels
-          real(dp), intent(in) :: min_spacing
-          
-          integer :: level, i, j, n_original
-          real(dp) :: omega, gamma, spacing
-          complex(dp) :: delta_val
-          logical, allocatable :: needs_refinement(:)
-          real(dp) :: omega_new, gamma_new
-          integer :: n_refined
-          
-          do level = 1, refinement_levels
-              n_original = grid%npoints
-              allocate(needs_refinement(n_original))
-              
-              ! Identify points that need refinement
-              do i = 1, n_original
-                  needs_refinement(i) = grid%points(i)%distance_to_contour < refinement_width
-              end do
-              
-              n_refined = 0
-              spacing = refinement_width / (2.0_dp**level)
-              
-              ! Add refined points around identified regions
-              do i = 1, n_original
-                  if (needs_refinement(i)) then
-                      omega = grid%points(i)%omega
-                      gamma = grid%points(i)%gamma
+                  IF (a == 0.0d0) THEN
+                      tmplam = -slope / 2.0d0 / b
+                  ELSE
+                      disc = b*b - 3.0d0 * a * slope
                       
-                      ! Add points in a 3x3 grid around this point
-                      do j = -1, 1
-                          omega_new = omega + real(j, dp) * spacing
-                          if (omega_new < grid%omega_min .or. omega_new > grid%omega_max) cycle
-                          
-                          gamma_new = gamma - spacing
-                          if (gamma_new >= grid%gamma_min .and. gamma_new <= grid%gamma_max) then
-                              if (.not. point_exists(grid, omega_new, gamma_new, min_spacing)) then
-                                  delta_val = delta_function(omega_new, gamma_new)
-                                  call add_point(grid, omega_new, gamma_new, delta_val)
-                                  n_refined = n_refined + 1
-                              end if
-                          end if
-                          
-                          if (j /= 0) then
-                              gamma_new = gamma
-                              if (.not. point_exists(grid, omega_new, gamma_new, min_spacing)) then
-                                  delta_val = delta_function(omega_new, gamma_new)
-                                  call add_point(grid, omega_new, gamma_new, delta_val)
-                                  n_refined = n_refined + 1
-                              end if
-                          end if
-                          
-                          gamma_new = gamma + spacing
-                          if (gamma_new >= grid%gamma_min .and. gamma_new <= grid%gamma_max) then
-                              if (.not. point_exists(grid, omega_new, gamma_new, min_spacing)) then
-                                  delta_val = delta_function(omega_new, gamma_new)
-                                  call add_point(grid, omega_new, gamma_new, delta_val)
-                                  n_refined = n_refined + 1
-                              end if
-                          end if
-                      end do
-                  end if
-              end do
-              
-              print *, 'Refinement level', level, ': Added', n_refined, 'points'
-              
-              ! Update distances for new points
-              call identify_contour_regions(grid, deltaprime, refinement_width)
-              
-              deallocate(needs_refinement)
-              
-              ! Stop if no new points were added
-              if (n_refined == 0) exit
-          end do
+                      IF (disc < 0.0d0) THEN
+                          tmplam = 0.5d0 * lambda
+                      ELSE IF (b <= 0.0d0) THEN
+                          tmplam = (-b + sqrt(disc)) / 3.0d0 / a
+                      ELSE
+                          tmplam = -slope / (b + sqrt(disc))
+                      ENDIF
+                  ENDIF
+                  
+                  IF (tmplam > 0.5d0 * lambda) THEN
+                      tmplam = 0.5d0 * lambda
+                  ENDIF
+              ENDIF
+          ENDIF
           
-      end subroutine adaptive_refine
+          lambd2 = lambda
+          mf2 = f
+          lambda = max(tmplam, 0.1d0*lambda)
+      ENDDO
       
-      !===========================================================================
-      ! Marching squares helper for more accurate contour following
-      !===========================================================================
-      subroutine refine_with_marching_squares(grid, delta_function, deltaprime, &
-                                             contour_tol, max_new_points)
-          type(adaptive_grid), intent(inout) :: grid
-          interface
-              function delta_function(omega, gamma) result(delta)
-                  import :: dp
-                  real(dp), intent(in) :: omega, gamma
-                  complex(dp) :: delta
-              end function delta_function
-          end interface
-          complex(dp), intent(in) :: deltaprime
-          real(dp), intent(in) :: contour_tol
-          integer, intent(in) :: max_new_points
-          
-          ! Implementation of marching squares refinement
-          ! This would trace along detected contours for extra precision
-          ! Left as a stub for brevity, but can be expanded if needed
-          
-      end subroutine refine_with_marching_squares
+      dx = lambda * dxold
       
-      !===========================================================================
-      ! Export grid to file
-      !===========================================================================
-      subroutine export_grid(grid, filename)
-          type(adaptive_grid), intent(in) :: grid
-          character(len=*), intent(in) :: filename
-          
-          integer :: i, unit_num
-          
-          open(newunit=unit_num, file=filename, status='replace', action='write')
-          
-          ! Write header
-          write(unit_num, '(A)') '# omega, gamma, Re(delta), Im(delta), distance_to_contour'
-          write(unit_num, '(A,I0)') '# Number of points: ', grid%npoints
-          
-          ! Write data
-          do i = 1, grid%npoints
-              write(unit_num, '(5E16.8)') grid%points(i)%omega, grid%points(i)%gamma, &
-                                          real(grid%points(i)%delta), &
-                                          aimag(grid%points(i)%delta), &
-                                          grid%points(i)%distance_to_contour
-          end do
-          
-          close(unit_num)
-          
-          print *, 'Grid exported to ', trim(filename)
-          print *, 'Total points: ', grid%npoints
-          
-      end subroutine export_grid
+      END SUBROUTINE newton_backtrack
+c-----------------------------------------------------------------------
+c     Function to calculate Jacobian matrix for Newton-Raphson root finding
+c     Adapted from
+c-----------------------------------------------------------------------
+      SUBROUTINE newton_jacobian(g_r, g_i, J11, J12, J21, J22,
+     $                           fitz_flag)
+      REAL(r8), INTENT(IN) :: g_r, g_i
+      LOGICAL, INTENT(IN) :: fitz_flag
+
+      REAL(r8), INTENT(OUT) :: J11, J12, J21, J22
       
-      !===========================================================================
-      ! Main driver routine
-      !===========================================================================
-      subroutine find_contours(delta_function, omega_min, omega_max, &
-                              gamma_min, gamma_max, deltaprime, &
-                              n_coarse_omega, n_coarse_gamma, &
-                              refinement_width, refinement_levels, &
-                              min_spacing, output_file)
-          interface
-              function delta_function(omega, gamma) result(delta)
-                  import :: dp
-                  real(dp), intent(in) :: omega, gamma
-                  complex(dp) :: delta
-              end function delta_function
-          end interface
-          real(dp), intent(in) :: omega_min, omega_max, gamma_min, gamma_max
-          complex(dp), intent(in) :: deltaprime
-          integer, intent(in) :: n_coarse_omega, n_coarse_gamma
-          real(dp), intent(in) :: refinement_width
-          integer, intent(in) :: refinement_levels
-          real(dp), intent(in) :: min_spacing
-          character(len=*), intent(in) :: output_file
-          
-          type(adaptive_grid) :: grid
-          integer :: initial_capacity
-          
-          print *, '========================================'
-          print *, 'Starting adaptive contour finding'
-          print *, '========================================'
-          
-          ! Initialize grid
-          initial_capacity = n_coarse_omega * n_coarse_gamma * 4
-          call init_grid(grid, omega_min, omega_max, gamma_min, gamma_max, initial_capacity)
-          
-          ! Perform coarse scan
-          print *, 'Step 1: Coarse scanning...'
-          call coarse_scan(grid, delta_function, n_coarse_omega, n_coarse_gamma)
-          
-          ! Identify contour regions
-          print *, 'Step 2: Identifying contour regions...'
-          call identify_contour_regions(grid, deltaprime, refinement_width)
-          
-          ! Adaptive refinement
-          print *, 'Step 3: Adaptive refinement...'
-          call adaptive_refine(grid, delta_function, deltaprime, &
-                             refinement_width, refinement_levels, min_spacing)
-          
-          ! Export results
-          print *, 'Step 4: Exporting results...'
-          call export_grid(grid, output_file)
-          
-          ! Clean up
-          deallocate(grid%points)
-          
-      end subroutine find_contours
-  
+      REAL(r8) :: F1m, F2m, F1p, F2p
+      REAL(r8), PARAMETER :: dS = 1.0e-06  ! Step size for derivatives
+      
+      CALL newton_function(g_r - dS, g_i,F1m,F2m,fitz_flag)
+      CALL newton_function(g_r + dS, g_i,F1p,F2p,fitz_flag)
+      
+      J11 = (F1p - F1m) / 2.0d0 / dS
+      J21 = (F2p - F2m) / 2.0d0 / dS
+      
+      CALL newton_function(g_r, g_i - dS,F1m,F2m,fitz_flag)
+      CALL newton_function(g_r, g_i + dS,F1p,F2p,fitz_flag)
+      
+      J12 = (F1p - F1m) / 2.0d0 / dS
+      J22 = (F2p - F2m) / 2.0d0 / dS
+      
+      END SUBROUTINE newton_jacobian
+      
+c-----------------------------------------------------------------------
+c     Function to RETURN maximum of two values
+c     Adapted from
+c-----------------------------------------------------------------------
+      FUNCTION Fmax(f1, f2) result(res)
+      REAL(r8), INTENT(IN) :: f1, f2
+      REAL(r8) :: res
+      
+      IF (f1 > f2) THEN
+          res = f1
+      ELSE
+          res = f2
+      ENDIF
+      
+      END FUNCTION Fmax
+      
+c-----------------------------------------------------------------------
+c     Function to RETURN minimum of two values
+c     Adapted from
+c-----------------------------------------------------------------------
+      FUNCTION Fmin(f1, f2) result(res)
+      REAL(r8), INTENT(IN) :: f1, f2
+      REAL(r8) :: res
+      
+      IF (f1 < f2) THEN
+          res = f1
+      ELSE
+          res = f2
+      ENDIF
+      
+      END FUNCTION Fmin
+      
+c-----------------------------------------------------------------------
+c     Function to calculate target functions for Newton-Raphson root finding
+c     Adapted from
+c-----------------------------------------------------------------------
+      SUBROUTINE newton_function(g_r,g_i,F1,F2,fitz_flag)
+      REAL(r8), INTENT(IN) :: g_r,g_i
+      LOGICAL, INTENT(IN) :: fitz_flag
+      REAL(r8), INTENT(OUT) :: F1, F2
+
+      COMPLEX(r8) :: Deltas
+
+      IF (fitz_flag) THEN ! use Fitzpatrick formalism
+         g_tmp = CMPLX(g_r,g_i)
+         Deltas=riccati_f(g_tmp)
+      ELSE ! use J.K. Park formalism
+         g_tmp = CMPLX(g_i,g_r)
+         Deltas=riccati(g_i,Q_e,Q_i,P_perp,
+     $                             c_beta,D_norm,tau,pe,
+     $                             iinQ=g_r)
+      END IF 
+
+      F1 = REAL(Deltas) - delta_eff
+      F2 = AIMAG(Deltas)
+      
+      END SUBROUTINE newton_function
       END MODULE gslayer_mod
