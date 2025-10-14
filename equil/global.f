@@ -24,7 +24,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: input_only=.FALSE.
       LOGICAL :: out_fl=.FALSE.
       LOGICAL :: out_ahg2msc=.FALSE.
-      LOGICAL :: vac_memory=.FALSE.
+      LOGICAL :: vac_memory=.TRUE.
       LOGICAL :: bin_fl=.FALSE.
       LOGICAL :: gse_flag=.FALSE.
       LOGICAL :: power_flag=.TRUE.

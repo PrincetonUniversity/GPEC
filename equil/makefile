@@ -45,10 +45,10 @@ clean:
 
 local.o: io.o
 utils.o: local.o
-spline.o: local.o
+spline.o: local.o utils.o
 grid.o: local.o spline.o
 bicube.o: spline.o
-cspline.o: local.o
+cspline.o: local.o spline.o
 fft.o: local.o
 fspline.o: local.o spline.o cspline.o utils.o fft.o
 global.o: bicube.o cspline.o
@@ -60,3 +60,4 @@ gsec.o: inverse.o
 sol.o: direct.o
 equil.o: read_eq.o lar.o gsec.o sol.o
 equil_out.o: global.o
+jacobi.o: local.o

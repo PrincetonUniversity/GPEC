@@ -26,6 +26,7 @@ c-----------------------------------------------------------------------
       USE gpglobal_mod
       USE vacuum_mod, ONLY: mscvac
       USE ismath_mod
+      USE equil_mod, ONLY: equil_loadnamelists,vac_memory
       USE netcdf
       IMPLICIT NONE
 
@@ -45,6 +46,10 @@ c-----------------------------------------------------------------------
       REAL(r8) :: sfac0
 
       REAL(r4), DIMENSION(:,:), POINTER :: rgarr,zgarr,psigarr
+c-----------------------------------------------------------------------
+c     reload equil namelists.
+c-----------------------------------------------------------------------
+      CALL equil_loadnamelists()
 c-----------------------------------------------------------------------
 c     open euler.bin and read header.
 c-----------------------------------------------------------------------

@@ -38,7 +38,7 @@
     coil%ideal_flag=f    ! Write ideal galerkin solution instead of resistive -- combined with GPEC this is physically equivalent to running regular DCON
 /
 &RMATCH_OUTPUT
-    bin_rpecsol=t        ! Write outer and inner solutions to binary files
+    bin_rpecsol=f        ! Write outer and inner solutions to binary files
     out_rpecsol=f        ! Write outer and inner solutions to ascii files
 /
 
