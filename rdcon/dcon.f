@@ -229,7 +229,7 @@ c-----------------------------------------------------------------------
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
      $     out_fl,bin_fl,out_evals,bin_evals,bin_euler,euler_stride,
      $     bin_vac,ahb_flag,mthsurf0,msol_ahb,diagnose_fixup,verbose,
-     $     out_ahg2msc,MRE_flag,geom_flag,netcdf_out
+     $     MRE_flag,geom_flag,netcdf_out
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -256,15 +256,6 @@ c-----------------------------------------------------------------------
          CALL gal_read_input
       ENDIF
       CALL ascii_close(in_unit)
-
-      IF (out_ahg2msc) THEN
-         WRITE(*,*) "WARNING: ahg2msc.out is deprecated and will be " //
-     $        "removed in a future version. Set out_ahg2msc = .FALSE."
-         WRITE(*,*) "         to disable this warning."
-         vac_memory=.FALSE.
-      ELSE
-         vac_memory=.TRUE.
-      ENDIF
 
 c-----------------------------------------------------------------------
 c     open output files, read, process, and diagnose equilibrium.

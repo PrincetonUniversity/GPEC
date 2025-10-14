@@ -69,8 +69,6 @@ c-----------------------------------------------------------------------
       LOGICAL :: node_flag=.FALSE.
       LOGICAL :: res_flag=.FALSE.
       LOGICAL :: ahb_flag=.FALSE.
-      LOGICAL :: out_ahg2msc=.TRUE.
-      LOGICAL :: vac_memory=.FALSE.
       LOGICAL :: MRE_flag=.FALSE.
       LOGICAL :: geom_flag=.FALSE.
       LOGICAL :: reform_eq_with_psilim=.FALSE.

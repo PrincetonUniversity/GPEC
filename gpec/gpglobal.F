@@ -50,8 +50,6 @@ c-----------------------------------------------------------------------
 
       INTEGER, DIMENSION(8) :: values
 
-      LOGICAL :: out_ahg2msc, vac_memory
-
       LOGICAL, DIMENSION(:), ALLOCATABLE :: sing_flag
       INTEGER, DIMENSION(:), ALLOCATABLE :: fixstep,mfac,lmfac
       INTEGER, DIMENSION(:,:), ALLOCATABLE :: permeabindex,gdl
@@ -118,7 +116,6 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(:), ALLOCATABLE :: index
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: fixfac,transform,gauss
       END TYPE fixfac_type
-
       TYPE :: sing_type
       INTEGER :: msol_l,msol_r,jfix,jpert
       REAL(r8) :: psifac,q,q1

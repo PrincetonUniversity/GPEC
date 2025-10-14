@@ -26,7 +26,7 @@ c-----------------------------------------------------------------------
      $     sing_npsi
       INTEGER :: pmode,p1mode,rmode,dmode,d1mode,fmode,smode,tmp_outs(5)
       INTEGER, DIMENSION(:), POINTER :: ipiv
-      REAL(r8) :: sing_spot,majr,minr,smallwidth,fp,normpsi,
+      REAL(r8) :: sing_spot,sing_resspot,majr,minr,smallwidth,fp,normpsi,
      $     singthresh_slayer_inpr
       CHARACTER(8) :: filter_types
       CHARACTER(128) :: infile
@@ -37,7 +37,7 @@ c-----------------------------------------------------------------------
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
      $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag,
      $     arzphifun_flag,xbrzphifun_flag,pmodbmn_flag,xclebsch_flag,
-     $     filter_flag,gal_flag,delpsi_flag,
+     $     filter_flag,gal_flag,delpsi_flag,use_res_spot,
      $     singthresh_callen_flag,singthresh_slayer_flag,singthresh_flag
       LOGICAL, DIMENSION(100) :: ss_flag
       COMPLEX(r8), DIMENSION(:), POINTER :: finmn,foutmn,xspmn,
@@ -57,8 +57,9 @@ c-----------------------------------------------------------------------
      $     pmode,p1mode,dmode,d1mode,fmode,rmode,smode,
      $     filter_types,filter_modes,gal_flag
       NAMELIST/gpec_control/resp_index,resp_induct_flag,
-     $     sing_spot,sing_npsi,reg_flag,reg_spot,
-     $     chebyshev_flag,nche,nchr,nchz,use_classic_splines
+     $     sing_spot,sing_resspot,sing_npsi,reg_flag,reg_spot,
+     $     chebyshev_flag,nche,nchr,nchz,use_classic_splines,
+     $     use_res_spot
       NAMELIST/gpec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
      $     singfld_flag,pmodb_flag,xbnormal_flag,rstep,jsurf_out,
      $     jac_out,power_bout,power_rout,power_bpout,power_rcout,
@@ -70,7 +71,7 @@ c-----------------------------------------------------------------------
      $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout,filter_flag,
      $     netcdf_flag,ascii_flag,singthresh_flag,
      $     singthresh_callen_flag,singthresh_slayer_flag,
-     $     singthresh_slayer_inpr,out_ahg2msc
+     $     singthresh_slayer_inpr
       NAMELIST/gpec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,jacfac_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
@@ -126,8 +127,6 @@ c-----------------------------------------------------------------------
       nchr=20
       nchz=20
 
-      out_ahg2msc=.TRUE.
-      vac_memory=.FALSE.
       jsurf_out=0
       tmag_out=1
       mlim_out=64
@@ -255,17 +254,6 @@ c-----------------------------------------------------------------------
          ENDIF
        PRINT *,"!! WARNING: ivacuumfile is deprecated and will be"//
      $         " ignored."
-      ENDIF
-      IF (out_ahg2msc) THEN
-         IF(.not. warnings_needed)THEN
-           PRINT *, "..."
-           warnings_needed = .true.
-         ENDIF
-         PRINT *, "!! WARNING: ahg2msc.out is deprecated and will be "//
-     $        "removed in a future version."
-         vac_memory=.FALSE.
-      ELSE
-         vac_memory=.TRUE.
       ENDIF
       IF(warnings_needed) PRINT *, "..."
 c-----------------------------------------------------------------------
