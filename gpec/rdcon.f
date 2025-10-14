@@ -118,6 +118,8 @@ c-----------------------------------------------------------------------
      $                  singtype(ising)%restype%taua,
      $                  singtype(ising)%restype%eta,
      $                  singtype(ising)%restype%eigenvalue
+         singtype(ising)%restype%sfac=singtype(ising)%restype%taur/
+     $       singtype(ising)%restype%taua
       ENDDO
       ALLOCATE(galsol%psifac(0:galsol%tot_grids),
      $         galsol%q(0:galsol%tot_grids),

@@ -21,13 +21,14 @@ c-----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER :: i,j,in,resol,
+      INTEGER :: i,j,in,resol,ising,
      $     mode,m3mode,lowmode,highmode,filter_modes,
      $     sing_npsi
       INTEGER :: pmode,p1mode,rmode,dmode,d1mode,fmode,smode,tmp_outs(5)
       INTEGER, DIMENSION(:), POINTER :: ipiv
-      REAL(r8) :: sing_spot,sing_resspot,majr,minr,smallwidth,fp,normpsi,
-     $     singthresh_slayer_inpr
+      REAL(r8) :: sing_spot,sing_resspot,majr,minr,smallwidth,fp,
+     $     normpsi,singthresh_slayer_inpr,sing_interpspot
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: sing_spots
       CHARACTER(8) :: filter_types
       CHARACTER(128) :: infile
       LOGICAL :: singcoup_flag,singfld_flag,vsingfld_flag,pmodb_flag,
@@ -57,8 +58,8 @@ c-----------------------------------------------------------------------
      $     pmode,p1mode,dmode,d1mode,fmode,rmode,smode,
      $     filter_types,filter_modes,gal_flag
       NAMELIST/gpec_control/resp_index,resp_induct_flag,
-     $     sing_spot,sing_resspot,sing_npsi,reg_flag,reg_spot,
-     $     chebyshev_flag,nche,nchr,nchz,use_classic_splines,
+     $     sing_spot,sing_resspot,sing_interpspot,sing_npsi,reg_flag,
+     $     reg_spot,chebyshev_flag,nche,nchr,nchz,use_classic_splines,
      $     use_res_spot
       NAMELIST/gpec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
      $     singfld_flag,pmodb_flag,xbnormal_flag,rstep,jsurf_out,
@@ -119,6 +120,8 @@ c-----------------------------------------------------------------------
       resp_index=0
       resp_induct_flag=.TRUE.
       sing_spot=5e-4
+      sing_resspot=1.0
+      sing_interpspot=1.0
       sing_npsi=1e2
       reg_flag=.TRUE.
       reg_spot=5e-2
@@ -225,7 +228,6 @@ c-----------------------------------------------------------------------
       CALL ascii_close(in_unit)
       galsol%gal_flag=gal_flag
       IF(timeit) CALL gpec_timer(0)
-
 c-----------------------------------------------------------------------
 c     deprecated variable errors
 c-----------------------------------------------------------------------
@@ -507,6 +509,12 @@ c-----------------------------------------------------------------------
       ! gpec_control
       ierr=set_harvest_payload_int(hlog,'resp_index'//nul,resp_index)
       ierr=set_harvest_payload_dbl(hlog,'sing_spot'//nul,sing_spot)
+      ierr=set_harvest_payload_dbl(hlog,'sing_resspot'//nul,
+     $                             sing_resspot)
+      ierr=set_harvest_payload_dbl(hlog,'sing_interpspot'//nul,
+     $                             sing_interpspot)
+      ierr=set_harvest_payload_bol(hlog,'use_res_spot'//nul,
+     $                             use_res_spot)
       ierr=set_harvest_payload_dbl(hlog,'sing_npsi'//nul,sing_npsi)
       ierr=set_harvest_payload_bol(hlog,'reg_flag'//nul,reg_flag)
       ierr=set_harvest_payload_dbl(hlog,'reg_spot'//nul,reg_spot)
@@ -553,6 +561,19 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     Set parameters for outputs.
 c-----------------------------------------------------------------------
+      ALLOCATE(sing_spots(msing))
+      DO ising=1,msing
+         IF (use_res_spot .AND. gal_flag) THEN
+            sing_spots(ising)=sing_resspot*(nn*ABS(singtype(ising)%q1))*
+     $           (singtype(ising)%restype%sfac)**(-1.0_r8/3.0_r8)
+         ELSEIF (use_res_spot .AND. (.NOT.gal_flag)) THEN
+            sing_spots(ising)=sing_spot
+            use_res_spot = .FALSE.
+            PRINT *,"!! WARNING: use_res_spot requires gal_flag"
+         ELSE
+            sing_spots(ising)=sing_spot
+         ENDIF
+      ENDDO
       IF (nrzeq_flag) THEN
          nr=mr
          nz=mz
@@ -574,8 +595,8 @@ c-----------------------------------------------------------------------
             PRINT *,"!! WARNING: no rationals for singcoup_flag"
             singcoup_flag = .FALSE.
          ELSE
-            CALL gpout_singcoup(sing_spot,sing_npsi,power_rout,
-     $           power_bpout,power_bout,power_rcout,tmag_out)
+            CALL gpout_singcoup(sing_spots,sing_interpspot,sing_npsi,
+     $           power_rout,power_bpout,power_bout,power_rcout,tmag_out)
          ENDIF
       ENDIF
 c-----------------------------------------------------------------------
@@ -609,9 +630,9 @@ c-----------------------------------------------------------------------
                CALL initialize_pentrc(op_kin=.TRUE.,op_deq=.TRUE.,
      $                op_peq=.FALSE.)
             ENDIF
-            CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi,
-     $              singthresh_callen_flag,singthresh_slayer_flag,
-     $              singthresh_slayer_inpr)
+            CALL gpout_singfld(mode,xspmn,sing_spots,sing_interpspot,
+     $              sing_npsi,singthresh_callen_flag,
+     $              singthresh_slayer_flag,singthresh_slayer_inpr)
          ENDIF
       ENDIF
 
@@ -631,7 +652,8 @@ c-----------------------------------------------------------------------
          CALL gpout_pmodb(mode,xspmn)
       ENDIF
       IF (xbnormal_flag) THEN
-         CALL gpout_xbnormal(mode,xspmn,sing_spot,sing_npsi)
+         CALL gpout_xbnormal(mode,xspmn,sing_spots,sing_interpspot,
+     $                                                      sing_npsi)
       ENDIF
       IF (xbtangent_flag) THEN
          CALL gpout_xbtangent(mode,xspmn,power_rout,
@@ -724,9 +746,9 @@ c-----------------------------------------------------------------------
          CALL gpout_control(mode,infile,fxmn,foutmn,xspmn,
      $        0,0,0,0,1,0,0,0,0,0,1,0,'   ',0,.FALSE.)
          edge_flag=.TRUE.
-         CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi,
-     $           singthresh_callen_flag,singthresh_slayer_flag,
-     $           singthresh_slayer_inpr)
+         CALL gpout_singfld(mode,xspmn,sing_spots,sing_interpspot,
+     $           sing_npsi,singthresh_callen_flag,
+     $           singthresh_slayer_flag,singthresh_slayer_inpr)
       ENDIF
 
       IF (cas3d_flag) THEN
@@ -748,11 +770,12 @@ c-----------------------------------------------------------------------
      $        power_rout,power_bpout,power_bout,power_rcout,
      $        tmag_out,jsurf_out,'   ',0,.FALSE.)
          edge_flag=.TRUE.
-         CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi,
-     $           singthresh_callen_flag,singthresh_slayer_flag,
-     $           singthresh_slayer_inpr)
+         CALL gpout_singfld(mode,xspmn,sing_spots,sing_interpspot,
+     $           sing_npsi,singthresh_callen_flag,
+     $           singthresh_slayer_flag,singthresh_slayer_inpr)
          CALL gpdiag_xbcontra(mode,xspmn,0,0,2,0,1)
-         CALL gpout_xbnormal(mode,xspmn,sing_spot,sing_npsi)
+         CALL gpout_xbnormal(mode,xspmn,sing_spots,sing_interpspot,
+     $              sing_npsi)
          CALL gpdiag_xbnobo(mode,xspmn,d3_flag)
          CALL gpdiag_radvar
          ! reset output options

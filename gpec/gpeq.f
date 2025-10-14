@@ -1327,14 +1327,14 @@ c-----------------------------------------------------------------------
 c     subprogram 18. gpeq_interp_singsurf.
 c     create spline for interpretation of solution near singular surface.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpeq_interp_singsurf(fsp_sol,spot,npsi)
+      SUBROUTINE gpeq_interp_singsurf(fsp_sol,spots,npsi)
       TYPE(cspline_type), INTENT(INOUT)::fsp_sol    ! spline of bwp smoothly crossing rationals
-      REAL(r8), INTENT(IN) :: spot                  ! roughly the span in  m-nq to cross
+      REAL(r8), DIMENSION(msing), INTENT(IN) :: spots ! roughly the span in  m-nq to cross
       INTEGER, INTENT(IN) :: npsi                   ! number of points between rationals in the spline
 
       INTEGER::psisize,ising,ix,icount
       INTEGER,PARAMETER:: method=1
-      REAL(r8)::nq1,x,x0,x1
+      REAL(r8)::nq1,x,x0,x1,spot
       REAL(r8),DIMENSION(msing)::respsi,dxl,dxr
 c-----------------------------------------------------------------------
 c     determine spline allocation.
@@ -1343,6 +1343,7 @@ c-----------------------------------------------------------------------
          respsi(ising)=singtype(ising)%psifac
       ENDDO
       DO ising=1,msing
+         spot=spots(ising)
          nq1=singtype(ising)%q1*nn
          SELECT CASE(method)
          CASE(1)

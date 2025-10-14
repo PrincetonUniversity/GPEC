@@ -482,12 +482,14 @@ c-----------------------------------------------------------------------
 c     subprogram 2. gpout_singcoup.
 c     compute coupling between singular surfaces and external fields.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpout_singcoup(spot,nspot,rout,bpout,bout,rcout,tout)
+      SUBROUTINE gpout_singcoup(spots,interpspot,nspot,rout,bpout,bout,
+     $   rcout,tout)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: rout,bpout,bout,rcout,tout,nspot
-      REAL(r8), INTENT(IN) :: spot
+      REAL(r8), DIMENSION(msing), INTENT(IN) :: spots
+      REAL(r8), INTENT(IN) :: interpspot
 
       INTEGER :: i,j,itheta,ising,resnum,rsing,rpert,
      $     tmlow,tmhigh,tmpert,lwork,info
@@ -605,23 +607,22 @@ c-----------------------------------------------------------------------
          edge_mn=foutmn/(chi1*singfac*twopi*ifac)
          edge_flag=.TRUE.
          CALL idcon_build(0,edge_mn)
-c-----------------------------------------------------------------------
-c     construct fsp_sol.
-c-----------------------------------------------------------------------
          ! Interpolation is necessary because bwp is invalid in the
          ! inner layer due to excluding curl (eta J)
-         CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
+         CALL gpeq_interp_singsurf(fsp_sol,spots*interpspot,nspot)
 c-----------------------------------------------------------------------
 c     evaluate delta/singular current/normal field/islands.
 c-----------------------------------------------------------------------
          DO ising=1,msing
             resnum=NINT(singtype(ising)%q*nn)-mlow+1
             respsi=singtype(ising)%psifac
-            lpsi=respsi-spot/(nn*ABS(singtype(ising)%q1))
+            lpsi=respsi-spots(ising)/(nn*ABS(singtype(ising)%q1))
+            ! IF (lpsi < psilow) lpsi=psilow
             CALL gpeq_sol(lpsi)
             lbwp1mn=bwp1_mn(resnum)
 
-            rpsi=respsi+spot/(nn*ABS(singtype(ising)%q1))
+            rpsi=respsi+spots(ising)/(nn*ABS(singtype(ising)%q1))
+            ! IF (rpsi > psihigh) rpsi=psihigh
             CALL gpeq_sol(rpsi)
             rbwp1mn=bwp1_mn(resnum)
 
@@ -646,7 +647,6 @@ c-----------------------------------------------------------------------
 c     deallocate fsp_sol.
 c-----------------------------------------------------------------------
          CALL cspline_dealloc(fsp_sol)
-
          IF(verbose) WRITE(*,'(1x,i4,1x,es10.3)') mfac(i),
      $        SQRT(SUM(ABS(singbnoflxs(:,i))**2))
       ENDDO
@@ -1571,7 +1571,7 @@ c-----------------------------------------------------------------------
 c     subprogram 4. gpout_singfld.
 c     compute current and field on rational surfaces.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpout_singfld(egnum,xspmn,spot,nspot,
+      SUBROUTINE gpout_singfld(egnum,xspmn,spots,interpspot,nspot,
      $             callen_threshold_flag,slayer_threshold_flag,
      $             slayer_inpr)
 c-----------------------------------------------------------------------
@@ -1580,7 +1580,8 @@ c-----------------------------------------------------------------------
       LOGICAL, INTENT(IN) :: callen_threshold_flag,
      $            slayer_threshold_flag
       INTEGER, INTENT(IN) :: egnum,nspot
-      REAL(r8), INTENT(IN) :: spot, slayer_inpr
+      REAL(r8), DIMENSION(msing), INTENT(IN) :: spots
+      REAL(r8), INTENT(IN) :: slayer_inpr, interpspot
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: i_id,q_id,m_id,p_id,c_id,bp_id,w_id,k_id,n_id,d_id,
@@ -1627,8 +1628,7 @@ c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,*)"Computing total resonant fields"
       CALL gpeq_alloc
       CALL idcon_build(egnum,xspmn)
-
-      CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
+      CALL gpeq_interp_singsurf(fsp_sol,spots*interpspot,nspot)
 
       IF (vsbrzphi_flag) ALLOCATE(singbno_mn(mpert,msing))
 
@@ -1678,12 +1678,14 @@ c-----------------------------------------------------------------------
          CALL gpeq_interp_sol(fsp_sol,respsi,interpbwn)
          singbwp(ising)=interpbwn(resnum(ising))
 
-         lpsi=respsi-spot/(nn*ABS(singtype(ising)%q1))
+         lpsi=respsi-spots(ising)/(nn*ABS(singtype(ising)%q1))
+         ! IF (lpsi < psilow) lpsi=psilow
          CALL gpeq_sol(lpsi)
          lbwp1mn=bwp1_mn(resnum(ising))
 
-         rpsi=respsi+spot/(nn*ABS(singtype(ising)%q1))
+         rpsi=respsi+spots(ising)/(nn*ABS(singtype(ising)%q1))
          CALL gpeq_sol(rpsi)
+         ! IF (rpsi > psihigh) rpsi=psihigh
          rbwp1mn=bwp1_mn(resnum(ising))
 
          delta(ising) = (rbwp1mn - lbwp1mn) / (twopi * chi1)
@@ -1823,11 +1825,9 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,a13,a8,1x,a12,I2)')
-     $        "jac_out = ",jac_out,"tmag_out =",tmag_out
-         WRITE(out_unit,'(1x,a12,es17.8e3)')"sweet-spot =",spot
          WRITE(out_unit,'(1x,a12,1x,I4)')"msing =",msing
          WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a6,14(1x,a16))')"q","psi",
+         WRITE(out_unit,'(1x,a6,15(1x,a16))')"q","psi","spot",
      $        "real(singflx)","imag(singflx)",
      $        "real(singcur)","imag(singcur)",
      $        "real(singbwp)","imag(singbwp)",
@@ -1835,8 +1835,9 @@ c-----------------------------------------------------------------------
      $        "half_w_isl","chirikov",
      $        "half_w_isl_crit","singflx_crit"
          DO ising=1,msing
-            WRITE(out_unit,'(1x,f6.3,14(es17.8e3))')
+            WRITE(out_unit,'(1x,f6.3,15(es17.8e3))')
      $           singtype(ising)%q,singtype(ising)%psifac,
+     $           spots(ising),
      $           REAL(singflx_mn(resnum(ising),ising)),
      $           AIMAG(singflx_mn(resnum(ising),ising)),
      $           REAL(singcur(ising)),AIMAG(singcur(ising)),
@@ -3149,12 +3150,13 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     subprogram 9. gpout_xbnormal.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpout_xbnormal(egnum,xspmn,spot,nspot)
+      SUBROUTINE gpout_xbnormal(egnum,xspmn,spots,interpspot,nspot)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum,nspot
-      REAL(r8), INTENT(IN) :: spot
+      REAL(r8), DIMENSION(msing), INTENT(IN) :: spots
+      REAL(r8), INTENT(IN) :: interpspot
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: p_id,t_id,i_id,m_id,mp_id,r_id,z_id,bm_id,b_id,
@@ -3214,7 +3216,7 @@ c-----------------------------------------------------------------------
 
       CALL gpeq_alloc
       IF (msing>0) THEN
-         CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
+         CALL gpeq_interp_singsurf(fsp_sol,spots*interpspot,nspot)
       ENDIF
 
       ! these surfaces are phsyically independent

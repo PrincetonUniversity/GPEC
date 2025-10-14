@@ -34,6 +34,9 @@
 &GPEC_CONTROL
    resp_index=0             ! Integer 0-4, determining method of inductance matrix formation. 0 uses energy identity, and is recommended.
    sing_spot=1e-3           ! Minimum distance to singular surface in (m-nq) space
+   sing_resspot=1.0         ! If use_res_spot=t, use inverse cube root of lundquist number scaled by sing_resspot in psi space as spot size
+   use_res_spot=f           ! Use resistive singular layer width instead of fixed sing_spot
+   sing_interpspot=1.0      ! Scaling of the interpolation width, in units of spot size, for smoothed outputs of singular surface quantities
    reg_flag=f               ! Regularize the solution near resonant surfaces
    reg_spot=5e-2            ! Regularize by (m-nq)^2/((m-nq)^2+reg_spot^2)
    chebyshev_flag=f         ! Fit Chebyshev polynomials to the displacement.
