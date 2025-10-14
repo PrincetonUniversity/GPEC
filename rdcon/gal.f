@@ -814,14 +814,19 @@ c-----------------------------------------------------------------------
       IF(cell%extra == "left")THEN
          x0=cell%x(1)
          x1=cell%x_lsode
-         WRITE(*,*) "x0=",x0," x1=",x1
-         IF (x0 > x1) CALL program_stop
+         IF (x0 > x1) THEN
+            WRITE(*,*) "x0=",x0," x1=",x1
+            CALL program_stop
      $        ("gal_lsode_int: left resonant element too small.")
+         ENDIF
       ELSE
          x0=cell%x(2)
          x1=cell%x_lsode
-         IF (x0 < x1) CALL program_stop
+         IF (x0 < x1) THEN
+            WRITE(*,*) "x0=",x0," x1=",x1
+            CALL program_stop
      $        ("gal_lsode_int: right resonant element too small.")
+         ENDIF
       ENDIF
       dx=x1-x0
       x=x0

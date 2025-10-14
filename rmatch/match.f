@@ -1371,22 +1371,24 @@ c-----------------------------------------------------------------------
 c     finish loop over singular surfaces.
 c-----------------------------------------------------------------------
       ENDDO
-      WRITE(*,*) "Finished loop over singular surfaces."
-      WRITE(*,*) "Writing mat to mat.out"
+      IF (out_rpecsol) THEN
+         WRITE(*,*) "Finished loop over singular surfaces."
+         WRITE(*,*) "Writing mat to mat.out"
 
-      OPEN(UNIT=119,FILE="mat.out",STATUS="REPLACE")
-      DO ip=1,4*msing
-         WRITE(119,'(i4,1p,100e15.5)')ip,mat(ip,:)
-      ENDDO
-      CLOSE(UNIT=119)
-      WRITE(*,*) "Finished writing mat to mat.out"
-      WRITE(*,*) " Writing rmat to rmat.out"
-      OPEN(UNIT=120,FILE="rmat.out",STATUS="REPLACE")
-      DO ip=1,4*msing
-         WRITE(120,'(i4,1p,100e15.5)')ip,rmat(ip,:)
-      ENDDO
-      CLOSE(UNIT=120)
-      WRITE(*,*) "Finished writing rmat to rmat.out"
+         OPEN(UNIT=119,FILE="mat.out",STATUS="REPLACE")
+         DO ip=1,4*msing
+            WRITE(119,'(i4,1p,100e15.5)')ip,mat(ip,:)
+         ENDDO
+         CLOSE(UNIT=119)
+         WRITE(*,*) "Finished writing mat to mat.out"
+         WRITE(*,*) " Writing rmat to rmat.out"
+         OPEN(UNIT=120,FILE="rmat.out",STATUS="REPLACE")
+         DO ip=1,4*msing
+            WRITE(120,'(i4,1p,100e15.5)')ip,rmat(ip,:)
+         ENDDO
+         CLOSE(UNIT=120)
+         WRITE(*,*) "Finished writing rmat to rmat.out"
+      ENDIF
 c-----------------------------------------------------------------------
 c     compute the coefficients of outer and inner region solutions.
 c-----------------------------------------------------------------------
@@ -1397,21 +1399,23 @@ c-----------------------------------------------------------------------
       CALL zgetrs('N',nmat,coil%mcoil,cmat,nmat,ipiv,cof,nmat,info)
       cout=cof(1:2*msing,:)
       cin=cof(2*msing+1:4*msing,:)
-      WRITE(*,*) "Finished solving matrix equation."
-      WRITE(*,*) "Writing cout to cout.out"
-      OPEN(UNIT=121,FILE="cout.out",STATUS="REPLACE")
-      DO ip=1,2*msing
-         WRITE(121,'(i4,1p,100e15.5)')ip,cout(ip,:)
-      ENDDO
-      CLOSE(UNIT=121)
-      WRITE(*,*) "Finished writing cout to cout.out"
-      WRITE(*,*) "Writing cin to cin.out"
-      OPEN(UNIT=122,FILE="cin.out",STATUS="REPLACE")
-      DO ip=1,2*msing
-         WRITE(122,'(i4,1p,100e15.5)')ip,cin(ip,:)
-      ENDDO
-      CLOSE(UNIT=122)
-      WRITE(*,*) "Finished writing cin to cin.out"
+      IF (out_rpecsol) THEN
+         WRITE(*,*) "Finished solving matrix equation."
+         WRITE(*,*) "Writing cout to cout.out"
+         OPEN(UNIT=121,FILE="cout.out",STATUS="REPLACE")
+         DO ip=1,2*msing
+            WRITE(121,'(i4,1p,100e15.5)')ip,cout(ip,:)
+         ENDDO
+         CLOSE(UNIT=121)
+         WRITE(*,*) "Finished writing cout to cout.out"
+         WRITE(*,*) "Writing cin to cin.out"
+         OPEN(UNIT=122,FILE="cin.out",STATUS="REPLACE")
+         DO ip=1,2*msing
+            WRITE(122,'(i4,1p,100e15.5)')ip,cin(ip,:)
+         ENDDO
+         CLOSE(UNIT=122)
+         WRITE(*,*) "Finished writing cin to cin.out"
+      ENDIF
 c-----------------------------------------------------------------------
 c     output inner and outer regions' solutions.
 c-----------------------------------------------------------------------
