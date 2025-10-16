@@ -130,16 +130,12 @@ c-----------------------------------------------------------------------
       ENDDO
       DO isol=1,galsol%mtot
          DO ip=0,galsol%tot_grids
-            DO ipert=1,galsol%mpert
-               READ(bin_unit) galsol%u(ipert,ip,isol)
-            ENDDO
+            READ(bin_unit) galsol%u(1:galsol%mpert,ip,isol)
          ENDDO
       ENDDO
       DO isol=1,galsol%mtot
          DO ip=0,galsol%tot_grids
-            DO ipert=1,galsol%mpert
-               READ(bin_unit) galsol%bpsi(ipert,ip,isol)
-            ENDDO
+            READ(bin_unit) galsol%bpsi(1:galsol%mpert,ip,isol)
          ENDDO
       ENDDO
       WRITE(*,*) "RDCON solutions read."

@@ -1458,9 +1458,7 @@ c-----------------------------------------------------------------------
             IF (outs%issing(ip)) THEN
                CYCLE
             ENDIF
-            DO ipert=1,outs%mpert
-               WRITE (bin_unit) globalsol(ipert,ip,isol)
-            ENDDO
+            WRITE(bin_unit) globalsol(1:outs%mpert,ip,isol)
          ENDDO
       ENDDO
       DO isol=1,coil%mcoil
@@ -1468,9 +1466,7 @@ c-----------------------------------------------------------------------
             IF (outs%issing(ip)) THEN
                CYCLE
             ENDIF
-            DO ipert=1,outs%mpert
-               WRITE (bin_unit) globalsol_b(ipert,ip,isol)
-            ENDDO
+            WRITE(bin_unit) globalsol_b(1:outs%mpert,ip,isol)
          ENDDO
       ENDDO
       CALL bin_close(bin_unit)

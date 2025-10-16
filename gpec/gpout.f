@@ -1587,7 +1587,7 @@ c-----------------------------------------------------------------------
       INTEGER :: i_id,q_id,m_id,p_id,c_id,bp_id,w_id,k_id,n_id,d_id,
      $           a_id,pp_id,cp_id,wp_id,np_id,dp_id,wc_id,bc_id,
      $           ti_id, te_id, ni_id, ne_id, we_id, wi_id, q1_id,
-     $           rh_id, r1_id,
+     $           rh_id, r1_id,ssp_id,lq_id,
      $           astat
 
       INTEGER :: itheta,ising,icoup
@@ -1856,6 +1856,16 @@ c-----------------------------------------------------------------------
          CALL check( nf90_redef(fncid))
          CALL check( nf90_put_att(fncid, nf90_global,
      $     "Pr", slayer_inpr) )
+         CALL check( nf90_def_var(fncid, "sing_spots", nf90_double,
+     $      (/q_id/), ssp_id) )
+         CALL check( nf90_put_att(fncid, ssp_id, "long_name",
+     $    "Sweet spots used for calculating resonant jump quantities") )
+         CALL check( nf90_put_att(fncid, ssp_id, "units", "m-nq") )
+         CALL check( nf90_def_var(fncid, "Sfac", nf90_double,
+     $      (/q_id/), lq_id) )
+         CALL check( nf90_put_att(fncid, lq_id, "long_name",
+     $    "Lundquist Number at rational surface") )
+         CALL check( nf90_put_att(fncid, lq_id, "units", "unitless") )
          CALL check( nf90_def_var(fncid, "Phi_res", nf90_double,
      $      (/q_id,i_id/), p_id) )
          CALL check( nf90_put_att(fncid, p_id, "units", "T") )
@@ -1948,6 +1958,9 @@ c-----------------------------------------------------------------------
      $        "Surface area of rational surface") )
          ENDIF
          CALL check( nf90_enddef(fncid) )
+         CALL check( nf90_put_var(fncid, ssp_id, spots) )
+         CALL check( nf90_put_var(fncid, lq_id, 
+     $  (/ (singtype(ising)%restype%sfac, ising=1, msing) /) ) )
          singflx = (/(singflx_mn(resnum(ising),ising), ising=1,msing)/)
          CALL check( nf90_put_var(fncid, p_id,
      $      RESHAPE((/REAL(singflx), AIMAG(singflx)/), (/msing,2/))) )
