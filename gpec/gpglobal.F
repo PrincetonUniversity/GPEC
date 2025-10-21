@@ -94,8 +94,8 @@ c-----------------------------------------------------------------------
       TYPE(fspline_type) :: metric
 
       TYPE :: resist_type
-      REAL(r8) :: e,f,h,m,g,k,eta,rho,taua,taur,di,dr,sfac,deltac,
-     $            eigenvalue    
+      REAL(r8) :: e,f,h,m,g,k,eta,rho,taua,taur,di,dr,sfac,deltac
+      COMPLEX(r8) :: eigenvalue
       END TYPE resist_type
 
       TYPE :: solution_type

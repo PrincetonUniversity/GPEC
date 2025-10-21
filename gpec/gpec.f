@@ -565,12 +565,18 @@ c-----------------------------------------------------------------------
       DO ising=1,msing
          IF (use_res_spot .AND. gal_flag) THEN
             sing_spots(ising)=sing_resspot*(nn*ABS(singtype(ising)%q1))*
-     $           (singtype(ising)%restype%sfac)**(-1.0_r8/3.0_r8)
+     $                 ( singtype(ising)%restype%sfac * 
+     $                 (twopi/ABS(singtype(ising)%restype%eigenvalue)) )
+     $                 **(-1.0_r8/3.0_r8)  
          ELSEIF (use_res_spot .AND. (.NOT.gal_flag)) THEN
             sing_spots(ising)=sing_spot
             use_res_spot = .FALSE.
             PRINT *,"!! WARNING: use_res_spot requires gal_flag"
          ELSE
+            sing_spots(ising)=sing_spot
+         ENDIF
+         ! Use sing_spot as a minimum spot size
+         IF (sing_spots(ising) < sing_spot .AND. use_res_spot) THEN
             sing_spots(ising)=sing_spot
          ENDIF
       ENDDO
