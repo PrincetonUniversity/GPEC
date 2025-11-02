@@ -1872,10 +1872,10 @@ c-----------------------------------------------------------------------
      $       "Alfven timescale at rational surface") )
             CALL check( nf90_put_att(fncid, at_id, "units", "s"))
             CALL check( nf90_def_var(fncid, "tauR", nf90_double,
-     $         (/q_id/), at_id) )
-            CALL check( nf90_put_att(fncid, at_id, "long_name",
+     $         (/q_id/), rt_id) )
+            CALL check( nf90_put_att(fncid, rt_id, "long_name",
      $       "Resistive timescale at rational surface") )
-            CALL check( nf90_put_att(fncid, at_id, "units", "s"))
+            CALL check( nf90_put_att(fncid, rt_id, "units", "s"))
          
          ENDIF
          CALL check( nf90_def_var(fncid, "Phi_res", nf90_double,
@@ -1976,7 +1976,7 @@ c-----------------------------------------------------------------------
      $         (/ (singtype(ising)%restype%sfac, ising=1, msing) /) ) )
             CALL check( nf90_put_var(fncid, at_id,
      $         (/ (singtype(ising)%restype%taua, ising=1, msing) /) ) )
-            CALL check( nf90_put_var(fncid, at_id,
+            CALL check( nf90_put_var(fncid, rt_id,
      $         (/ (singtype(ising)%restype%taur, ising=1, msing) /) ) )
          ENDIF
          singflx = (/(singflx_mn(resnum(ising),ising), ising=1,msing)/)

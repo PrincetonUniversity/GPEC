@@ -1333,7 +1333,7 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: npsi                   ! number of points between rationals in the spline
 
       INTEGER::psisize,ising,ix,icount
-      INTEGER,PARAMETER:: method=1
+      INTEGER,PARAMETER:: method=3
       REAL(r8)::nq1,x,x0,x1,spot
       REAL(r8),DIMENSION(msing)::respsi,dxl,dxr
 c-----------------------------------------------------------------------
@@ -1371,6 +1371,9 @@ c-----------------------------------------------------------------------
          CASE(2)
             dxl(ising)=respsi(ising)-spot/nq1
             dxr(ising)=respsi(ising)+spot/nq1
+         CASE(3)
+            dxl(ising)=respsi(ising) - 1.0e-7
+            dxr(ising)=respsi(ising) + 1.0e-7
          END SELECT
       ENDDO
 c-----------------------------------------------------------------------

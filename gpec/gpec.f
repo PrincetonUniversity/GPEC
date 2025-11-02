@@ -121,6 +121,7 @@ c-----------------------------------------------------------------------
       resp_induct_flag=.TRUE.
       sing_spot=5e-4
       sing_resspot=1.0
+      use_res_spot=.FALSE.
       sing_interpspot=1.0
       sing_npsi=1e2
       reg_flag=.TRUE.
@@ -565,9 +566,9 @@ c-----------------------------------------------------------------------
       DO ising=1,msing
          IF (use_res_spot .AND. gal_flag) THEN
             sing_spots(ising)=sing_resspot*(nn*ABS(singtype(ising)%q1))*
-     $                 ( singtype(ising)%restype%sfac * 
-     $                 (twopi/ABS(singtype(ising)%restype%eigenvalue)) )
-     $                 **(-1.0_r8/3.0_r8)  
+     $                 ((singtype(ising)%restype%sfac)**(-1.0_r8/3.0_r8)
+     $                 )*(twopi/ABS(singtype(ising)%restype%eigenvalue))
+     $                  + sing_spot
          ELSEIF (use_res_spot .AND. (.NOT.gal_flag)) THEN
             sing_spots(ising)=sing_spot
             use_res_spot = .FALSE.
