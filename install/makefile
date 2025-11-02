@@ -12,8 +12,6 @@ export LDFLAGS
 
 # compile package
 
-.IGNORE:
-
 all: v harvest equil lsode zlange zvode orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum xdraw slayer coil gpec stride mkbin
 
@@ -31,58 +29,58 @@ harvest:
 	cp -f ../harvest/libharvest.a ../lib/
 
 xdraw:
-	cd ../xdraw;  make
+	cd ../xdraw;  make -j 8
 
 lsode:
-	cd ../lsode;  make liblsode
+	cd ../lsode;  make -j 8 liblsode
 
 zlange:
-	cd ../zlange;  make libzlange
+	cd ../zlange;  make -j 8 libzlange
 
 zvode:
-	cd ../zvode;  make libzvode
+	cd ../zvode;  make -j 8 libzvode
 
 equil:
-	cd ../equil;  make libequil
+	cd ../equil;  make -j 8 libequil
 
 vacuum:
-	cd ../vacuum; make libvac
+	cd ../vacuum; make -j 8 libvac
 
 orbit:
-	cd ../orbit;  make orbit
+	cd ../orbit;  make -j 8 orbit
 
 dcon:
-	cd ../dcon;   make dcon
+	cd ../dcon;   make -j 8 dcon
 
 match:
-	cd ../match;  make match
+	cd ../match;  make -j 8 match
 
 rdcon:
-	cd ../rdcon;   make rdcon
+	cd ../rdcon;   make -j 8 rdcon
 
 rmatch:
-	cd ../rmatch;  make rmatch
+	cd ../rmatch;  make -j 8 rmatch
 
 multi:
-	cd ../multi;  make multi
+	cd ../multi;  make -j 8 multi
 
 sum:
-	cd ../sum;    make sum
+	cd ../sum;    make -j 8 sum
 
 slayer:
-	cd ../slayer; make slayer
+	cd ../slayer; make -j 8 slayer
 
 coil:
-	cd ../coil;   make libcoil
+	cd ../coil;   make -j 8 libcoil
 
 gpec:
-	cd ../gpec;   make gpec
+	cd ../gpec;   make -j 8 gpec
 
 pentrc:
-	cd ../pentrc; make pentrc
+	cd ../pentrc; make -j 8 pentrc
 
 stride:
-	cd ../stride; make stride
+	cd ../stride; make -j 8 stride
 
 mkbin:
 	mkdir -p ../bin
