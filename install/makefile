@@ -29,58 +29,58 @@ harvest:
 	cp -f ../harvest/libharvest.a ../lib/
 
 xdraw:
-	cd ../xdraw;  make -j 8
+	cd ../xdraw;  make
 
 lsode:
-	cd ../lsode;  make -j 8 liblsode
+	cd ../lsode;  make liblsode
 
 zlange:
-	cd ../zlange;  make -j 8 libzlange
+	cd ../zlange;  make libzlange
 
 zvode:
-	cd ../zvode;  make -j 8 libzvode
+	cd ../zvode;  make libzvode
 
 equil:
-	cd ../equil;  make -j 8 libequil
+	cd ../equil;  make libequil
 
 vacuum:
-	cd ../vacuum; make -j 8 libvac
+	cd ../vacuum; make libvac
 
 orbit:
-	cd ../orbit;  make -j 8 orbit
+	cd ../orbit;  make orbit
 
 dcon:
-	cd ../dcon;   make -j 8 dcon
+	cd ../dcon;   make dcon
 
 match:
-	cd ../match;  make -j 8 match
+	cd ../match;  make match
 
 rdcon:
-	cd ../rdcon;   make -j 8 rdcon
+	cd ../rdcon;   make rdcon
 
 rmatch:
-	cd ../rmatch;  make -j 8 rmatch
+	cd ../rmatch;  make rmatch
 
 multi:
-	cd ../multi;  make -j 8 multi
+	cd ../multi;  make multi
 
 sum:
-	cd ../sum;    make -j 8 sum
+	cd ../sum;    make sum
 
 slayer:
-	cd ../slayer; make -j 8 slayer
+	cd ../slayer; make slayer
 
 coil:
-	cd ../coil;   make -j 8 libcoil
+	cd ../coil;   make libcoil
 
 gpec:
-	cd ../gpec;   make -j 8 gpec
+	cd ../gpec;   make gpec
 
 pentrc:
-	cd ../pentrc; make -j 8 pentrc
+	cd ../pentrc; make pentrc
 
 stride:
-	cd ../stride; make -j 8 stride
+	cd ../stride; make stride
 
 mkbin:
 	mkdir -p ../bin
