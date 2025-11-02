@@ -53,7 +53,7 @@ c-----------------------------------------------------------------------
       INTEGER :: ir,iz,itheta,ipsi
       INTEGER, PARAMETER :: nstep=8192
       REAL(r8) :: f0fac,f0,ffac,rfac,eta,r,jacfac,w11,w12,delpsi,q
-      REAL(r8), DIMENSION(0:nstep,0:4) :: y_out
+      REAL(r8), ALLOCATABLE, DIMENSION(:,:) :: y_out
       REAL(r8), DIMENSION(2, mpsi+1) :: xdx
       REAL(r8), DIMENSION(3,3) :: v
 
@@ -68,6 +68,7 @@ c-----------------------------------------------------------------------
      $        "Warning: direct equilibrium with psihigh =",psihigh,
      $        " could hang on separatrix."
       direct_infinite_loop_flag = .FALSE.
+      ALLOCATE(y_out(0:nstep,0:4))
 c-----------------------------------------------------------------------
 c     fit input to cubic splines and diagnose.
 c-----------------------------------------------------------------------
@@ -250,6 +251,7 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
       CALL bicube_fit(eqfun,"extrap","periodic")
+      DEALLOCATE(y_out)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
