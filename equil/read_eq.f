@@ -464,7 +464,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE read_eq_chease2
+      END SUBROUTINE read_eq_chease_inp1_ascii
 c-----------------------------------------------------------------------
 c     subprogram 7. read_eq_chum.
 c     reads data from Ming Chu's equilibrium.
