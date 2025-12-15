@@ -14,7 +14,7 @@ c      INTEGER, PARAMETER :: r8=SELECTED_REAL_KIND(13,307)
      $            delta_n,layfac,Qconv,lnLamb,deltaprim,dc_tmp,
      $            d_crit,tau_r,tauk,g_r,g_i,delta_eff
       REAL(r8), DIMENSION(:), ALLOCATABLE :: re_trace,im_trace
-      COMPLEX(r8) :: Q,g_tmp
+      COMPLEX(r8) :: Q,g_tmp,delta_det
       CHARACTER(20) :: dc_type
      
       REAL(r8), PARAMETER :: pi=3.1415926535897932385, mu0=4e-7*pi,

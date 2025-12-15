@@ -415,246 +415,64 @@ c-----------------------------------------------------------------------
 c
 c
 c     Adapted from
-      SUBROUTINE newton_root(g_r, g_i, verbose, fitz_flag)
-      LOGICAL, INTENT(IN) :: fitz_flag
-      REAL(r8), INTENT(INOUT) :: g_r, g_i
-      INTEGER, INTENT(IN) :: verbose
+      FUNCTION dispersion_det(g_tmp,n_k,sl_in)
       
-      REAL(r8) :: F1, F2, J11, J12, J21, J22, det, iJ11, iJ12
-      REAL(r8) :: iJ21, iJ22, dx1, dx2, dx, f, g1, g2, lambda,
-     $            Residual
-      INTEGER :: iter
-      
-      REAL(r8), PARAMETER :: Eps = 1.0e-12    ! Tolerance PARAMETER
-      REAL(r8), PARAMETER :: Smin = 1.0e-07   ! Min step size
-      REAL(r8), PARAMETER :: Smax = 0.02     ! Max step size
-      INTEGER, PARAMETER :: MaxIter = 100             ! Maximum iterations
-      
-      iter = 0
-      DO
-          CALL newton_function(g_r, g_i, F1, F2, fitz_flag)
-          
-          CALL newton_jacobian(g_r, g_i, J11, J12, J21, J22,
-     $                          fitz_flag)
-          
-          det = J11 * J22 - J12 * J21
-          
-          iJ11 =  J22 / det
-          iJ12 = -J12 / det
-          iJ21 = -J21 / det
-          iJ22 =  J11 / det
-          
-          dx1 = -(iJ11 * F1 + iJ12 * F2)
-          dx2 = -(iJ21 * F1 + iJ22 * F2)
-          
-          dx = sqrt(dx1*dx1 + dx2*dx2)
-          
-          f = 0.5 * (F1*F1 + F2*F2)
-          
-          g1 = F1*J11 + F2*J21
-          g2 = F1*J12 + F2*J22
-          
-          CALL newton_backtrack(g_r,g_i,dx1,dx2,dx,f,g1,g2,lambda, 
-     $                         fitz_flag)
-          
-          CALL newton_function(g_r, g_i, F1, F2, fitz_flag)
-          
-          Residual = sqrt(F1*F1 + F2*F2)
-          
-          n_trace = n_trace + 1
+      COMPLEX(r8), INTENT(IN) :: g_tmp
+      INTEGER, INTENT(IN) :: n_k
+      TYPE(slayer_inputs_type), INTENT(IN) :: sl_in
+      COMPLEX(r8) :: dispersion_det,det_val,tmp_delta
+      COMPLEX(r8), ALLOCATABLE :: delta_Q(:,:),result_matrix(:,:)
+      INTEGER :: k
 
-          IF (n_trace < 100) THEN
-             re_trace(n_trace) = g_r
-             im_trace(n_trace) = g_i
-          END IF 
+      IF (n_k < 2) THEN
+         Q_e = sl_in%Q_e_arr(1)
+         Q_i = sl_in%Q_i_arr(1)
+         P_perp = sl_in%P_perp_arr(1)
+         P_tor = sl_in%P_tor_arr(1)
+         tau = sl_in%tau_arr(1)
+         D_norm = sl_in%D_norm_arr(1)
+         c_beta = sl_in%c_beta_arr(1)
+         tauk = sl_in%Qconv_arr(1)
+         iota_e = Q_e / (Q_e - Q_i)
 
-          IF (verbose .ne. 0) THEN
-              WRITE(*, '(A, ES10.3, A, ES10.3, A, A, ES10.3)')
-     $              'Q step = (', g_r, ' + ', 
-     $              g_i, 'j ),', '    Residual =', Residual
-          ENDIF
-          
-          iter = iter + 1
-          
-          IF (Residual<=Eps .or. dx<=Smin .or. iter>=MaxIter) exit
-      ENDDO
-      
-      END SUBROUTINE newton_root
-      
-c-----------------------------------------------------------------------
-c     Function to backtrack along Newton step IN order to minimize f = (F1*F1 + F2*F2) /2
-c     Press, Teukolsky, Vetterling, and Flannery, Numerical Recipies IN C (Cambridge, 1992), Sect. 9.7
-c     Adapted from
-c-----------------------------------------------------------------------
-      SUBROUTINE newton_backtrack(g_r, g_i, dx1, dx2, dx, f, g1, g2, 
-     $                          lambda, fitz_flag)
-      LOGICAL, INTENT(IN) :: fitz_flag
-      REAL(r8), INTENT(INOUT) :: g_r, g_i, dx, lambda
-      REAL(r8), INTENT(INOUT) :: dx1, dx2, f, g1, g2
-      
-      REAL(r8) :: x1old, x2old, dxold, fold, slope, F1, F2
-      REAL(r8) :: tmplam, rhs1, rhs2, a, b, disc, lambd2, mf2
-      INTEGER :: i
-      
-      REAL(r8), PARAMETER :: Smin = 1.0d-10   ! Min step size
-      REAL(r8), PARAMETER :: Smax = 0.02     ! Max step size
-      REAL(r8), PARAMETER :: alpha = 1.0d-4   ! Line search PARAMETER
-      INTEGER, PARAMETER :: Maxiter = 100     ! Maximum iterations
-      
-      x1old = g_r
-      x2old = g_i
-      dxold = dx
-      fold = f
-      
-      IF (dxold > Smax) THEN
-          dx1 = dx1 * Smax / dxold
-          dx2 = dx2 * Smax / dxold
-          dxold = Smax
-      ENDIF
-      
-      slope = g1*dx1 + g2*dx2
-      
-      IF (slope >= 0.0d0) THEN
-          WRITE(*,*) "NewtonBackTrack: Error - roundoff problem"
-      ENDIF
-      
-      lambda = 1.0d0
-      
-      DO i = 0, Maxiter
-          g_r = x1old + lambda * dx1
-          g_i = x2old + lambda * dx2
-          
-          CALL newton_function(g_r, g_i, F1, F2, fitz_flag)
-          
-          f = 0.5 * (F1*F1 + F2*F2)
-          
-          IF (f <= fold + alpha * lambda * slope .or. 
-     $       lambda * dxold < Smin) THEN
-              dx = lambda * dxold
-              RETURN
-          ELSE
-              IF (lambda == 1.0d0) THEN
-                  tmplam = -slope / 2.0d0 / (f - fold - slope)
-              ELSE
-                  rhs1 = f - fold - lambda * slope
-                  rhs2 = mf2 - fold - lambd2 * slope
-                  
-                  a = (rhs1/lambda/lambda - rhs2/lambd2/lambd2)
-     $               / (lambda - lambd2)
-                  b = (-lambd2 * rhs1/lambda/lambda + lambda * 
-     $               rhs2/lambd2/lambd2) / (lambda - lambd2)
-                  
-                  IF (a == 0.0d0) THEN
-                      tmplam = -slope / 2.0d0 / b
-                  ELSE
-                      disc = b*b - 3.0d0 * a * slope
-                      
-                      IF (disc < 0.0d0) THEN
-                          tmplam = 0.5d0 * lambda
-                      ELSE IF (b <= 0.0d0) THEN
-                          tmplam = (-b + sqrt(disc)) / 3.0d0 / a
-                      ELSE
-                          tmplam = -slope / (b + sqrt(disc))
-                      ENDIF
-                  ENDIF
-                  
-                  IF (tmplam > 0.5d0 * lambda) THEN
-                      tmplam = 0.5d0 * lambda
-                  ENDIF
-              ENDIF
-          ENDIF
-          
-          lambd2 = lambda
-          mf2 = f
-          lambda = max(tmplam, 0.1d0*lambda)
-      ENDDO
-      
-      dx = lambda * dxold
-      
-      END SUBROUTINE newton_backtrack
-c-----------------------------------------------------------------------
-c     Function to calculate Jacobian matrix for Newton-Raphson root finding
-c     Adapted from
-c-----------------------------------------------------------------------
-      SUBROUTINE newton_jacobian(g_r, g_i, J11, J12, J21, J22,
-     $                           fitz_flag)
-      REAL(r8), INTENT(IN) :: g_r, g_i
-      LOGICAL, INTENT(IN) :: fitz_flag
+         tmp_delta=riccati_f(g_tmp)
+         det_val=tmp_delta*(sl_in%lu_arr(1)**(1.0/3.0)) ! DE-NORMALIZE          
 
-      REAL(r8), INTENT(OUT) :: J11, J12, J21, J22
-      
-      REAL(r8) :: F1m, F2m, F1p, F2p
-      REAL(r8), PARAMETER :: dS = 1.0e-06  ! Step size for derivatives
-      
-      CALL newton_function(g_r - dS, g_i,F1m,F2m,fitz_flag)
-      CALL newton_function(g_r + dS, g_i,F1p,F2p,fitz_flag)
-      
-      J11 = (F1p - F1m) / 2.0d0 / dS
-      J21 = (F2p - F2m) / 2.0d0 / dS
-      
-      CALL newton_function(g_r, g_i - dS,F1m,F2m,fitz_flag)
-      CALL newton_function(g_r, g_i + dS,F1p,F2p,fitz_flag)
-      
-      J12 = (F1p - F1m) / 2.0d0 / dS
-      J22 = (F2p - F2m) / 2.0d0 / dS
-      
-      END SUBROUTINE newton_jacobian
-      
-c-----------------------------------------------------------------------
-c     Function to RETURN maximum of two values
-c     Adapted from
-c-----------------------------------------------------------------------
-      FUNCTION Fmax(f1, f2) result(res)
-      REAL(r8), INTENT(IN) :: f1, f2
-      REAL(r8) :: res
-      
-      IF (f1 > f2) THEN
-          res = f1
+         ! Calculate Deltaprime - Delta(Q)
+         dispersion_det = sl_in%Re_dp_arr(1) - det_val
+
+      ELSEIF ((n_k == 2) .OR. (n_k == 3)) THEN
+         ALLOCATE(delta_Q(n_k,n_k))
+         delta_Q=(0.0,0.0)
+         DO k=1,2 !!! MAXING OUT AT 2X2
+            Q_e = sl_in%Q_e_arr(k)
+            Q_i = sl_in%Q_i_arr(k)
+            P_perp = sl_in%P_perp_arr(k)
+            P_tor = sl_in%P_tor_arr(k)
+            tau = sl_in%tau_arr(k)
+            D_norm = sl_in%D_norm_arr(k)
+            c_beta = sl_in%c_beta_arr(k)
+            tauk = sl_in%Qconv_arr(k)
+            iota_e = Q_e / (Q_e - Q_i)
+
+            delta_eff = (sl_in%Re_dp_arr(k) - 
+     $          sl_in%d_crit_arr(k))/(sl_in%lu_arr(k)**(1.0/3.0))
+     
+            delta_Q(k,k)=riccati_f(((g_tmp*sl_in%Qconv_arr(1))
+     $           /tauk))
+            delta_Q(k,k)=delta_Q(k,k)*sl_in%lu_arr(k)**(1.0/3.0) ! DE-NORMALIZE          
+         END DO
+   
+         ! Calculate Deltaprime - Delta(Q)
+         result_matrix = sl_in%dp_matrix - delta_Q
+
+         ! Calculate determinant
+         CALL calc_determinant(result_matrix, n_k, det_val)
+         dispersion_det = det_val
       ELSE
-          res = f2
-      ENDIF
-      
-      END FUNCTION Fmax
-      
-c-----------------------------------------------------------------------
-c     Function to RETURN minimum of two values
-c     Adapted from
-c-----------------------------------------------------------------------
-      FUNCTION Fmin(f1, f2) result(res)
-      REAL(r8), INTENT(IN) :: f1, f2
-      REAL(r8) :: res
-      
-      IF (f1 < f2) THEN
-          res = f1
-      ELSE
-          res = f2
-      ENDIF
-      
-      END FUNCTION Fmin
-      
-c-----------------------------------------------------------------------
-c     Function to calculate target functions for Newton-Raphson root finding
-c     Adapted from
-c-----------------------------------------------------------------------
-      SUBROUTINE newton_function(g_r,g_i,F1,F2,fitz_flag)
-      REAL(r8), INTENT(IN) :: g_r,g_i
-      LOGICAL, INTENT(IN) :: fitz_flag
-      REAL(r8), INTENT(OUT) :: F1, F2
+         WRITE(*,*)"Error: no support for msing > 3"
+         stop
+      END IF
+      END FUNCTION dispersion_det
 
-      COMPLEX(r8) :: Deltas
-
-      IF (fitz_flag) THEN ! use Fitzpatrick formalism
-         g_tmp = CMPLX(g_r,g_i)
-         Deltas=riccati_f(g_tmp)
-      ELSE ! use J.K. Park formalism
-         g_tmp = CMPLX(g_i,g_r)
-         Deltas=riccati(g_i,Q_e,Q_i,P_perp,
-     $                             c_beta,D_norm,tau,pe,
-     $                             iinQ=g_r)
-      END IF 
-
-      F1 = REAL(Deltas) - delta_eff
-      F2 = AIMAG(Deltas)
-      
-      END SUBROUTINE newton_function
       END MODULE gslayer_mod

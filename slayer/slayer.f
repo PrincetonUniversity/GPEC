@@ -43,7 +43,6 @@ c-----------------------------------------------------------------------
      $     kpower,ing_step,ing_coarse,iing_coarse,delta_real,
      $     delta_imag,Qratio
       REAL(r8) :: chis(3)
-      COMPLEX(r8), ALLOCATABLE :: delta_Q(:,:),result_matrix(:,:)
 
       INTEGER, DIMENSION(:), ALLOCATABLE :: mms,nns
 
@@ -493,7 +492,7 @@ c-----------------------------------------------------------------------
          !--------------
          !n_k = 1
          !--------------
-         DO k=1,n_k
+         DO k=1,2!!!!!!!!!!!!!! ONLY DOING TWO SURFACES
             WRITE(*,*)
             WRITE(*,'(A,I0,A)') 'Calculating growth rate on q = ',
      $       sl_in%qval_arr(k),' rational surface:'
@@ -517,7 +516,9 @@ c-----------------------------------------------------------------------
 
             WRITE(*,*)"slayer.f iota_e: ",iota_e
             WRITE(*,*)"slayer.f D_prime: ",sl_in%Re_dp_arr(k)
+            WRITE(*,*)"slayer.f D_prime: ",sl_in%Re_dp_arr(k)
             WRITE(*,*)"slayer.f D_crit: ",sl_in%d_crit_arr(k)
+            WRITE(*,*),"sl_in%qval_arr: ",sl_in%qval_arr
 
             ! (Deltaprime - d_crit)/S^1/3
             delta_eff = (sl_in%Re_dp_arr(k) - 
@@ -541,25 +542,25 @@ c            delta_eff = Re_deltaprime_arr(k)
                re_trace(1) = -Q_e
             END IF
 
-            WRITE(*,*)"$^$ calling newton_root(): "
-            CALL newton_root(g_r,g_i,1,fitz_flag)
+            WRITE(*,*)"no longer using newton_root(): "
+            !CALL newton_root(g_r,g_i,1,fitz_flag)
 
             WRITE(*,*)
-            WRITE(*,'(A,F0.3,A)') 'Success! Growth rate = ', 
-     $            g_r/tauk, ' [Hz]'
+            !WRITE(*,'(A,F0.3,A)') 'Success! Growth rate = ', 
+      !$            g_r/tauk, ' [Hz]'
 
             !CALL shrink_array(re_trace, n_trace)
             !CALL shrink_array(im_trace, n_trace)
             n_trace = 100
 
             IF (fitz_flag) THEN
-               re_trace = re_trace/tauk
-               im_trace = im_trace/tauk
-               sl_out%gamma_sol_arr(k) = g_r/tauk! THIS IS FOR PLOT
+               !re_trace = re_trace/tauk
+               !im_trace = im_trace/tauk
+               sl_out%gamma_sol_arr(k) = 0.0!g_r/tauk! THIS IS FOR PLOT
             ELSE
-               re_trace = re_trace/tauk
-               im_trace = -im_trace/tauk
-               sl_out%gamma_sol_arr(k) = -g_r/tauk! THIS IS FOR PLOT
+               !re_trace = re_trace/tauk
+               !im_trace = -im_trace/tauk
+               sl_out%gamma_sol_arr(k) = 0.0!-g_r/tauk! THIS IS FOR PLOT
             END IF
 
             IF (stabscan_flag) THEN
@@ -645,8 +646,6 @@ c            delta_eff = Re_deltaprime_arr(k)
             !END IF
 
             inQs=0.0; iinQs=0.0; deltas=(0.0,0.0)
-            ALLOCATE(delta_Q(n_k,n_k))
-            delta_Q=(0.0,0.0)
 
             DO i = 1, (Q_num+1)
                DO j = 1, Q_num
@@ -655,48 +654,9 @@ c            delta_eff = Re_deltaprime_arr(k)
                   inQs(i) = ing_coarse
                   iinQs(j) = iing_coarse
 
-                  ! Evaluate riccati function
+                  ! Evaluate determinant
                   g_tmp = CMPLX(ing_coarse,iing_coarse)
-                  IF (n_k == 1) THEN
-                     WRITE(*,*)"Error: no coupling for msing = 1"
-                     stop
-                  ELSEIF (n_k == 2) THEN
-                     DO k=1,2
-                        Q_e = sl_in%Q_e_arr(k)
-                        Q_i = sl_in%Q_i_arr(k)
-                        P_perp = sl_in%P_perp_arr(k)
-                        P_tor = sl_in%P_tor_arr(k)
-                        tau = sl_in%tau_arr(k)
-                        D_norm = sl_in%D_norm_arr(k)
-                        c_beta = sl_in%c_beta_arr(k)
-                        tauk = sl_in%Qconv_arr(k)
-                        iota_e = Q_e / (Q_e - Q_i)
-
-                        ! (Deltaprime - d_crit)/S^1/3
-      !                  delta_eff = (sl_in%Re_dp_arr(k) - 
-      !$          sl_in%d_crit_arr(k))/(sl_in%lu_arr(k)**(1.0/3.0)) ! NO DELTA_CRIT
-
-                        delta_eff = (sl_in%Re_dp_arr(k) - 
-     $          sl_in%d_crit_arr(k))/(sl_in%lu_arr(k)**(1.0/3.0))
-     
-                        delta=riccati_f(((g_tmp*sl_in%Qconv_arr(1))/
-     $                        tauk))                   
-                        delta_Q(k,k) = delta
-                     END DO
-
-                     ! Calculate Deltaprime - Delta(Q)
-                     result_matrix = sl_in%dp_matrix - delta_Q
-                        
-                     ! Calculate determinant
-                     CALL calc_determinant(result_matrix, n_k, det_val)
-                     deltas(i,j) = det_val
-                  ELSEIF (n_k == 3) THEN
-                     WRITE(*,*)"Error: no support for msing = 3"
-                     stop
-                  ELSE
-                     WRITE(*,*)"Error: no support for msing < 3"
-                     stop
-                  END IF
+                  deltas(i,j) = dispersion_det(g_tmp,n_k,sl_in)
                ENDDO
             ENDDO
 
