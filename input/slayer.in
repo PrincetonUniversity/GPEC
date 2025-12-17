@@ -49,6 +49,7 @@
     knum=100             ! resolution for 2d scan along with the other.
     Q_num=100            ! resolution for stability scan along Re(Q),Im(Q) axes
     scan_width=1.5       ! stability scan width for Re(Q),Im(Q) scan
+    msing_max=2          ! number of surfaces to include in coupled tearing growth rate calculation
     dc_type="toroidal"   ! Delta_crit type, options are "toroidal", "lar", and "rfitzp"
     read_eq=f            ! read in equilibrium quantities from STRIDE and kinetic file. Set all normalized params to 0.0
     fitz_flag=t          ! Use R. Fitzpatrick formalism (inc. anomalous diffusion) for growth rate calculation

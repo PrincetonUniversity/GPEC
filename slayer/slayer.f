@@ -22,7 +22,7 @@ c-----------------------------------------------------------------------
 
       CHARACTER(512) :: infile,ncfile
       INTEGER :: i,j,k,inum,jnum,knum,inn,count,
-     $           Q_num,n_k
+     $           Q_num,msing_max,n_k
       INTEGER, DIMENSION(1) :: index
 
       LOGICAL :: params_flag,QPscan_flag,QPescan_flag,QPscan2_flag,
@@ -32,8 +32,8 @@ c-----------------------------------------------------------------------
      $     bal_flag,stability_flag,riccatiscan_flag,input_flag,
      $     params_check,stabscan_flag,read_eq,est_gamma_flag,
      $     match_gamma_flag,fitz_flag,coupling_flag,br_th_flag
-      REAL(r8) :: n_e,t_e,t_i,omega,omega0,scan_width,l_n,l_t,
-     $     qval,sval,bt,rs,R0,mu_i,zeff,dr_val,dgeo_val
+      REAL(r8) :: n_e,t_e,t_i,omega,omega0,scan_width,l_n,
+     $     l_t,qval,sval,bt,rs,R0,mu_i,zeff,dr_val,dgeo_val
       REAL(r8) :: inQ,inQ_e,inQ_i,inpr,inpe,inc_beta,inds,intau,inlu
       REAL(r8) :: psi0,jxb,Q0,Q_sol,br_th,d_b,Residual
       COMPLEX(r8) :: delta,delta_n_p,dels_db,del_s,lar_gamma,
@@ -67,10 +67,10 @@ c-----------------------------------------------------------------------
      $     chi_t_prof,kappa_prof,inpr,inpe,inQ,inQ_e,inQ_i,inc_beta,
      $     inds,intau,Q0,delta_prime,delta_n_p,ingamma
       NAMELIST/slayer_control/inum,jnum,knum,Q_num,scan_width,
-     $     dc_type,read_eq,fitz_flag,coupling_flag,QPscan_flag,
-     $     Qscan_flag,QPescan_flag,Qbscan_flag,onscan_flag,otscan_flag,
-     $     ntscan_flag,nbtscan_flag,parflow_flag,peohmonly_flag,
-     $     Pe_flag,layfac
+     $     msing_max,dc_type,read_eq,fitz_flag,coupling_flag,
+     $     QPscan_flag,Qscan_flag,QPescan_flag,Qbscan_flag,onscan_flag,
+     $     otscan_flag,ntscan_flag,nbtscan_flag,parflow_flag,
+     $     peohmonly_flag,Pe_flag,layfac
       NAMELIST/slayer_output/verbose,ascii_flag,bin_flag,netcdf_flag,
      $     est_gamma_flag,match_gamma_flag,stability_flag,
      $     stabscan_flag,br_th_flag,bal_flag
@@ -122,6 +122,7 @@ c-----------------------------------------------------------------------
       knum=100 ! resolution for 2d scan alont with the other.
       Q_num=100 ! resolution for stab. scan along Re(Q) axis
       scan_width = 2.0
+      msing_max = 2
       in_unit=1
       out_unit=2
       out2_unit=3
@@ -485,14 +486,10 @@ c-----------------------------------------------------------------------
             END IF
          END IF 
 
-         ALLOCATE(re_trace(100),im_trace(100))
-         ALLOCATE(sl_out%r_trace(n_k,100),
-     $            sl_out%i_trace(n_k,100))
-
          !--------------
          !n_k = 1
          !--------------
-         DO k=1,2!!!!!!!!!!!!!! ONLY DOING TWO SURFACES
+         DO k=1,msing_max
             WRITE(*,*)
             WRITE(*,'(A,I0,A)') 'Calculating growth rate on q = ',
      $       sl_in%qval_arr(k),' rational surface:'
@@ -520,53 +517,19 @@ c-----------------------------------------------------------------------
             WRITE(*,*)"slayer.f D_crit: ",sl_in%d_crit_arr(k)
             WRITE(*,*),"sl_in%qval_arr: ",sl_in%qval_arr
 
-            ! (Deltaprime - d_crit)/S^1/3
+            ! Calculate (Deltaprime - d_crit)/S^1/3
             delta_eff = (sl_in%Re_dp_arr(k) - 
      $          sl_in%d_crit_arr(k))/(sl_in%lu_arr(k)**(1.0/3.0))
 c            delta_eff = Re_deltaprime_arr(k)
             pe = 0.0
 
-            re_trace = 0.0
-            im_trace = 0.0
-            n_trace = 1
-
-            IF (fitz_flag) THEN
-               g_r = 0.0
-               g_i = -Q_e
-               re_trace(1) = 0.0
-               im_trace(1) = -Q_e
-            ELSE
-               g_i = 0.0
-               g_r = -Q_e
-               im_trace(1) = 0.0
-               re_trace(1) = -Q_e
-            END IF
-
-            WRITE(*,*)"no longer using newton_root(): "
-            !CALL newton_root(g_r,g_i,1,fitz_flag)
-
-            WRITE(*,*)
-            !WRITE(*,'(A,F0.3,A)') 'Success! Growth rate = ', 
-      !$            g_r/tauk, ' [Hz]'
-
-            !CALL shrink_array(re_trace, n_trace)
-            !CALL shrink_array(im_trace, n_trace)
-            n_trace = 100
-
-            IF (fitz_flag) THEN
-               !re_trace = re_trace/tauk
-               !im_trace = im_trace/tauk
-               sl_out%gamma_sol_arr(k) = 0.0!g_r/tauk! THIS IS FOR PLOT
-            ELSE
-               !re_trace = re_trace/tauk
-               !im_trace = -im_trace/tauk
-               sl_out%gamma_sol_arr(k) = 0.0!-g_r/tauk! THIS IS FOR PLOT
-            END IF
+c           ! Fill gamma_sol_arr with 0's, will by used by python root finding
+            sl_out%gamma_sol_arr(k) = 0.0
 
             IF (stabscan_flag) THEN
                WRITE(*,*)"------------------------------------------"
                WRITE(*,'(A,F0.1)')' >>> Running [Re(Q),'//
-     $            'Im(Q)] scan with radius = ',
+     $            'Im(Q)] scan with Q width = ',
      $                scan_width
 
                ing_step = (2.0 * scan_width) / (Q_num - 1)
@@ -656,7 +619,7 @@ c            delta_eff = Re_deltaprime_arr(k)
 
                   ! Evaluate determinant
                   g_tmp = CMPLX(ing_coarse,iing_coarse)
-                  deltas(i,j) = dispersion_det(g_tmp,n_k,sl_in)
+                  deltas(i,j)=dispersion_det(g_tmp,n_k,sl_in,msing_max)
                ENDDO
             ENDDO
 

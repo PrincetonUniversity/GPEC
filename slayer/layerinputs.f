@@ -77,12 +77,6 @@ c-----------------------------------------------------------------------
       stat = nf90_inquire_attribute(ncid,nn_id,"n",len = nn_len)
       CALL sl_check(stat)
 
-      !bt0_id=0 !!!!! THIS COULD BE A PROBLEM
-      !nn_id=0
-      !mpsi_id=0
-      !psio_id=0
-      !ro_id=0
-
       ALLOCATE(my_bt0(INT(bt0_len)),r_o(INT(ro_len)),
      $         my_psio(INT(psio_len)),
      $         mpsi(INT(mpsi_len)),nn(INT(nn_len)))

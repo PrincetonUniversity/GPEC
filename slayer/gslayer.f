@@ -176,8 +176,8 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpec_slayer
 c-----------------------------------------------------------------------
-c     Subprogram 3. scan_grid
-c     Run stability scan on real and imaginary rotation axes
+c     Subprogram 2. output_gamma
+c     Take SLAYER input and output dicts, send to netCDF subroutine
 c-----------------------------------------------------------------------
       SUBROUTINE output_gamma(est_gamma_flag,sl_in,sl_out)
 
@@ -190,7 +190,10 @@ c-----------------------------------------------------------------------
      $                       sl_in,sl_out)
 
       END SUBROUTINE output_gamma
-
+c-----------------------------------------------------------------------
+c     Subprogram 3. allocate_inputs
+c     Allocate arrays inside SLAYER inputs type (dictionary-esque)
+c-----------------------------------------------------------------------
       SUBROUTINE allocate_inputs(n_k,sl_in)
       INTEGER, INTENT(IN) :: n_k
       TYPE(slayer_inputs_type), INTENT(INOUT) :: sl_in
@@ -205,7 +208,10 @@ c-----------------------------------------------------------------------
      $  sl_in%c_beta_arr(n_k),sl_in%lu_arr(n_k),sl_in%Qconv_arr(n_k))
       RETURN
       END SUBROUTINE allocate_inputs
-
+c-----------------------------------------------------------------------
+c     Subprogram 4. allocate_outputs
+c     Allocate arrays inside SLAYER outputs type (dictionary-esque)
+c-----------------------------------------------------------------------
       SUBROUTINE allocate_outputs(n_k,sl_out)
       INTEGER, INTENT(IN) :: n_k
       TYPE(slayer_outputs_type), INTENT(INOUT) :: sl_out
@@ -215,139 +221,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE allocate_outputs
 c-----------------------------------------------------------------------
-c     Subprogram 2. growthrate_scan
-c     Set up and iterate stability scans IF no match is found
-c-----------------------------------------------------------------------
-      SUBROUTINE growthrate_scan(qval,my_lu,inQ,inQ_e,inQ_i,inc_beta,
-     $         inds,intau,inQ0,inpr,inpe,scan_radius,ncoarse,
-     $         compress_deltas,deltaprime,results)
-c-----------------------------------------------------------------------
-c     Declarations
-c-----------------------------------------------------------------------
-      ! Inputs
-      REAL(r8),INTENT(IN) :: inQ,inQ_e,inQ_i,inc_beta,inds,
-     $     intau,inQ0,inpr,inpe,my_lu
-      INTEGER, INTENT(IN) :: qval,scan_radius,ncoarse
-      REAL(r8), INTENT(IN) :: deltaprime
-      LOGICAL, INTENT(IN) :: compress_deltas
-      TYPE(result_type), INTENT(INOUT) :: results
-
-      COMPLEX(r8) :: delta
-      INTEGER :: new_scan_radius,new_ncoarse
-      INTEGER :: nfine, new_nfine
-      REAL(r8), PARAMETER :: tolerance = 1.0E-6
-      REAL(r8) :: delta_real, delta_imag, threshold
-      INTEGER :: i, j, k, l, m, count, match_count
-      LOGICAL :: repeat
-      REAL(r8) :: inQ_step, iinQ_step, inQ_fine, iinQ_fine,
-     $            inQ_coarse, iinQ_coarse
-      INTEGER :: max_points, new_max_points
-      INTEGER :: ci, cj, nx, ny
-      REAL(r8) :: dx, dy, overlap_factor
-      INTEGER :: fi, fj
-      REAL(r8) :: fine_dx, fine_dy, overlap_x, overlap_y
-      REAL(r8) :: x_start, x_end, y_start, y_end, x, y
-      !!!!!!!!!!!!!!!!
-      repeat = .FALSE.
-      dx = 1.0
-      dy = 1.0
-      nfine = 6
-      overlap_factor = 0.5
-      max_points = ncoarse**2 * ((nfine)**2 - 1)
-
-      ! Allocate arrays with maximum possible size
-      ALLOCATE(results%inQs(max_points), results%iinQs(max_points))
-      ALLOCATE(results%Re_deltas(max_points),
-     $ results%Im_deltas(max_points))
-
-      results%inQs=0.0
-      results%iinQs=0.0
-      results%Re_deltas=0.0
-      results%Im_deltas=0.0
-      ! Initialize counter
-      count = 0
-
-      ! Calculate step sizes
-      inQ_step = (2.0 * scan_radius) / (ncoarse - 1)
-      iinQ_step = (2.0 * scan_radius) / (ncoarse - 1)
-      dx = inQ_step
-      dy = iinQ_step
-
-      match_count = 0
-      ! Run scan
-      CALL scan_grid(inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe,my_lu,
-     $    scan_radius,ncoarse,nfine,deltaprime,compress_deltas,
-     $    results,count,match_count,dx,dy)
-
-      ! Set the actual count of points
-      results%count = count
-
-      IF (count < max_points) THEN
-        ! Resize arrays to actual number of points
-        CALL shrink_array(results%inQs, count)
-        CALL shrink_array(results%iinQs, count)
-        CALL shrink_array(results%Re_deltas, count)
-        CALL shrink_array(results%Im_deltas, count)
-      END IF
-
-      RETURN
-      END SUBROUTINE growthrate_scan
-c-----------------------------------------------------------------------
-c     Subprogram 3. scan_grid
-c     Run stability scan on real and imaginary rotation axes
-c-----------------------------------------------------------------------
-      SUBROUTINE scan_grid(inQ_e,inQ_i,inpr,inc_beta,inds,intau, 
-     $     inpe,my_lu,scan_radius,ncoarse,nfine,deltaprime,
-     $     compress_deltas,results,count,match_count,dx,dy)
-      
-      ! Declarations (include necessary type declarations from original code)
-      REAL(r8), INTENT(IN) :: inQ_e,inQ_i,inpr,inc_beta,inds,
-     $     intau,inpe,my_lu,deltaprime
-      INTEGER, INTENT(IN) :: scan_radius, ncoarse, nfine
-      LOGICAL, INTENT(IN) :: compress_deltas
-      TYPE(result_type), INTENT(INOUT) :: results
-      INTEGER, INTENT(INOUT) :: count, match_count
-      REAL(r8), INTENT(INOUT) :: dx, dy
-      
-      ! Local variables
-      REAL(r8) :: inQ_step, iinQ_step, inQ_fine, iinQ_fine,
-     $     inQ_coarse, iinQ_coarse
-      REAL(r8) :: delta_real, delta_imag, threshold
-      COMPLEX(r8) :: delta
-      REAL(r8) :: fine_dx, fine_dy, overlap_x, overlap_y
-      REAL(r8) :: x_start, x_end, y_start, y_end
-      INTEGER :: i, j, fi, fj
-      REAL(r8), PARAMETER :: tolerance = 1.0E-6
-      REAL(r8) :: overlap_factor = 0.5
-
-      ! Calculate step sizes
-      inQ_step = (2.0 * scan_radius) / (ncoarse - 1)
-      iinQ_step = (2.0 * scan_radius) / (ncoarse - 1)
-      dx = inQ_step
-      dy = iinQ_step
-      count = 0
-      
-      DO i = 1, ncoarse
-        DO j = 1, ncoarse
-          inQ_coarse = -scan_radius + (i - 1) * inQ_step
-          iinQ_coarse = -scan_radius + (j - 1) * iinQ_step
-          ! Evaluate riccati FUNCTION
-          delta = riccati(inQ_coarse,inQ_e,inQ_i,inpr,inc_beta,
-     $                        inds,intau,inpe,iinQ=iinQ_coarse)
-          delta_real = REAL(delta)*(my_lu**(1.0/3.0)) ! Critical normalization
-          delta_imag = AIMAG(delta)*(my_lu**(1.0/3.0)) ! Critical normalization
-
-          count = count + 1
-          results%inQs(count) = inQ_coarse
-          results%iinQs(count) = iinQ_coarse
-          results%Re_deltas(count) = delta_real
-          results%Im_deltas(count) = delta_imag
-
-        END DO
-      END DO
-      END SUBROUTINE scan_grid
-c-----------------------------------------------------------------------
-c     Subprogram 4. shrink_array
+c     Subprogram 5. shrink_array
 c     Remove excess scan array size from memory
 c-----------------------------------------------------------------------
       SUBROUTINE shrink_array(arr, new_size)
@@ -360,7 +234,7 @@ c-----------------------------------------------------------------------
           CALL move_alloc(temp, arr)
       END SUBROUTINE shrink_array
 c-----------------------------------------------------------------------
-c     Subprogram 5. grow_array
+c     Subprogram 6. grow_array
 c     Increase scan array size IF necessary
 c-----------------------------------------------------------------------
       SUBROUTINE grow_array(arr, old_size, new_size)
@@ -372,12 +246,9 @@ c-----------------------------------------------------------------------
           temp(1:old_size) = arr(1:old_size)
           CALL move_alloc(temp, arr)
       END SUBROUTINE grow_array
-c
-c
-c
 c-----------------------------------------------------------------------
-c     Subprogram 6. determinant
-c     Increase scan array size IF necessary
+c     Subprogram 7. calc_determinant
+c     Calculate determinant of 2x2 and 3x3 matrices
 c-----------------------------------------------------------------------
       SUBROUTINE calc_determinant(matk, nk, detk)
       IMPLICIT NONE
@@ -387,9 +258,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(nk,nk), INTENT(IN) :: matk      ! Input matrix
       COMPLEX(r8), INTENT(OUT) :: detk                        ! Determinant result
       INTEGER :: status                     ! Status (0=success, -1=error)
-            
-      ! Local variables
-            
+                        
       status = 0  ! Initialize status as success
             
       SELECT CASE (nk)
@@ -412,13 +281,14 @@ c-----------------------------------------------------------------------
       END SELECT
       RETURN
       END SUBROUTINE calc_determinant
-c
-c
-c     Adapted from
-      FUNCTION dispersion_det(g_tmp,n_k,sl_in)
+c-----------------------------------------------------------------------
+c     Subprogram 8. dispersion_det
+c     Calculate determinant of coupling matrix e-value problem
+c-----------------------------------------------------------------------
+      FUNCTION dispersion_det(g_tmp,n_k,sl_in,msing_max)
       
       COMPLEX(r8), INTENT(IN) :: g_tmp
-      INTEGER, INTENT(IN) :: n_k
+      INTEGER, INTENT(IN) :: n_k,msing_max
       TYPE(slayer_inputs_type), INTENT(IN) :: sl_in
       COMPLEX(r8) :: dispersion_det,det_val,tmp_delta
       COMPLEX(r8), ALLOCATABLE :: delta_Q(:,:),result_matrix(:,:)
@@ -444,7 +314,7 @@ c     Adapted from
       ELSEIF ((n_k == 2) .OR. (n_k == 3)) THEN
          ALLOCATE(delta_Q(n_k,n_k))
          delta_Q=(0.0,0.0)
-         DO k=1,2 !!! MAXING OUT AT 2X2
+         DO k=1,msing_max ! maxing out at msing_max
             Q_e = sl_in%Q_e_arr(k)
             Q_i = sl_in%Q_i_arr(k)
             P_perp = sl_in%P_perp_arr(k)
@@ -474,5 +344,4 @@ c     Adapted from
          stop
       END IF
       END FUNCTION dispersion_det
-
       END MODULE gslayer_mod

@@ -115,29 +115,22 @@ c-----------------------------------------------------------------------
       REAL(r8),INTENT(IN),OPTIONAL :: inx
       COMPLEX(r8), INTENT(IN), OPTIONAL :: iny
       COMPLEX(r8) :: riccati_del_s
-
       INTEGER :: istep,neq,itol,itask,istate,liw,lrw,iopt,mf
       INTEGER :: ml = 0, mu = 0, nrpd = 1
-
       REAL(r8) :: xintv,x,xout,rtol,jac,xmin,my_q,P_hat,alpha
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: W,dW_dq,y,dy
-
       INTEGER, DIMENSION(:), ALLOCATABLE :: iwork
       REAL(r8), DIMENSION(:), ALLOCATABLE :: xfac,atol,rwork
 
-      !IF ((layfac>0).AND.(ABS(Q-Q_e)<layfac)) THEN
-      !   Q=Q_e+layfac*EXP(ifac*ATAN2(AIMAG(Q-Q_e),REAL(Q-Q_e)))
-      !ENDIF
-
       neq = 2
       itol = 2
-      rtol = 1e-10    !changed to 1e-08       !1e-7*pr**0.4 ! !1e-7 at front 1e-6 !e-4
+      rtol = 1e-10
       ALLOCATE(atol(neq),W(1),dW_dq(1))
-      atol(:) = 1e-10!*pr**0.4 ! changed to 1e-08 1e-8 !e-4
+      atol(:) = 1e-10
       itask = 2
       istate = 1
       iopt = 0
-      mf = 21!21 IS STIFF WITH USER-SPECIFIED JACOBIAN, 10 iS NON STIFF
+      mf = 21 !21 IS STIFF WITH USER-SPECIFIED JACOBIAN, 10 iS NON STIFF
       liw = 20*2
       lrw = 22+9*neq+neq**2 !just (22+16*neq) for mf=10
       ALLOCATE(iwork(liw+neq),rwork(lrw)) ! just iwork(liw) for mf=10
@@ -145,13 +138,10 @@ c-----------------------------------------------------------------------
 !     MXSTEP?
       iopt = 1
       iwork=0
-      iwork(6)=50000 !5000 ! maximum # of steps per call, e.g. 50000
+      iwork(6)=50000 ! maximum # of steps per call, e.g. 50000
       rwork=0
 !      x=10.0*(1.0+log10(Q/pr))
-
-      !!!!!!!!
-      my_q=inx!10.0 ! "starting backwards integration at large q"
-      !!!!!!!!
+      my_q=inx ! "starting backwards integration at large q"
 
       xmin=1e-5
       IF(present(inx)) x=inx
@@ -172,7 +162,6 @@ c-----------------------------------------------------------------------
 !      y(1)=0.5-ifac*10.0
 !      WRITE(*,*)y(1)
 
-
       IF (riccati_out) THEN
          istep = 1
          itask = 2
@@ -186,7 +175,7 @@ c-----------------------------------------------------------------------
          DO WHILE (my_q>xout)
             istep=istep+1
             CALL lsode(w_der_del_s,neq,W,my_q,xout,itol,rtol,atol,
-     $           itask,istate,iopt,rwork,lrw,iwork,liw,my_jac,mf)
+     $           itask,istate,iopt,rwork,lrw,iwork,liw,jac_del_s,mf)
             WRITE(bin_unit)REAL(my_q,4),REAL(REAL(W),4),REAL(AIMAG(W),4)
             WRITE(out2_unit,'(1x,3(es17.8e3))')my_q,REAL(W),AIMAG(W)
          ENDDO
@@ -196,7 +185,7 @@ c-----------------------------------------------------------------------
          istep = 1
          itask = 1
          CALL lsode(w_der_del_s,neq,W,my_q,xout,itol,rtol,atol,
-     $        itask,istate,iopt,rwork,lrw,iwork,liw,my_jac,mf)
+     $        itask,istate,iopt,rwork,lrw,iwork,liw,jac_del_s,mf)
 
       ENDIF
 
@@ -211,15 +200,15 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     jacobian for riccati_del_s()
 c------------------------------------------- ----------------------------
-      SUBROUTINE my_jac(neq, my_q, W, ml, mu, pd, nrpd)
+      SUBROUTINE jac_del_s(neq, my_q, W, ml, mu, pd, nrpd)
             INTEGER, INTENT(IN) :: neq, ml, mu, nrpd
             REAL(r8), INTENT(IN) :: my_q
             COMPLEX(r8), DIMENSION(neq), INTENT(IN) :: W
             COMPLEX(r8), DIMENSION(nrpd,neq), INTENT(INOUT) :: pd
             pd(1,1) = 1.0/my_q - 2.0d0*W(1)/my_q
-      END SUBROUTINE my_jac
+      END SUBROUTINE jac_del_s
 c-----------------------------------------------------------------------
-c     riccati integration.
+c     W derivative for riccati_del_s()
 c-----------------------------------------------------------------------
       SUBROUTINE w_der_del_s(neq,my_q,W,dW_dq)
 
@@ -230,20 +219,10 @@ c-----------------------------------------------------------------------
       REAL(r8) :: Q_hat, P_tor_hat, P_perp_hat
       COMPLEX(r8) :: E,F
 
-      !COMPLEX(r8), PARAMETER :: ifac=(0,1)
-
       !Q_hat = Q / ds**4
       Q_hat = (Q_e*(1+tau)/tau) / D_norm**4.0 ! Q_star = Q_e * (1+tau), 2.4e-02 for benchmark
       P_perp_hat = P_perp / D_norm**6.0 ! 0.377 for benchmark
       P_tor_hat = P_perp / D_norm**6.0 ! 1.15 for benchmark
-
-      !WRITE(*,*)"w_der_del_s P_perp_hat = ",P_perp_hat
-      !WRITE(*,*)"w_der_del_s P_tor_hat = ",P_tor_hat
-      !WRITE(*,*)"w_der_del_s Q_hat = ",Q_hat
-
-      !WRITE(*,*)"w_der inpr = ",pr
-      !WRITE(*,*)"w_der Q_e = ",Q_e
-      !WRITE(*,*)"w_der D_beta_norm = ",D_beta_norm
       E = (-(Q_hat**2)/(1+1/tau)) - ifac*Q_hat*(P_perp_hat+
      $  P_tor_hat)*(my_q**2) + P_perp_hat*P_tor_hat*(my_q**4) ! P_tor = P_perp
       F = P_perp_hat - ifac*Q_hat + (1+1/tau)*P_tor_hat*my_q**2
@@ -252,11 +231,8 @@ c-----------------------------------------------------------------------
       dW_dq(1)=W(1)/my_q - (W(1)**2)/my_q + (my_q*E)/F !p*D = my_q
       RETURN
       END SUBROUTINE w_der_del_s
-c
-c
-c
 c-----------------------------------------------------------------------
-c     calculate delta based on Fitzpatrick delta formulation.
+c     calculate delta based on Fitzpatrick P_perp and P_tor formulation.
 c-----------------------------------------------------------------------
       FUNCTION riccati_f(tmp_g,inx)
       COMPLEX(r8), INTENT(IN) :: tmp_g
@@ -265,41 +241,34 @@ c-----------------------------------------------------------------------
 
       INTEGER :: istep,neq,itol,itask,istate,liw,lrw,iopt,mf
       INTEGER :: ml = 0, mu = 0, nrpd = 1
-
       REAL(r8) :: xintv,x,xout,rtol,jac,xmin,my_p,alpha,bk
       COMPLEX(r8) :: ak,ck_1,ck_2,ck,xk,W_bound
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: W,dWdp,y,dy
-
       INTEGER, DIMENSION(:), ALLOCATABLE :: iwork
       REAL(r8), DIMENSION(:), ALLOCATABLE :: xfac,atol,rwork
 
       neq = 2
       itol = 2
-      rtol = 1e-10    !changed to 1e-08       !1e-7*pr**0.4 ! !1e-7 at front 1e-6 !e-4
+      rtol = 1e-10
       ALLOCATE(atol(neq),W(1),dWdp(1))
-      atol(:) = 1e-10!*pr**0.4 ! changed to 1e-08 1e-8 !e-4
+      atol(:) = 1e-10
       itask = 2
       istate = 1
       iopt = 0
-      mf = 21!21 IS STIFF WITH USER-SPECIFIED JACOBIAN, 10 iS NON STIFF
+      mf = 21 !21 IS STIFF WITH USER-SPECIFIED JACOBIAN, 10 iS NON STIFF
       liw = 20*2
       lrw = 22+9*neq+neq**2 !just (22+16*neq) for mf=10
       ALLOCATE(iwork(liw+neq),rwork(lrw)) ! just iwork(liw) for mf=10
 
-!     MXSTEP?
       iopt = 1
       iwork=0
       iwork(6)=50000 ! maximum # of steps per call, e.g. 50000
       rwork=0
 
-      !!!!!!!!
-      !IF(present(inx)) my_p=inx!10.0 ! "starting backwards integration at large q"
-      !!!!!!!!
-      !my_p=6.0
       xmin=1e-6
       xout=xmin
 
-      ! SOLVE FOR W BOUNDARY CONDITION
+      ! Solve for p and W boundary conditions
       IF ((D_norm**2.0) > ((iota_e*P_perp)/(P_tor**(2.0/3.0)))) THEN
           my_p = ( (P_tor*D_norm**2)/(iota_e*P_tor*P_perp) )**0.25
           IF (my_p < 6.0) THEN
@@ -312,10 +281,6 @@ c-----------------------------------------------------------------------
           ck = bk*(1+(g_tmp+ifac*Q_i)*((P_tor+P_perp)/(P_tor*P_perp))-
      $       (P_perp+(g_tmp + 
      $       ifac*Q_i)*(D_norm**2.0) )*(iota_e/(P_tor*(D_norm**2.0))))
-        !  ck_1 = 2.0*(g_tmp + ifac*Q_i)/P_perp
-        !  ck_2 = (P_perp + (g_tmp + 
-      !$     ifac*Q_i)*(D_norm**2.0))/(2.0*P_perp*(D_norm**2.0))
-      !    ck = (P_perp/(2.0*(D_norm**2.0)))*(1 + ck_1 - ck_2)
 
           xk = (ck - SQRT(bk)*(1 - SQRT(bk)*ak)) / (2.0*SQRT(bk))
 
@@ -361,17 +326,9 @@ c-----------------------------------------------------------------------
          itask = 1
          CALL lsode(w_der_f,neq,W,my_p,xout,itol,rtol,atol,
      $        itask,istate,iopt,rwork,lrw,iwork,liw,jac_f,mf)
-
       ENDIF
 
-      ! w=0 when Q=Q_e. Why?
-
       CALL w_der_f(neq,my_p,W,dWdp)
-      !WRITE(*,*)"riccati Q_e = ",Q_e
-      !WRITE(*,*)"riccati Q_i = ",Q_i
-      !WRITE(*,*)"riccati pr = ",pr
-      !WRITE(*,*)"riccati D_beta_norm = ",D_beta_norm
-      !WRITE(*,*)"riccati g_tmp = ",g_tmp
 
       !riccati_f = pi * my_p / (dWdp(1) + 1)
       riccati_f = pi / dWdp(1)
@@ -379,7 +336,7 @@ c-----------------------------------------------------------------------
 
       END FUNCTION riccati_f
 c-----------------------------------------------------------------------
-c     jacobian for riccati_del_s()
+c     jacobian for riccati_f()
 c------------------------------------------- ----------------------------
       SUBROUTINE jac_f(neq, my_p, W, ml, mu, pd, nrpd)
             INTEGER, INTENT(IN) :: neq, ml, mu, nrpd
@@ -394,7 +351,7 @@ c------------------------------------------- ----------------------------
             pd(1,1) = (-fA_p/my_p) - (2.0*W(1))/my_p
       END SUBROUTINE jac_f
 c-----------------------------------------------------------------------
-c     riccati integration.
+c     W derivative for riccati_f()
 c-----------------------------------------------------------------------
       SUBROUTINE w_der_f(neq,my_p,W,dWdp)
 
@@ -404,8 +361,6 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(neq), INTENT(OUT) :: dWdp
       COMPLEX(r8) :: fA, fA_prime, fB, fC
       
-      !WRITE(*,*)"w_der g_tmp = ",g_tmp
-
       ! Evaluate coefficients at the current p
       fA = (my_p**2)/(g_tmp + ifac*Q_e + (my_p**2.0))
       fA_prime = (g_tmp + ifac*Q_e - (my_p**2)) / (g_tmp + 
@@ -422,9 +377,9 @@ c-----------------------------------------------------------------------
 
       RETURN
       END SUBROUTINE w_der_f
-c
-c
-c
+c-----------------------------------------------------------------------
+c     W derivative for riccati()
+c-----------------------------------------------------------------------
       SUBROUTINE w_der(neq,x,y,dy)
 
       INTEGER, INTENT(IN) :: neq
