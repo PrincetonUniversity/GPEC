@@ -9,9 +9,9 @@
 
       abstract interface
          function riccati_functions (inQ,inQ_e,inQ_i,inpr,inc_beta,inds,
-     $     intau,inpe,iinQ,inx,iny) result(riccati_outcome)
+     $     intau,inpe,inKp,iinQ,inx,iny) result(riccati_outcome)
             REAL(8),INTENT(IN) :: inQ,inQ_e,inQ_i,inpr,inpe,inc_beta
-            REAL(8),INTENT(IN) :: inds,intau
+            REAL(8),INTENT(IN) :: inds,intau,inKp
             REAL(8),INTENT(IN),OPTIONAL :: iinQ,inx
             COMPLEX(8), INTENT(IN), OPTIONAL :: iny
             COMPLEX(8) :: riccati_outcome
@@ -40,10 +40,10 @@ c-----------------------------------------------------------------------
 c     calculate delta based on riccati w_der formulation.
 c-----------------------------------------------------------------------
       FUNCTION riccati3(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe,
-     $     iinQ,inx,iny) result(riccati_outcome)
+     $     inKp,iinQ,inx,iny) result(riccati_outcome)
 
       REAL(r8),INTENT(IN) :: inQ,inQ_e,inQ_i,inpr,inpe,inc_beta,inds
-      REAL(r8),INTENT(IN) :: intau
+      REAL(r8),INTENT(IN) :: intau,inKp
       REAL(r8),INTENT(IN),OPTIONAL :: iinQ,inx
       COMPLEX(r8), INTENT(IN), OPTIONAL :: iny
       COMPLEX(r8) :: riccati_outcome
@@ -143,10 +143,10 @@ c         parallel flow on resonant layer responses in high beta plasmas.
 c         Nucl. Fusion, 64(10), 106058.
 c-----------------------------------------------------------------------
       FUNCTION riccati4(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe,
-     $     iinQ,inx,iny) result(riccati_outcome)
+     $     inKp,iinQ,inx,iny) result(riccati_outcome)
 
       REAL(r8),INTENT(IN) :: inQ,inQ_e,inQ_i,inpr,inpe,inc_beta,inds
-      REAL(r8),INTENT(IN) :: intau
+      REAL(r8),INTENT(IN) :: intau,inKp
       REAL(r8),INTENT(IN),OPTIONAL :: iinQ,inx
       COMPLEX(r8), INTENT(IN), OPTIONAL :: iny
       COMPLEX(r8) :: riccati_outcome, Delta_old, Delta_new
@@ -171,6 +171,7 @@ c-----------------------------------------------------------------------
       c_beta=inc_beta
       ds=inds
       tau=intau
+      Kp=inKp
    
       IF ((layfac>0).AND.(ABS(Q-Q_e)<layfac)) THEN
          Q=Q_e+layfac*EXP(ifac*ATAN2(AIMAG(Q-Q_e),REAL(Q-Q_e)))
@@ -383,11 +384,11 @@ c-----------------------------------------------------------------------
       END FUNCTION riccati4
 
       FUNCTION riccati_full(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,
-     $     inpe,iinQ,inx,iny) result(riccati_outcome)
+     $     inKp,inpe,iinQ,inx,iny) result(riccati_outcome)
       USE global_mod
 
       REAL(r8),INTENT(IN) :: inQ,inQ_e,inQ_i,inpr,inpe,inc_beta,inds
-      REAL(r8),INTENT(IN) :: intau
+      REAL(r8),INTENT(IN) :: intau,inKp
       REAL(r8),INTENT(IN),OPTIONAL :: iinQ,inx
       COMPLEX(r8), INTENT(IN), OPTIONAL :: iny
       COMPLEX(r8) :: riccati_outcome, Delta_old, Delta_new
@@ -412,6 +413,7 @@ c-----------------------------------------------------------------------
       c_beta=inc_beta
       ds=inds
       tau=intau
+      Kp=inKp
    
       IF ((layfac>0).AND.(ABS(Q-Q_e)<layfac)) THEN
          Q=Q_e+layfac*EXP(ifac*ATAN2(AIMAG(Q-Q_e),REAL(Q-Q_e)))
@@ -1589,7 +1591,7 @@ c-----------------------------------------------------------------------
         A(5,11) = ifac*Q/ds**2
         A(5,12) = 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
         !A(5,12) = 1.0/(1.0+tau)*(c_beta**2)/ds**2
-        A(5,13) = -1.0/(1.0+tau)*(c_beta**2+(1-c_beta**)2*Kp)/ds**2
+        A(5,13) = -1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
         !A(5,13) = -1.0/(1.0+tau)*(c_beta**2)/ds**2
         A(6,7)  = ifac*c_beta**2/ds**2*x
         A(6,10) = ifac*Q_e/ds**2

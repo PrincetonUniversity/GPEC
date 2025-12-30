@@ -37,7 +37,7 @@ c-----------------------------------------------------------------------
 
       REAL(r8) :: inQ,inQ_e,inQ_i,inpe,inc_beta,inds,intau,inlu
       REAL(r8) :: mrs,nrs,rho,b_l,v_a,Qconv,Q0,delta_n_p,
-     $            lbeta,tau_i,tau_h,tau_r,tau_v
+     $            lbeta,tau_i,tau_h,tau_r,tau_v,inK
       REAL(r8) :: inQ_min,inQ_max,Q_sol
       
       REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs,jxbl,bal
@@ -118,7 +118,7 @@ c-----------------------------------------------------------------------
 c     calculate basic delta, torque, balance, error fields.
 c-----------------------------------------------------------------------
       delta_n_p=1e-2
-      delta=riccati(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe)
+      delta=riccati(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe,inK)
       psi0=1.0/ABS(delta+delta_n_p)     ! a.u.
       jxb=-AIMAG(1.0/(delta+delta_n_p)) ! a.u.
 c-----------------------------------------------------------------------
@@ -144,7 +144,7 @@ c-----------------------------------------------------------------------
       DO i=0,inum
          inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
          deltal(i)=riccati(inQs(i),inQ_e,inQ_i,
-     $        inpr,inc_beta,inds,intau,inpe)
+     $        inpr,inc_beta,inds,intau,inpe,inK)
          jxbl(i)=-AIMAG(1.0/(deltal(i)+delta_n_p))
          bal(i)=2.0*inpr*(Q0-inQs(i))/jxbl(i)
       ENDDO
