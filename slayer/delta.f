@@ -203,7 +203,7 @@ c-----------------------------------------------------------------------
 
       rwork=0
       x=0.0
-      xout=1e-4
+      xout=1e-9
       rwork(1)=1e-5
 
       y = 0.0
@@ -232,20 +232,23 @@ c-----------------------------------------------------------------------
       ! rightside subregion
       DO WHILE (abs(Delta_new-Delta_old)/abs(Delta_new)>0.01)
          IF (riccati_out) THEN
-            xout=xout+10.0
+            xout=xout+4.0
          ELSE
             xout=xout+1.0
          ENDIF
          Delta_old=Delta_new
+         !WRITE(*,*) xout, Delta_new
          DO WHILE (x<xout)
             istep=istep+1
             ! Do Forward sweep by solving dR=A21+A22R-RA11-RA12R
             CALL ZVODE(w_derr,neq,y,x,xout,itol,rtol,atol,itask,
      $      istate,iopt,zwork,lzw,rwork,lrw,iwork,liw,dw_der_wr,mf,
      $      ipar)
+            !WRITE(*,*) x, Delta_new
          ENDDO        
          CALL Update_Delta(Delta_new,y,x,neq)
          IF (verbose_delta) WRITE(*,*) xout, Delta_new
+         !WRITE(*,*) xout, Delta_new
       END DO
       riccati_outcome=Delta_new
 
@@ -264,7 +267,7 @@ c-----------------------------------------------------------------------
          ! Redo Forward sweep to fill Riccati matrix
          istate=1
          x=0.0
-         xout=1e-4
+         xout=1e-9
          y=0.0
          dy=0.0
          rtol = 1e-9
@@ -1257,22 +1260,22 @@ c-----------------------------------------------------------------------
       A(4,12) = -1.0/(1.0+tau)
       A(4,13) = 1.0/(1.0+tau)
       A(5,2)  = -ifac*x
-      !A(5,7)  = -ifac*x*c_beta**2/ds**2
+      A(5,7)  = -ifac*x*c_beta**2/ds**2
       A(5,10) = -ifac*Q_e/ds**2
       A(5,11) = ifac*Q/ds**2
-      !A(5,12) = 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2*K))/ds**2
-      A(5,12) = 1.0/(1.0+tau)*(c_beta**2)/ds**2
-      !A(5,13) = -1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2*K))/ds**2
-      A(5,13) = -1.0/(1.0+tau)*(c_beta**2)/ds**2
-      !A(6,7)  = ifac*c_beta**2/ds**2*x
+      A(5,12) = 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
+      !A(5,12) = 1.0/(1.0+tau)*(c_beta**2)/ds**2
+      A(5,13) = -1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
+      !A(5,13) = -1.0/(1.0+tau)*(c_beta**2)/ds**2
+      A(6,7)  = ifac*c_beta**2/ds**2*x
       A(6,10) = ifac*Q_e/ds**2
       A(6,11) = -ifac*Q/ds**2
-!        A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
-!     $          - 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2*K))/ds**2
-      A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
-     $          - 1.0/(1.0+tau)*c_beta**2/ds**2
-!        A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
-!     $          + 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2*K))/ds**2
+        A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
+     $          - 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
+!      A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
+!     $          - 1.0/(1.0+tau)*c_beta**2/ds**2
+        A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
+     $          + 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
       A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
      $        + 1.0/(1.0+tau)*c_beta**2/ds**2
       A(7,14) = 1.0/Pr
@@ -1331,24 +1334,24 @@ c-----------------------------------------------------------------------
       A(4,12) = -1.0/(1.0+tau)
       A(4,13) = 1.0/(1.0+tau)
       A(5,2)  = -ifac*x
-      !A(5,7)  = -ifac*x*c_beta**2/ds**2
+      A(5,7)  = -ifac*x*c_beta**2/ds**2
       A(5,10) = -ifac*Q_e/ds**2
       A(5,11) = ifac*Q/ds**2
-      !A(5,12) = 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2*K))/ds**2
-      A(5,12) = 1.0/(1.0+tau)*(c_beta**2)/ds**2
-      !A(5,13) = -1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2*K))/ds**2
-      A(5,13) = -1.0/(1.0+tau)*(c_beta**2)/ds**2
-      !A(6,7)  = ifac*c_beta**2/ds**2*x
+      A(5,12) = 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
+      !A(5,12) = 1.0/(1.0+tau)*(c_beta**2)/ds**2
+      A(5,13) = -1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
+      !A(5,13) = -1.0/(1.0+tau)*(c_beta**2)/ds**2
+      A(6,7)  = ifac*c_beta**2/ds**2*x
       A(6,10) = ifac*Q_e/ds**2
       A(6,11) = -ifac*Q/ds**2
-!        A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
-!     $          - 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2*K))/ds**2
-      A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
-     $        - 1.0/(1.0+tau)*c_beta**2/ds**2
-!        A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
-!     $          + 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2*K))/ds**2
-      A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
-     $        + 1.0/(1.0+tau)*c_beta**2/ds**2
+        A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
+     $          - 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
+!      A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
+!     $        - 1.0/(1.0+tau)*c_beta**2/ds**2
+        A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
+     $          + 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
+!      A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
+!     $        + 1.0/(1.0+tau)*c_beta**2/ds**2
       A(7,14) = 1.0/Pr
       CALL cspline_eval(splR,x,0)
       R1D=splR%f
@@ -1581,24 +1584,24 @@ c-----------------------------------------------------------------------
         A(4,12) = -1.0/(1.0+tau)
         A(4,13) = 1.0/(1.0+tau)
         A(5,2)  = -ifac*x
-        !A(5,7)  = -ifac*x*c_beta**2/ds**2
+        A(5,7)  = -ifac*x*c_beta**2/ds**2
         A(5,10) = -ifac*Q_e/ds**2
         A(5,11) = ifac*Q/ds**2
-        !A(5,12) = 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2*K))/ds**2
-        A(5,12) = 1.0/(1.0+tau)*(c_beta**2)/ds**2
-        !A(5,13) = -1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2*K))/ds**2
-        A(5,13) = -1.0/(1.0+tau)*(c_beta**2)/ds**2
-        !A(6,7)  = ifac*c_beta**2/ds**2*x
+        A(5,12) = 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
+        !A(5,12) = 1.0/(1.0+tau)*(c_beta**2)/ds**2
+        A(5,13) = -1.0/(1.0+tau)*(c_beta**2+(1-c_beta**)2*Kp)/ds**2
+        !A(5,13) = -1.0/(1.0+tau)*(c_beta**2)/ds**2
+        A(6,7)  = ifac*c_beta**2/ds**2*x
         A(6,10) = ifac*Q_e/ds**2
         A(6,11) = -ifac*Q/ds**2
-!        A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
-!     $          - 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2*K))/ds**2
         A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
-     $          - 1.0/(1.0+tau)*c_beta**2/ds**2
-!        A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
-!     $          + 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2*K))/ds**2
+     $          - 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
+!        A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
+!     $          - 1.0/(1.0+tau)*c_beta**2/ds**2
         A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
-     $          + 1.0/(1.0+tau)*c_beta**2/ds**2
+     $          + 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
+!        A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
+!     $          + 1.0/(1.0+tau)*c_beta**2/ds**2
         A(7,14) = 1.0/Pr
         A(8,2)  = 1.0
         A(9,1)  = -ifac/(1.0+tau)*((Q-Q_e)+(Q-Q_i)*Pe/Pr)
@@ -1666,24 +1669,24 @@ c-----------------------------------------------------------------------
       A(4,12) = -1.0/(1.0+tau)
       A(4,13) = 1.0/(1.0+tau)
       A(5,2)  = -ifac*x
-      !A(5,7)  = -ifac*x*c_beta**2/ds**2
+      A(5,7)  = -ifac*x*c_beta**2/ds**2
       A(5,10) = -ifac*Q_e/ds**2
       A(5,11) = ifac*Q/ds**2
-      !A(5,12) = 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2*K))/ds**2
-      A(5,12) = 1.0/(1.0+tau)*(c_beta**2)/ds**2
-      !A(5,13) = -1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2*K))/ds**2
-      A(5,13) = -1.0/(1.0+tau)*(c_beta**2)/ds**2
-      !A(6,7)  = ifac*c_beta**2/ds**2*x
+      A(5,12) = 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
+      !A(5,12) = 1.0/(1.0+tau)*(c_beta**2)/ds**2
+      A(5,13) = -1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
+      !A(5,13) = -1.0/(1.0+tau)*(c_beta**2)/ds**2
+      A(6,7)  = ifac*c_beta**2/ds**2*x
       A(6,10) = ifac*Q_e/ds**2
       A(6,11) = -ifac*Q/ds**2
-!        A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
-!     $          - 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2*K))/ds**2
-      A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
-     $        - 1.0/(1.0+tau)*c_beta**2/ds**2
-!        A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
-!     $          + 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2*K))/ds**2
-      A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
-     $        + 1.0/(1.0+tau)*c_beta**2/ds**2
+        A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
+     $          - 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
+!      A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
+!     $        - 1.0/(1.0+tau)*c_beta**2/ds**2
+        A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
+     $          + 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
+!      A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
+!     $        + 1.0/(1.0+tau)*c_beta**2/ds**2
       A(7,14) = 1.0/Pr
       
       CALL cspline_eval(splR,x,0)

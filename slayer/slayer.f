@@ -27,14 +27,14 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(1) :: index,index4
 
       LOGICAL :: params_flag,QPscan_flag,QPescan_flag,QPscan2_flag,
-     $     QDscan2_flag,Qbscan_flag,Qscan_flag,
+     $     QDscan2_flag,Qbscan_flag,Qscan_flag,Pscan_flag,QDbscan_flag,
      $     onscan_flag,otscan_flag,ntscan_flag,nbtscan_flag,
      $     Pe_flag,verbose,ascii_flag,bin_flag,netcdf_flag,
      $     bal_flag,stability_flag,riccatiscan_flag,input_flag,
      $     params_check,IonScreening_flag,verbose_delta
 
       REAL(r8) :: n_e,t_e,t_i,omega,omega0,
-     $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff
+     $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,inKp
       REAL(r8) :: inQ,inQ_e,inQ_i,inpr,inpe,inc_beta,inds,intau,inlu
       REAL(r8) :: psi0,jxb,Q0,Q_sol,br_th
       REAL(r8) :: psi04,jxb4,Q04,Q_sol4,br_th4
@@ -55,19 +55,20 @@ c-----------------------------------------------------------------------
      $     js,ks,psis,jxbs,Q_sols,br_ths,
      $     jxb4s,Q_sol4s,br_th4s
       REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: Q_solss,br_thss,
-     $     Qsol4ss,br_th4ss
+     $     Qsol4ss,br_th4ss,iss,jss,kss
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: deltal,delta4l
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: deltas,delta4s
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: deltass
 
       NAMELIST/slayer_input/params_flag,input_flag,infile,
      $     mm,nn,n_e,t_e,t_i,omega,l_n,l_t,
-     $     qval,sval,bt,rs,R0,zeff,mu_i,inQ,inQ_e,inQ_i,
+     $     qval,sval,bt,rs,R0,zeff,mu_i,inQ,inQ_e,inQ_i,inKp,
      $     inpr,inpr_prof,inpe,inc_beta,inds,intau,inlu,Q0,delta_n_p
       NAMELIST/slayer_control/inum,jnum,knum,QPscan_flag,QPscan2_flag,
      $     QPescan_flag,QDscan2_flag,Qbscan_flag,Qscan_flag,
      $     onscan_flag,otscan_flag,ntscan_flag,nbtscan_flag,
      $     layfac,Qratio,parflow_flag,peohmonly_flag,Pe_flag,
-     $     IonScreening_flag
+     $     IonScreening_flag,Pscan_flag,QDbscan_flag
       NAMELIST/slayer_output/verbose,ascii_flag,bin_flag,netcdf_flag,
      $     stability_flag,bal_flag,verbose_delta
       NAMELIST/slayer_diagnose/riccati_out,riccatiscan_flag,
@@ -115,6 +116,7 @@ c-----------------------------------------------------------------------
       bin_2d_unit=6
       input_unit=7
       QPscan_flag=.FALSE. ! scan (Q,P) space for delta and torque.
+      QPscan2_flag=.FALSE. ! scan (Q,P) space for delta and torque.
       QPescan_flag=.FALSE. ! scan (Q,Pe) space for delta and torque.
       Qbscan_flag=.FALSE. ! scan (Q,beta) space for delta and torque.
       onscan_flag=.FALSE. ! scan (omega,n) space for error fields.
@@ -182,13 +184,14 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     calculate basic delta, torque, balance, error fields.
 c-----------------------------------------------------------------------
-      delta=riccati3(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe)
+      delta=riccati3(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe,inKp)
       psi0=1.0/ABS(delta+delta_n_p) ! a.u.
       jxb=-AIMAG(1.0/(delta+delta_n_p)) ! a.u.
 
       IF (IonScreening_flag) THEN
          IF(verbose) WRITE(*,*)"Four-field model used for delta"
-         delta4=riccati(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe)
+         delta4=riccati(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe,
+     $          inKp)
          psi04=1.0/ABS(delta4+delta_n_p) ! a.u.
          jxb4=-AIMAG(1.0/(delta4+delta_n_p)) ! a.u.
          WRITE(*,*)"delta=",delta
@@ -258,7 +261,7 @@ c-----------------------------------------------------------------------
             DO i=0,inum
                inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
                deltal(i)=riccati(inQs(i),inQ_e,inQ_i,
-     $              inpr,inc_beta,inds,intau,inpe)
+     $              inpr,inc_beta,inds,intau,inpe,inKp)
                jxbl(i)=-AIMAG(1.0/(deltal(i)+delta_n_p))
                bal(i)=2.0*inpr*(Q0-inQs(i))/jxbl(i)
             ENDDO
@@ -309,7 +312,7 @@ c-----------------------------------------------------------------------
          DO i=0,inum
             inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
             deltal(i)=riccati(inQs(i),inQ_e,inQ_i,
-     $           inpr,inc_beta,inds,intau,inpe)
+     $           inpr,inc_beta,inds,intau,inpe,inKp)
             jxbl(i)=-AIMAG(1.0/(deltal(i)+delta_n_p))
             bal(i)=2.0*inpr*(Q0-inQs(i))/jxbl(i)
          ENDDO
@@ -350,7 +353,7 @@ c-----------------------------------------------------------------------
                inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
                iinQs(j)=inQ_min+(REAL(j)/200)*(inQ_max-inQ_min)
                deltas(i,j)=riccati(inQs(i),inQ_e,inQ_i,inpr,inc_beta,
-     $              inds,intau,inpe,iinQ=iinQs(j))
+     $              inds,intau,inpe,inKp,iinQ=iinQs(j))
             ENDDO
          ENDDO
       
@@ -385,7 +388,7 @@ c-----------------------------------------------------------------------
             DO k=0,knum
                ks(j,k)=inc_beta/sqrt((1+intau)*inds)*js(j,k)**2.0
                deltas(j,k)=riccati(inQ,inQ_e,inQ_i,inpr,
-     $              inc_beta,inds,intau,inpe,inx=js(j,k),
+     $              inc_beta,inds,intau,inpe,inKp,inx=js(j,k),
      $              iny=ks(j,k)*EXP(ifac*2*pi*REAL(k)/knum))
                WRITE(*,*)"deltas",deltas(j,k)
             ENDDO
@@ -426,7 +429,7 @@ c-----------------------------------------------------------------------
                kpower=k_min+(k_max-k_min)/knum*REAL(k)
                ks(j,k)=10.0**kpower
                deltas(j,k)=riccati(js(j,k),inQ_e,inQ_i,inpr,
-     $              inc_beta,inds,intau,ks(j,k))
+     $              inc_beta,inds,intau,ks(j,k),inKp)
                psis(j,k)=1.0/ABS(deltas(j,k)+delta_n_p)
                jxbs(j,k)=-AIMAG(1.0/(deltas(j,k)+delta_n_p))
                WRITE(*,*)"deltas",deltas(j,k)
@@ -481,7 +484,7 @@ c-----------------------------------------------------------------------
                kpower=k_min+(k_max-k_min)/knum*REAL(k)
                ks(j,k)=10.0**kpower
                deltas(j,k)=riccati(js(j,k),inQ_e,inQ_i,60.6*ks(j,k),
-     $              inc_beta,inds,intau,inpe)
+     $              inc_beta,inds,intau,inpe,inKp)
                psis(j,k)=1.0/ABS(deltas(j,k)+delta_n_p)
                jxbs(j,k)=-AIMAG(1.0/(deltas(j,k)+delta_n_p))
                WRITE(*,*)"deltas",deltas(j,k)
@@ -526,12 +529,12 @@ c-----------------------------------------------------------------------
      $        deltas(0:jnum,0:1),psis(0:jnum,0:1),
      $        jxbs(0:jnum,0:1))
 
-         j_min=0.05 ! extended from 20.0
-         j_max=50.0 ! extended from 20.0
+         j_min=-0.00105 ! extended from 20.0
+         j_max=0.00105 ! extended from 20.0
          DO j=0,jnum            
             js(j,:)=j_min+(j_max-j_min)/jnum*REAL(j)
             deltas(j,0)=riccati(js(j,0),inQ_e,inQ_i,inpr,
-     $         inc_beta,inds,intau,inpe)
+     $         inc_beta,inds,intau,inpe,inKp)
             psis(j,0)=1.0/ABS(deltas(j,0)+delta_n_p)
             jxbs(j,0)=-AIMAG(1.0/(deltas(j,0)+delta_n_p))
             WRITE(*,*)"deltas",deltas(j,0)
@@ -553,6 +556,41 @@ c-----------------------------------------------------------------------
       DEALLOCATE(js,deltas,psis,jxbs)
       ENDIF
 c-----------------------------------------------------------------------
+c     (P) scan.
+c-----------------------------------------------------------------------
+      IF (Pscan_flag) THEN
+         ALLOCATE(js(0:jnum,0:1),
+     $        deltas(0:jnum,0:1),psis(0:jnum,0:1),
+     $        jxbs(0:jnum,0:1))
+
+         j_min=-1.5 ! extended from 20.0
+         j_max=1.5 ! extended from 20.0
+         DO j=0,jnum            
+            js(j,:)=j_min+(j_max-j_min)/jnum*REAL(j)
+            deltas(j,0)=riccati(inQ,inQ_e,inQ_i,inpr,
+     $         inc_beta,10.0**js(j,0),intau,inpe,inKp)
+            psis(j,0)=1.0/ABS(deltas(j,0)+delta_n_p)
+            jxbs(j,0)=-AIMAG(1.0/(deltas(j,0)+delta_n_p))
+            WRITE(*,*)"deltas",deltas(j,0)
+         ENDDO
+
+         IF (ascii_flag) THEN
+            OPEN(UNIT=out_unit,FILE="slayer_Pscan_n"//
+     $         TRIM(sn)//".out",STATUS="UNKNOWN")
+            WRITE(out_unit,'(1x,6(a17))') "D","RE(delta)",
+     $           "IM(delta)","psi","jxb"
+            DO j=0,jnum
+               WRITE(out_unit,'(1x,6(es17.8e3))')
+     $              js(j,0),REAL(deltas(j,0)),
+     $              AIMAG(deltas(j,0)),psis(j,0),jxbs(j,0)
+            ENDDO
+            CLOSE(out_unit)
+         ENDIF
+
+      DEALLOCATE(js,deltas,psis,jxbs)
+      ENDIF
+
+c-----------------------------------------------------------------------
 c     (Q,P) scan 2.
 c-----------------------------------------------------------------------
       IF (QPscan2_flag) THEN
@@ -572,9 +610,11 @@ c-----------------------------------------------------------------------
                kpower=k_min+(k_max-k_min)/knum*REAL(k)
                ks(j,k)=10.0**kpower
                deltas(j,k)=riccati(js(j,k),js(j,k)*Qratio,
-     $              -js(j,k)*Qratio,ks(j,k),inc_beta,inds,intau,inpe)
+     $              -js(j,k)*Qratio,ks(j,k),inc_beta,inds,intau,inpe,
+     $              inKp)
                psis(j,k)=1.0/ABS(deltas(j,k)+delta_n_p)
                jxbs(j,k)=-AIMAG(1.0/(deltas(j,k)+delta_n_p))
+               WRITE(*,*)"here?"
                WRITE(*,*)"deltas",deltas(j,k)
             ENDDO
          ENDDO
@@ -609,6 +649,69 @@ c-----------------------------------------------------------------------
          ENDIF
       DEALLOCATE(js,ks,deltas,psis,jxbs)
       ENDIF
+
+c-----------------------------------------------------------------------
+c     (Q,D,beta) scan .
+c-----------------------------------------------------------------------
+      IF (QDbscan_flag) THEN
+         ALLOCATE(iss(0:inum,0:jnum,0:knum),jss(0:inum,0:jnum,0:knum),
+     $        kss(0:inum,0:jnum,0:knum),deltass(0:inum,0:jnum,0:knum))
+         !inQ_min=0.01; ! Q
+         !inQ_max=0.15; ! Q
+         inQ_min=0.12; ! Q
+         inQ_max=0.18; ! Q
+         j_min=0.04; ! cb
+         j_max=0.2; ! cb 
+         k_min=1.0; ! D
+         k_max=10.0; ! D
+
+         DO i=0,inum
+            iss(i,:,:)=inQ_min+(inQ_max-inQ_min)/inum*REAL(i)
+            DO j=0,jnum
+               jss(i,j,:)=j_min+(j_max-j_min)/jnum*REAL(j)
+               DO k=0,knum
+                  kss(i,j,k)=k_min+(k_max-k_min)/knum*REAL(k)
+                  deltass(i,j,k)=riccati(iss(i,j,k),inQ_e,
+     $              inQ_i,inPr,jss(i,j,k),kss(i,j,k),intau,inPe,inKp)
+                  WRITE(*,*)"delta",deltass(i,j,k)
+                  WRITE(*,*)"Q,cb,D",iss(i,j,k),jss(i,j,k),kss(i,j,k)
+               ENDDO
+            ENDDO
+         ENDDO
+
+         IF (ascii_flag) THEN
+            OPEN(UNIT=out_unit,FILE="QDbscan.out",STATUS="UNKNOWN")
+            WRITE(out_unit,'(1x,5(a17))')"Q","D","cb"
+     $           "RE(delta)","IM(delta)"
+
+            DO i=0,inum
+               DO j=0,jnum
+                  DO k=0,knum
+                     WRITE(out_unit,'(1x,5(es17.8e3))')
+     $                 iss(i,j,k),jss(i,j,k),kss(i,j,k),
+     $                 REAL(deltass(i,j,k)),AIMAG(deltass(i,j,k))
+                  ENDDO
+               ENDDO
+            ENDDO
+            CLOSE(out_unit)
+         ENDIF
+
+!         IF (bin_flag) THEN
+!            OPEN(UNIT=bin_2d_unit,FILE='slayer_QDbscan_n'//
+!     $         TRIM(sn)//'.bin',
+!     $         STATUS='UNKNOWN',POSITION='REWIND',FORM='UNFORMATTED')
+!            WRITE(bin_2d_unit)1,0
+!            WRITE(bin_2d_unit)jnum,knum
+!            WRITE(bin_2d_unit)REAL(js,4),REAL(ks,4)
+!            WRITE(bin_2d_unit)REAL(REAL(deltas),4)
+!            WRITE(bin_2d_unit)REAL(AIMAG(deltas),4)
+!            WRITE(bin_2d_unit)REAL(psis,4)
+!            WRITE(bin_2d_unit)REAL(jxbs,4)
+!            CLOSE(bin_2d_unit)
+!         ENDIF
+      DEALLOCATE(iss,jss,kss,deltass)
+      ENDIF
+
 c-----------------------------------------------------------------------
 c     (Q,D) scan 2.
 c-----------------------------------------------------------------------
@@ -626,7 +729,8 @@ c-----------------------------------------------------------------------
             DO k=0,knum
                ks(j,k)=k_min+(k_max-k_min)/knum*REAL(k)
                deltas(j,k)=riccati(js(j,k),js(j,k)*Qratio,
-     $              -js(j,k)*Qratio,inpr,inc_beta,ks(j,k),intau,inpe)
+     $              -js(j,k)*Qratio,inpr,inc_beta,ks(j,k),intau,inpe,
+     $              inKp)
                psis(j,k)=1.0/ABS(deltas(j,k)+delta_n_p)
                jxbs(j,k)=-AIMAG(1.0/(deltas(j,k)+delta_n_p))
                WRITE(*,*)"deltas",deltas(j,k)
@@ -708,7 +812,7 @@ c-----------------------------------------------------------------------
                DO i=0,inum
                   inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
                   delta=riccati(inQs(i),inQ_e,inQ_i,
-     $                 inpr,inc_beta,inds,intau,inpe)
+     $                 inpr,inc_beta,inds,intau,inpe,inKp)
                   jxb=-AIMAG(1.0/(delta+delta_n_p))
                   bal(i)=2.0*inpr*(Q0-inQs(i))/jxb
                ENDDO
@@ -794,7 +898,7 @@ c-----------------------------------------------------------------------
                DO i=0,inum
                   inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
                   delta=riccati(inQs(i),inQ_e,inQ_i,
-     $                 inpr,inc_beta,inds,intau,inpe)
+     $                 inpr,inc_beta,inds,intau,inpe,inKp)
                   jxb=-AIMAG(1.0/(delta+delta_n_p))
                   bal(i)=2.0*inpr*(Q0-inQs(i))/jxb
                ENDDO
@@ -879,7 +983,7 @@ c-----------------------------------------------------------------------
                DO i=0,inum
                   inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
                   delta=riccati(inQs(i),inQ_e,inQ_i,
-     $                 inpr,inc_beta,inds,intau,inpe)
+     $                 inpr,inc_beta,inds,intau,inpe,inKp)
                   jxb=-AIMAG(1.0/(delta+delta_n_p))
                   bal(i)=2.0*inpr*(Q0-inQs(i))/jxb
                ENDDO
@@ -966,7 +1070,7 @@ c-----------------------------------------------------------------------
                DO i=0,inum
                   inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
                   delta=riccati(inQs(i),inQ_e,inQ_i,
-     $                 inpr,inc_beta,inds,intau,inpe)
+     $                 inpr,inc_beta,inds,intau,inpe,inKp)
                   jxb=-AIMAG(1.0/(delta+delta_n_p))
                   bal(i)=2.0*inpr*(Q0-inQs(i))/jxb
                ENDDO
