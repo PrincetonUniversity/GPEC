@@ -152,14 +152,15 @@ c-----------------------------------------------------------------------
       COMPLEX(r8) :: riccati_outcome, Delta_old, Delta_new
 
       INTEGER :: istep,neq,itol,itask,istate,liw,lrw,lzw,iopt,mf
-      INTEGER :: ml,mu,nrpd,ipar
+      INTEGER :: ml,mu,nrpd,ipar,ind,nR
+      INTEGER :: nerr, jsv, meth, miter
 
-      REAL(r8) :: xintv,x,xout,jac,xmin
-      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: y,dy,zwork
-      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: pd
+      REAL(r8) :: xintv,x,xout,x_match,jac,xmin
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: y,dy,zwork,y1,dy1
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: pd, Rmatrix, dRmatrix
 
       INTEGER, DIMENSION(:), ALLOCATABLE :: iwork
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: xfac,rwork,rtol,atol
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: xfac,rwork,rtol,atol,RT
       
       Q=inQ
       IF(present(iinQ)) Q=inQ+ifac*iinQ
@@ -215,7 +216,7 @@ c-----------------------------------------------------------------------
       DO WHILE (x<xout)
          istep=istep+1
          CALL ZVODE(w_derl,neq,y,x,xout,itol,rtol,atol,itask,
-     $   istate,iopt,zwork,lzw,rwork,lrw,iwork,liw,dy_der_yl,mf,
+     $   istate,iopt,zwork,lzw,rwork,lrw,iwork,liw,dw_der_wl,mf,
      $   ipar)
       ENDDO        
 
@@ -240,7 +241,7 @@ c-----------------------------------------------------------------------
             istep=istep+1
             ! Do Forward sweep by solving dR=A21+A22R-RA11-RA12R
             CALL ZVODE(w_derr,neq,y,x,xout,itol,rtol,atol,itask,
-     $      istate,iopt,zwork,lzw,rwork,lrw,iwork,liw,dy_der_yr,mf,
+     $      istate,iopt,zwork,lzw,rwork,lrw,iwork,liw,dw_der_wr,mf,
      $      ipar)
          ENDDO        
          CALL Update_Delta(Delta_new,y,x,neq)
@@ -253,7 +254,7 @@ c-----------------------------------------------------------------------
          ! Fix Riccati matrix size
          x_match=xout+4.0
          nR = int(x_match)*1000
-         ALLOCATE(RT(nR),Rmatrix(nR,neq))
+         ALLOCATE(RT(nR),Rmatrix(nR,neq),y1(5),dy1(5))
          ind=1
          Rt=0
          Rmatrix=0
@@ -275,7 +276,7 @@ c-----------------------------------------------------------------------
          DO WHILE (x<xout)
             istep=istep+1
             CALL ZVODE(w_derl,neq,y,x,xout,itol,rtol,atol,itask,
-     $      istate,iopt,zwork,lzw,rwork,lrw,iwork,liw,dy_der_yl,mf,
+     $      istate,iopt,zwork,lzw,rwork,lrw,iwork,liw,dw_der_wl,mf,
      $      ipar)
          ENDDO        
 
@@ -291,7 +292,7 @@ c-----------------------------------------------------------------------
            DO WHILE (x<xout)
               istep=istep+1
               CALL ZVODE(w_derr,neq,y,x,xout,itol,rtol,atol,itask,
-     $        istate,iopt,zwork,lzw,rwork,lrw,iwork,liw,dy_der_yr,
+     $        istate,iopt,zwork,lzw,rwork,lrw,iwork,liw,dw_der_wr,
      $        mf,ipar)
            ENDDO        
            IF (RT(ind) .lt. x) then
@@ -346,18 +347,15 @@ c-----------------------------------------------------------------------
          xout = 0.0
          RWORK(1) = xout*3
          
-         """ 
-         여기부터시작
-         """
          ! Initialize y1 at X=XM
-         CALL Init_y1_r (neq, x, y, y1)
+         CALL Init_yr1 (neq, x, y, y1)
          OPEN(UNIT=out4_unit,FILE='riccati_config_profile.out'
      $         ,STATUS='UNKNOWN')
          DO WHILE (x>xout)
             ! Do backward sweep by solving dy1 = (A11+A12R)y1
-            CALL ZVODE(y_der_r, NEQ, y1, x, xout, ITOL, RTOL, ATOL, 
+            CALL ZVODE(y_derr, NEQ, y1, x, xout, ITOL, RTOL, ATOL, 
      $         ITASK, ISTATE, IOPT, ZWORK, LZW, RWORK, LRW, IWORK, LIW,
-     $         dy_der_y_full, MF, IPAR)
+     $         dy_der_yr, MF, IPAR)
             WRITE(out4_unit,'(es17.8e3)') x
          
             DO ind = 1,7
@@ -368,7 +366,7 @@ c-----------------------------------------------------------------------
             END DO
          
             ! Recover y2 by using y2 = Ry1
-            CALL get_y2_r (NEQ, x, y1, dy1, IPAR)
+            CALL get_yr2 (NEQ, x, y1, dy1, IPAR)
          
             DO ind = 1,7
                WRITE(out4_unit,'(es17.8e3)') DREAL(dy1(ind))
@@ -1713,20 +1711,22 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), PARAMETER :: ifac=(0,1)
       INTEGER, DIMENSION(5):: ipiv
 
-      DO i = 1,5
-        beta(i) = 0.0d0
-        DO j = 1,5
-          B21(i,j) = 0.0d0
-          B22(i,j) = 0.0d0
-          R(i,j) = Rmatrix1(niter, i+5*(j-1))
+      DO i=1,5
+        beta(i)=0.0
+        DO j=1,5
+          B21(i,j)=0.0
+          B22(i,j)=0.0
+          R(i,j)=y(i+5*(j-1))
+          B21B22R(i,j)=0.0
         END DO
       END DO
-      beta(1) = 1.0d0
-      B22(1,1) = 1.0d0
-      B21(2,2) = 1.0d0
-      B22(3,2) = 1.0d0
-      B22(4,3) = 1.0d0
-      B21(5,5) = 1.0d0
+
+      beta(1) = 1.0
+      B22(1,1) = 1.0
+      B21(2,2) = 1.0
+      B22(3,2) = 1.0
+      B22(4,3) = 1.0
+      B21(5,5) = 1.0
 
       B21B22R=B21+matmul(B22,R)
       CALL zgetrf(5,5,B21B22R,5,ipiv,info)
