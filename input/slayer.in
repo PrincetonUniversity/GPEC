@@ -77,6 +77,8 @@
     match_gamma_flag=t ! Find Delta_hat = Delta_prime match to solve for growth rate
     stability_flag=f     ! calculate delta dependence on complex Q
     stabscan_flag=f      ! Generate Re(Q),Im(Q) scan and output as ASCII
+    coupled_stabscan_flag=f      ! Generate Re(Q),Im(Q) scan and output as ASCII
+    amr_flag=t           ! Generate Re(Q),Im(Q) scan and output as ASCII
     br_th_flag=f         ! Calculate br_th
     bal_flag=f           ! calculate the resonant field penetration threshold from torque balance
 /

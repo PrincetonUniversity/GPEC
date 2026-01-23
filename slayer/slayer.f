@@ -30,7 +30,8 @@ c-----------------------------------------------------------------------
      $     onscan_flag,otscan_flag,ntscan_flag,nbtscan_flag,
      $     Pe_flag,verbose,ascii_flag,bin_flag,netcdf_flag,
      $     bal_flag,stability_flag,riccatiscan_flag,input_flag,
-     $     params_check,stabscan_flag,read_eq,est_gamma_flag,
+     $     params_check,stabscan_flag,coupled_stabscan_flag,amr_flag,
+     $     read_eq,est_gamma_flag,
      $     match_gamma_flag,fitz_flag,coupling_flag,br_th_flag
       REAL(r8) :: n_e,t_e,t_i,omega,omega0,scan_width,l_n,
      $     l_t,qval,sval,bt,rs,R0,mu_i,zeff,dr_val,dgeo_val
@@ -57,9 +58,13 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: Q_solss,br_thss
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: deltal,outer_deltas
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: deltas
-      
+
+      ! AMR DECLARATIONS
+      INTEGER, PARAMETER :: AMR_passes = 4     ! Number of refinement levels (User Set)
+
       TYPE(slayer_inputs_type) :: sl_in
       TYPE(slayer_outputs_type) :: sl_out
+      TYPE(deltas_outputs_type), ALLOCATABLE :: all_deltas_out(:)
 
       NAMELIST/slayer_input/input_flag,infile,
      $     ncfile,params_flag,mm,nn,n_e,t_e,t_i,sval,bt,rs,R0,omega,
@@ -73,7 +78,8 @@ c-----------------------------------------------------------------------
      $     peohmonly_flag,Pe_flag,layfac
       NAMELIST/slayer_output/verbose,ascii_flag,bin_flag,netcdf_flag,
      $     est_gamma_flag,match_gamma_flag,stability_flag,
-     $     stabscan_flag,br_th_flag,bal_flag
+     $     stabscan_flag,coupled_stabscan_flag,amr_flag,br_th_flag,
+     $     bal_flag
       NAMELIST/slayer_diagnose/riccati_out,riccatiscan_flag,
      $     params_check
 c-----------------------------------------------------------------------
@@ -161,6 +167,8 @@ c-----------------------------------------------------------------------
       bal_flag=.FALSE.
       stability_flag=.FALSE.
       stabscan_flag=.FALSE.
+      coupled_stabscan_flag=.FALSE.
+      amr_flag=.FALSE.
       br_th_flag=.FALSE.
 c-----------------------------------------------------------------------
 c     read slayer.in.
@@ -404,7 +412,8 @@ c-----------------------------------------------------------------------
 
          IF (.NOT. (match_gamma_flag)) THEN
             sl_out%gamma_sol_arr = (/0./)
-            CALL output_gamma(est_gamma_flag,sl_in,sl_out)
+            CALL output_gamma(est_gamma_flag,sl_in,sl_out,
+     $      all_deltas_out)
          END IF
       ENDIF
 c-----------------------------------------------------------------------
@@ -486,10 +495,12 @@ c-----------------------------------------------------------------------
             END IF
          END IF 
 
-         !--------------
-         !n_k = 1
-         !--------------
-         DO k=1,msing_max
+         IF (amr_flag) THEN
+         !IF (ALLOCATED(all_deltas_out)) DEALLOCATE(all_deltas_out)
+         ALLOCATE(all_deltas_out(n_k))
+         END IF
+
+         DO k=1,MIN(n_k,msing_max)
             WRITE(*,*)
             WRITE(*,'(A,I0,A)') 'Calculating growth rate on q = ',
      $       sl_in%qval_arr(k),' rational surface:'
@@ -526,13 +537,45 @@ c            delta_eff = Re_deltaprime_arr(k)
 c           ! Fill gamma_sol_arr with 0's, will by used by python root finding
             sl_out%gamma_sol_arr(k) = 0.0
 
-            IF (stabscan_flag) THEN
+            IF (amr_flag) THEN
+
+               CALL dispersion_AMR(n_k,sl_in,msing_max,scan_width,
+     $                  Q_num,AMR_passes,coupling_flag)
+               WRITE(*,*)"Q_store(10) = ",Q_store(10)
+
+               WRITE(*,*)"n_pts = ",n_pts
+
+               ! --- 4. Export to Output Arrays ---
+               ! Flatten the unique points store into the requested 1D arrays
+               ALLOCATE(all_deltas_out(k)%inQs(n_pts),
+     $                  all_deltas_out(k)%iinQs(n_pts))
+               ! Assumes you also have real_deltas/imag_deltas declared as 1D
+               ALLOCATE(all_deltas_out(k)%real_deltas(n_pts), 
+     $         all_deltas_out(k)%imag_deltas(n_pts)) 
+               
+               DO i = 1, n_pts
+                  all_deltas_out(k)%inQs(i) = REAL(Q_store(i))
+                  IF (fitz_flag) THEN
+                     all_deltas_out(k)%iinQs(i) = AIMAG(Q_store(i))
+                  ELSE
+                     all_deltas_out(k)%iinQs(i) = -AIMAG(Q_store(i))
+                  END IF
+                  all_deltas_out(k)%real_deltas(i) = REAL(D_store(i))
+                  all_deltas_out(k)%imag_deltas(i) = AIMAG(D_store(i))
+               END DO
+         
+               ! Clean up temporary AMR memory
+               DEALLOCATE(Q_store, D_store, hash_head, hash_next)
+
+            END IF
+
+            IF ((stabscan_flag)) THEN ! was .AND. (k == 2)
                WRITE(*,*)"------------------------------------------"
                WRITE(*,'(A,F0.1)')' >>> Running [Re(Q),'//
      $            'Im(Q)] scan with Q width = ',
      $                scan_width
 
-               ing_step = (2.0 * scan_width) / (Q_num - 1)
+               ing_step = (2.0*scan_width) / (Q_num - 1) ! was (2.0 * scan_width) / (Q_num - 1)
                count = 0
          
                ALLOCATE(inQs(1:(Q_num+1)),iinQs(1:Q_num))
@@ -540,7 +583,7 @@ c           ! Fill gamma_sol_arr with 0's, will by used by python root finding
 
                DO i = 1, (Q_num+1)
                   DO j = 1, Q_num
-                     ing_coarse = -scan_width + (i - 1) * ing_step
+                     ing_coarse = -scan_width + (i - 1) * ing_step ! added 0.5*
                      iing_coarse = -scan_width + (j - 1) * ing_step
                      ! Evaluate riccati function
                      g_tmp = CMPLX(ing_coarse,iing_coarse)
@@ -586,15 +629,12 @@ c           ! Fill gamma_sol_arr with 0's, will by used by python root finding
             ENDIF 
          ENDDO 
 
-         sl_out%r_trace(k,:) = re_trace
-         sl_out%i_trace(k,:) = im_trace
-
          IF (.NOT. (est_gamma_flag)) THEN
             sl_in%d_beta_arr = (/ 0. /)
             sl_out%dels_db_arr = (/ 0. /)
          END IF
 
-         IF (coupling_flag) THEN
+         IF (coupled_stabscan_flag) THEN
             WRITE(*,*)"------------------------------------------"
             WRITE(*,'(A,F0.1)')' >>> Running [Re(Q),'//
      $            'Im(Q)] determinant scan with radius = ',
@@ -639,7 +679,7 @@ c           ! Fill gamma_sol_arr with 0's, will by used by python root finding
          DEALLOCATE(inQs,iinQs,deltas)
          END IF
 
-         CALL output_gamma(est_gamma_flag,sl_in,sl_out)
+         CALL output_gamma(est_gamma_flag,sl_in,sl_out,all_deltas_out)
          stop
       ENDIF
 c-----------------------------------------------------------------------

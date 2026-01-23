@@ -179,15 +179,18 @@ c-----------------------------------------------------------------------
 c     Subprogram 2. output_gamma
 c     Take SLAYER input and output dicts, send to netCDF subroutine
 c-----------------------------------------------------------------------
-      SUBROUTINE output_gamma(est_gamma_flag,sl_in,sl_out)
+      SUBROUTINE output_gamma(est_gamma_flag,sl_in,sl_out,
+     $                        all_deltas_out)
 
       ! Declarations (include necessary type declarations from original code)
       LOGICAL, INTENT(IN) :: est_gamma_flag
       TYPE(slayer_inputs_type), INTENT(IN) :: sl_in
       TYPE(slayer_outputs_type), INTENT(IN) :: sl_out
+      TYPE(deltas_outputs_type), INTENT(IN) :: 
+     $                            all_deltas_out(SIZE(sl_in%qval_arr))
 
       CALL slayer_netcdf_out(SIZE(sl_in%qval_arr),est_gamma_flag,
-     $                       sl_in,sl_out)
+     $                       sl_in,sl_out,all_deltas_out)
 
       END SUBROUTINE output_gamma
 c-----------------------------------------------------------------------
@@ -324,9 +327,6 @@ c-----------------------------------------------------------------------
             c_beta = sl_in%c_beta_arr(k)
             tauk = sl_in%Qconv_arr(k)
             iota_e = Q_e / (Q_e - Q_i)
-
-            delta_eff = (sl_in%Re_dp_arr(k) - 
-     $          sl_in%d_crit_arr(k))/(sl_in%lu_arr(k)**(1.0/3.0))
      
             delta_Q(k,k)=riccati_f(((g_tmp*sl_in%Qconv_arr(1))
      $           /tauk))
@@ -344,4 +344,263 @@ c-----------------------------------------------------------------------
          stop
       END IF
       END FUNCTION dispersion_det
+
+      SUBROUTINE dispersion_AMR(n_k,sl_in,msing_max,
+     $                          scan_width,Q_num,AMR_passes,
+     $                          coupling_flag)
+      !WRITE(*,*)"------------------------------------------"
+      !WRITE(*,'(A,F0.1,A,I2,A)')' >>> Running Adaptive AMR Scan [Width=',scan_width, &
+      !                          ', Passes=', AMR_PASSES, ']'
+      INTEGER, INTENT(IN) :: n_k,msing_max,Q_num,AMR_passes
+      REAL(r8), INTENT(IN) :: scan_width
+      TYPE(slayer_inputs_type), INTENT(IN) :: sl_in
+      LOGICAL, INTENT(IN) :: coupling_flag
+
+      !COMPLEX(r8), INTENT(OUT), ALLOCATABLE :: Q_store(:)    ! Stores Q coordinates
+      !COMPLEX(r8), INTENT(OUT), ALLOCATABLE :: D_store(:)    ! Stores Result Delta
+      INTEGER, ALLOCATABLE :: cells(:,:)       ! 4 corners (indices) per cell
+      INTEGER, ALLOCATABLE :: new_cells(:,:)   ! Temp array for next level
+      INTEGER :: n_cells, n_new_cells, i, j
+      INTEGER :: h_idx, pt_idx, c_idx, pass
+      INTEGER :: idx_TL, idx_TR, idx_BL, idx_BR ! Corner indices
+      INTEGER :: idx_TM, idx_BM, idx_LM, idx_RM, idx_MM ! Midpoint indices
+      REAL(r8) :: r_min, r_max, i_min, i_max, ing_step,
+     $            ing_coarse,iing_coarse
+      LOGICAL :: cross_real, cross_imag
+      !INTEGER, INTENT(OUT) :: n_pts
+
+      COMPLEX(r8) :: q_curr
+
+      ! (Re-allocate or just reset counters. Re-allocating ensures clean slate)
+      !IF (ALLOCATED(Q_store)) DEALLOCATE(Q_store, D_store)
+      !IF (ALLOCATED(hash_head)) DEALLOCATE(hash_head, hash_next)
+      !IF (ALLOCATED(cells)) DEALLOCATE(cells, new_cells)
+
+      ! --- 1. Initialize Memory ---
+      ALLOCATE(Q_store(MAX_PTS), D_store(MAX_PTS))
+      ALLOCATE(hash_head(HASH_SZ), hash_next(MAX_PTS))
+      ALLOCATE(cells(4, 200000), new_cells(4, 200000)) ! Estimate cell count
+      
+      hash_head = 0
+      hash_next = 0
+      n_pts = 0
+      n_cells = 0
+  
+      ! --- 2. Build Initial Coarse Grid (100x100) ---
+      ! We treat the grid as a collection of quadrilateral cells
+      ing_step = (2.0*scan_width) / (Q_num - 1)
+      
+      ! A. Generate Points & Evaluate
+      DO i = 1, Q_num
+          DO j = 1, Q_num
+             ing_coarse = -scan_width + (i - 1) * ing_step
+             iing_coarse = -scan_width + (j - 1) * ing_step
+             q_curr = CMPLX(ing_coarse, iing_coarse)
+             
+             ! Check/Compute (Using inline logic to simulate a function call)
+             CALL get_or_compute(q_curr, pt_idx,n_k,sl_in,msing_max,
+     $                          coupling_flag)
+             
+             ! If we are not at the right/bottom edge, form a cell with neighbors
+             IF (i < Q_num .AND. j < Q_num) THEN
+                 n_cells = n_cells + 1
+                 ! Store indices of corners: TL, TR, BL, BR (row-major logic)
+                 ! Note: This indexing assumes we inserted in order, but for AMR 
+                 ! we must rely on the returned pt_idx, not loop counters.
+                 ! To simplify, we just store the TL index and calculate others? 
+                 ! No, AMR breaks structure. We must look up all 4 corners.
+                 
+                 ! Top-Left (current)
+                 cells(1, n_cells) = pt_idx 
+                 
+                 ! Top-Right (i+1, j)
+                 q_curr = CMPLX(ing_coarse + ing_step, iing_coarse)
+                 CALL get_or_compute(q_curr, cells(2, n_cells),n_k,
+     $              sl_in,msing_max,coupling_flag)
+                 
+                 ! Bottom-Left (i, j+1)
+                 q_curr = CMPLX(ing_coarse, iing_coarse+ing_step)
+                 CALL get_or_compute(q_curr, cells(3, n_cells),n_k,
+     $              sl_in,msing_max,coupling_flag)
+                 
+                 ! Bottom-Right (i+1, j+1)
+                 q_curr = CMPLX(ing_coarse + ing_step, iing_coarse+
+     $                              ing_step)
+                 CALL get_or_compute(q_curr, cells(4, n_cells),n_k,
+     $              sl_in,msing_max,coupling_flag)
+             END IF
+          END DO
+      END DO
+  
+      ! --- 3. Refinement Loops ---
+      DO pass = 1, AMR_PASSES
+          WRITE(*,'(A,I2,A,I6,A)') '   > Pass ', pass, 
+     $         ': Checking ', n_cells, ' cells...'
+          n_new_cells = 0
+          
+          DO c_idx = 1, n_cells
+              idx_TL = cells(1, c_idx)
+              idx_TR = cells(2, c_idx)
+              idx_BL = cells(3, c_idx)
+              idx_BR = cells(4, c_idx)
+              
+              ! Check for contours (Sign changes across the cell)
+              ! Real Part Check
+              r_min = MIN(REAL(D_store(idx_TL)), 
+     $                         REAL(D_store(idx_TR)),
+     $                         REAL(D_store(idx_BL)), 
+     $                         REAL(D_store(idx_BR)))
+              r_max = MAX(REAL(D_store(idx_TL)), 
+     $                         REAL(D_store(idx_TR)),
+     $                         REAL(D_store(idx_BL)), 
+     $                         REAL(D_store(idx_BR)))
+              cross_real = (r_min * r_max <= 0.0d0)
+              
+              ! Imag Part Check
+              i_min = MIN(AIMAG(D_store(idx_TL)), 
+     $                         AIMAG(D_store(idx_TR)),
+     $                         AIMAG(D_store(idx_BL)), 
+     $                         AIMAG(D_store(idx_BR)))
+              i_max = MAX(AIMAG(D_store(idx_TL)), 
+     $                         AIMAG(D_store(idx_TR)),
+     $                         AIMAG(D_store(idx_BL)), 
+     $                         AIMAG(D_store(idx_BR)))
+              cross_imag = (i_min * i_max <= 0.0d0)
+  
+              IF (cross_real .OR. cross_imag) THEN
+                  ! --- REFINE THIS CELL ---
+                  ! We need 5 new points: Top-Mid, Bot-Mid, Left-Mid, Right-Mid, Center
+                  
+                  ! Calculate coords from corners
+                  ! TL: Q_store(idx_TL), BR: Q_store(idx_BR)
+                  
+                  ! Top-Mid
+                  q_curr = 0.5d0*(Q_store(idx_TL)+Q_store(idx_TR))
+                  CALL get_or_compute(q_curr, idx_TM,n_k,
+     $              sl_in,msing_max,coupling_flag)
+                  
+                  ! Bot-Mid
+                  q_curr = 0.5d0*(Q_store(idx_BL)+Q_store(idx_BR))
+                  CALL get_or_compute(q_curr, idx_BM,n_k,
+     $              sl_in,msing_max,coupling_flag)
+                  
+                  ! Left-Mid
+                  q_curr = 0.5d0*(Q_store(idx_TL)+Q_store(idx_BL))
+                  CALL get_or_compute(q_curr, idx_LM,n_k,
+     $              sl_in,msing_max,coupling_flag)
+                  
+                  ! Right-Mid
+                  q_curr = 0.5d0*(Q_store(idx_TR)+Q_store(idx_BR))
+                  CALL get_or_compute(q_curr, idx_RM,n_k,
+     $              sl_in,msing_max,coupling_flag)
+                  
+                  ! Center
+                  q_curr = 0.5d0*(Q_store(idx_TL)+Q_store(idx_BR))
+                  CALL get_or_compute(q_curr, idx_MM,n_k,
+     $              sl_in,msing_max,coupling_flag)
+                  
+                  ! Create 4 new sub-cells (Top-Left, Top-Right, Bot-Left, Bot-Right)
+                  ! Sub 1 (Top-Left)
+                  n_new_cells = n_new_cells + 1
+                  new_cells(1, n_new_cells) = idx_TL
+                  new_cells(2, n_new_cells) = idx_TM
+                  new_cells(3, n_new_cells) = idx_LM
+                  new_cells(4, n_new_cells) = idx_MM
+                  
+                  ! Sub 2 (Top-Right)
+                  n_new_cells = n_new_cells + 1
+                  new_cells(1, n_new_cells) = idx_TM
+                  new_cells(2, n_new_cells) = idx_TR
+                  new_cells(3, n_new_cells) = idx_MM
+                  new_cells(4, n_new_cells) = idx_RM
+                  
+                  ! Sub 3 (Bot-Left)
+                  n_new_cells = n_new_cells + 1
+                  new_cells(1, n_new_cells) = idx_LM
+                  new_cells(2, n_new_cells) = idx_MM
+                  new_cells(3, n_new_cells) = idx_BL
+                  new_cells(4, n_new_cells) = idx_BM
+                  
+                  ! Sub 4 (Bot-Right)
+                  n_new_cells = n_new_cells + 1
+                  new_cells(1, n_new_cells) = idx_MM
+                  new_cells(2, n_new_cells) = idx_RM
+                  new_cells(3, n_new_cells) = idx_BM
+                  new_cells(4, n_new_cells) = idx_BR
+                  
+              ELSE
+                  ! No refinement needed, keep original cell
+                  n_new_cells = n_new_cells + 1
+                  new_cells(:, n_new_cells) = cells(:, c_idx)
+              END IF
+          END DO
+          
+          ! Swap arrays for next iteration
+          n_cells = n_new_cells
+          cells(:, 1:n_cells) = new_cells(:, 1:n_cells)
+          
+      END DO
+      DEALLOCATE(cells, new_cells)
+      WRITE(*,*) "AMR Scan Complete. Total Points:", n_pts
+      WRITE(*,*)"gslayer.f Q_store(10) = ",Q_store(10)
+      RETURN
+      END SUBROUTINE dispersion_AMR
+          
+      SUBROUTINE get_or_compute(q_in,idx_out,n_k,sl_in,msing_max,
+     $                          coupling_flag)
+      COMPLEX(r8), INTENT(IN) :: q_in
+      !INTEGER, INTENT(INOUT) :: n_pts
+      !COMPLEX(r8), INTENT(INOUT) :: Q_store(:),D_store(:)
+      TYPE(slayer_inputs_type), INTENT(IN) :: sl_in
+      INTEGER, INTENT(IN) :: n_k, msing_max
+      INTEGER, INTENT(OUT) :: idx_out
+      LOGICAL, INTENT(IN) :: coupling_flag
+      INTEGER :: h, curr, ix, iy
+      COMPLEX(r8) :: delta_val
+
+      ! 1. Calculate Hash
+      ix = NINT(REAL(q_in) * HASH_SCALE)
+      iy = NINT(AIMAG(q_in) * HASH_SCALE)
+      ! Simple hash mix
+      h = MOD(ABS(ix * 73856093 + iy * 19349663), HASH_SZ) + 1
+      
+      ! 2. Check collisions
+      curr = hash_head(h)
+      DO WHILE (curr /= 0)
+          ! Check if point matches (with small tolerance)
+          IF (ABS(Q_store(curr) - q_in) < 1.0d-8) THEN
+              idx_out = curr
+              RETURN ! Found it, return existing index
+          END IF
+          curr = hash_next(curr)
+      END DO
+      
+      ! 3. Not found: Compute and Store
+      n_pts = n_pts + 1
+
+      IF (n_pts > MAX_PTS) THEN
+          WRITE(*,*) "ERROR: AMR exceeded MAX_PTS"
+          STOP
+      END IF
+      
+      idx_out = n_pts
+      Q_store(idx_out) = q_in
+      
+      ! --- PHYSICS EVALUATION ---
+      IF (coupling_flag) THEN
+           g_tmp = q_in
+           delta_val = dispersion_det(g_tmp, n_k, sl_in, msing_max)
+      ELSE
+           g_tmp = q_in
+           delta_val = riccati_f(g_tmp)
+           !delta_val = delta_val - delta_eff
+      END IF
+      D_store(idx_out) = delta_val
+      ! --------------------------
+      
+      ! 4. Add to Hash Table
+      hash_next(idx_out) = hash_head(h)
+      hash_head(h) = idx_out
+      
+      END SUBROUTINE get_or_compute
       END MODULE gslayer_mod

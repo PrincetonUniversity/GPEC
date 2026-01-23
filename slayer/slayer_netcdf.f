@@ -49,19 +49,29 @@ c -----------------------------------------------------------------------
 c      declarations.
 c -----------------------------------------------------------------------
       SUBROUTINE slayer_netcdf_out(msing,est_gamma_flag,
-     $         sl_in,sl_out)
+     $         sl_in,sl_out,all_deltas_out)
 
       INTEGER, INTENT(IN) :: msing
       LOGICAL, INTENT(IN) :: est_gamma_flag
       TYPE(slayer_inputs_type), INTENT(IN) :: sl_in
       TYPE(slayer_outputs_type), INTENT(IN) :: sl_out
+      TYPE(deltas_outputs_type), INTENT(IN) :: all_deltas_out(msing)
 
       INTEGER :: i,ncid,r_id,qsing_dim,i_dim,r_dim,qr_id,omegas_id,
      $    Q_id,Q_e_id,Q_i_id,d_b_id,c_b_id,Dnorm_id,p_perp_id,S_id,
-     $    pr_id,dpp_id,dc_id,dels_db_id,gs_id,ge_id,tr_id,tr_dim,
+     $    pr_id,dpp_id,dc_id,dels_db_id,gs_id,ge_id,
      $    qsing_id,qc_id,p_tor_id
 
       INTEGER :: run, run_dimid, point_dimid, varids(4)
+
+      ! AMR declarations
+      INTEGER :: max_pts_all, s, n_curr
+      INTEGER :: dim_pts_id
+      INTEGER :: var_q_id, var_d_id, var_npts_id
+      REAL(r8), ALLOCATABLE :: buffer_q(:,:,:), buffer_d(:,:,:)
+      INTEGER, ALLOCATABLE :: n_pts_arr(:)
+      REAL(r8) :: fill_val = -9.99E33 ! Standard NetCDF Fill Value
+      ! AMR declarations
 
       CHARACTER(64) :: ncfile
       LOGICAL, PARAMETER :: debug_flag = .FALSE.
@@ -84,7 +94,48 @@ c -----------------------------------------------------------------------
       IF(debug_flag) PRINT *," - Creating netcdf files"
       CALL sl_check( nf90_create(ncfile,
      $     cmode=or(NF90_CLOBBER,NF90_64BIT_OFFSET), ncid=ncid) )
+c
+c     reform "ragged" AMR delta ouputs into rectangular array
+c
 
+      ! 1. Find the Maximum AMR Grid Size across all surfaces
+      max_pts_all = 0
+      DO s = 1, msing
+      IF (ALLOCATED(all_deltas_out(s)%inQs)) THEN
+          max_pts_all = MAX(max_pts_all,SIZE(all_deltas_out(s)%inQs))
+      END IF
+      END DO
+  
+      ! 2. Allocate Rectangular Buffers (Points, Surfaces, Re/Im)
+      !    Shape: (Max_Points, Number_Surfaces, 2)
+      ALLOCATE(buffer_q(max_pts_all, msing, 2))
+      ALLOCATE(buffer_d(max_pts_all, msing, 2))
+      ALLOCATE(n_pts_arr(msing))
+  
+      ! Initialize with Fill Value (so unused space is ignored by plotters)
+      buffer_q = 0.0
+      buffer_d = 0.0
+      n_pts_arr = 0
+  
+      ! 3. Flatten the Ragged Data into the Buffers
+      DO s = 1, msing
+      IF (ALLOCATED(all_deltas_out(s)%inQs)) THEN
+          n_curr = SIZE(all_deltas_out(s)%inQs)
+          n_pts_arr(s) = n_curr
+          
+          ! --- FILL Q (Coordinate) ---
+          ! Real part (inQs) -> Index 1
+          buffer_q(1:n_curr,s,1) = all_deltas_out(s)%inQs(1:n_curr)
+          ! Imag part (iinQs) -> Index 2
+          buffer_q(1:n_curr,s,2) = all_deltas_out(s)%iinQs(1:n_curr)
+          
+          ! --- FILL DELTA (Result) ---
+          ! Real part -> Index 1
+          buffer_d(1:n_curr,s,1)=all_deltas_out(s)%real_deltas(1:n_curr)
+          ! Imag part -> Index 2
+          buffer_d(1:n_curr,s,2)=all_deltas_out(s)%imag_deltas(1:n_curr)
+      END IF
+      END DO
 c -----------------------------------------------------------------------
 c      define global file attributes
 c -----------------------------------------------------------------------
@@ -111,8 +162,6 @@ c -----------------------------------------------------------------------
      $    qsing_dim,qsing_id))
          CALL sl_check( nf90_def_var(ncid,"q_rational",nf90_int,
      $    qsing_dim,qr_id))
-         CALL sl_check( nf90_def_dim(ncid, "step", SIZE(re_trace), 
-     $                  tr_dim) )
          CALL sl_check( nf90_def_var(ncid,"omegas",nf90_double,
      $    qsing_dim,omegas_id))
          CALL sl_check( nf90_def_var(ncid,"tau_k",nf90_double,
@@ -153,8 +202,19 @@ c -----------------------------------------------------------------------
 
       CALL sl_check( nf90_def_var(ncid,"growth rate",
      $      nf90_double,(/qsing_dim,i_dim/),gs_id) )
-      CALL sl_check( nf90_def_var(ncid,"growth rate trace",
-     $      nf90_double,(/qsing_dim,tr_dim,i_dim/),tr_id) )
+
+      !!! AMR
+      CALL sl_check(nf90_def_dim(ncid, 'amr_pts', max_pts_all, 
+     $               dim_pts_id))
+      !    Define Variables
+      CALL sl_check(nf90_def_var(ncid, 'n_amr_pts', NF90_INT, 
+     $             (/qsing_dim/), var_npts_id))
+      !    Note: Dimensions order is (pts, surf, cplx)
+      CALL sl_check(nf90_def_var(ncid, 'Q_AMR', NF90_DOUBLE,
+     $      (/dim_pts_id, qsing_dim, i_dim/), var_q_id))      
+      CALL sl_check(nf90_def_var(ncid, 'Deltas_AMR', NF90_DOUBLE,
+     $      (/dim_pts_id, qsing_dim, i_dim/), var_d_id))
+
       ! end definitions
       CALL sl_check( nf90_enddef(ncid) )
 c -----------------------------------------------------------------------
@@ -193,9 +253,12 @@ c -----------------------------------------------------------------------
      $      RESHAPE((/REAL(sl_out%gamma_sol_arr),
      $      AIMAG(sl_out%gamma_sol_arr)/),(/msing,2/))))
 
-      CALL sl_check( nf90_put_var(ncid,tr_id, 
-     $      RESHAPE((/sl_out%r_trace,sl_out%i_trace/),
-     $      (/msing,SIZE(re_trace),2/))))
+      CALL sl_check(nf90_put_var(ncid, var_npts_id, n_pts_arr))
+      CALL sl_check(nf90_put_var(ncid, var_q_id, buffer_q))
+      CALL sl_check(nf90_put_var(ncid, var_d_id, buffer_d))
+
+      ! 6. Clean Up
+      DEALLOCATE(buffer_q, buffer_d, n_pts_arr)
 
 c -----------------------------------------------------------------------
 c      close file

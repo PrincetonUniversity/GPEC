@@ -13,13 +13,21 @@ c      INTEGER, PARAMETER :: r8=SELECTED_REAL_KIND(13,307)
       REAL(r8) :: eta,visc,rho_s,lu,omega_e,omega_i,iota_e,
      $            delta_n,layfac,Qconv,lnLamb,deltaprim,dc_tmp,
      $            d_crit,tau_r,tauk,g_r,g_i,delta_eff
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: re_trace,im_trace
       COMPLEX(r8) :: Q,g_tmp,delta_det
       CHARACTER(20) :: dc_type
      
       REAL(r8), PARAMETER :: pi=3.1415926535897932385, mu0=4e-7*pi,
      $     m_e=9.1094e-31,m_p=1.6726e-27,chag=1.6021917e-19,
      $     kval=1.3807e-23,eps0 = 8.8542e-12
+
+      INTEGER, PARAMETER :: MAX_PTS = 500000   ! Max unique points allowed
+      INTEGER, PARAMETER :: HASH_SZ = 500009   ! Prime number for hash table
+      REAL(r8), PARAMETER :: HASH_SCALE = 1.0d5                  ! Scaling factor for integer hashing
+      INTEGER, ALLOCATABLE :: hash_head(:)     ! Hash bucket heads
+      INTEGER, ALLOCATABLE :: hash_next(:)     ! Linked list next pointers
+      INTEGER :: n_pts
+      COMPLEX(r8), ALLOCATABLE :: Q_store(:)    ! Stores Q coordinates
+      COMPLEX(r8), ALLOCATABLE :: D_store(:)    ! Stores Result Delta
 
       TYPE result_type
           REAL(r8), ALLOCATABLE :: inQs(:), iinQs(:),
@@ -40,9 +48,15 @@ c      INTEGER, PARAMETER :: r8=SELECTED_REAL_KIND(13,307)
 
       TYPE slayer_outputs_type
           COMPLEX(r8), ALLOCATABLE :: dels_db_arr(:),gamma_sol_arr(:),
-     $      gamma_est_arr(:)      
-          REAL(r8), ALLOCATABLE :: r_trace(:,:),i_trace(:,:)
+     $      gamma_est_arr(:)
       END TYPE slayer_outputs_type
+
+      TYPE deltas_outputs_type
+          REAL(r8), ALLOCATABLE :: inQs(:)
+          REAL(r8), ALLOCATABLE :: iinQs(:)
+          REAL(r8), ALLOCATABLE :: real_deltas(:)
+          REAL(r8), ALLOCATABLE :: imag_deltas(:)
+      END TYPE deltas_outputs_type
 
       ! lnLamb will be updated.
 
