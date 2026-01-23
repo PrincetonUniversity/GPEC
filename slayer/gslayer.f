@@ -370,67 +370,63 @@ c-----------------------------------------------------------------------
       !INTEGER, INTENT(OUT) :: n_pts
 
       COMPLEX(r8) :: q_curr
-
+      INTEGER, ALLOCATABLE :: coarse_indices(:,:)
       ! (Re-allocate or just reset counters. Re-allocating ensures clean slate)
       !IF (ALLOCATED(Q_store)) DEALLOCATE(Q_store, D_store)
       !IF (ALLOCATED(hash_head)) DEALLOCATE(hash_head, hash_next)
       !IF (ALLOCATED(cells)) DEALLOCATE(cells, new_cells)
 
       ! --- 1. Initialize Memory ---
+      !ALLOCATE(Q_store(MAX_PTS), D_store(MAX_PTS))
+      !ALLOCATE(hash_head(HASH_SZ), hash_next(MAX_PTS))
+      !ALLOCATE(cells(4, 200000), new_cells(4, 200000)) ! Estimate cell count
+  
+      IF (ALLOCATED(Q_store)) DEALLOCATE(Q_store)
+      IF (ALLOCATED(D_store)) DEALLOCATE(D_store)
+      IF (ALLOCATED(hash_head)) DEALLOCATE(hash_head)
+      IF (ALLOCATED(hash_next)) DEALLOCATE(hash_next)
+      
       ALLOCATE(Q_store(MAX_PTS), D_store(MAX_PTS))
       ALLOCATE(hash_head(HASH_SZ), hash_next(MAX_PTS))
-      ALLOCATE(cells(4, 200000), new_cells(4, 200000)) ! Estimate cell count
+      ALLOCATE(cells(4, 200000), new_cells(4, 200000))
       
       hash_head = 0
       hash_next = 0
       n_pts = 0
       n_cells = 0
   
-      ! --- 2. Build Initial Coarse Grid (100x100) ---
-      ! We treat the grid as a collection of quadrilateral cells
+  ! --- 2. Build Initial Coarse Grid (Robust 2-Pass Method) ---
+      ALLOCATE(coarse_indices(Q_num, Q_num))
       ing_step = (2.0*scan_width) / (Q_num - 1)
-      
-      ! A. Generate Points & Evaluate
+
+      ! PASS 1: Compute ALL points and store their indices
+      ! This ensures every grid node is computed exactly once and hashed consistently
       DO i = 1, Q_num
-          DO j = 1, Q_num
+         DO j = 1, Q_num
              ing_coarse = -scan_width + (i - 1) * ing_step
              iing_coarse = -scan_width + (j - 1) * ing_step
              q_curr = CMPLX(ing_coarse, iing_coarse)
              
-             ! Check/Compute (Using inline logic to simulate a function call)
-             CALL get_or_compute(q_curr, pt_idx,n_k,sl_in,msing_max,
-     $                          coupling_flag)
-             
-             ! If we are not at the right/bottom edge, form a cell with neighbors
-             IF (i < Q_num .AND. j < Q_num) THEN
-                 n_cells = n_cells + 1
-                 ! Store indices of corners: TL, TR, BL, BR (row-major logic)
-                 ! Note: This indexing assumes we inserted in order, but for AMR 
-                 ! we must rely on the returned pt_idx, not loop counters.
-                 ! To simplify, we just store the TL index and calculate others? 
-                 ! No, AMR breaks structure. We must look up all 4 corners.
-                 
-                 ! Top-Left (current)
-                 cells(1, n_cells) = pt_idx 
-                 
-                 ! Top-Right (i+1, j)
-                 q_curr = CMPLX(ing_coarse + ing_step, iing_coarse)
-                 CALL get_or_compute(q_curr, cells(2, n_cells),n_k,
-     $              sl_in,msing_max,coupling_flag)
-                 
-                 ! Bottom-Left (i, j+1)
-                 q_curr = CMPLX(ing_coarse, iing_coarse+ing_step)
-                 CALL get_or_compute(q_curr, cells(3, n_cells),n_k,
-     $              sl_in,msing_max,coupling_flag)
-                 
-                 ! Bottom-Right (i+1, j+1)
-                 q_curr = CMPLX(ing_coarse + ing_step, iing_coarse+
-     $                              ing_step)
-                 CALL get_or_compute(q_curr, cells(4, n_cells),n_k,
-     $              sl_in,msing_max,coupling_flag)
-             END IF
-          END DO
+             CALL get_or_compute(q_curr, coarse_indices(i,j), n_k, 
+     $                        sl_in, msing_max, coupling_flag)
+         END DO
       END DO
+
+      ! PASS 2: Stitch cells together using the stored indices
+      ! No floating point math here, just integer lookups -> Perfect Topology
+      DO i = 1, Q_num - 1
+         DO j = 1, Q_num - 1
+             n_cells = n_cells + 1
+             
+             ! Define corners using the pre-calculated indices
+             cells(1, n_cells) = coarse_indices(i, j)     ! Top-Left
+             cells(2, n_cells) = coarse_indices(i+1, j)   ! Top-Right
+             cells(3, n_cells) = coarse_indices(i, j+1)   ! Bot-Left
+             cells(4, n_cells) = coarse_indices(i+1, j+1) ! Bot-Right
+         END DO
+      END DO
+      
+      DEALLOCATE(coarse_indices) ! Clean up temp array
   
       ! --- 3. Refinement Loops ---
       DO pass = 1, AMR_PASSES
@@ -555,15 +551,29 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: n_k, msing_max
       INTEGER, INTENT(OUT) :: idx_out
       LOGICAL, INTENT(IN) :: coupling_flag
-      INTEGER :: h, curr, ix, iy
+      INTEGER :: h, curr
       COMPLEX(r8) :: delta_val
+      INTEGER(8) :: ix8, iy8, h8   ! 64-bit integers for hash calculation
 
       ! 1. Calculate Hash
-      ix = NINT(REAL(q_in) * HASH_SCALE)
-      iy = NINT(AIMAG(q_in) * HASH_SCALE)
+      !ix = NINT(REAL(q_in) * HASH_SCALE)
+      !iy = NINT(AIMAG(q_in) * HASH_SCALE)
       ! Simple hash mix
-      h = MOD(ABS(ix * 73856093 + iy * 19349663), HASH_SZ) + 1
+      !h = MOD(ABS(ix * 73856093 + iy * 19349663), HASH_SZ) + 1
+  
+      ! 1. Calculate Hash using 64-bit arithmetic
+      ix8 = NINT(REAL(q_in) * HASH_SCALE, KIND=8)
+      iy8 = NINT(AIMAG(q_in) * HASH_SCALE, KIND=8)
+      h8 = MOD(ABS(ix8 * 73856093_8 + iy8 * 19349663_8), 
+     $         INT(HASH_SZ, 8)) + 1_8 
+      h = INT(h8)  ! Safe to convert back, result is within HASH_SZ
       
+      IF (h < 1 .OR. h > HASH_SZ) THEN
+         WRITE(*,*) "HASH ERROR: h=", h, " q_in=", q_in
+         WRITE(*,*) "  ix=", ix8, " iy=", iy8
+         STOP
+      END IF
+
       ! 2. Check collisions
       curr = hash_head(h)
       DO WHILE (curr /= 0)
@@ -593,7 +603,7 @@ c-----------------------------------------------------------------------
       ELSE
            g_tmp = q_in
            delta_val = riccati_f(g_tmp)
-           !delta_val = delta_val - delta_eff
+           delta_val = delta_val - delta_eff
       END IF
       D_store(idx_out) = delta_val
       ! --------------------------
@@ -603,4 +613,417 @@ c-----------------------------------------------------------------------
       hash_head(h) = idx_out
       
       END SUBROUTINE get_or_compute
+      SUBROUTINE dispersion_AMR_v2(n_k, sl_in, msing_max,
+     $                             scan_width, Q_num, AMR_passes,
+     $                             coupling_flag)
+      
+      IMPLICIT NONE
+      
+      INTEGER, INTENT(IN) :: n_k, msing_max, Q_num, AMR_passes
+      REAL(r8), INTENT(IN) :: scan_width
+      TYPE(slayer_inputs_type), INTENT(IN) :: sl_in
+      LOGICAL, INTENT(IN) :: coupling_flag
+      
+      TYPE(amr_cell_type), ALLOCATABLE :: new_cells(:)
+      INTEGER :: i, j, c, corner, pass
+      REAL(r8) :: step, x, y
+      COMPLEX(r8) :: delta_val
+      LOGICAL :: cross_real, cross_imag
+      INTEGER :: n_new_cells
+      INTEGER :: cells_to_refine, cells_kept
+      
+      ! --- 1. Clean Initialization ---
+      WRITE(*,*) '=== AMR v2 Starting ==='
+      
+      IF (ALLOCATED(amr_cells)) THEN
+          WRITE(*,*) 'Deallocating old amr_cells'
+          DEALLOCATE(amr_cells)
+      END IF
+      IF (ALLOCATED(Q_store)) DEALLOCATE(Q_store)
+      IF (ALLOCATED(D_store)) DEALLOCATE(D_store)
+      
+      ALLOCATE(amr_cells(MAX_CELLS))
+      ALLOCATE(new_cells(MAX_CELLS))
+      
+      ! Initialize all cells
+      DO i = 1, MAX_CELLS
+          amr_cells(i)%Q = (0.0d0, 0.0d0)
+          amr_cells(i)%D = (0.0d0, 0.0d0)
+          amr_cells(i)%needs_refine = .FALSE.
+          new_cells(i)%Q = (0.0d0, 0.0d0)
+          new_cells(i)%D = (0.0d0, 0.0d0)
+          new_cells(i)%needs_refine = .FALSE.
+      END DO
+      
+      n_amr_cells = 0
+      step = (2.0d0 * scan_width) / DBLE(Q_num - 1)
+      
+      WRITE(*,*) 'Scan width:', scan_width
+      WRITE(*,*) 'Q_num:', Q_num
+      WRITE(*,*) 'Step size:', step
+      WRITE(*,*) 'AMR passes:', AMR_passes
+      
+      ! --- 2. Build Initial Coarse Grid ---
+      WRITE(*,*) 'Building initial coarse grid...'
+      
+      DO i = 1, Q_num - 1
+          DO j = 1, Q_num - 1
+              x = -scan_width + DBLE(i-1) * step
+              y = -scan_width + DBLE(j-1) * step
+              
+              n_amr_cells = n_amr_cells + 1
+              
+              IF (n_amr_cells > MAX_CELLS) THEN
+                  WRITE(*,*) 'ERROR: Exceeded MAX_CELLS in init'
+                  STOP
+              END IF
+              
+              ! Define corner coordinates (BL, BR, TL, TR)
+              amr_cells(n_amr_cells)%Q(1) = CMPLX(x, y, KIND=r8)
+              amr_cells(n_amr_cells)%Q(2) = CMPLX(x+step, y, KIND=r8)
+              amr_cells(n_amr_cells)%Q(3) = CMPLX(x, y+step, KIND=r8)
+              amr_cells(n_amr_cells)%Q(4) = CMPLX(x+step, y+step, 
+     $                                            KIND=r8)
+              
+              ! Compute Delta at each corner
+              DO corner = 1, 4
+                  CALL compute_delta_sub(
+     $                amr_cells(n_amr_cells)%Q(corner),
+     $                n_k, sl_in, msing_max, coupling_flag,
+     $                amr_cells(n_amr_cells)%D(corner))
+              END DO
+              
+              amr_cells(n_amr_cells)%needs_refine = .FALSE.
+          END DO
+      END DO
+      
+      WRITE(*,*) 'Initial grid cells:', n_amr_cells
+      WRITE(*,*) 'Sample cell 1 Q(1):', amr_cells(1)%Q(1)
+      WRITE(*,*) 'Sample cell 1 D(1):', amr_cells(1)%D(1)
+      
+      ! --- 3. Refinement Passes ---
+      DO pass = 1, AMR_passes
+          WRITE(*,'(A,I2,A,I7,A)') '   Pass ', pass, 
+     $         ': Processing ', n_amr_cells, ' cells'
+          
+          ! Mark cells that need refinement
+          cells_to_refine = 0
+          DO c = 1, n_amr_cells
+              CALL check_cell_crossing_sub(amr_cells(c), 
+     $                                     cross_real, cross_imag)
+              amr_cells(c)%needs_refine = (cross_real .OR. cross_imag)
+              IF (amr_cells(c)%needs_refine) THEN
+                  cells_to_refine = cells_to_refine + 1
+              END IF
+          END DO
+          
+          WRITE(*,*) '   Cells to refine:', cells_to_refine
+          
+          ! Build new cell list
+          n_new_cells = 0
+          cells_kept = 0
+          
+          DO c = 1, n_amr_cells
+              IF (amr_cells(c)%needs_refine) THEN
+                  ! Subdivide this cell into 4
+                  CALL subdivide_cell_sub(amr_cells(c), 
+     $                 new_cells, n_new_cells, MAX_CELLS,
+     $                 n_k, sl_in, msing_max, coupling_flag)
+              ELSE
+                  ! Keep cell as-is
+                  n_new_cells = n_new_cells + 1
+                  IF (n_new_cells > MAX_CELLS) THEN
+                      WRITE(*,*) 'ERROR: Exceeded MAX_CELLS in refine'
+                      STOP
+                  END IF
+                  new_cells(n_new_cells) = amr_cells(c)
+                  cells_kept = cells_kept + 1
+              END IF
+          END DO
+          
+          WRITE(*,*) '   Cells kept:', cells_kept
+          WRITE(*,*) '   New total cells:', n_new_cells
+          
+          ! Copy new_cells back to amr_cells
+          n_amr_cells = n_new_cells
+          DO c = 1, n_amr_cells
+              amr_cells(c) = new_cells(c)
+          END DO
+          
+      END DO
+      
+      ! --- 4. Flatten to Output Arrays ---
+      WRITE(*,*) 'Flattening cells to output arrays...'
+      CALL flatten_cells_to_points_sub(n_amr_cells)
+      
+      ! Cleanup
+      DEALLOCATE(new_cells)
+      ! Keep amr_cells allocated for potential debugging
+      
+      WRITE(*,*) 'AMR v2 Complete. Unique output points:', n_pts
+      
+      RETURN
+      END SUBROUTINE dispersion_AMR_v2
+
+
+! ============================================================
+      SUBROUTINE compute_delta_sub(q_in, n_k, sl_in, msing_max,
+     $                             coupling_flag, delta_out)
+      
+      IMPLICIT NONE
+      
+      COMPLEX(r8), INTENT(IN) :: q_in
+      INTEGER, INTENT(IN) :: n_k, msing_max
+      TYPE(slayer_inputs_type), INTENT(IN) :: sl_in
+      LOGICAL, INTENT(IN) :: coupling_flag
+      COMPLEX(r8), INTENT(OUT) :: delta_out
+      
+      IF (coupling_flag) THEN
+          g_tmp = q_in*ifac
+          delta_out = dispersion_det(g_tmp, n_k, sl_in, msing_max)
+      ELSE
+          g_tmp = q_in*ifac
+          delta_out = riccati_f(g_tmp)
+          delta_out = delta_out - delta_eff
+      END IF
+      
+      RETURN
+      END SUBROUTINE compute_delta_sub
+
+
+! ============================================================
+      SUBROUTINE check_cell_crossing_sub(cell, cross_real, cross_imag)
+      
+      IMPLICIT NONE
+      
+      TYPE(amr_cell_type), INTENT(IN) :: cell
+      LOGICAL, INTENT(OUT) :: cross_real, cross_imag
+      
+      REAL(r8) :: r_vals(4), i_vals(4)
+      REAL(r8) :: r_min, r_max, i_min, i_max
+      INTEGER :: k
+      
+      ! Extract real and imaginary parts
+      DO k = 1, 4
+          r_vals(k) = REAL(cell%D(k), KIND=r8)
+          i_vals(k) = AIMAG(cell%D(k))
+      END DO
+      
+      r_min = MINVAL(r_vals)
+      r_max = MAXVAL(r_vals)
+      cross_real = (r_min * r_max <= 0.0d0)
+      
+      i_min = MINVAL(i_vals)
+      i_max = MAXVAL(i_vals)
+      cross_imag = (i_min * i_max <= 0.0d0)
+      
+      RETURN
+      END SUBROUTINE check_cell_crossing_sub
+
+
+! ============================================================
+      SUBROUTINE subdivide_cell_sub(parent, new_cells, n_new, 
+     $                              max_cells, n_k, sl_in, 
+     $                              msing_max, coupling_flag)
+      
+      IMPLICIT NONE
+      
+      TYPE(amr_cell_type), INTENT(IN) :: parent
+      TYPE(amr_cell_type), INTENT(INOUT) :: new_cells(*)
+      INTEGER, INTENT(INOUT) :: n_new
+      INTEGER, INTENT(IN) :: max_cells
+      INTEGER, INTENT(IN) :: n_k, msing_max
+      TYPE(slayer_inputs_type), INTENT(IN) :: sl_in
+      LOGICAL, INTENT(IN) :: coupling_flag
+      
+      COMPLEX(r8) :: q_bl, q_br, q_tl, q_tr
+      COMPLEX(r8) :: q_bm, q_tm, q_lm, q_rm, q_mm
+      COMPLEX(r8) :: d_bm, d_tm, d_lm, d_rm, d_mm
+      COMPLEX(r8) :: d_bl, d_br, d_tl, d_tr
+      
+      ! Extract parent corners (BL=1, BR=2, TL=3, TR=4)
+      q_bl = parent%Q(1)
+      q_br = parent%Q(2)
+      q_tl = parent%Q(3)
+      q_tr = parent%Q(4)
+      
+      d_bl = parent%D(1)
+      d_br = parent%D(2)
+      d_tl = parent%D(3)
+      d_tr = parent%D(4)
+      
+      ! Compute midpoint coordinates
+      q_bm = 0.5d0 * (q_bl + q_br)  ! Bottom middle
+      q_tm = 0.5d0 * (q_tl + q_tr)  ! Top middle
+      q_lm = 0.5d0 * (q_bl + q_tl)  ! Left middle
+      q_rm = 0.5d0 * (q_br + q_tr)  ! Right middle
+      q_mm = 0.25d0 * (q_bl + q_br + q_tl + q_tr)  ! Center
+      
+      ! Compute Delta at new midpoints (5 new evaluations)
+      CALL compute_delta_sub(q_bm, n_k, sl_in, msing_max, 
+     $                       coupling_flag, d_bm)
+      CALL compute_delta_sub(q_tm, n_k, sl_in, msing_max, 
+     $                       coupling_flag, d_tm)
+      CALL compute_delta_sub(q_lm, n_k, sl_in, msing_max, 
+     $                       coupling_flag, d_lm)
+      CALL compute_delta_sub(q_rm, n_k, sl_in, msing_max, 
+     $                       coupling_flag, d_rm)
+      CALL compute_delta_sub(q_mm, n_k, sl_in, msing_max, 
+     $                       coupling_flag, d_mm)
+      
+      ! Check space for 4 new cells
+      IF (n_new + 4 > max_cells) THEN
+          WRITE(*,*) 'ERROR: Would exceed MAX_CELLS in subdivide'
+          STOP
+      END IF
+      
+      ! Child 1: Bottom-Left quadrant (BL, BM, LM, MM)
+      n_new = n_new + 1
+      new_cells(n_new)%Q(1) = q_bl
+      new_cells(n_new)%Q(2) = q_bm
+      new_cells(n_new)%Q(3) = q_lm
+      new_cells(n_new)%Q(4) = q_mm
+      new_cells(n_new)%D(1) = d_bl
+      new_cells(n_new)%D(2) = d_bm
+      new_cells(n_new)%D(3) = d_lm
+      new_cells(n_new)%D(4) = d_mm
+      new_cells(n_new)%needs_refine = .FALSE.
+      
+      ! Child 2: Bottom-Right quadrant (BM, BR, MM, RM)
+      n_new = n_new + 1
+      new_cells(n_new)%Q(1) = q_bm
+      new_cells(n_new)%Q(2) = q_br
+      new_cells(n_new)%Q(3) = q_mm
+      new_cells(n_new)%Q(4) = q_rm
+      new_cells(n_new)%D(1) = d_bm
+      new_cells(n_new)%D(2) = d_br
+      new_cells(n_new)%D(3) = d_mm
+      new_cells(n_new)%D(4) = d_rm
+      new_cells(n_new)%needs_refine = .FALSE.
+      
+      ! Child 3: Top-Left quadrant (LM, MM, TL, TM)
+      n_new = n_new + 1
+      new_cells(n_new)%Q(1) = q_lm
+      new_cells(n_new)%Q(2) = q_mm
+      new_cells(n_new)%Q(3) = q_tl
+      new_cells(n_new)%Q(4) = q_tm
+      new_cells(n_new)%D(1) = d_lm
+      new_cells(n_new)%D(2) = d_mm
+      new_cells(n_new)%D(3) = d_tl
+      new_cells(n_new)%D(4) = d_tm
+      new_cells(n_new)%needs_refine = .FALSE.
+      
+      ! Child 4: Top-Right quadrant (MM, RM, TM, TR)
+      n_new = n_new + 1
+      new_cells(n_new)%Q(1) = q_mm
+      new_cells(n_new)%Q(2) = q_rm
+      new_cells(n_new)%Q(3) = q_tm
+      new_cells(n_new)%Q(4) = q_tr
+      new_cells(n_new)%D(1) = d_mm
+      new_cells(n_new)%D(2) = d_rm
+      new_cells(n_new)%D(3) = d_tm
+      new_cells(n_new)%D(4) = d_tr
+      new_cells(n_new)%needs_refine = .FALSE.
+      
+      RETURN
+      END SUBROUTINE subdivide_cell_sub
+
+
+! ============================================================
+      SUBROUTINE flatten_cells_to_points_sub(num_cells)
+      
+      IMPLICIT NONE
+      
+      INTEGER, INTENT(IN) :: num_cells
+      
+      INTEGER :: c, corner, i, j, idx
+      INTEGER :: n_total_corners
+      COMPLEX(r8), ALLOCATABLE :: temp_Q(:), temp_D(:)
+      LOGICAL, ALLOCATABLE :: is_unique(:)
+      REAL(r8) :: tol
+      
+      tol = 1.0d-10
+      n_total_corners = num_cells * 4
+      
+      WRITE(*,*) 'Flatten: num_cells =', num_cells
+      WRITE(*,*) 'Flatten: n_total_corners =', n_total_corners
+      
+      IF (num_cells <= 0) THEN
+          WRITE(*,*) 'ERROR: No cells to flatten'
+          n_pts = 0
+          RETURN
+      END IF
+      
+      ! Allocate temporary arrays
+      ALLOCATE(temp_Q(n_total_corners))
+      ALLOCATE(temp_D(n_total_corners))
+      ALLOCATE(is_unique(n_total_corners))
+      
+      ! Initialize
+      temp_Q = (0.0d0, 0.0d0)
+      temp_D = (0.0d0, 0.0d0)
+      is_unique = .TRUE.
+      
+      ! Gather all corners from cells
+      idx = 0
+      DO c = 1, num_cells
+          DO corner = 1, 4
+              idx = idx + 1
+              temp_Q(idx) = amr_cells(c)%Q(corner)
+              temp_D(idx) = amr_cells(c)%D(corner)
+          END DO
+      END DO
+      
+      WRITE(*,*) 'Gathered corners:', idx
+      
+      ! Mark duplicate points as non-unique
+      ! (Simple O(n²) approach - works fine for moderate sizes)
+      DO i = 1, n_total_corners
+          IF (.NOT. is_unique(i)) CYCLE
+          DO j = i + 1, n_total_corners
+              IF (is_unique(j)) THEN
+                  IF (ABS(temp_Q(j) - temp_Q(i)) < tol) THEN
+                      is_unique(j) = .FALSE.
+                  END IF
+              END IF
+          END DO
+      END DO
+      
+      ! Count unique points
+      n_pts = 0
+      DO i = 1, n_total_corners
+          IF (is_unique(i)) n_pts = n_pts + 1
+      END DO
+      
+      WRITE(*,*) 'Unique points found:', n_pts
+      
+      IF (n_pts <= 0) THEN
+          WRITE(*,*) 'ERROR: No unique points found'
+          DEALLOCATE(temp_Q, temp_D, is_unique)
+          RETURN
+      END IF
+      
+      ! Allocate output arrays
+      IF (ALLOCATED(Q_store)) DEALLOCATE(Q_store)
+      IF (ALLOCATED(D_store)) DEALLOCATE(D_store)
+      ALLOCATE(Q_store(n_pts))
+      ALLOCATE(D_store(n_pts))
+      
+      ! Copy unique points to output
+      idx = 0
+      DO i = 1, n_total_corners
+          IF (is_unique(i)) THEN
+              idx = idx + 1
+              Q_store(idx) = temp_Q(i)
+              D_store(idx) = temp_D(i)
+          END IF
+      END DO
+      
+      WRITE(*,*) 'Copied to output:', idx
+      
+      ! Cleanup temporaries
+      DEALLOCATE(temp_Q, temp_D, is_unique)
+      
+      RETURN
+      END SUBROUTINE flatten_cells_to_points_sub
       END MODULE gslayer_mod

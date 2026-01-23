@@ -25,9 +25,19 @@ c      INTEGER, PARAMETER :: r8=SELECTED_REAL_KIND(13,307)
       REAL(r8), PARAMETER :: HASH_SCALE = 1.0d5                  ! Scaling factor for integer hashing
       INTEGER, ALLOCATABLE :: hash_head(:)     ! Hash bucket heads
       INTEGER, ALLOCATABLE :: hash_next(:)     ! Linked list next pointers
+
+      ! Replace hash-based storage with cell-based storage
+      INTEGER, PARAMETER :: MAX_CELLS = 500000
+      TYPE :: amr_cell_type
+          COMPLEX(r8) :: Q(4)      ! Corner Q values (TL, TR, BL, BR)
+          COMPLEX(r8) :: D(4)      ! Corner Delta values
+          LOGICAL :: needs_refine  ! Flag for refinement
+      END TYPE amr_cell_type
+      TYPE(amr_cell_type), ALLOCATABLE :: amr_cells(:)
+      INTEGER :: n_amr_cells
+      ! For output: flattened unique points
+      COMPLEX(r8), ALLOCATABLE :: Q_store(:), D_store(:)
       INTEGER :: n_pts
-      COMPLEX(r8), ALLOCATABLE :: Q_store(:)    ! Stores Q coordinates
-      COMPLEX(r8), ALLOCATABLE :: D_store(:)    ! Stores Result Delta
 
       TYPE result_type
           REAL(r8), ALLOCATABLE :: inQs(:), iinQs(:),

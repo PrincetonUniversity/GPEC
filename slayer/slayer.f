@@ -539,9 +539,10 @@ c           ! Fill gamma_sol_arr with 0's, will by used by python root finding
 
             IF (amr_flag) THEN
 
-               CALL dispersion_AMR(n_k,sl_in,msing_max,scan_width,
+               CALL dispersion_AMR_v2(n_k,sl_in,msing_max,scan_width,
      $                  Q_num,AMR_passes,coupling_flag)
                WRITE(*,*)"Q_store(10) = ",Q_store(10)
+               WRITE(*,*)"D_store(10) = ",D_store(10)
 
                WRITE(*,*)"n_pts = ",n_pts
 
@@ -553,22 +554,27 @@ c           ! Fill gamma_sol_arr with 0's, will by used by python root finding
                ALLOCATE(all_deltas_out(k)%real_deltas(n_pts), 
      $         all_deltas_out(k)%imag_deltas(n_pts)) 
                
+               WRITE(*,*)"Allocated all_deltas_out"
+
                DO i = 1, n_pts
                   all_deltas_out(k)%inQs(i) = REAL(Q_store(i))
                   IF (fitz_flag) THEN
-                     all_deltas_out(k)%iinQs(i) = AIMAG(Q_store(i))
+                     all_deltas_out(k)%iinQs(i) = -AIMAG(Q_store(i))
                   ELSE
                      all_deltas_out(k)%iinQs(i) = -AIMAG(Q_store(i))
                   END IF
                   all_deltas_out(k)%real_deltas(i) = REAL(D_store(i))
                   all_deltas_out(k)%imag_deltas(i) = AIMAG(D_store(i))
                END DO
+
+               WRITE(*,*)"all_deltas_out(1)%real_deltas(10): ",
+     $          all_deltas_out(1)%real_deltas(10)
          
                ! Clean up temporary AMR memory
-               DEALLOCATE(Q_store, D_store, hash_head, hash_next)
+               DEALLOCATE(Q_store, D_store)!, hash_head, hash_next)
 
             END IF
-
+            WRITE(*,*)"Exited if_AMR"
             IF ((stabscan_flag)) THEN ! was .AND. (k == 2)
                WRITE(*,*)"------------------------------------------"
                WRITE(*,'(A,F0.1)')' >>> Running [Re(Q),'//
