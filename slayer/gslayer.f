@@ -179,17 +179,18 @@ c-----------------------------------------------------------------------
 c     Subprogram 2. output_gamma
 c     Take SLAYER input and output dicts, send to netCDF subroutine
 c-----------------------------------------------------------------------
-      SUBROUTINE output_gamma(est_gamma_flag,sl_in,sl_out,
+      SUBROUTINE output_gamma(est_gamma_flag,m_AMR,sl_in,sl_out,
      $                        all_deltas_out)
 
       ! Declarations (include necessary type declarations from original code)
       LOGICAL, INTENT(IN) :: est_gamma_flag
+      INTEGER, INTENT(IN) :: m_AMR
       TYPE(slayer_inputs_type), INTENT(IN) :: sl_in
       TYPE(slayer_outputs_type), INTENT(IN) :: sl_out
       TYPE(deltas_outputs_type), INTENT(IN) :: 
      $                            all_deltas_out(SIZE(sl_in%qval_arr))
 
-      CALL slayer_netcdf_out(SIZE(sl_in%qval_arr),est_gamma_flag,
+      CALL slayer_netcdf_out(SIZE(sl_in%qval_arr),m_AMR,est_gamma_flag,
      $                       sl_in,sl_out,all_deltas_out)
 
       END SUBROUTINE output_gamma
@@ -698,9 +699,7 @@ c-----------------------------------------------------------------------
       END DO
       
       WRITE(*,*) 'Initial grid cells:', n_amr_cells
-      WRITE(*,*) 'Sample cell 1 Q(1):', amr_cells(1)%Q(1)
-      WRITE(*,*) 'Sample cell 1 D(1):', amr_cells(1)%D(1)
-      
+
       ! --- 3. Refinement Passes ---
       DO pass = 1, AMR_passes
           WRITE(*,'(A,I2,A,I7,A)') '   Pass ', pass, 

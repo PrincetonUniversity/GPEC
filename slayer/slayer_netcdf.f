@@ -48,18 +48,18 @@ c -----------------------------------------------------------------------
 c -----------------------------------------------------------------------
 c      declarations.
 c -----------------------------------------------------------------------
-      SUBROUTINE slayer_netcdf_out(msing,est_gamma_flag,
+      SUBROUTINE slayer_netcdf_out(msing,m_AMR,est_gamma_flag,
      $         sl_in,sl_out,all_deltas_out)
 
-      INTEGER, INTENT(IN) :: msing
+      INTEGER, INTENT(IN) :: msing,m_AMR
       LOGICAL, INTENT(IN) :: est_gamma_flag
       TYPE(slayer_inputs_type), INTENT(IN) :: sl_in
       TYPE(slayer_outputs_type), INTENT(IN) :: sl_out
-      TYPE(deltas_outputs_type), INTENT(IN) :: all_deltas_out(msing)
+      TYPE(deltas_outputs_type), INTENT(IN) :: all_deltas_out(m_AMR)
 
       INTEGER :: i,ncid,r_id,qsing_dim,i_dim,r_dim,qr_id,omegas_id,
      $    Q_id,Q_e_id,Q_i_id,d_b_id,c_b_id,Dnorm_id,p_perp_id,S_id,
-     $    pr_id,dpp_id,dc_id,dels_db_id,gs_id,ge_id,
+     $    pr_id,dpp_id,dc_id,dels_db_id,gs_id,ge_id,nAMR_dim,
      $    qsing_id,qc_id,p_tor_id
 
       INTEGER :: run, run_dimid, point_dimid, varids(4)
@@ -100,17 +100,17 @@ c
 
       ! 1. Find the Maximum AMR Grid Size across all surfaces
       max_pts_all = 0
-      DO s = 1, msing
-      IF (ALLOCATED(all_deltas_out(s)%inQs)) THEN
+      IF (ALLOCATED(all_deltas_out(1)%inQs)) THEN
+      DO s = 1, m_AMR
           max_pts_all = MAX(max_pts_all,SIZE(all_deltas_out(s)%inQs))
-      END IF
       END DO
-  
+      END IF
+
       ! 2. Allocate Rectangular Buffers (Points, Surfaces, Re/Im)
       !    Shape: (Max_Points, Number_Surfaces, 2)
-      ALLOCATE(buffer_q(max_pts_all, msing, 2))
-      ALLOCATE(buffer_d(max_pts_all, msing, 2))
-      ALLOCATE(n_pts_arr(msing))
+      ALLOCATE(buffer_q(max_pts_all, m_AMR, 2))
+      ALLOCATE(buffer_d(max_pts_all, m_AMR, 2))
+      ALLOCATE(n_pts_arr(m_AMR))
   
       ! Initialize with Fill Value (so unused space is ignored by plotters)
       buffer_q = 0.0
@@ -118,8 +118,8 @@ c
       n_pts_arr = 0
   
       ! 3. Flatten the Ragged Data into the Buffers
-      DO s = 1, msing
-      IF (ALLOCATED(all_deltas_out(s)%inQs)) THEN
+      IF (ALLOCATED(all_deltas_out(1)%inQs)) THEN
+      DO s = 1, m_AMR
           n_curr = SIZE(all_deltas_out(s)%inQs)
           n_pts_arr(s) = n_curr
           
@@ -134,8 +134,8 @@ c
           buffer_d(1:n_curr,s,1)=all_deltas_out(s)%real_deltas(1:n_curr)
           ! Imag part -> Index 2
           buffer_d(1:n_curr,s,2)=all_deltas_out(s)%imag_deltas(1:n_curr)
-      END IF
       END DO
+      END IF
 c -----------------------------------------------------------------------
 c      define global file attributes
 c -----------------------------------------------------------------------
@@ -157,6 +157,8 @@ c -----------------------------------------------------------------------
          !CALL check( nf90_def_var(ncid,"r",nf90_int,r_dim,r_id))
       IF(msing>0)THEN
          CALL sl_check( nf90_def_dim(ncid,"r",msing,qsing_dim) ) !r_dim = q_rational
+         CALL sl_check( nf90_def_dim(ncid,"r_AMR",m_AMR,
+     $                  nAMR_dim) ) !r_dim = q_rational
          CALL sl_check( nf90_def_dim(ncid, "i", 2, i_dim) )
          CALL sl_check( nf90_def_var(ncid,"r",nf90_int,
      $    qsing_dim,qsing_id))
@@ -211,9 +213,9 @@ c -----------------------------------------------------------------------
      $             (/qsing_dim/), var_npts_id))
       !    Note: Dimensions order is (pts, surf, cplx)
       CALL sl_check(nf90_def_var(ncid, 'Q_AMR', NF90_DOUBLE,
-     $      (/dim_pts_id, qsing_dim, i_dim/), var_q_id))      
+     $      (/dim_pts_id, nAMR_dim, i_dim/), var_q_id))      
       CALL sl_check(nf90_def_var(ncid, 'Deltas_AMR', NF90_DOUBLE,
-     $      (/dim_pts_id, qsing_dim, i_dim/), var_d_id))
+     $      (/dim_pts_id, nAMR_dim, i_dim/), var_d_id))
 
       ! end definitions
       CALL sl_check( nf90_enddef(ncid) )
