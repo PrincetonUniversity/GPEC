@@ -201,6 +201,18 @@ c-----------------------------------------------------------------------
       tmp=delta(1)
       delta(1)=delta(2)
       delta(2)=tmp
+
+      ! IF (restype%ising == 6) THEN
+      !    ! It can sometimes be important to adjust these numerics
+      !    ! per-surface, so leaving this here for now. Deltac should
+      !    ! be inspected to ensure convergence.
+      !    ! xmax=xmax/2.0
+      !    ! dx1=dx1/16.0
+      !    ! dx2=dx2/16.0
+      !    inps_type="inps"
+      !    gal_method="resonant"
+      ! ENDIF
+
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

@@ -1413,6 +1413,7 @@ c-----------------------------------------------------------------------
 c     solve global matrix.
 c-----------------------------------------------------------------------
       gal%sol=gal%rhs
+      WRITE(*,*)"Grid generated with ",gal%ndim," DOF"
       IF (solver == "LU") THEN
          WRITE(*,*)"Performing Galerkin matrix LU factorization"
          CALL zgbtrf(gal%ndim,gal%ndim,gal%kl,gal%ku,gal%mat,gal%ldab,
@@ -1854,6 +1855,7 @@ c-----------------------------------------------------------------------
 c     find the cell and interval containing x.
 c-----------------------------------------------------------------------
       IF (x.LT.psilow.OR.x.GT.psihigh) THEN
+         WRITE(*,*) "Error in gal_get_solution: x out of range = ",x
          CALL program_stop("x is out of range.")
       ENDIF
       DO

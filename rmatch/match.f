@@ -1338,6 +1338,10 @@ c-----------------------------------------------------------------------
       rmat(2*msing+1:4*msing,1:coil%mcoil)
      $     =-TRANSPOSE(delta(coil%m1:coil%m2,1:2*msing))
       deltar=0
+
+      ! Adjust nx for inps grid if needed
+      IF (inps_type == 'inps') nx = INT(nx*inps_xfac)
+
 c-----------------------------------------------------------------------
 c     start loop over singular surfaces.
 c-----------------------------------------------------------------------
@@ -1436,6 +1440,15 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     output for coupling to the coil (final rpec run).
 c-----------------------------------------------------------------------
+      
+      IF (coil%ideal_flag) THEN
+         DO ising=1,msing
+            ! Set taur and sfac to largest numbers
+            restype(ising)%taur=HUGE(1.0_r8)
+            eta(ising)=0.
+         ENDDO
+      ENDIF
+
       countsing=0
       DO ip=0,outs%tot_grids
          IF (outs%issing(ip)) countsing=countsing+1
@@ -1527,7 +1540,6 @@ c     get inner region solutions
 c-----------------------------------------------------------------------
       ALLOCATE(ins%sols(msing))
       ! interp_np=INT(interp_np*inps_xfac)
-      IF (inps_type == 'inps') nx = INT(nx*inps_xfac)
       ins%tot_g=interp_np*nx
       output_sol=.TRUE.
       DO ising=1,msing
@@ -1719,8 +1731,6 @@ c-----------------------------------------------------------------------
          IF (match_sol%auto_connect) THEN
             CALL match_auto_connect (csol,cout,inpsifac,
      $                               intotsol,outtotsol)
-            CALL match_auto_connect (csol,cout,inpsifac,
-     $                               intotsol_b,outtotsol_b)
          ENDIF
       ENDIF
 c-----------------------------------------------------------------------
@@ -1794,6 +1804,62 @@ c-----------------------------------------------------------------------
             WRITE (match_unit,*)
          ENDDO
          CALL ascii_close(match_unit)
+
+         WRITE(filename1,*) TRIM(filename)//'_b_out.out'
+         CALL ascii_open(match_unit,TRIM(ADJUSTL(filename1)),"REPLACE")
+         WRITE (match_unit,19) 'psifac'
+         DO m=outs%mlow,outs%mhigh
+            WRITE (tmp,"(I4)") m
+            tmp=ADJUSTL(tmp)
+            WRITE (comp_tittle,*) 'REAL(',TRIM(tmp),')'
+            WRITE (match_unit,19) TRIM(comp_tittle)
+            WRITE (comp_tittle,*) 'IMAG(',TRIM(tmp),')'
+            WRITE (match_unit,19) TRIM(comp_tittle)
+         ENDDO
+19       FORMAT (1P,A15,$)
+         WRITE (match_unit,*)
+         DO ip=0,outs%tot_grids
+            IF (outs%issing(ip)) CYCLE
+            WRITE (match_unit,29) outs%psi(ip)
+29          FORMAT (1P,E20.10,$)
+            DO ipert=1,outs%mpert
+               WRITE (match_unit,29)
+     $               REAL(outtotsol_b(ipert,ip)),
+     $               IMAG(outtotsol_b(ipert,ip))
+            ENDDO
+            WRITE (match_unit,*)
+         ENDDO
+         CALL ascii_close(match_unit)
+      ENDIF
+c-----------------------------------------------------------------------
+c     write full inner region solutions, ascii.
+c-----------------------------------------------------------------------
+      IF(out_rpecsol)THEN
+         WRITE(filename1,*) TRIM(filename)//'_in.out'
+         CALL ascii_open(match_unit,TRIM(ADJUSTL(filename1)),"REPLACE")
+         WRITE (match_unit,11) 'psifac'
+         DO m=outs%mlow,outs%mhigh
+            WRITE (tmp,"(I4)") m
+            tmp=ADJUSTL(tmp)
+            WRITE (comp_tittle,*) 'REAL(',TRIM(tmp),')'
+            WRITE (match_unit,11) TRIM(comp_tittle)
+            WRITE (comp_tittle,*) 'IMAG(',TRIM(tmp),')'
+            WRITE (match_unit,11) TRIM(comp_tittle)
+         ENDDO
+         WRITE (match_unit,*)
+         DO ising=1,msing
+            DO ip=-ins%tot_g,ins%tot_g
+               inpsi=inpsifac(ip,ising)
+               CALL cspline_eval(q_sp, inpsi, 1)
+               insol=intotsol(ip,ising)
+               WRITE (match_unit,21) inpsi,
+     $                             REAL(q_sp%f(1)),
+     $                             REAL(insol),
+     $                             IMAG(insol)
+            ENDDO
+            WRITE (match_unit,*)
+         ENDDO
+         CALL ascii_close(match_unit)
       ENDIF
 c-----------------------------------------------------------------------
 c     write inner region solutions, binary.
@@ -1819,6 +1885,8 @@ c-----------------------------------------------------------------------
          WRITE(filename1,*) TRIM(filename)//'_in.bin'
          CALL bin_open(bin_unit,TRIM(ADJUSTL(filename1)),
      $                                 "REPLACE","REWIND","none")
+         ! Needed for python reading, but breaks xdraw compatibility
+         WRITE(bin_unit) msing, -ins%tot_g, ins%tot_g
          DO ising=1,msing
             DO ip=-ins%tot_g,ins%tot_g
                inpsi=inpsifac(ip,ising)
@@ -1874,6 +1942,8 @@ c-----------------------------------------------------------------------
          WRITE(filename1,*) TRIM(filename)//'_b_in.bin'
          CALL bin_open(bin_unit,TRIM(ADJUSTL(filename1)),
      $                                 "REPLACE","REWIND","none")
+         ! Needed for python reading, but breaks xdraw compatibility
+         WRITE(bin_unit) msing, -ins%tot_g, ins%tot_g
          DO ising=1,msing
             DO ip=-ins%tot_g,ins%tot_g
                inpsi=inpsifac(ip,ising)
