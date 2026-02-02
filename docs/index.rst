@@ -1,6 +1,8 @@
 
 .. include:: ../install/README
 
+**See full installation instructions in** :doc:`installation <installation>`
+
 .. _Run_Process:
 
 Running using OMFIT
