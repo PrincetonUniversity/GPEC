@@ -46,7 +46,7 @@ allf: v neededdeps xdraw equil lsode zlange zvode orbit vacuum pentrc dcon match
 
 # Print verbose info
 .PHONY: v
-v: | FORCE
+v:
 	@echo "------------------------------------------------------------"
 	@echo "Defaults tailored for platform $(if $(PLATFORM),$(PLATFORM),NULL) on host $(if $(HOST),$(HOST),NULL)"
 	@echo "Compiling with FC = $(FC)"
@@ -64,8 +64,6 @@ v: | FORCE
 	@echo
 	@echo "Set environment FC,LAPACKHOME,NETCDFHOME to change these"
 	@echo "------------------------------------------------------------"
-
-FORCE:
 
 # Cleaning
 clean:
