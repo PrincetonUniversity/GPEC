@@ -1608,6 +1608,9 @@ c-----------------------------------------------------------------------
 
       INTEGER :: resm
       REAL(r8) :: qintb, rho_gyro, wpol, delta_callen, delta_rmp
+      REAL(r8) :: A_trig, B_trig, C_trig, p_trig, q_trig, R_trig,
+     $     theta_trig, root_trig_1, root_trig_2, root_trig_3,
+     $     min_trig, max_trig
       REAL(r8), DIMENSION(0:mpsi) :: psitor, rhotor
       REAL(r8), DIMENSION(0:mthsurf) :: r_tmp
       TYPE(spline_type) :: sr
@@ -1769,21 +1772,60 @@ c-----------------------------------------------------------------------
             ! Delta'_m/n in Callen... should the 2 be generalized to nn?
             delta_callen = -2 * resm / sr%f(1)
             ! Callen critical vac width
-            hw_crit(ising) = 0.5 * wpol ** (2./3) * sr%f(1) ** (1./3)
-     $         * ((27. / 4) * abs(sr%f(1) * delta_callen) ) ** (1./6)
-     $         / sqrt(sr%f(1) * delta_rmp)
-            ! computing Callen w_sat and w_min. These are already in units of psi_n
-            ! computing vacuum island width (should be the same as in the vsingfld subroutine)
+            hw_crit(ising) = 0.5 * (wpol) ** (2./3) 
+     $         * ((27. / 4) * abs(delta_callen)) ** (1./6)
+     $         / (delta_rmp) ** (1./2)
+
+            ! computing Callen w_sat and w_min from cubic equation roots
+            ! requires vacuum island width (should be the same as in the vsingfld subroutine)
             visland_hwidth(ising)=
      $        SQRT(ABS(4*vsingfld(ising)*area(ising)/
      $        (twopi*shear*sq%f(4)*chi1)))
-            hw_sat(ising) = visland_hwidth(ising) 
-     $         * (delta_rmp/abs(delta_callen)) ** (1./2)
-            hw_min(ising) = 0.5 * ((wpol/sr%f1(1))
-     $         /2*visland_hwidth(ising)) ** 3 
-     $         * (2*visland_hwidth(ising)/(sr%f(1)*delta_rmp))
+
+            A_trig=delta_callen
+            B_trig=delta_rmp
+     $        * (2*visland_hwidth(ising)*sr%f1(1))**2 ! converting island width to meters from psi_n
+            C_trig=-(wpol**2)
+            p_trig=B_trig/A_trig ! always negative as defined by delta_callen
+            q_trig=C_trig/A_trig ! always negative as definted by delta_callen
+            R_trig=(-p_trig/3)**(1./2) ! should be real
+            theta_trig=ACOS(-q_trig/(2*R_trig**3))
+            
+            ! these are all half-widths!
+            root_trig_1=R_trig*COS(theta_trig/3)
+            root_trig_2=R_trig*COS((theta_trig+2*pi)/3)
+            root_trig_3=R_trig*COS((theta_trig+4*pi)/3)
+
+            min_trig=HUGE(1.0_r8)
+            max_trig=0.0_r8
+            ! appropriately assigning the roots to w_min and w_sat
+            IF (root_trig_1 > 0.0_r8) THEN
+                min_trig=MIN(min_trig,root_trig_1)
+                max_trig=MAX(max_trig,root_trig_1)
+            ENDIF
+            IF (root_trig_2 > 0.0_r8) THEN
+                min_trig=MIN(min_trig,root_trig_2)
+                max_trig=MAX(max_trig,root_trig_2)
+            ENDIF
+            IF (root_trig_3 > 0.0_r8) THEN
+                min_trig=MIN(min_trig,root_trig_3)
+                max_trig=MAX(max_trig,root_trig_3)
+            ENDIF
+            IF (max_trig > 0.0_r8) THEN
+                hw_sat(ising)=max_trig
+            ELSE
+                hw_sat(ising)=0.0_r8
+            ENDIF
+            IF (min_trig < HUGE(1.0_r8)) THEN
+                hw_min(ising)=min_trig
+            ELSE
+                hw_min(ising)=0.0_r8
+            ENDIF
+
             ! convert from meters to psi_n for clear comparision to island_hwidth
             hw_crit(ising) = hw_crit(ising) / sr%f1(1)
+            hw_sat(ising) = hw_sat(ising) / sr%f1(1)
+            hw_min(ising) = hw_min(ising) / sr%f1(1)
 
          ENDIF
 c-----------------------------------------------------------------------
@@ -1800,16 +1842,15 @@ c-----------------------------------------------------------------------
          IF (verbose) THEN
 
             IF (callen_threshold_flag .OR. slayer_threshold_flag) THEN
-               IF(ising == 1) WRITE(*,'(1x,10a13)')
+               IF(ising == 1) WRITE(*,'(1x,9a13)')
      $              "psi","q","singflx","chirikov",
      $              "w_island","w_crit","singflx_crit",
-     $              "w_sat","w_min","w_vac"
-               WRITE(*,'(1x,es13.3,f13.3,es13.3,f13.3,6es13.3)')
+     $              "w_sat","w_min"
+               WRITE(*,'(1x,es13.3,f13.3,es13.3,f13.3,7es13.3)')
      $              respsi,sq%f(4),ABS(singflx_mn(resnum(ising),ising)),
      $              chirikov(ising),2*island_hwidth(ising),
      $              2*hw_crit(ising),b_crit(ising),
-     $              2*hw_sat(ising),2*hw_min(ising),
-     $              2*visland_hwidth(ising) ! also printing vacuum island width here for diagnostic purposes    
+     $              2*hw_sat(ising),2*hw_min(ising)
             ELSE
        
                IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12,a12)') "psi",
