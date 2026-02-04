@@ -1,12 +1,16 @@
 # This is the makefile for STRIDE.
+
 include ../install/DEFAULTS.inc
 
 # flags unique to stride (not to be clobbered by top level install/makefile options)
-IFLAGS = -I../equil -I$(MATHINC) -I$(NETCDFINC)
-F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
+IFLAGS = -I../equil -I../vacuum -I$(MATHINC) -I$(NETCDFINC)
+F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS) $(RECURSFLAG) $(LEGACYFLAG)
 
 .f.o:
 	$(F90) -c $*.f
+
+.F.o:
+	$(F90) -c $*.F
 
 LIBDIR = ../lib
 
@@ -54,7 +58,7 @@ vacuum:
 	cd ../vacuum; make
 
 stride: $(OBJS)
-	$(F90) -o stride $(OBJS) $(LIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS)
+	$(F90) -o stride $(OBJS) $(LIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS) $(NETCDF_EXTRA_LIBS)
 
 ifeq ($(wildcard version.inc),)
 version.inc: force
@@ -72,7 +76,7 @@ endif
 force:
 
 clean:
-	rm -f *.o *.mod *.out *.bin *.dat *~ *.diff stride *.log *.optrpt *.dci *__genmod.f90
+	rm -f *.o *.mod *.out *.bin *.dat *~ *.diff stride *.log *.optrpt *.dci *__genmod.f90 *.original
 
 # dependencies
 

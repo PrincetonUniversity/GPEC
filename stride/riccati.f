@@ -25,7 +25,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE riccati_mod
-      USE sing_mod
+      USE stride_sing_mod
       USE zvode1_mod
       IMPLICIT NONE
 
@@ -400,7 +400,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE riccati_nojac(neq_jac, t, y, ml, mu, pd, nrpd)
          INTEGER  neq_jac, ml, mu, nrpd
-         REAL*8  t, y, pd(nrpd,2)
+         REAL(r8)  t, y, pd(nrpd,2)
          pd(:,:) = 0
 c-----------------------------------------------------------------------
 c     terminate.

@@ -2,11 +2,11 @@
 include ../install/DEFAULTS.inc
 
 IFLAGS = -I../equil -I../harvest -I$(MATHINC) -I$(NETCDFINC)
-F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
+F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS) $(RECURSFLAG)
 export FFLAGS
 
 .f.o:
-	$(F90) -c $*.f
+	$(F90) $(LEGACYFLAG) -c $*.f
 
 %.o: %.f90
 	$(F90) -c $<
@@ -19,7 +19,7 @@ LIBDIR = ../lib
 LIBS = \
 	-llsode \
 	-lequil \
-	-lharvest
+	-lharvest \
 
 OBJS = \
     params.o \
@@ -28,7 +28,6 @@ OBJS = \
 	lsode1.o \
 	lsode2.o \
 	special.o \
-    grid.o \
     inputs.o \
 	energy.o \
     pitch.o \
@@ -77,8 +76,7 @@ pentrc: $(OBJS)
 
 lsode1.o: ../lsode/lsode.o
 lsode2.o: ../lsode/lsode.o
-params.o: version.inc
-grid.o: 
+params.o: version.inc ../equil/local_mod.mod
 utilities.o: params.o
 special.o: params.o utilities.o
 dcon_interface.o: params.o utilities.o ../equil/spline_mod.mod ../equil/fspline_mod.mod ../equil/cspline_mod.mod ../equil/bicube_mod.mod
@@ -91,4 +89,4 @@ pentrc_interface.o: params.o utilities.o special.o inputs.o energy.o pitch.o tor
 pentrc.o:  params.o  pentrc_interface.o
 
 clean:
-	rm -f *.o *.mod *.out *.bin pentrc
+	rm -f *.o *.mod *.out *.bin pentrc *.original

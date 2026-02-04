@@ -16,10 +16,15 @@
 *vacin5
 */penmpi
 */version.inc
+*/*.original
+*/make.log
+modovmc
 
 .cproject
 .idea/
+.vscode/
 .project
+.DS_Store
 bin/
 docs/_build/
 docs/examples/*/gal_solution.dat

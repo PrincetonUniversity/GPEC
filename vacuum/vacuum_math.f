@@ -10,22 +10,24 @@ c      2. spl1d2
 c      4. search
 c      5. searchx
 c      6. green
-c      7. aleg
-c      8. trans
-c      9. transdx
-c     10. transdxx
-c     11. smooth0
-c     12. smooth
-c     13. lagp
-c     14. shft
-c     15. lagpe4
-c     16. lag
-c     17. eigen
-c     18. mult
-c     19. matmul1
-c     20. matmul3
-c     21. indef4
-c     22. atan2m
+c      7. aleg_old
+c      8. aleg
+c      9. ek3
+c     10. trans
+c     11. transdx
+c     12. transdxx
+c     13. smooth0
+c     14. smooth
+c     15. lagp
+c     16. shft
+c     17. lagpe4
+c     18. lag
+c     19. eigen
+c     20. mult
+c     21. matmul1
+c     22. matmul3
+c     23. indef4
+c     24. atan2m
 c-----------------------------------------------------------------------
 c     subprogram 1. spl1d1.
 c     spline fitting routine.
@@ -34,7 +36,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine spl1d1(n,x,f,w,iop,ij,a,b,c)
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension iop(*),x(*),f(*),w(*),a(*),b(*),c(*)
       data zz,oz,tz,sz/0.0e0,1.0e0,3.0e0,6.0e0/
@@ -46,7 +49,14 @@ c-----------------------------------------------------------------------
       b(2)=(x(3)-x(1))/tz
       w(ij+1)=(f(2*ij+1)-f(ij+1))/(x(3)-x(2))-(f(ij+1)-f(1))
      1     /(x(2)-x(1))
-      if (n-3)3,4,3
+      SELECT CASE (n - 3)
+      CASE (: -1)  ! Less than 0
+          GOTO 3
+      CASE (0)     ! Equal to 0
+          GOTO 4
+      CASE (1 :)   ! Greater than 0
+          GOTO 3
+      END SELECT
     3 do 10 i=3,k
       m=(i-1)*ij+1
       j1=m+ij
@@ -57,13 +67,21 @@ c-----------------------------------------------------------------------
       e=(f(j1)-f(m))/(x(i+1)-x(i))-(f(m)-f(j2))/
      1     (x(i)-x(i-1))
       w(m)=e-(don*w(j2))/b(i-1)
-   10 a(i)=-(don*a(i-1))/b(i-1)
+      a(i)=-(don*a(i-1))/b(i-1)
+   10 continue
     4 k1=(n-2)*ij+1
       c(n-1)=-((x(n)-x(n-1))/sz)/b(n-1)
       w(k1)=w(k1)/b(n-1)
       a(n-1)=a(n-1)/b(n-1)
       k2=k-1
-      if (n-3)7,8,7
+      SELECT CASE (n - 3)
+      CASE (: -1)  ! Less than 0
+          GOTO 7
+      CASE (0)     ! Equal to 0
+          GOTO 8
+      CASE (1 :)   ! Greater than 0
+          GOTO 7
+      END SELECT
     7 do 20 i=2,k2
       j=n-i
       con=(x(j+1)-x(j))/sz
@@ -71,14 +89,36 @@ c-----------------------------------------------------------------------
       c(j)=-(con*c(j+1))/b(j)
       k3=(j-1)*ij+1
       m=k3+ij
-   20 w(k3)=(w(k3)-con*w(m))/b(j)
+      w(k3)=(w(k3)-con*w(m))/b(j)
+   20 continue
     8 k4=(n-1)*ij+1
-      if (iop(1)-5) 201,200,201
+      SELECT CASE (iop(1)-5)
+      CASE (: -1)  ! Less than 0
+         GOTO 201
+      CASE (0)     ! Equal to 0
+         GOTO 200
+      CASE (1 :)   ! Greater than 0
+         GOTO 201
+      END SELECT
   201 c1=w(1)
-      if (iop(2)-5) 203,202,203
+      SELECT CASE (iop(2)-5)
+      CASE (: -1)  ! Less than 0
+         GOTO 203
+      CASE (0)     ! Equal to 0
+         GOTO 202
+      CASE (1 :)   ! Greater than 0
+         GOTO 203
+      END SELECT
   203 c2=w(k4)
       go to 205
-  200 if (n-4)300,302,302
+  200 SELECT CASE (n - 4)
+      CASE (: -1)  ! Less than 0
+         GOTO 300
+      CASE (0)     ! Equal to 0
+         GOTO 302
+      CASE (1 :)   ! Greater than 0
+         GOTO 302
+      END SELECT
   302 a1=x(1)-x(2)
       a2=x(1)-x(3)
       a3=x(1)-x(4)
@@ -88,7 +128,14 @@ c-----------------------------------------------------------------------
       w(1)=f(1)*(oz/a1+oz/a2+oz/a3)-a2*a3*f(ij+1)/(a1*a4*a5)+
      1     a1*a3*f(2*ij+1)/(a2*a4*a6 )-a1*a2*f(3*ij+1)/(a3*a5*a6)
       go to 201
-  202 if (n-4)300,303,303
+  202 SELECT CASE (n-4)
+      CASE (: -1)  ! Less than 0
+         GOTO 300
+      CASE (0)     ! Equal to 0
+         GOTO 303
+      CASE (1 :)   ! Greater than 0
+         GOTO 303
+      END SELECT
   303 b1=x(n)-x(n-3)
       b2=x(n)-x(n-2)
       b3=x(n)-x(n-1)
@@ -105,7 +152,14 @@ c-----------------------------------------------------------------------
  2051 continue
       m=(i-1)*ij+1
       go to 60
-   70 if (i-1)80,50,80
+   70 SELECT CASE (i-1)
+      CASE (: -1)  ! Less than 0
+         GOTO 80
+      CASE (0)     ! Equal to 0
+         GOTO 50
+      CASE (1 :)   ! Greater than 0
+         GOTO 80
+      END SELECT
    80 w(1)=w(1)-bob*w(m)
       w(k4)=w(k4)-bill*w(m)
       a(1)=a(1)-bob*a(i)
@@ -118,33 +172,75 @@ c-----------------------------------------------------------------------
       go to 100
    60 mk=iop(1)
       go to (62,64,66,68,66),mk
-   62 if (i-1)71,63,71
+   62 SELECT CASE (i-1)
+      CASE (: -1)  ! Less than 0
+         GOTO 71
+      CASE (0)     ! Equal to 0
+         GOTO 63
+      CASE (1 :)   ! Greater than 0
+         GOTO 71
+      END SELECT
    63 a(1)=-oz
       c(1)=zz
       go to 500
    71 bob=zz
       go to 500
-   64 if (i-1)73,76,73
+   64 SELECT CASE (i-1)
+      CASE (: -1)  ! Less than 0
+         GOTO 73
+      CASE (0)     ! Equal to 0
+         GOTO 76
+      CASE (1 :)   ! Greater than 0
+         GOTO 73
+      END SELECT
    76 a(1)=-oz
       c(1)=zz
       w(1)=zz
       go to 500
-   73 if (i-2)81,81,82
+   73 SELECT CASE (i-2)
+      CASE (: -1)  ! Less than 0
+         GOTO 81
+      CASE (0)     ! Equal to 0
+         GOTO 81
+      CASE (1 :)   ! Greater than 0
+         GOTO 82
+      END SELECT
    81 bob=-c1
       go to 500
    82 bob=zz
       go to 500
-   66 if (i-1)83,84,83
+   66 SELECT CASE (i-1)
+      CASE (: -1)  ! Less than 0
+         GOTO 83
+      CASE (0)     ! Equal to 0
+         GOTO 84
+      CASE (1 :)   ! Greater than 0
+         GOTO 83
+      END SELECT
    84 a(1)=-(x(2)-x(1))/tz
       c(1)=zz
       w(1)=-c1+(f(ij+1)-f(1))/(x(2)-x(1))
       go to 500
-   83 if (i-2)85,85,86
+   83 SELECT CASE (i-2)
+      CASE (: -1)  ! Less than 0
+         GOTO 85
+      CASE (0)     ! Equal to 0
+         GOTO 85
+      CASE (1 :)   ! Greater than 0
+         GOTO 86
+      END SELECT
    85 bob=(x(2)-x(1))/sz
       go to 500
    86 bob=zz
       go to 500
-   68 if (i-1)87,88,87
+   68 SELECT CASE (i-1)
+      CASE (: -1)  ! Less than 0
+         GOTO 87
+      CASE (0)     ! Equal to 0
+         GOTO 88
+      CASE (1 :)   ! Greater than 0
+         GOTO 87
+      END SELECT
    88 a(1)=-oz
       c(1)=oz
       w(1)=zz
@@ -152,41 +248,97 @@ c-----------------------------------------------------------------------
    87 bob=zz
   500 ml=iop(2)
       go to (120,130,140,150,140),ml
-  120 if (i-1)121,122,121
+  120 SELECT CASE (i-1)
+      CASE (: -1)  ! Less than 0
+         GOTO 121
+      CASE (0)     ! Equal to 0
+         GOTO 122
+      CASE (1 :)   ! Greater than 0
+         GOTO 121
+      END SELECT
   122 a(n)=zz
       c(n)=-oz
       go to 70
   121 bill=zz
       go to 70
-  130 if (i-1)131,132,131
+  130 SELECT CASE (i-1)
+      CASE (: -1)  ! Less than 0
+         GOTO 131
+      CASE (0)     ! Equal to 0
+         GOTO 132
+      CASE (1 :)   ! Greater than 0
+         GOTO 131
+      END SELECT
   132 a(n)=zz
       c(n)=-oz
       w(k4)=zz
       go to 70
-  131 if (i-k)134,133,134
+  131 SELECT CASE (i-k)
+      CASE (: -1)  ! Less than 0
+         GOTO 134
+      CASE (0)     ! Equal to 0
+         GOTO 133
+      CASE (1 :)   ! Greater than 0
+         GOTO 134
+      END SELECT
   133 bill=-c2
       go to 70
   134 bill=zz
       go to 70
-  140 if (i-1)141,142,141
+  140 SELECT CASE (i-1)
+      CASE (: -1)  ! Less than 0
+         GOTO 141
+      CASE (0)     ! Equal to 0
+         GOTO 142
+      CASE (1 :)   ! Greater than 0
+         GOTO 141
+      END SELECT
   142 a(n)=zz
       c(n)=(x(n-1)-x(n))/tz
       w(k4)=c2-(f(k4)-f(k1))/(x(n)-x(n-1))
       go to 70
-  141 if (i-k)143,144,143
+  141 SELECT CASE (i-k)
+      CASE (: -1)  ! Less than 0
+         GOTO 143
+      CASE (0)     ! Equal to 0
+         GOTO 144
+      CASE (1 :)   ! Greater than 0
+         GOTO 143
+      END SELECT
   144 bill=(x(n)-x(n-1))/sz
       go to 70
   143 bill=zz
       go to 70
-  150 if (i-1)151,152,151
+  150 SELECT CASE (i-1)
+      CASE (: -1)  ! Less than 0
+         GOTO 151
+      CASE (0)     ! Equal to 0
+         GOTO 152
+      CASE (1 :)   ! Greater than 0
+         GOTO 151
+      END SELECT
   152 a(n)=zz
       c(n)=(x(n-1)+x(1)-x(n)-x(2))/tz
       w(k4)=(f(ij+1)-f(1))/(x(2)-x(1))-(f(k4)-f(k1))/(x(n)-x(n-1))
       go to 70
-  151 if (i-2)153,154,153
+  151 SELECT CASE (i-2)
+      CASE (: -1)  ! Less than 0
+         GOTO 153
+      CASE (0)     ! Equal to 0
+         GOTO 154
+      CASE (1 :)   ! Greater than 0
+         GOTO 153
+      END SELECT
   154 bill=(x(2)-x(1))/sz
       go to 70
-  153 if (i-k)155,156,155
+  153 SELECT CASE (i-k)
+      CASE (: -1)  ! Less than 0
+         GOTO 155
+      CASE (0)     ! Equal to 0
+         GOTO 156
+      CASE (1 :)   ! Greater than 0
+         GOTO 155
+      END SELECT
   156 bill=(x(n)-x(n-1))/sz
       go to 70
   155 bill=zz
@@ -198,7 +350,8 @@ c-----------------------------------------------------------------------
       w(k4)=(a(1)*d2-d1*a(n))/con
       do 110 i=2,k
       m=(i-1)*ij+1
-  110 w(m)=w(m)+a(i)*w(1)+c(i)*w(k4)
+      w(m)=w(m)+a(i)*w(1)+c(i)*w(k4)
+  110 continue
       go to 305
   300 write(3,*) ' spl1d1: Results incorrect because n<4.'
 c-----------------------------------------------------------------------
@@ -214,7 +367,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine spl1d2(n,x,f,w,ij,y,tab)
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       data wz,sz/2.0e0,6.0e0/
       dimension x(*),f(*),w(*)
@@ -223,10 +377,22 @@ c-----------------------------------------------------------------------
 c     computations.
 c-----------------------------------------------------------------------
       mflag = 0
-      if(y-x(1))10,10,20
+      IF (y-x(1)<0) THEN
+         GOTO 10
+      ELSE IF (y-x(1)==0) THEN
+         GOTO 10
+      ELSE
+         GOTO 20
+      END IF
    10 i=1
       go to 30
-   20 if(y-x(n))15,40,40
+   20 IF (y-x(n)<0) THEN
+         GOTO 15
+      ELSE IF (y-x(n)==0) THEN
+         GOTO 40
+      ELSE
+         GOTO 40
+      END IF
    40 i=n-1
       go to 30
    15 call search(y,x,n,i,mflag)
@@ -255,7 +421,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine search(xbar,x,n,i,mflag)
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension x(*)
 c-----------------------------------------------------------------------
@@ -272,15 +439,28 @@ c-----------------------------------------------------------------------
       do 5 k=1,n
       j=i+i
       if(j.ge.n) go to 6
-  5   i=j
+      i=j
+  5   continue
  6    k=i
       mflag = 1
       do 115  l=2,n
       a=x(l-1)
       b=x(l)
-      if(sign(1.0d0,a)-sign(1.0d0,b)) 7,113,8
- 113   if(a-b)7,115,8
- 115    continue
+      IF (sign(1.0d0,a)-sign(1.0d0,b)<0) THEN
+         GOTO 7
+      ELSE IF (sign(1.0d0,a)-sign(1.0d0,b)==0) THEN
+         GOTO 113
+      ELSE
+         GOTO 8
+      END IF
+113   IF (a-b<0) THEN
+         GOTO 7
+      ELSE IF (a-b==0) THEN
+         GOTO 115
+      ELSE
+         GOTO 8
+      END IF
+115    continue
   7    j=1
       if(ixbar.lt.ix1.or.(ixbar.eq.ix1.and.xbar.lt.x(1)).or.ixbar
      1.gt.ixn.or.(ixbar.eq.ixn.and.xbar.gt.x(n))) go to 16
@@ -291,10 +471,28 @@ c-----------------------------------------------------------------------
    10 k=k/2
        a=x(i)
       go to (11,20),j
-  11   if(ixbar-sign(1.0d0,a)) 111,1111,2111
- 1111 if(xbar-a)111,14,2111
+  11   IF (ixbar-sign(1.0d0,a)<0) THEN
+          GOTO 111
+       ELSE IF (ixbar-sign(1.0d0,a)==0) THEN
+          GOTO 1111
+       ELSE
+          GOTO 2111
+       END IF
+ 1111 IF (xbar-a<0) THEN
+         GOTO 111
+      ELSE IF (xbar-a==0) THEN
+         GOTO 14
+      ELSE
+         GOTO 2111
+      END IF
  2111 b=x(i+1)
-      if(ixbar-sign(1.0d0,b)) 2112,2113,12
+      IF (ixbar-sign(1.0d0,b)<0) THEN
+         GOTO 2112
+      ELSE IF (ixbar-sign(1.0d0,b)==0) THEN
+         GOTO 2113
+      ELSE
+         GOTO 12
+      END IF
  2113   if(xbar.ge.b) go to 12
  2112   return
  111  i = i-k
@@ -308,11 +506,35 @@ c-----------------------------------------------------------------------
    16 write(3,*) ' search: xbar is outside range of table.'
       mflag=2
       return
-  20   if(ixbar-sign(1.0d0,a) ) 2120,2121,111
- 2121  if(xbar-a) 2120,14,111
+  20   IF (ixbar-sign(1.0d0,a)<0) THEN
+          GOTO 2120
+       ELSE IF (ixbar-sign(1.0d0,a)==0) THEN
+          GOTO 2121
+       ELSE
+          GOTO 111
+       END IF
+ 2121  IF (xbar-a<0) THEN
+          GOTO 2120
+       ELSE IF (xbar-a==0) THEN
+          GOTO 14
+       ELSE
+          GOTO 111
+       END IF
  2120 b=x(i+1)
-       if(ixbar-sign(1.0d0,b)) 12,2122,2112
- 2122  if(xbar-b) 12,12,2112
+       IF (ixbar-sign(1.0d0,b)<0) THEN
+          GOTO 12
+       ELSE IF (ixbar-sign(1.0d0,b)==0) THEN
+          GOTO 2122
+       ELSE
+          GOTO 2112
+       END IF
+ 2122  IF (xbar-b<0) THEN
+          GOTO 12
+       ELSE IF (xbar-b==0) THEN
+          GOTO 12
+       ELSE
+          GOTO 2112
+       END IF
 c-----------------------------------------------------------------------
 c     termination.
 c-----------------------------------------------------------------------
@@ -326,7 +548,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine searchx(xbar,x,n,i,mflag)
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       integer xbar,x(*)
 c-----------------------------------------------------------------------
@@ -344,14 +567,29 @@ c-----------------------------------------------------------------------
       do 5 k=1,n
       j=i+i
       if(j.ge.n) go to 6
-  5   i=j
+      i=j
+  5   continue
  6    k=i
       mflag = 1
       do 115  l=2,n
       ia=x(l-1)
       ib=x(l)
-      if(isign(1,ia)-isign(1,ib)) 7,113,8
- 113   if(ia-ib)7,115,8
+      SELECT CASE (isign(1,ia)-isign(1,ib))
+      CASE (: -1)  ! Less than 0
+         GOTO 7
+      CASE (0)     ! Equal to 0
+         GOTO 113
+      CASE (1 :)   ! Greater than 0
+         GOTO 8
+      END SELECT
+ 113   SELECT CASE (ia-ib)
+       CASE (: -1)  ! Less than 0
+          GOTO 7
+       CASE (0)     ! Equal to 0
+          GOTO 115
+       CASE (1 :)   ! Greater than 0
+          GOTO 8
+       END SELECT
  115    continue
   7    j=1
       if(ixbar.lt.ix1.or.(ixbar.eq.ix1.and.xbar.lt.x(1)).or.ixbar
@@ -363,10 +601,31 @@ c-----------------------------------------------------------------------
    10 k=k/2
        ia=x(i)
       go to (11,20),j
-  11   if(ixbar-isign(1,ia)) 111,1111,2111
- 1111 if(xbar-ia)111,14,2111
+  11   SELECT CASE (ixbar-isign(1,ia))
+       CASE (: -1)  ! Less than 0
+          GOTO 111
+       CASE (0)     ! Equal to 0
+          GOTO 1111
+       CASE (1 :)   ! Greater than 0
+          GOTO 2111
+       END SELECT
+ 1111 SELECT CASE (xbar-ia)
+      CASE (: -1)  ! Less than 0
+         GOTO 111
+      CASE (0)     ! Equal to 0
+         GOTO 14
+      CASE (1 :)   ! Greater than 0
+         GOTO 2111
+      END SELECT
  2111 ib=x(i+1)
-      if(ixbar-isign(1,ib)) 2112,2113,12
+      SELECT CASE (ixbar-isign(1,ib))
+      CASE (: -1)  ! Less than 0
+         GOTO 2112
+      CASE (0)     ! Equal to 0
+         GOTO 2113
+      CASE (1 :)   ! Greater than 0
+         GOTO 12
+      END SELECT
  2113   if(xbar.ge.ib) go to 12
  2112   return
  111  i = i-k
@@ -380,11 +639,39 @@ c-----------------------------------------------------------------------
    16 write(3,*) ' searchx: xbar is outside range of table.'
       mflag=2
       return
-  20   if(ixbar-isign(1,ia) ) 2120,2121,111
- 2121  if(xbar-ia) 2120,14,111
+  20   SELECT CASE (ixbar-isign(1,ia))
+       CASE (: -1)  ! Less than 0
+          GOTO 2120
+       CASE (0)     ! Equal to 0
+          GOTO 2121
+       CASE (1 :)   ! Greater than 0
+          GOTO 111
+       END SELECT
+ 2121  SELECT CASE (xbar-ia)
+       CASE (: -1)  ! Less than 0
+          GOTO 2120
+       CASE (0)     ! Equal to 0
+          GOTO 14
+       CASE (1 :)   ! Greater than 0
+          GOTO 111
+       END SELECT
  2120 ib=x(i+1)
-       if(ixbar-isign(1,ib)) 12,2122,2112
- 2122  if(xbar-ib) 12,12,2112
+       SELECT CASE (ixbar-isign(1,ib))
+       CASE (: -1)  ! Less than 0
+          GOTO 12
+       CASE (0)     ! Equal to 0
+          GOTO 2122
+       CASE (1 :)   ! Greater than 0
+          GOTO 2112
+       END SELECT
+ 2122  SELECT CASE (xbar-ib)
+       CASE (: -1)  ! Less than 0
+          GOTO 12
+       CASE (0)     ! Equal to 0
+          GOTO 12
+       CASE (1 :)   ! Greater than 0
+          GOTO 2112
+       END SELECT
 c-----------------------------------------------------------------------
 c     termination.
 c-----------------------------------------------------------------------
@@ -399,7 +686,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine green
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 c-----------------------------------------------------------------------
 c     computations.
@@ -422,7 +709,11 @@ c-----------------------------------------------------------------------
       r1sq = sqrt( r14 )
       r1 = sqrt( r1sq )
       s  = (xp2 + zm2 )/r1sq
-      call aleg ( s,nloc, pm,pn,pp, aleg0,aleg1 )
+      if (use_legacy_greens_function) then
+         call aleg_old ( s,nloc, pm,pn,pp, aleg0,aleg1 )
+      else
+         call aleg ( s,nloc, pm,pn,pp, aleg0,aleg1 )
+      endif
       kloc=0
       ak=zero
       if ( nloc .eq. 0 )  go to 10
@@ -449,25 +740,33 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-c     subprogram 7. aleg.
-c     computes Legendre functions.
+c     subprogram 7. aleg_old.
+c     computes Legendre functions, using [Chance Phys. Plasmas 1997].
+c
+c     subroutine to calculate half integral legendre functions.
+c     uses upwards recurrence relations starting from elliptic
+c     integrals evaluated using Bulirsch's algorithm
+c     these expressions are very bad for large values of nloc.
+c     zkisq is ths the 1 - k**2 in Elliptic integeral parlance.
+c.    This is now replaced by the new aleg subroutine below.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE aleg(x,nloc,pm,pn,pp, aleg0,aleg1)
+      SUBROUTINE aleg_old(x,nloc,pm,pn,pp, aleg0,aleg1)
+      USE local_mod, only: r8
       IMPLICIT NONE
 
-      REAL(8), INTENT(IN) :: x
+      REAL(r8), INTENT(IN) :: x
       INTEGER, INTENT(IN) :: nloc
-      REAL(8), INTENT(OUT) :: pm,pn,pp,aleg0,aleg1
+      REAL(r8), INTENT(OUT) :: pm,pn,pp,aleg0,aleg1
 
       INTEGER :: kloc
-      REAL(8) :: ak02,elipe,elipk,gam,s,v,w,x1,x2,x3,x4,xxq,y,ysq
+      REAL(r8) :: ak02,elipe,elipk,gam,s,v,w,x1,x2,x3,x4,xxq,y,ysq
 
-      REAL(8), PARAMETER :: pi=3.1415926535897931_8,pii=2/pi,
+      REAL(r8), PARAMETER :: pi=3.1415926535897931_8,pii=2/pi,
      $     sqpi=1.7724538509055159_8
-      REAL(8), PARAMETER ::
+      REAL(r8), PARAMETER ::
      $     ak0=1.38629436112_8,
      $     ak1=0.09666344259_8,
      $     ak2=0.03590092383_8,
@@ -529,15 +828,387 @@ c     termination.
 c-----------------------------------------------------------------------
       RETURN
       END
+
 c-----------------------------------------------------------------------
-c     subprogram 8. trans.
-c     transforms (translates?) something.
+c     subprogram 8. aleg.
+c     Computes half-integral Legendre functions, using methods outlined
+c     in Chance J. Comp. Phys 221 (2007) 330-348.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE aleg(x,nloc,pm,pn,pp, aleg0,aleg1 )     
+c     subroutine to calculate half integral legendre functions.
+c     uses upwards recurrence relations starting from elliptic
+c     integrals evaluated using Bulirsch's algorithm
+c     these expressions are very bad for large values of nloc.
+c     zkisq is ths the 1 - k**2 in Elliptic integeral parlance.     
+
+c     This modified from the old aleg subroutine to use the 
+c     Bulirsch algorithms for the Elliptic functions. 
+c     The new integral representation of the Legendre function is used
+c     here for n*rhohat >= 0.1
+
+c     Reference: JCP 221 (2007) 330-348
+      USE local_mod, only: r8
+      IMPLICIT NONE
+      REAL(r8), INTENT(IN) :: x
+      INTEGER, INTENT(IN) :: nloc
+      REAL(r8), INTENT(OUT) :: pm,pn,pp,aleg0,aleg1
+      REAL(r8), PARAMETER :: pye=3.141592653589793_r8, pii=2.0_r8/pye, 
+     $            sqpi=SQRT(pye), sqtwo=SQRT(2.0_r8), half=0.5_r8
+
+c...  Sum of ak_i = pi/2. Sum of ae_i = pi/2 - 1.0
+
+!::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+!     This stuff for Gaussian Itegration:
+
+      REAL(r8), DIMENSION(32):: tg32, wg32, xg32
+      REAL(r8), DIMENSION(5):: xu, xl
+
+      REAL(r8) :: gam, xxq, ysq, y, w, rhohatsq, rhohat, zk1i, zk1, 
+     $ zk1sq, zk1sqrt, zk1sqrti, errbu, elipk, elipe, convbu, 
+     $ pnp, ak, ak02, gint, gintp, agaus, bgaus, ginti, gintip, tg0,
+     $ tg02, tg1, tg1p, sinhtg1, sinhtg1p, sinhtg12, sinhtg12p, dnom,
+     $ dnomp, anumr, pcoef, twopi, gamn, gamp
+      INTEGER :: kcbu, kloc, ngauss, nng, ing, i, ig, ierbu
+
+!.... Weights and abscissae for 32 points gaussian quadrature.
+
+      wg32(1)  =  0.007018610009470096600_r8 
+      wg32(2)  =  0.016274394730905670605_r8
+      wg32(3)  =  0.025392065309262059456_r8
+      wg32(4)  =  0.034273862913021433103_r8
+      wg32(5)  =  0.042835898022226680657_r8
+      wg32(6)  =  0.050998059262376176196_r8
+      wg32(7)  =  0.058684093478535547145_r8
+      wg32(8)  =  0.065822222776361846838_r8
+      wg32(9)  =  0.072345794108848506225_r8
+      wg32(10) =  0.078193895787070306472_r8
+      wg32(11) =  0.083311924226946755222_r8
+      wg32(12) =  0.087652093004403811143_r8
+      wg32(13) =  0.091173878695763884713_r8
+      wg32(14) =  0.093844399080804565639_r8
+      wg32(15) =  0.095638720079274859419_r8
+      wg32(16) =  0.096540088514727800567_r8
+      
+      DO i = 1, 16
+         wg32(16+i) = wg32(17-i)
+      END DO
+
+      xg32(1:16) = (/ -0.997263861849481563545_r8,
+     $ 0.985611511545268335400_r8, 
+     $ 0.964762255587506430774_r8,
+     $ 0.934906075937739689171_r8, 
+     $ 0.896321155766052123965_r8, 
+     $ 0.849367613732569970134_r8, 
+     $ 0.794483795967942406963_r8, 
+     $ 0.732182118740289680387_r8, 
+     $ 0.663044266930215200975_r8, 
+     $ 0.587715757240762329041_r8, 
+     $ 0.506899908932229390024_r8, 
+     $ 0.421351276130635345364_r8, 
+     $ 0.331868602282127649780_r8, 
+     $ 0.239287362252137074545_r8, 
+     $ 0.144471961582796493485_r8, 
+     $ 0.048307665687738316235_r8 /)
+
+!     xg32(17:32) = - (/ xg32(16:1) /)
+
+      DO i = 1, 16
+         xg32(16+i) = - xg32(17-i)
+      END DO
+
+c-----------------------------------------------------------------------
+c     Computations.
+c-----------------------------------------------------------------------
+
+      gam = sqpi
+      xxq = x*x
+      ysq = xxq - 1.0_r8
+      y = SQRT( ysq )
+      w = x+y
+
+      rhohatsq = 1.0_r8 / ( 2.0_r8 * y*w )
+      rhohat = SQRT (rhohatsq)
+
+      zk1i = w              
+      zk1 = 1.0_r8/w        ! This is k1 = SQRT(1-k**2) = SQRT(m_1)
+      zk1sq = zk1**2        ! This is m_1
+      zk1sqrt = SQRT(zk1)   ! This is m_1^(1/4)
+      zk1sqrti = SQRT(zk1i) ! This is m_1^(-1/4)
+
+      errbu = 1.0e-8_r8
+      CALL ek3 ( zk1sq, ierbu, errbu, 10, elipk, elipe, convbu, kcbu )
+
+      pn = pii * zk1sqrt * elipk
+      pnp = pii * zk1sqrti * elipe
+
+      aleg0 = pn
+
+      pp = (  pnp - x*pn ) / (2.0_r8*y)
+
+      aleg1 = pp
+
+c... Use Gaussian Integration if ...
+      IF ( nloc*rhohat >= 0.1 ) GO TO 100
+
+      kloc=0
+      ak = 0.0_r8
+
+      IF ( nloc == 0 )  GO TO 10
+
+    5 kloc=kloc+1
+      ak = FLOAT(kloc)
+      ak02 = 0.5_r8 - ak
+      pm = pn
+      pn = pp
+      pp = -2.0*ak*x*pn/y - ak02*ak02*pm
+      gam = gam / ak02
+      IF ( kloc /= nloc )  GO TO 5
+
+ 10   CONTINUE
+
+      GO TO 500
+
+ 100  CONTINUE
+
+c...  use Gauss integration of the new integral representation 
+c     if n*rhohat >= 0.1
+c...  The integration is done in nng segments [xl(ing),xu(ing)]. 
+c     Each stored in gint.
+
+      ngauss = 32
+      nng = 1
+      xl(1) = 0.0
+      xu(1) = 5.0
+
+      gint = 0.0
+      gintp = 0.0
+
+      DO 165 ing = 1, nng
+
+!.....xl, xu are the lower and upper limits of the gaussian integration
+!     The integration is done in nng sections
+!     This will calculate P(n) and P(n+1) together. 
+!        variables for P(n+1) will usually have p appended.
+
+         agaus = half*( xu(ing)+xl(ing) )
+         bgaus = half*( xu(ing)-xl(ing) )
+         
+         tg32(1:32) = agaus + xg32(1:32) * bgaus
+
+         ginti = 0.0
+         gintip = 0.0
+
+         DO ig = 1, ngauss
+            tg0 = tg32(ig)
+            tg02 = tg0**2
+            tg1  = tg02 / (2.0*nloc)
+            tg1p = tg02 / (2.0*nloc+2.0)
+            sinhtg1  = SINH(tg1)
+            sinhtg1p = SINH(tg1p)
+            sinhtg12  = sinhtg1  * sinhtg1
+            sinhtg12p = sinhtg1p * sinhtg1p
+            dnom  = x * sinhtg12  + sinhtg1 *SQRT(1.0 + sinhtg12)
+            dnomp = x * sinhtg12p + sinhtg1p*SQRT(1.0 + sinhtg12p)
+            dnom  = SQRT(dnom)
+            dnomp = SQRT(dnomp)
+            anumr = tg0 * EXP(-tg02)
+            ginti  = ginti  + wg32(ig)*anumr / dnom
+            gintip = gintip + wg32(ig)*anumr / dnomp
+         END DO                 ! 32 point Gaussian
+         
+         ginti  = bgaus * ginti
+         gintip = bgaus * gintip
+         gint  = gint  + ginti
+         gintp = gintp + gintip
+
+ 165  CONTINUE                  !  Gaussian integration segments
+
+c... Now calculate the coeficients for the Legendre functions.
+
+      pcoef = SQRT ( (x-1.0)/(x+1.0) )
+      twopi = 2.0_r8 * pye
+
+c.. gamn is  Gamma[1/2-n]
+c   gamp is  Gamma[1/2-(n+1)]
+
+      gamn = sqpi
+      gamp = - 2.0_r8 * sqpi
+
+      IF ( nloc /= 0 ) THEN
+
+         gamn = sqpi /
+     $        PRODUCT( (/ ( -(i-1)-0.5, i = 1, nloc ) /) )
+         gamp = - gamn / (nloc+0.5)
+         
+      END IF
+
+      gint  = sqtwo * pcoef**nloc * gint / (nloc*sqpi*gamn)
+      gintp = sqtwo * pcoef**(nloc+1) * gintp / ((nloc+1.0)*sqpi*gamp)
+      pn = gint  ! P(n)
+      pp = gintp  ! P(n+1)
+
+ 500  CONTINUE
+
+c-----------------------------------------------------------------------
+c     termination.
+c-----------------------------------------------------------------------
+      RETURN
+      END
+c-----------------------------------------------------------------------
+c     subprogram 9. ek3.
+c     Computes complete elliptic integrals of first and second kind.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE ek3(eta,ier,error,maxit,cel1,cel2,convg, kounter)
+
+!  Compute the complete elliptic integral of first and second kind
+!      cel(kc,p,a,b).  
+!  Bulirsch's method. Numerical Recipes, modified by Turnbull to 
+!    calculate both K and E simultaneously.
+
+!  Returns cel1 = K, cel2 = E.
+!  Precision is error**2, 
+
+!  eta, the complementary parameter, (1 - k^2), is the square of 
+!          the argument kc
+!  p   is 1
+!  a   is 1
+!  b   is 1 for the first kind and b is eta( = kc**2) for the second kind
+
+      USE local_mod, only: r8
+      IMPLICIT NONE
+
+      REAL(r8), PARAMETER :: pi=3.1415926535897932385_r8 , 
+     $                       pi2 = pi/2.0_r8
+
+      REAL(r8), INTENT(IN) :: eta, error
+      INTEGER, INTENT(IN) :: maxit
+      REAL(r8), INTENT(OUT) :: cel1, cel2, convg
+      INTEGER, INTENT(OUT) :: ier, kounter
+
+      REAL(r8) :: pp, aa, bb1, bb2, qcval, aval0, bval1, bval2, pval0,
+     $  eval, emval, pval, aval1, aval2, fval, tval, gval, qval1, qval2,
+     $  hval1, hval2, rval, sval, snorm, cnvlog
+
+      INTEGER :: logcnv
+
+      pp     = 1.0_r8
+      aa     = 1.0_r8
+      bb1    = 1.0_r8
+      bb2    = ABS(eta)
+
+      ier    = 0
+      IF(eta .LE. 0.0_r8  .OR.  eta > 1.0_r8) THEN
+         IF(eta < 0.0_r8) ier   = 1
+         IF(eta == 0.0_r8) ier   = 2
+         IF(eta > 1.0_r8) ier   = 3
+         cel1  = 0.0_r8
+         cel2  = 0.0_r8
+         RETURN
+      END IF
+
+c-----------------------------------------------------------------------
+c     Computations.
+c-----------------------------------------------------------------------
+
+      qcval  = SQRT(ABS(eta))
+      aval0  = aa
+      bval1  = bb1
+      bval2  = bb2
+      pval0  = pp
+
+      eval   = qcval
+      emval  = 1.0_r8
+
+
+      IF(pval0 > 0.0_r8) THEN
+         pval  = SQRT(pval0)
+         aval1 = aval0
+         aval2 = aval0
+         bval1 = bval1/pval
+         bval2 = bval2/pval
+
+      else
+         fval  = qcval*qcval
+         tval  = 1.0_r8  - fval
+         gval  = 1.0_r8  - pval0
+         fval  = fval - pval0
+         qval1 = tval*(bval1 - aval0*pval0)
+         qval2 = tval*(bval2 - aval0*pval0)
+
+         pval  = SQRT(fval/gval)
+         aval1 = (aval0 - bval1) / gval
+         aval2 = (aval0 - bval2) / gval
+         bval1 =  aval1*pval - qval1/(gval*gval*pval)
+         bval2 =  aval2*pval - qval2/(gval*gval*pval)
+      END IF
+
+
+      kounter = 0
+100   CONTINUE
+      kounter = kounter + 1
+
+      hval1  = aval1
+      hval2  = aval2
+      aval1  = aval1 + bval1/pval
+      aval2  = aval2 + bval2/pval
+      rval   = eval/pval
+      bval1  = bval1 + hval1*rval
+      bval1  = bval1 + bval1
+      bval2  = bval2 + hval2*rval
+      bval2  = bval2 + bval2
+      pval   = rval + pval
+
+      sval   = emval
+      emval  = qcval + emval
+
+      IF (ABS(sval-qcval) > sval*error) THEN
+         qcval  = SQRT(eval)
+         qcval  = qcval + qcval
+         eval   = qcval*emval
+         GO TO 100
+      END IF
+
+      IF(sval /= 0.0_r8) snorm = sval*sval
+      IF(sval == 0.0_r8) snorm = 1.0_r8
+      convg  = (sval-qcval)*(sval-qcval) / snorm
+      IF ( convg <= 1.0e-100_r8 ) convg = 1.0e-100_r8
+      cnvlog = LOG10(ABS(convg))
+      logcnv = INT(cnvlog)
+
+      IF (kounter > maxit) THEN
+         IF(logcnv < 0) ier   = logcnv
+         IF(logcnv >= 0) ier   = -1
+         cel1  = pi2*(bval1 + aval1*emval) / (emval*(emval+pval))
+         cel2  = pi2*(bval2 + aval2*emval) / (emval*(emval+pval))
+         RETURN
+      END IF
+
+
+      cel1  = pi2*(bval1 + aval1*emval) / (emval*(emval+pval))
+      cel2  = pi2*(bval2 + aval2*emval) / (emval*(emval+pval))
+
+c-----------------------------------------------------------------------
+c     termination.
+c-----------------------------------------------------------------------
+      RETURN
+      END
+c-----------------------------------------------------------------------
+c     subprogram 10. trans.
+c     Interpolates input variables of length mthin to length mth.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine trans ( vecin,mthin, vecout,mth )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension vecin(*), vecout(*)
 c-----------------------------------------------------------------------
@@ -567,14 +1238,15 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-c     subprogram 9. transdx.
+c     subprogram 11. transdx.
 c     transforms (translates?) something.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine transdx ( vecin,mthin, vecout,mth, dx0 )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension vecin(*), vecout(*)
 c-----------------------------------------------------------------------
@@ -604,14 +1276,15 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-c     subprogram 10. transdxx.
+c     subprogram 12. transdxx.
 c     transforms (translates?) something.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine transdxx ( vecin,mthin, vecout,mth, dx0,dx1 )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension vecin(*), vecout(*)
 c-----------------------------------------------------------------------
@@ -647,14 +1320,15 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-c     subprogram 11. smooth0.
+c     subprogram 13. smooth0.
 c     smooth an array with a moving average.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine smooth0 ( g, n )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension g(*)
 c-----------------------------------------------------------------------
@@ -678,14 +1352,15 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-c     subprogram 12. smooth.
+c     subprogram 14. smooth.
 c     smooth an array with a moving average.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine smooth ( g, n )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension g(*), h(301)
 c-----------------------------------------------------------------------
@@ -711,14 +1386,15 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-c     subprogram 13. lagp.
+c     subprogram 15. lagp.
 c     some sort of interpolation.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine lagp ( ax, af, m, nl, x, f, df, iop, iper )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension ax(*), af(*)
 c-----------------------------------------------------------------------
@@ -795,14 +1471,15 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-c     subprogram 14. shft.
+c     subprogram 16. shft.
 c     some sort of shift operation, used by lagp.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine shft ( i0,i, axi, ax, m, dax )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension ax(*)
 c-----------------------------------------------------------------------
@@ -827,14 +1504,15 @@ c-----------------------------------------------------------------------
       return
       end    
 c-----------------------------------------------------------------------
-c     subprogram 15. lagpe4.
+c     subprogram 17. lagpe4.
 c     routine used by trans and transdx.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine lagpe4 ( f0,m, x,f, df, iop )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension f0(*)
 c-----------------------------------------------------------------------
@@ -867,20 +1545,21 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-c     subprogram 16. lag.
+c     subprogram 18. lag.
 c     some sort of routine used by main vacuum computation.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE lag(ax,af,m,nl,x,f,df,iop)
+      USE local_mod, ONLY: r8
       IMPLICIT NONE
 
-      REAL(8), DIMENSION(*), INTENT(IN) :: ax,af
+      REAL(r8), DIMENSION(*), INTENT(IN) :: ax,af
       INTEGER, INTENT(IN) :: m,nl,iop
-      REAL(8), INTENT(OUT) :: f,df
+      REAL(r8), INTENT(OUT) :: f,df
 
-      REAL(8) :: alag,slag,x
+      REAL(r8) :: alag,slag,x
       INTEGER :: i,id,jn,jnmm,jnpp,j,nll,nlr
 c-----------------------------------------------------------------------
 c     computations.
@@ -949,38 +1628,46 @@ c-----------------------------------------------------------------------
       RETURN
       END
 c-----------------------------------------------------------------------
-c     subprogram 17. eigen.
+c     subprogram 19. eigen.
 c     computes eigenvalues and eigenvectors of a matrix.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine eigen(a,r,n,mv)
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension a(*),r(*)
 c-----------------------------------------------------------------------
 c     computations.
 c-----------------------------------------------------------------------
     5 range=1.0e-12
-      if(mv-1) 10,25,10
+      if(mv-1 == 0) goto 25
    10 iq=-n
-      do 20 j=1,n
+      do 21 j=1,n
       iq=iq+n
       do 20 i=1,n
       ij=iq+i
       r(ij)=0.0
-      if(i-j) 20,15,20
+      if(i-j .ne. 0) goto 20
    15 r(ij)=1.0
    20 continue
+   21 continue
    25 anorm=0.0
-      do 35 i=1,n
+      do 36 i=1,n
       do 35 j=i,n
-      if(i-j) 30,35,30
-   30 ia=i+(j*j-j)/2
+      if(i-j .NE. 0) then
+         ia=i+(j*j-j)/2
+      endif
       anorm=anorm+a(ia)*a(ia)
    35 continue
-      if(anorm) 165,165,40
+   36 continue
+      if(anorm .LE. 0) then
+         goto 165
+      else 
+         goto 40
+      endif
    40 anorm=1.414*sqrt(anorm)
       anrmx=anorm*range/float(n)
       ind=0
@@ -991,13 +1678,17 @@ c-----------------------------------------------------------------------
    60 mq=(m*m-m)/2
       lq=(l*l-l)/2
       lm=l+mq
-   62 if( abs(a(lm))-thr) 130,65,65
+   62 if( abs(a(lm))-thr .GE. 0) then
+         goto 65
+      else
+         goto 130
+      endif
    65 ind=1
       ll=l+lq
       mm=m+mq
       x=0.5*(a(ll)-a(mm))
    68 y=-a(lm)/ sqrt(a(lm)*a(lm)+x*x)
-      if(x) 70,75,75
+      if(x .ge. 0) go to 75
    70 y=-y
    75 continue
       yp = 1.0 - y*y
@@ -1011,19 +1702,26 @@ c-----------------------------------------------------------------------
       imq=n*(m-1)
       do 125 i=1,n
       iq=(i*i-i)/2
-      if(i-l) 80,115,80
-   80 if(i-m) 85,115,90
+      if(i-l == 0) goto 115
+   80 SELECT CASE (i-m)
+      CASE (: -1)  ! Less than 0
+         GOTO 85
+      CASE (0)     ! Equal to 0
+         GOTO 115
+      CASE (1 :)   ! Greater than 0
+         GOTO 90
+      END SELECT
    85 im=i+mq
       go to 95
    90 im=m+iq
-   95 if(i-l) 100,105,105
+   95 if(i-l .ge. 0) goto 105
   100 il=i+lq
       go to 110
   105 il=l+iq
   110 x=a(il)*cosx-a(im)*sinx
       a(im)=a(il)*sinx+a(im)*cosx
       a(il)=x
-  115 if(mv-1) 120,125,120
+  115 if(mv-1 == 0) goto 125
   120 ilr=ilq+i
       imr=imq+i
       x=r(ilr)*cosx-r(imr)*sinx
@@ -1036,50 +1734,53 @@ c-----------------------------------------------------------------------
       a(lm)=(a(ll)-a(mm))*sincs+a(lm)*(cosx2-sinx2)
       a(ll)=y
       a(mm)=x
-  130 if(m-n) 135,140,135
+  130 if(m-n == 0) goto 140
   135 m=m+1
       go to 60
-  140 if(l-(n-1)) 145,150,145
+  140 if(l-(n-1) == 0) goto 150
   145 l=l+1
       go to 55
-  150 if(ind-1) 160,155,160
+  150 if(ind-1 .ne. 0) goto 160 
   155 ind=0
       go to 50
-  160 if(thr-anrmx) 165,165,45
+  160 if(thr-anrmx .gt. 0) go to 45
   165 iq=-n
-      do 185 i=1,n
+      do 186 i=1,n
       iq=iq+n
       ll=i+(i*i-i)/2
       jq=n*(i-2)
       do 185 j=i,n
       jq=jq+n
       mm=j+(j*j-j)/2
-      if(a(ll)-a(mm)) 170,185,185
+      if(a(ll)-a(mm) .ge. 0) go to 185
   170 x=a(ll)
       a(ll)=a(mm)
       a(mm)=x
-      if(mv-1) 175,185,175
+      if(mv-1 == 0) goto 185
   175 do 180 k=1,n
       ilr=iq+k
       imr=jq+k
       x=r(ilr)
       r(ilr)=r(imr)
-  180 r(imr)=x
+      r(imr)=x
+  180 continue
   185 continue
+  186 continue
 c-----------------------------------------------------------------------
 c     termination.
 c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-c     subprogram 18. mult.
+c     subprogram 20. mult.
 c     matrix times matrix multiplication.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine mult ( a, b, c, ndim, ndim2, m, l )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension a(ndim,ndim), b(ndim,ndim2), c(ndim,ndim2)
 c-----------------------------------------------------------------------
@@ -1100,14 +1801,15 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-c     subprogram 19. matmul1.
+c     subprogram 21. matmul1.
 c     matrix times matrix multiplication.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine matmul1 ( a, b, nda,ndb, n, c,ndc )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension a(nda,nda), b(ndb,ndb), c(ndc,ndc)
 c-----------------------------------------------------------------------
@@ -1128,14 +1830,15 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-c     subprogram 20. matmul3.
+c     subprogram 22. matmul3.
 c     matrix times matrix multiplication.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine matmul3 ( a, b, nda,ndb, la,lb,lc, c,ndc )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension a(nda,nda), b(ndb,ndb), c(ndc,ndc)
 c-----------------------------------------------------------------------
@@ -1156,14 +1859,15 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-c     subprogram 21. indef4.
+c     subprogram 23. indef4.
 c     computes indefinite and definite integral.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine indef4 ( f, fin, dx, n1, n2, defint, iend )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension f(*), fin(*)
 c-----------------------------------------------------------------------
@@ -1194,7 +1898,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-c     subprogram 22. atan2m.
+c     subprogram 24. atan2m.
 c     computes indefinite and definite integral.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1202,7 +1906,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       function atan2m ( z,x )
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       epszer = 1e-30

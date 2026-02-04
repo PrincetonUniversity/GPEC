@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #if !defined(__MACH__)
-#include <malloc.h>
+#include <stdlib.h>
 #endif
 #include <string.h>
 #include <fcntl.h>
@@ -101,7 +101,7 @@ void give_command_args(int argcc, char **argvv)
 /*-----------------------------------------------------------------------------
 |   opendisplay. initializes display_in, etc.
 -----------------------------------------------------------------------------*/
-opendisplay(char *title_in)
+int opendisplay(char *title_in)
 {
   int x0, y0;
   unsigned int bwidth, depth;

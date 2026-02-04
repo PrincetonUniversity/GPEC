@@ -1,5 +1,7 @@
       SUBROUTINE LSODE (F, NEQ, Y, T, TOUT, ITOL, RTOL, ATOL, ITASK,
      1                  ISTATE, IOPT, RWORK, LRW, IWORK, LIW, JAC, MF)
+      USE local_mod, ONLY: r8
+
 C***BEGIN PROLOGUE  LSODE
 C***PURPOSE  Livermore solver for ordinary differential equations.
 C            LSODE solves the initial-value problem for stiff or
@@ -8,7 +10,7 @@ C               dy/dt = f(t,y),   or, in component form,
 C               dy(i)/dt = f(i) = f(i,t,y(1),y(2),...,y(N)),  i=1,...,N.
 C***LIBRARY   MATHLIB (ODEPACK)
 C***CATEGORY  I1A
-C***TYPE      REAL*8 (SLSODE-S, LSODE-D)
+C***TYPE      REAL(r8) (SLSODE-S, LSODE-D)
 C***KEYWORDS  ORDINARY DIFFERENTIAL EQUATIONS, INITIAL VALUE PROBLEM,
 C             STIFF, NONSTIFF
 C***AUTHOR  Hindmarsh, Alan C., (LLNL)
@@ -61,7 +63,7 @@ C
 C        EXTERNAL F, JAC
 C        INTEGER  NEQ, ITOL, ITASK, ISTATE, IOPT, LRW, IWORK(LIW),
 C       *         LIW, MF
-C        REAL*8 Y(NEQ), T, TOUT, RTOL, ATOL(ntol), RWORK(LRW)
+C        REAL(r8) Y(NEQ), T, TOUT, RTOL, ATOL(ntol), RWORK(LRW)
 C
 C        CALL LSODE (F, NEQ, Y, T, TOUT, ITOL, RTOL, ATOL, ITASK,
 C       *            ISTATE, IOPT, RWORK, LRW, IWORK, LIW, JAC, MF)
@@ -73,7 +75,7 @@ C                   program.  The form of F must be:
 C
 C                   SUBROUTINE  F (NEQ, T, Y, YDOT)
 C                   INTEGER  NEQ
-C                   REAL*8  T, Y(NEQ), YDOT(NEQ)
+C                   REAL(r8)  T, Y(NEQ), YDOT(NEQ)
 C
 C                   The inputs are NEQ, T, Y.  F is to set
 C
@@ -199,7 +201,7 @@ C                   dummy name.  The form of JAC must be:
 C
 C                   SUBROUTINE JAC (NEQ, T, Y, ML, MU, PD, NROWPD)
 C                   INTEGER  NEQ, ML, MU, NROWPD
-C                   REAL*8  T, Y(NEQ), PD(NROWPD,NEQ)
+C                   REAL(r8)  T, Y(NEQ), PD(NROWPD,NEQ)
 C
 C                   See item c, under "Description" below for more
 C                   information about JAC.
@@ -234,7 +236,7 @@ C     a. First write a subroutine of the form
 C
 C           SUBROUTINE  F (NEQ, T, Y, YDOT)
 C           INTEGER  NEQ
-C           REAL*8  T, Y(NEQ), YDOT(NEQ)
+C           REAL(r8)  T, Y(NEQ), YDOT(NEQ)
 C
 C        which supplies the vector function f by loading YDOT(i) with
 C        f(i).
@@ -264,7 +266,7 @@ C        subroutine of the form
 C
 C           SUBROUTINE  JAC (NEQ, T, Y, ML, MU, PD, NROWPD)
 C           INTEGER  NEQ, ML, MU, NRWOPD
-C           REAL*8  Y, Y(NEQ), PD(NROWPD,NEQ)
+C           REAL(r8)  Y, Y(NEQ), PD(NROWPD,NEQ)
 C
 C        which provides df/dy by loading PD as follows:
 C        - For a full Jacobian (MF = 21), load PD(i,j) with df(i)/dy(j),
@@ -307,7 +309,7 @@ C
 C        EXTERNAL  FEX, JEX
 C        INTEGER  IOPT, IOUT, ISTATE, ITASK, ITOL, IWORK(23), LIW, LRW,
 C       *         MF, NEQ
-C        REAL*8  ATOL(3), RTOL, RWORK(58), T, TOUT, Y(3)
+C        REAL(r8)  ATOL(3), RTOL, RWORK(58), T, TOUT, Y(3)
 C        NEQ = 3
 C        Y(1) = 1.
 C        Y(2) = 0.
@@ -342,7 +344,7 @@ C        END
 C
 C        SUBROUTINE  FEX (NEQ, T, Y, YDOT)
 C        INTEGER  NEQ
-C        REAL*8  T, Y(3), YDOT(3)
+C        REAL(r8)  T, Y(3), YDOT(3)
 C        YDOT(1) = -.04*Y(1) + 1.D4*Y(2)*Y(3)
 C        YDOT(3) = 3.D7*Y(2)*Y(2)
 C        YDOT(2) = -YDOT(1) - YDOT(3)
@@ -351,7 +353,7 @@ C        END
 C
 C        SUBROUTINE  JEX (NEQ, T, Y, ML, MU, PD, NRPD)
 C        INTEGER  NEQ, ML, MU, NRPD
-C        REAL*8  T, Y(3), PD(NRPD,3)
+C        REAL(r8)  T, Y(3), PD(NRPD,3)
 C        PD(1,1) = -.04
 C        PD(1,2) = 1.D4*Y(3)
 C        PD(1,3) = 1.D4*Y(2)
@@ -465,7 +467,7 @@ C              the scalar t and the vector y. Subroutine F is to compute
 C              the function f. It is to have the form
 C
 C                 SUBROUTINE F (NEQ, T, Y, YDOT)
-C                 REAL*8  Y(NEQ), YDOT(NEQ)
+C                 REAL(r8)  Y(NEQ), YDOT(NEQ)
 C
 C              where NEQ, T, and Y are input, and the array YDOT =
 C              f(T,Y) is output.  Y and YDOT are arrays of length NEQ.
@@ -701,7 +703,7 @@ C              0   No optional inputs are being used.  Default values
 C                  will be used in all cases.
 C              1   One or more optional inputs are being used.
 C
-C     RWORK    A real working array (real*8).  The length of
+C     RWORK    A real working array (real(r8)).  The length of
 C              RWORK must be at least
 C
 C                 20 + NYH*(MAXORD + 1) + 3*NEQ + LWM
@@ -774,7 +776,7 @@ C              scalar t and the vector y.  (See the MF description below
 C              for MITER.)  It is to have the form
 C
 C                 SUBROUTINE JAC (NEQ, T, Y, ML, MU, PD, NROWPD)
-C                 REAL*8  Y(NEQ), PD(NROWPD,NEQ)
+C                 REAL(r8)  Y(NEQ), PD(NROWPD,NEQ)
 C
 C              where NEQ, T, Y, ML, MU, and NROWPD are input and the
 C              array PD is to be loaded with partial derivatives
@@ -1030,7 +1032,7 @@ C     If LSODE is to be used in an overlay situation, the user must
 C     declare, in the primary overlay, the variables in:
 C     (1) the call sequence to LSODE,
 C     (2) the internal COMMON block /DLS001/, of length 255 
-C         (218 real*8 words followed by 37 integer words).
+C         (218 real(r8) words followed by 37 integer words).
 C
 C     If LSODE is used on a system in which the contents of internal
 C     COMMON blocks are not preserved between calls, the user should
@@ -1091,7 +1093,7 @@ C     given by NST = 0, NQ is 1 and H is temporarily set to 1.0.  The
 C     quantities NQ, NYH, H, and NST can be obtained by including in
 C     DEWSET the statements:
 C
-C           REAL*8  RLS
+C           REAL(r8)  RLS
 C           COMMON /DLS001/ RLS(218),ILS(37)
 C           NQ = ILS(33)
 C           NYH = ILS(12)
@@ -1156,7 +1158,7 @@ C           dummy dimensions from 1 to *. (ACH)
 C   930809  Changed to generic intrinsic names; changed names of
 C           subprograms and Common blocks to SLSODE etc. (ACH)
 C   930929  Eliminated use of REAL intrinsic; other minor changes. (ACH)
-C   931005  Generated real*8 version. (ACH)
+C   931005  Generated real(r8) version. (ACH)
 C***END PROLOGUE  LSODE
 C
 C*Internal Notes:
@@ -1195,13 +1197,13 @@ C  Declare arguments.
 C
       EXTERNAL F, JAC
       INTEGER NEQ, ITOL, ITASK, ISTATE, IOPT, LRW, IWORK, LIW, MF
-      REAL*8 Y, T, TOUT, RTOL, ATOL, RWORK
+      REAL(r8) Y, T, TOUT, RTOL, ATOL, RWORK
       DIMENSION NEQ(*), Y(*), RTOL(*), ATOL(*), RWORK(LRW), IWORK(LIW)
 C
 C  Declare externals.
 C
       EXTERNAL DPREPJ, DSOLSY
-      REAL*8 DUMACH, DVNORM
+      REAL(r8) DUMACH, DVNORM
 C
 C  Declare all other variables.
 C
@@ -1211,9 +1213,9 @@ C
      1   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
       INTEGER I, I1, I2, IFLAG, IMXER, KGO, LF0,
      1   LENIW, LENRW, LENWM, ML, MORD, MU, MXHNL0, MXSTP0
-      REAL*8 ROWNS,
+      REAL(r8) ROWNS,
      1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND
-      REAL*8 ATOLI, AYI, BIG, EWTI, H0, HMAX, HMX, RH, RTOLI,
+      REAL(r8) ATOLI, AYI, BIG, EWTI, H0, HMAX, HMX, RH, RTOLI,
      1   TCRIT, TDIST, TNEXT, TOL, TOLSF, TP, SIZE, SUM, W0
       DIMENSION MORD(2)
       LOGICAL IHIT
@@ -1305,13 +1307,13 @@ C Next process and check the optional inputs. --------------------------
       IF (MXHNIL .EQ. 0) MXHNIL = MXHNL0
       IF (ISTATE .NE. 1) GO TO 50
       H0 = RWORK(5)
-      IF ((TOUT - T)*H0 .LT. 0.0) GO TO 614
+      IF ((TOUT - T)*H0 .LT. 0.0d0) GO TO 614
  50   HMAX = RWORK(6)
-      IF (HMAX .LT. 0.0) GO TO 615
+      IF (HMAX .LT. 0.0d0) GO TO 615
       HMXI = 0.0
-      IF (HMAX .GT. 0.0) HMXI = 1.0/HMAX
+      IF (HMAX .GT. 0.0d0) HMXI = 1.0/HMAX
       HMIN = RWORK(7)
-      IF (HMIN .LT. 0.0) GO TO 616
+      IF (HMIN .LT. 0.0d0) GO TO 616
 C-----------------------------------------------------------------------
 C Set work array pointers and check lengths LRW and LIW.
 C Pointers to segments of RWORK and IWORK are named by prefixing L to
@@ -1342,8 +1344,8 @@ C Check RTOL and ATOL for legality. ------------------------------------
       DO 70 I = 1,N
         IF (ITOL .GE. 3) RTOLI = RTOL(I)
         IF (ITOL .EQ. 2 .OR. ITOL .EQ. 4) ATOLI = ATOL(I)
-        IF (RTOLI .LT. 0.0) GO TO 619
-        IF (ATOLI .LT. 0.0) GO TO 620
+        IF (RTOLI .LT. 0.0d0) GO TO 619
+        IF (ATOLI .LT. 0.0d0) GO TO 620
  70     CONTINUE
       IF (ISTATE .EQ. 1) GO TO 100
 C If ISTATE = 3, set flag to signal parameter changes to DSTODE. -------
@@ -1351,7 +1353,8 @@ C If ISTATE = 3, set flag to signal parameter changes to DSTODE. -------
       IF (NQ .LE. MAXORD) GO TO 90
 C MAXORD was reduced below NQ.  Copy YH(*,MAXORD+2) into SAVF. ---------
       DO 80 I = 1,N
- 80     RWORK(I+LSAVF-1) = RWORK(I+LWM-1)
+        RWORK(I+LSAVF-1) = RWORK(I+LWM-1)
+ 80     CONTINUE
 C Reload WM(1) = RWORK(LWM), since LWM may have changed. ---------------
  90   IF (MITER .GT. 0) RWORK(LWM) = SQRT(UROUND)
       IF (N .EQ. NYH) GO TO 200
@@ -1360,7 +1363,8 @@ C NEQ was reduced.  Zero part of YH to avoid undefined references. -----
       I2 = LYH + (MAXORD + 1)*NYH - 1
       IF (I1 .GT. I2) GO TO 200
       DO 95 I = I1,I2
- 95     RWORK(I) = 0.0
+        RWORK(I) = 0.0
+ 95     CONTINUE
       GO TO 200
 C-----------------------------------------------------------------------
 C Block C.
@@ -1373,8 +1377,8 @@ C-----------------------------------------------------------------------
       TN = T
       IF (ITASK .NE. 4 .AND. ITASK .NE. 5) GO TO 110
       TCRIT = RWORK(1)
-      IF ((TCRIT - TOUT)*(TOUT - T) .LT. 0.0) GO TO 625
-      IF (H0 .NE. 0.0 .AND. (T + H0 - TCRIT)*H0 .GT. 0.0)
+      IF ((TCRIT - TOUT)*(TOUT - T) .LT. 0.0d0) GO TO 625
+      IF (H0 .NE. 0.0 .AND. (T + H0 - TCRIT)*H0 .GT. 0.0d0)
      1   H0 = TCRIT - T
  110  JSTART = 0
       IF (MITER .GT. 0) RWORK(LWM) = SQRT(UROUND)
@@ -1394,14 +1398,16 @@ C Initial call to F.  (LF0 points to YH(*,2).) -------------------------
       NFE = 1
 C Load the initial value vector in YH. ---------------------------------
       DO 115 I = 1,N
- 115    RWORK(I+LYH-1) = Y(I)
+        RWORK(I+LYH-1) = Y(I)
+ 115    CONTINUE
 C Load and invert the EWT array.  (H is temporarily set to 1.0.) -------
       NQ = 1
       H = 1.0
       CALL DEWSET (N, ITOL, RTOL, ATOL, RWORK(LYH), RWORK(LEWT))
       DO 120 I = 1,N
-        IF (RWORK(I+LEWT-1) .LE. 0.0) GO TO 621
- 120    RWORK(I+LEWT-1) = 1.0/RWORK(I+LEWT-1)
+        IF (RWORK(I+LEWT-1) .LE. 0.0d0) GO TO 621
+        RWORK(I+LEWT-1) = 1.0/RWORK(I+LEWT-1)
+ 120    CONTINUE
 C-----------------------------------------------------------------------
 C The coding below computes the step size, H0, to be attempted on the
 C first step, unless the user has supplied a value for this.
@@ -1418,20 +1424,21 @@ C         f(i)   = i-th component of initial value of f,
 C         ywt(i) = EWT(i)/TOL  (a weight for y(i)).
 C The sign of H0 is inferred from the initial values of TOUT and T.
 C-----------------------------------------------------------------------
-      IF (H0 .NE. 0.0) GO TO 180
+      IF (H0 .NE. 0.0d0) GO TO 180
       TDIST = ABS(TOUT - T)
       W0 = MAX(ABS(T),ABS(TOUT))
       IF (TDIST .LT. 2.0*UROUND*W0) GO TO 622
       TOL = RTOL(1)
       IF (ITOL .LE. 2) GO TO 140
       DO 130 I = 1,N
- 130    TOL = MAX(TOL,RTOL(I))
- 140  IF (TOL .GT. 0.0) GO TO 160
+        TOL = MAX(TOL,RTOL(I))
+ 130    CONTINUE
+ 140  IF (TOL .GT. 0.0d0) GO TO 160
       ATOLI = ATOL(1)
       DO 150 I = 1,N
         IF (ITOL .EQ. 2 .OR. ITOL .EQ. 4) ATOLI = ATOL(I)
         AYI = ABS(Y(I))
-        IF (AYI .NE. 0.0) TOL = MAX(TOL,ATOLI/AYI)
+        IF (AYI .NE. 0.0d0) TOL = MAX(TOL,ATOLI/AYI)
  150    CONTINUE
  160  TOL = MAX(TOL,100.0*UROUND)
       TOL = MIN(TOL,0.001d0)
@@ -1446,7 +1453,8 @@ C Adjust H0 if necessary to meet HMAX bound. ---------------------------
 C Load H with H0 and scale YH(*,2) by H0. ------------------------------
       H = H0
       DO 190 I = 1,N
- 190    RWORK(I+LF0-1) = H0*RWORK(I+LF0-1)
+        RWORK(I+LF0-1) = H0*RWORK(I+LF0-1)
+ 190    CONTINUE
       GO TO 270
 C-----------------------------------------------------------------------
 C Block D.
@@ -1455,30 +1463,30 @@ C and is to check stop conditions before taking a step.
 C-----------------------------------------------------------------------
  200  NSLAST = NST
       GO TO (210, 250, 220, 230, 240), ITASK
- 210  IF ((TN - TOUT)*H .LT. 0.0) GO TO 250
+ 210  IF ((TN - TOUT)*H .LT. 0.0d0) GO TO 250
       CALL DINTDY (TOUT, 0, RWORK(LYH), NYH, Y, IFLAG)
       IF (IFLAG .NE. 0) GO TO 627
       T = TOUT
       GO TO 420
  220  TP = TN - HU*(1.0 + 100.0*UROUND)
-      IF ((TP - TOUT)*H .GT. 0.0) GO TO 623
-      IF ((TN - TOUT)*H .LT. 0.0) GO TO 250
+      IF ((TP - TOUT)*H .GT. 0.0d0) GO TO 623
+      IF ((TN - TOUT)*H .LT. 0.0d0) GO TO 250
       GO TO 400
  230  TCRIT = RWORK(1)
-      IF ((TN - TCRIT)*H .GT. 0.0) GO TO 624
-      IF ((TCRIT - TOUT)*H .LT. 0.0) GO TO 625
-      IF ((TN - TOUT)*H .LT. 0.0) GO TO 245
+      IF ((TN - TCRIT)*H .GT. 0.0d0) GO TO 624
+      IF ((TCRIT - TOUT)*H .LT. 0.0d0) GO TO 625
+      IF ((TN - TOUT)*H .LT. 0.0d0) GO TO 245
       CALL DINTDY (TOUT, 0, RWORK(LYH), NYH, Y, IFLAG)
       IF (IFLAG .NE. 0) GO TO 627
       T = TOUT
       GO TO 420
  240  TCRIT = RWORK(1)
-      IF ((TN - TCRIT)*H .GT. 0.0) GO TO 624
+      IF ((TN - TCRIT)*H .GT. 0.0d0) GO TO 624
  245  HMX = ABS(TN) + ABS(H)
       IHIT = ABS(TN - TCRIT) .LE. 100.0*UROUND*HMX
       IF (IHIT) GO TO 400
       TNEXT = TN + H*(1.0 + 4.0*UROUND)
-      IF ((TNEXT - TCRIT)*H .LE. 0.0) GO TO 250
+      IF ((TNEXT - TCRIT)*H .LE. 0.0d0) GO TO 250
       H = (TCRIT - TN)*(1.0 - 4.0*UROUND)
       IF (ISTATE .EQ. 2) JSTART = -2
 C-----------------------------------------------------------------------
@@ -1496,8 +1504,9 @@ C-----------------------------------------------------------------------
       IF ((NST-NSLAST) .GE. MXSTEP) GO TO 500
       CALL DEWSET (N, ITOL, RTOL, ATOL, RWORK(LYH), RWORK(LEWT))
       DO 260 I = 1,N
-        IF (RWORK(I+LEWT-1) .LE. 0.0) GO TO 510
- 260    RWORK(I+LEWT-1) = 1.0/RWORK(I+LEWT-1)
+        IF (RWORK(I+LEWT-1) .LE. 0.0d0) GO TO 510
+        RWORK(I+LEWT-1) = 1.0/RWORK(I+LEWT-1)
+ 260    CONTINUE
  270  TOLSF = UROUND*DVNORM (N, RWORK(LYH), RWORK(LEWT))
       IF (TOLSF .LE. 1.0) GO TO 280
       TOLSF = TOLSF*2.0
@@ -1507,16 +1516,16 @@ C-----------------------------------------------------------------------
       NHNIL = NHNIL + 1
       IF (NHNIL .GT. MXHNIL) GO TO 290
       MSG = 'LSODE-  Warning..internal T (=R1) and H (=R2) are'
-      CALL XERRWD (MSG, 50, 101, 0, 0, 0, 0, 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 50, 101, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       MSG='      such that in the machine, T + H = T on the next step  '
-      CALL XERRWD (MSG, 60, 101, 0, 0, 0, 0, 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 60, 101, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       MSG = '      (H = step size). Solver will continue anyway'
       CALL XERRWD (MSG, 50, 101, 0, 0, 0, 0, 2, TN, H)
       IF (NHNIL .LT. MXHNIL) GO TO 290
       MSG = 'LSODE-  Above warning has been issued I1 times.  '
-      CALL XERRWD (MSG, 50, 102, 0, 0, 0, 0, 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 50, 102, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       MSG = '      It will not be issued again for this problem'
-      CALL XERRWD (MSG, 50, 102, 0, 1, MXHNIL, 0, 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 50, 102, 0, 1, MXHNIL, 0, 0, 0.0d0, 0.0d0)
  290  CONTINUE
 C-----------------------------------------------------------------------
 C  CALL DSTODE(NEQ,Y,YH,NYH,YH,EWT,SAVF,ACOR,WM,IWM,F,JAC,DPREPJ,DSOLSY)
@@ -1534,15 +1543,15 @@ C-----------------------------------------------------------------------
  300  INIT = 1
       GO TO (310, 400, 330, 340, 350), ITASK
 C ITASK = 1.  If TOUT has been reached, interpolate. -------------------
- 310  IF ((TN - TOUT)*H .LT. 0.0) GO TO 250
+ 310  IF ((TN - TOUT)*H .LT. 0.0d0) GO TO 250
       CALL DINTDY (TOUT, 0, RWORK(LYH), NYH, Y, IFLAG)
       T = TOUT
       GO TO 420
 C ITASK = 3.  Jump to exit if TOUT was reached. ------------------------
- 330  IF ((TN - TOUT)*H .GE. 0.0) GO TO 400
+ 330  IF ((TN - TOUT)*H .GE. 0.0d0) GO TO 400
       GO TO 250
 C ITASK = 4.  See if TOUT or TCRIT was reached.  Adjust H if necessary.
- 340  IF ((TN - TOUT)*H .LT. 0.0) GO TO 345
+ 340  IF ((TN - TOUT)*H .LT. 0.0d0) GO TO 345
       CALL DINTDY (TOUT, 0, RWORK(LYH), NYH, Y, IFLAG)
       T = TOUT
       GO TO 420
@@ -1550,7 +1559,7 @@ C ITASK = 4.  See if TOUT or TCRIT was reached.  Adjust H if necessary.
       IHIT = ABS(TN - TCRIT) .LE. 100.0*UROUND*HMX
       IF (IHIT) GO TO 400
       TNEXT = TN + H*(1.0 + 4.0*UROUND)
-      IF ((TNEXT - TCRIT)*H .LE. 0.0) GO TO 250
+      IF ((TNEXT - TCRIT)*H .LE. 0.0d0) GO TO 250
       H = (TCRIT - TN)*(1.0 - 4.0*UROUND)
       JSTART = -2
       GO TO 250
@@ -1566,7 +1575,8 @@ C optional outputs are loaded into the work arrays before returning.
 C If ISTATE = 1 and TOUT = T, there is a return with no action taken.
 C-----------------------------------------------------------------------
  400  DO 410 I = 1,N
- 410    Y(I) = RWORK(I+LYH-1)
+        Y(I) = RWORK(I+LYH-1)
+ 410    CONTINUE
       T = TN
       IF (ITASK .NE. 4 .AND. ITASK .NE. 5) GO TO 420
       IF (IHIT) T = TCRIT
@@ -1590,9 +1600,9 @@ C are loaded into the work arrays before returning.
 C-----------------------------------------------------------------------
 C The maximum number of steps was taken before reaching TOUT. ----------
  500  MSG = 'LSODE-  At current T (=R1), MXSTEP (=I1) steps   '
-      CALL XERRWD (MSG, 50, 201, 0, 0, 0, 0, 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 50, 201, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       MSG = '      taken on this call before reaching TOUT     '
-      CALL XERRWD (MSG, 50, 201, 0, 1, MXSTEP, 0, 1, TN, 0.0)
+      CALL XERRWD (MSG, 50, 201, 0, 1, MXSTEP, 0, 1, TN, 0.0d0)
       ISTATE = -1
       GO TO 580
 C EWT(I) .LE. 0.0 for some I (not at start of problem). ----------------
@@ -1603,7 +1613,7 @@ C EWT(I) .LE. 0.0 for some I (not at start of problem). ----------------
       GO TO 580
 C Too much accuracy requested for machine precision. -------------------
  520  MSG = 'LSODE-  At T (=R1), too much accuracy requested  '
-      CALL XERRWD (MSG, 50, 203, 0, 0, 0, 0, 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 50, 203, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       MSG = '      for precision of machine..  see TOLSF (=R2) '
       CALL XERRWD (MSG, 50, 203, 0, 0, 0, 0, 2, TN, TOLSF)
       RWORK(14) = TOLSF
@@ -1611,16 +1621,16 @@ C Too much accuracy requested for machine precision. -------------------
       GO TO 580
 C KFLAG = -1.  Error test failed repeatedly or with ABS(H) = HMIN. -----
  530  MSG = 'LSODE-  At T(=R1) and step size H(=R2), the error'
-      CALL XERRWD (MSG, 50, 204, 0, 0, 0, 0, 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 50, 204, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       MSG = '      test failed repeatedly or with ABS(H) = HMIN'
       CALL XERRWD (MSG, 50, 204, 0, 0, 0, 0, 2, TN, H)
       ISTATE = -4
       GO TO 560
 C KFLAG = -2.  Convergence failed repeatedly or with ABS(H) = HMIN. ----
  540  MSG = 'LSODE-  At T (=R1) and step size H (=R2), the    '
-      CALL XERRWD (MSG, 50, 205, 0, 0, 0, 0, 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 50, 205, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       MSG = '      corrector convergence failed repeatedly     '
-      CALL XERRWD (MSG, 50, 205, 0, 0, 0, 0, 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 50, 205, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       MSG = '      or with ABS(H) = HMIN   '
       CALL XERRWD (MSG, 30, 205, 0, 0, 0, 0, 2, TN, H)
       ISTATE = -5
@@ -1636,7 +1646,8 @@ C Compute IMXER if relevant. -------------------------------------------
       IWORK(16) = IMXER
 C Set Y vector, T, and optional outputs. -------------------------------
  580  DO 590 I = 1,N
- 590    Y(I) = RWORK(I+LYH-1)
+        Y(I) = RWORK(I+LYH-1)
+ 590    CONTINUE
       T = TN
       RWORK(11) = HU
       RWORK(12) = H
@@ -1655,73 +1666,73 @@ C First the error message routine is called.  If the illegal input
 C is a negative ISTATE, the run is aborted (apparent infinite loop).
 C-----------------------------------------------------------------------
  601  MSG = 'LSODE-  ISTATE (=I1) illegal '
-      CALL XERRWD (MSG, 30, 1, 0, 1, ISTATE, 0, 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 30, 1, 0, 1, ISTATE, 0, 0, 0.0d0, 0.0d0)
       IF (ISTATE .LT. 0) GO TO 800
       GO TO 700
  602  MSG = 'LSODE-  ITASK (=I1) illegal  '
-      CALL XERRWD (MSG, 30, 2, 0, 1, ITASK, 0, 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 30, 2, 0, 1, ITASK, 0, 0, 0.0d0, 0.0d0)
       GO TO 700
  603  MSG = 'LSODE-  ISTATE .GT. 1 but LSODE not initialized '
-      CALL XERRWD (MSG, 50, 3, 0, 0, 0, 0, 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 50, 3, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       GO TO 700
  604  MSG = 'LSODE-  NEQ (=I1) .LT. 1     '
-      CALL XERRWD (MSG, 30, 4, 0, 1, NEQ(1), 0, 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 30, 4, 0, 1, NEQ(1), 0, 0, 0.0d0, 0.0d0)
       GO TO 700
  605  MSG = 'LSODE-  ISTATE = 3 and NEQ increased (I1 to I2)  '
-      CALL XERRWD (MSG, 50, 5, 0, 2, N, NEQ(1), 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 50, 5, 0, 2, N, NEQ(1), 0, 0.0d0, 0.0d0)
       GO TO 700
  606  MSG = 'LSODE-  ITOL (=I1) illegal   '
-      CALL XERRWD (MSG, 30, 6, 0, 1, ITOL, 0, 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 30, 6, 0, 1, ITOL, 0, 0, 0.0d0, 0.0d0)
       GO TO 700
  607  MSG = 'LSODE-  IOPT (=I1) illegal   '
-      CALL XERRWD (MSG, 30, 7, 0, 1, IOPT, 0, 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 30, 7, 0, 1, IOPT, 0, 0, 0.0d0, 0.0d0)
       GO TO 700
  608  MSG = 'LSODE-  MF (=I1) illegal     '
-      CALL XERRWD (MSG, 30, 8, 0, 1, MF, 0, 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 30, 8, 0, 1, MF, 0, 0, 0.0d0, 0.0d0)
       GO TO 700
  609  MSG = 'LSODE-  ML (=I1) illegal.. .LT.0 or .GE.NEQ (=I2)'
-      CALL XERRWD (MSG, 50, 9, 0, 2, ML, NEQ(1), 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 50, 9, 0, 2, ML, NEQ(1), 0, 0.0d0, 0.0d0)
       GO TO 700
  610  MSG = 'LSODE-  MU (=I1) illegal.. .LT.0 or .GE.NEQ (=I2)'
-      CALL XERRWD (MSG, 50, 10, 0, 2, MU, NEQ(1), 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 50, 10, 0, 2, MU, NEQ(1), 0, 0.0d0, 0.0d0)
       GO TO 700
  611  MSG = 'LSODE-  MAXORD (=I1) .LT. 0  '
-      CALL XERRWD (MSG, 30, 11, 0, 1, MAXORD, 0, 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 30, 11, 0, 1, MAXORD, 0, 0, 0.0d0, 0.0d0)
       GO TO 700
  612  MSG = 'LSODE-  MXSTEP (=I1) .LT. 0  '
-      CALL XERRWD (MSG, 30, 12, 0, 1, MXSTEP, 0, 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 30, 12, 0, 1, MXSTEP, 0, 0, 0.0d0, 0.0d0)
       GO TO 700
  613  MSG = 'LSODE-  MXHNIL (=I1) .LT. 0  '
-      CALL XERRWD (MSG, 30, 13, 0, 1, MXHNIL, 0, 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 30, 13, 0, 1, MXHNIL, 0, 0, 0.0d0, 0.0d0)
       GO TO 700
  614  MSG = 'LSODE-  TOUT (=R1) behind T (=R2)      '
       CALL XERRWD (MSG, 40, 14, 0, 0, 0, 0, 2, TOUT, T)
       MSG = '      Integration direction is given by H0 (=R1)  '
-      CALL XERRWD (MSG, 50, 14, 0, 0, 0, 0, 1, H0, 0.0)
+      CALL XERRWD (MSG, 50, 14, 0, 0, 0, 0, 1, H0, 0.0d0)
       GO TO 700
  615  MSG = 'LSODE-  HMAX (=R1) .LT. 0.0  '
-      CALL XERRWD (MSG, 30, 15, 0, 0, 0, 0, 1, HMAX, 0.0)
+      CALL XERRWD (MSG, 30, 15, 0, 0, 0, 0, 1, HMAX, 0.0d0)
       GO TO 700
  616  MSG = 'LSODE-  HMIN (=R1) .LT. 0.0  '
-      CALL XERRWD (MSG, 30, 16, 0, 0, 0, 0, 1, HMIN, 0.0)
+      CALL XERRWD (MSG, 30, 16, 0, 0, 0, 0, 1, HMIN, 0.0d0)
       GO TO 700
  617  CONTINUE
       MSG='LSODE-  RWORK length needed, LENRW (=I1), exceeds LRW (=I2)'
-      CALL XERRWD (MSG, 60, 17, 0, 2, LENRW, LRW, 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 60, 17, 0, 2, LENRW, LRW, 0, 0.0d0, 0.0d0)
       GO TO 700
  618  CONTINUE
       MSG='LSODE-  IWORK length needed, LENIW (=I1), exceeds LIW (=I2)'
-      CALL XERRWD (MSG, 60, 18, 0, 2, LENIW, LIW, 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 60, 18, 0, 2, LENIW, LIW, 0, 0.0d0, 0.0d0)
       GO TO 700
  619  MSG = 'LSODE-  RTOL(I1) is R1 .LT. 0.0        '
-      CALL XERRWD (MSG, 40, 19, 0, 1, I, 0, 1, RTOLI, 0.0)
+      CALL XERRWD (MSG, 40, 19, 0, 1, I, 0, 1, RTOLI, 0.0d0)
       GO TO 700
  620  MSG = 'LSODE-  ATOL(I1) is R1 .LT. 0.0        '
-      CALL XERRWD (MSG, 40, 20, 0, 1, I, 0, 1, ATOLI, 0.0)
+      CALL XERRWD (MSG, 40, 20, 0, 1, I, 0, 1, ATOLI, 0.0d0)
       GO TO 700
  621  EWTI = RWORK(LEWT+I-1)
       MSG = 'LSODE-  EWT(I1) is R1 .LE. 0.0         '
-      CALL XERRWD (MSG, 40, 21, 0, 1, I, 0, 1, EWTI, 0.0)
+      CALL XERRWD (MSG, 40, 21, 0, 1, I, 0, 1, EWTI, 0.0d0)
       GO TO 700
  622  CONTINUE
       MSG='LSODE-  TOUT (=R1) too close to T(=R2) to start integration'
@@ -1740,19 +1751,19 @@ C-----------------------------------------------------------------------
       CALL XERRWD (MSG, 60, 25, 0, 0, 0, 0, 2, TCRIT, TOUT)
       GO TO 700
  626  MSG = 'LSODE-  At start of problem, too much accuracy   '
-      CALL XERRWD (MSG, 50, 26, 0, 0, 0, 0, 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 50, 26, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       MSG='      requested for precision of machine..  See TOLSF (=R1) '
-      CALL XERRWD (MSG, 60, 26, 0, 0, 0, 0, 1, TOLSF, 0.0)
+      CALL XERRWD (MSG, 60, 26, 0, 0, 0, 0, 1, TOLSF, 0.0d0)
       RWORK(14) = TOLSF
       GO TO 700
  627  MSG = 'LSODE-  Trouble in DINTDY.  ITASK = I1, TOUT = R1'
-      CALL XERRWD (MSG, 50, 27, 0, 1, ITASK, 0, 1, TOUT, 0.0)
+      CALL XERRWD (MSG, 50, 27, 0, 1, ITASK, 0, 1, TOUT, 0.0d0)
 C
  700  ISTATE = -3
       RETURN
 C
  800  MSG = 'LSODE-  Run aborted.. apparent infinite loop     '
-      CALL XERRWD (MSG, 50, 303, 2, 0, 0, 0, 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 50, 303, 2, 0, 0, 0, 0, 0.0d0, 0.0d0)
       RETURN
 C----------------------- END OF SUBROUTINE LSODE ----------------------
       END

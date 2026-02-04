@@ -20,15 +20,15 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE ode_output_mod
-      USE sing_mod
-      USE dcon_mod, ONLY : shotnum,shottime
+      MODULE rdcon_ode_output_mod
+      USE rdcon_sing_mod
+      USE rdcon_mod, ONLY : shotnum,shottime,nzero
       IMPLICIT NONE
 
       CHARACTER(6), DIMENSION(:), POINTER :: name
       INTEGER, DIMENSION(:), POINTER :: sol_out_unit,sol_bin_unit
       
-      INTEGER :: neq,ising,istep,m1,nzero
+      INTEGER :: neq,ising,istep,m1
       REAL(r8) :: psifac,psizero,singfac,q,psi_save,psimax,singfac_old,
      $     psifac_old
       REAL(r8) :: singfac_min=1e-5,singfac_max=1e-4
@@ -56,7 +56,7 @@ c-----------------------------------------------------------------------
  20   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
      $     "eval1"/)
  30   FORMAT(3x,"mlow",4x,"m",2x,"mhigh",2x,"isol",2x,"msol"//5i6/)
- 40   FORMAT(1x,a,es10.3,a,f6.3)
+ 40   FORMAT(1x,2x,a,es10.3,a,f6.3)
 c-----------------------------------------------------------------------
 c     allocate space for asymptotic coefficients.
 c-----------------------------------------------------------------------
@@ -198,7 +198,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
- 10   FORMAT(1x,a,es10.3,a,f6.3)
+ 10   FORMAT(1x,2x,a,es10.3,a,f6.3)
  20   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
      $     "eval1"/)
 c-----------------------------------------------------------------------
@@ -321,7 +321,7 @@ c-----------------------------------------------------------------------
 
       REAL(r8) :: logpsi1,logpsi2,crit,fac,
      $     psi_med,crit_med,q_med,singfac_med,logpsi1_med,logpsi2_med
-      REAL(r8), SAVE :: crit_save,psi_save,dpsi
+      REAL(r8), SAVE :: crit_save=0,psi_save=0,dpsi
       COMPLEX(r8), DIMENSION(mpert,msol,2) :: u_med
 c-----------------------------------------------------------------------
 c     format statements.
@@ -542,4 +542,4 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ode_output_sol
-      END MODULE ode_output_mod
+      END MODULE rdcon_ode_output_mod

@@ -22,7 +22,9 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE direct_mod
       USE global_mod
+      USE local_mod
       USE utils_mod
+      USE grid_mod
       IMPLICIT NONE
 
       INTEGER, PRIVATE :: istep
@@ -87,7 +89,13 @@ c-----------------------------------------------------------------------
             mpsi=sq_in%mx-2
          ENDIF
       ENDIF
-      CALL spline_alloc(sq,mpsi,4)
+      IF(.NOT. sq%allocated)THEN
+         CALL spline_alloc(sq,mpsi,4)
+      ELSE
+         CALL spline_dealloc(sq)
+         CALL spline_alloc(sq,mpsi,4)
+      ENDIF
+      
       sq%name="  sq  "
       sq%title=(/"psifac","twopif","mu0 p ","dvdpsi","  q   "/)
 c-----------------------------------------------------------------------
@@ -127,7 +135,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     start loop over flux surfaces and integrate over field line.
 c-----------------------------------------------------------------------
-      IF(verbose) WRITE(*,'(a,1p,es10.3)')" etol = ",etol
+      IF(verbose) WRITE(*,'(3x,a,1p,es10.3)')"etol = ",etol
       DO ipsi=mpsi,0,-1
          CALL direct_fl_int(ipsi,y_out,bf)
 c-----------------------------------------------------------------------
@@ -352,8 +360,6 @@ c-----------------------------------------------------------------------
             CALL program_stop("Took too many steps to find o-point.")
          ENDIF
       ENDDO
-      ro=r
-      zo=z
       ro=r
       zo=z
 c-----------------------------------------------------------------------

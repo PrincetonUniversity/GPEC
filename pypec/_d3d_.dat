@@ -9,7 +9,7 @@ Formatted to be read by pypec packacge data.set_machine.
 """
 	@package pypec
 	@author NC Logan
-	@email nlogan@pppl.gov
+	@email nikolas.logan@columbia.edu
 """
 
 ############################################################################################### MAGNETIC PROBES

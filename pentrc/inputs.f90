@@ -26,7 +26,7 @@ module inputs
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
-    ! EMAIL: nlogan@pppl.gov
+    ! EMAIL: nikolas.logan@columbia.edu
     !-----------------------------------------------------------------------
     
     use params, only : r8,xj,mp,me,e,mu0,twopi
@@ -815,7 +815,7 @@ module inputs
                 xs_m(2)%fs(0:,i) = xspmns(1:,ims)
                 xs_m(3)%fs(0:,i) = xmsmns(1:,ims)
             else
-                print *,"WARNING: Not input for DCON m ",mfac(i)
+                print *,"!! WARNING: Not input for DCON m ",mfac(i)
                 xs_m(1)%fs(0:,i) = 0
                 xs_m(2)%fs(0:,i) = 0
                 xs_m(3)%fs(0:,i) = 0

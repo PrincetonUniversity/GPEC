@@ -10,6 +10,8 @@
 	cmpsi=64					! ?? Why do we need this is only care about psi_lim??
 	cmtheta=480					! Number of poloidal gridpoints (uses DCON jac_type??)
 	cmzeta=40					! Number of toroidal gridpoints (uses DCON jac_type??)
+    coil_threads=0              ! Number of parallel threads used when computing fields from coils (no reason to go beyond 4 for coils with less than 1000 points). Setting to <= 0 uses OMP_NUM_THREADS env variable.
+
 
 ! Array values should be specified for each of the coil arrays to be activated.
 ! The supported coil sets (number of coils) include...

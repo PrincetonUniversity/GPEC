@@ -1,9 +1,11 @@
       SUBROUTINE DSRCOM (RSAV, ISAV, JOB)
+      USE local_mod, ONLY: r8
+
 C***BEGIN PROLOGUE  DSRCOM
 C***SUBSIDIARY
 C***PURPOSE  Save/restore ODEPACK COMMON blocks.
 C***LIBRARY   MATHLIB (ODEPACK)
-C***TYPE      REAL*8 (SSRCOM-S, DSRCOM-D)
+C***TYPE      REAL(r8) (SSRCOM-S, DSRCOM-D)
 C***AUTHOR  Hindmarsh, Alan C., (LLNL)
 C***DESCRIPTION
 C
@@ -27,13 +29,13 @@ C   890501  Modified prologue to SLATEC/LDOC format.  (FNF)
 C   890503  Minor cosmetic changes.  (FNF)
 C   921116  Deleted treatment of block /EH0001/.  (ACH)
 C   930801  Reduced Common block length by 2.  (ACH)
-C   930809  Renamed to allow single/real*8 versions. (ACH)
+C   930809  Renamed to allow single/real(r8) versions. (ACH)
 C***END PROLOGUE  DSRCOM
 C**End
       INTEGER ISAV, JOB
       INTEGER ILS
       INTEGER I, LENILS, LENRLS
-      REAL*8 RSAV,   RLS
+      REAL(r8) RSAV,   RLS
       DIMENSION RSAV(*), ISAV(*)
       COMMON /DLS001/ RLS(218), ILS(37)
       DATA LENRLS/218/, LENILS/37/
@@ -42,16 +44,20 @@ C***FIRST EXECUTABLE STATEMENT  DSRCOM
       IF (JOB .EQ. 2) GO TO 100
 C
       DO 10 I = 1,LENRLS
- 10     RSAV(I) = RLS(I)
+        RSAV(I) = RLS(I)
+ 10     CONTINUE
       DO 20 I = 1,LENILS
- 20     ISAV(I) = ILS(I)
+        ISAV(I) = ILS(I)
+ 20     CONTINUE
       RETURN
 C
  100  CONTINUE
       DO 110 I = 1,LENRLS
- 110     RLS(I) = RSAV(I)
+         RLS(I) = RSAV(I)
+ 110     CONTINUE
       DO 120 I = 1,LENILS
- 120     ILS(I) = ISAV(I)
+         ILS(I) = ISAV(I)
+ 120     CONTINUE
       RETURN
 C----------------------- END OF SUBROUTINE DSRCOM ----------------------
       END

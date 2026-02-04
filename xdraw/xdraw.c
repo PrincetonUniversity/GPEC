@@ -70,7 +70,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #if !defined(__MACH__)
-#include <malloc.h>
+#include <stdlib.h>
 #endif
 #include <string.h>
 #include <math.h>

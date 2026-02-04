@@ -10,11 +10,11 @@
     deflate=f
     nroot=5
     itermax=5000
-    msing=20
+    msing=4
     initguess = ( 0,10)    !n=1
 
-    eta=8e-8,8e-8,8e-8,8e-8,8e-8,8e-8
-    massden=3.3e-07, 3.3e-07,3.3e-07,3.3e-07,3.3e-07,3.3e-07
+    eta=8e-8,8e-8,8e-8,8e-8
+    massden=3.3e-07,3.3e-07,3.3e-07,3.3e-07
 
     scan_x1 =  1e-9
     scan_x0 = 1.90E-10

@@ -24,9 +24,8 @@ c     15. gpout_arzphifun
 c     16. gpout_clebsch
 c     17. gpout_control_filter
 c     18. gpout_qrv
-c     19. check
-c     20. gpout_init_netcdf
-c     21. gpout_close_netcdf
+c     19. gpout_init_netcdf
+c     20. gpout_close_netcdf
 c-----------------------------------------------------------------------
 c     subprogram 0. gpout_mod.
 c     module declarations.
@@ -46,6 +45,7 @@ c-----------------------------------------------------------------------
       USE utilities, ONLY : progressbar
       USE pentrc_interface, ONLY : zi,mi,wefac,wpfac,initialize_pentrc
       USE gslayer_mod, ONLY : gpec_slayer
+      USE idcon_mod, ONLY : check
 
       IMPLICIT NONE
 
@@ -1580,10 +1580,10 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: spot, slayer_inpr
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: i_id,q_id,m_id,p_id,c_id,w_id,k_id,n_id,d_id,a_id,
-     $           pp_id,cp_id,wp_id,np_id,dp_id,wc_id,wmin_id,wsat_id,
+      INTEGER :: i_id,q_id,m_id,p_id,c_id,bp_id,w_id,k_id,n_id,d_id,
+     $           a_id,pp_id,cp_id,wp_id,np_id,dp_id,
      $           bc_id,ti_id, te_id, ni_id, ne_id, we_id, wi_id, q1_id,
-     $           rh_id, r1_id,
+     $           rh_id, r1_id,wc_id,wmin_id,wsat_id,
      $           astat
 
       INTEGER :: itheta,ising,icoup
@@ -1919,6 +1919,11 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(fncid, d_id, "long_name",
      $     "Unitless Resonance Parameter $\partial_\psi \frac{"//
      $     "\delta B \cdot \nabla \psi}{B \cdot \nabla \theta}$") )
+         CALL check( nf90_def_var(fncid, "B_pen", nf90_double,
+     $      (/q_id,i_id/), bp_id) )
+         CALL check( nf90_put_att(fncid, bp_id, "units", "T") )
+         CALL check( nf90_put_att(fncid, bp_id, "long_name",
+     $       "Penetrated resonant field"))
          CALL check( nf90_def_var(fncid, "I_res", nf90_double,
      $      (/q_id,i_id/), c_id) )
          CALL check( nf90_put_att(fncid, c_id, "units", "A") )
@@ -2011,6 +2016,8 @@ c-----------------------------------------------------------------------
      $      RESHAPE((/REAL(singflx), AIMAG(singflx)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, d_id,
      $      RESHAPE((/REAL(delta), AIMAG(delta)/), (/msing,2/))) )
+         CALL check( nf90_put_var(fncid, bp_id,
+     $      RESHAPE((/REAL(singbwp), AIMAG(singbwp)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, c_id,
      $      RESHAPE((/REAL(singcur), AIMAG(singcur)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, w_id, 2*island_hwidth) )
@@ -2128,12 +2135,12 @@ c-----------------------------------------------------------------------
      $         (/m_id, i_id/), d_id) )
             CALL check( nf90_put_att(mncid, d_id, "units", "untiless") )
             CALL check( nf90_put_att(mncid, d_id, "long_name",
-     $        "Extrenal Delta prime overlap") )
+     $        "External Delta prime overlap") )
             CALL check( nf90_def_var(mncid, "Delta_overlap_norm",
      $         nf90_double,(/m_id/), dp_id) )
             CALL check( nf90_put_att(mncid, dp_id, "units", "untiless"))
             CALL check( nf90_put_att(mncid, dp_id, "long_name",
-     $        "Extrenal Delta prime overlap percentage") )
+     $        "External Delta prime overlap percentage") )
             CALL check( nf90_enddef(mncid) )
             CALL check( nf90_put_var(mncid, p_id, RESHAPE((/
      $         REAL(olap(1,:)),AIMAG(olap(1,:))/), (/msing,2/))) )
@@ -2507,7 +2514,6 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: bsurfmat,dwks,dwk,
      $     gind,gindp,gres,gresp
 
-      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: coilmn
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: tmat,mmat,mdagger
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: gcoil
 
@@ -2652,17 +2658,14 @@ c----------------------------------------------------------------------
       IF (coil_flag) THEN
          ! form mutual inductance between coils and plasma surface
          ALLOCATE(mmat(mpert,coil_num),mdagger(coil_num,mpert))
-         ALLOCATE(coilmn(cmpert))
          DO j=1,coil_num
-            CALL field_bs_psi(psilim,coilmn,1,op_start=j,op_stop=j)
             DO i=1,cmpert
                IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
-                  mmat(cmlow-mlow+i,j)=coilmn(i)
+                  mmat(cmlow-mlow+i,j)=coilmn(i,j)
                ENDIF
             ENDDO
          ENDDO
          mdagger = CONJG(TRANSPOSE(mmat))
-         DEALLOCATE(coilmn)
 
          WRITE(*,*)"Build coil response matrix functions"
          ALLOCATE(gcoil(mstep,coil_num,coil_num),tmat(mpert,mpert))
@@ -3505,7 +3508,7 @@ c-----------------------------------------------------------------------
          rss=CMPLX(rs,rs)+xnofuns*rvecs
          zss=CMPLX(zs,zs)+xnofuns*zvecs
          DO itheta=0,mthsurf
-            psis(:,itheta)=psifac(:)
+            psis(:,itheta)=psifac(1:mstep)
          ENDDO
 
          CALL bin_open(bin_2d_unit,
@@ -3775,6 +3778,11 @@ c-----------------------------------------------------------------------
                ENDIF
             ENDDO
             CALL field_bs_psi(psi(ipsi),vcmn,2)
+            ! MCP: we could avoid calling this a second time by
+            !      rearranging the jacobian terms, there is nothing that
+            !      needs to be done inside the parallel loop.
+            !      Could save a lot of time for large coil sets.
+
             DO i=1,cmpert
                IF ((cmlow-lmlow+i>=1).AND.(cmlow-lmlow+i<=lmpert)) THEN
                   vwpmns(ipsi,cmlow-lmlow+i)=vcmn(i)
@@ -4360,7 +4368,8 @@ c-----------------------------------------------------------------------
          IF (coil_flag) THEN
             IF(verbose) WRITE(*,*)"Computing vacuum fields by coils"
             np=nn*48 ! make it consistent with cmzeta later.
-            CALL field_bs_rzphi(nr,nz,np,gdr,gdz,vcbr,vcbz,vcbp)
+            CALL field_bs_rzphi(nr,nz,np,gdr,gdz,vcbr,vcbz,vcbp,
+     $                                              op_verbose=.TRUE.)
             IF (divzero_flag) THEN
                CALL gpeq_rzpdiv(nr,nz,gdr,gdz,vcbr,vcbz,vcbp)
             ENDIF
@@ -5792,6 +5801,7 @@ c-----------------------------------------------------------------------
       i = malias+1
       j = mpert-malias
       wmatt = 0
+      wvecs = 0
       ! total flux matrix
       wmatt(i:j,i:j) = 0.5*plas_indinvmats(resp_index,i:j,i:j) *2*mu0
       ! convert to external flux
@@ -6576,29 +6586,9 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_qrv
+
 c-----------------------------------------------------------------------
-c     subprogram 19. check.
-c     Check status of netcdf file.
-c-----------------------------------------------------------------------
-      SUBROUTINE check(stat)
-c-----------------------------------------------------------------------
-c     declaration.
-c-----------------------------------------------------------------------
-      INTEGER, INTENT (IN) :: stat
-c-----------------------------------------------------------------------
-c     stop if it is an error.
-c-----------------------------------------------------------------------
-      IF(stat /= nf90_noerr) THEN
-         PRINT *, TRIM(nf90_strerror(stat))
-         STOP "ERROR: failed to write/read netcdf file"
-      ENDIF
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE check
-c-----------------------------------------------------------------------
-c     subprogram 20. gpout_init_netcdf.
+c     subprogram 19. gpout_init_netcdf.
 c     Initialize the netcdf files used for module outputs.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_init_netcdf
@@ -6822,7 +6812,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_init_netcdf
 c-----------------------------------------------------------------------
-c     subprogram 21. gpout_close_netcdf.
+c     subprogram 20. gpout_close_netcdf.
 c     Close the netcdf files used for module outputs.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_close_netcdf

@@ -1,6 +1,8 @@
 # This is the makefile for VACUUM.
 
-F90 = $(FC) $(FFLAGS) -zero
+include ../install/DEFAULTS.inc
+
+F90 = $(FC) $(FFLAGS) $(ZEROFLAG) $(RECURSFLAG) $(LEGACYFLAG) -I../equil
 
 .f.o:
 	$(F90) -c $*.f
@@ -30,4 +32,4 @@ vacuum_ut.o: vacuum_global.o
 vacuum_vac.o: vacuum_global.o
 
 clean:
-	rm -f *.o *.mod
+	rm -f *.o *.mod *.original

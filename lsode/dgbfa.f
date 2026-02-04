@@ -1,15 +1,16 @@
       subroutine dgbfa(abd,lda,n,ml,mu,ipvt,info)
+      USE local_mod, ONLY: r8
       integer lda,n,ml,mu,ipvt(1),info
-      real*8 abd(lda,1)
+      real(r8) abd(lda,1)
 c
-c     dgbfa factors a real*8 band matrix by elimination.
+c     dgbfa factors a real(r8) band matrix by elimination.
 c
 c     dgbfa is usually called by dgbco, but it can be called
 c     directly with a saving in time if  rcond  is not needed.
 c
 c     on entry
 c
-c        abd     real*8(lda, n)
+c        abd     real(r8)(lda, n)
 c                contains the matrix in band storage.  the columns
 c                of the matrix are stored in the columns of  abd  and
 c                the diagonals of the matrix are stored in rows
@@ -84,7 +85,7 @@ c     fortran max0,min0
 c
 c     internal variables
 c
-      real*8 t
+      real(r8) t
       integer i,idamax,i0,j,ju,jz,j0,j1,k,kp1,l,lm,m,mm,nm1
 c
 c

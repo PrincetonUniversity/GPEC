@@ -5,7 +5,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. fourfit_mod.
+c     0. stride_fourfit_mod.
 c     1. fourfit_make_metric.
 c     2. fourfit_make_matrix.
 c     3. fourfit_write_metric.
@@ -18,9 +18,11 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE fourfit_mod
+      MODULE stride_fourfit_mod
       USE fspline_mod
-      USE dcon_mod
+      USE stride_dcon_mod
+      USE omp_lib
+
       IMPLICIT NONE
 
       TYPE(fspline_type), PRIVATE :: metric
@@ -64,13 +66,21 @@ c     begin loop over nodes.
 c-----------------------------------------------------------------------
       rz_ix = rzphi%ix
       rz_iy = rzphi%iy
+#ifdef _OPENMP
       IF (fourfit_metric_parallel) THEN
          IF(nThreads > 0)THEN
            CALL OMP_SET_NUM_THREADS(nThreads)
+         ELSE 
+           nThreads = OMP_GET_MAX_THREADS()
          ENDIF
+
+         IF(verbose) WRITE(*,'(1x,a,i4,a)'),
+     $                "  > Running with ",nThreads," OMP threads"
+     
       ELSE
          CALL OMP_SET_NUM_THREADS(1)
       ENDIF
+#endif
 !$OMP PARALLEL DEFAULT(NONE)
 !$OMP& PRIVATE(ipsi,psifac,itheta,theta,rfac,eta,r,jac,jac1,v)
 !$OMP& PRIVATE(rzphi_s_f,rzphi_s_fx,rzphi_s_fy)
@@ -191,7 +201,15 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     define flux surface quantities.
 c-----------------------------------------------------------------------
-      IF(nThreads>0) CALL OMP_SET_NUM_THREADS(nThreads)
+#ifdef _OPENMP
+      IF(nThreads>0) THEN
+         CALL OMP_SET_NUM_THREADS(nThreads)
+      ELSE
+         nThreads = OMP_GET_MAX_THREADS()
+      ENDIF
+         IF(verbose) WRITE(*,'(1x,a,i4,a)'),
+     $                "  > Running with ",nThreads," OMP threads"
+#endif
 !$OMP PARALLEL DO DEFAULT(NONE)
 !$OMP& PRIVATE(ipsi,psifac,p1,q,q1,chi1,nq,jtheta,m1,ipert,singfac1,dm,
 !$OMP& m2,singfac2,jpert,g11,g22,g33,g23,g31,g12,jmat1,ipiva,work,info,
@@ -608,4 +626,4 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE fourfit_evals
 
-      END MODULE fourfit_mod
+      END MODULE stride_fourfit_mod

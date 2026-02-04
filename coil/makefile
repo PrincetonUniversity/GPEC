@@ -3,7 +3,7 @@
 include ../install/DEFAULTS.inc
 
 IFLAGS = -I../equil -I$(MATHINC) -I$(NETCDFINC)
-F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
+F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS) $(RECURSFLAG)
 
 .f.o:
 	$(F90) -c $*.f
@@ -42,7 +42,7 @@ libcoil: $(OBJS)
 	ar -r ../lib/libcoil.a *.o
 
 clean:
-	rm -f *.o *.mod ../lib/libcoil.a
+	rm -f *.o *.mod ../lib/libcoil.a *.original
 
 
 # dependencies

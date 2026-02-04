@@ -62,7 +62,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(sing(msing))
       DO ising=1,msing
          singp => sing(ising)
-         READ(debug_unit)sing%order,singp%alpha,singp%psifac,
+         READ(debug_unit)singp%order,singp%alpha,singp%psifac,
      $        singp%q,singp%r1,singp%r2
          ALLOCATE(singp%vmatl(mpert,2*mpert,2,0:2*singp%order))
          ALLOCATE(singp%vmatr(mpert,2*mpert,2,0:2*singp%order))

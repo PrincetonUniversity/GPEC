@@ -1,10 +1,12 @@
       subroutine dscal(n,da,dx,incx)
-c
+      USE local_mod, ONLY: r8
+      
+c     
 c     scales a vector by a constant.
 c     uses unrolled loops for increment equal to one.
 c     jack dongarra, linpack, 3/11/78.
 c
-      real*8 da,dx(*)
+      real(r8) da,dx(*)
       integer i,incx,m,mp1,n,nincx
 c
       if(n.le.0)return

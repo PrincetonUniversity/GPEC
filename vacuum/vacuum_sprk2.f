@@ -23,7 +23,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine testvec 
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       dimension xob(nths),zob(nths), the(nths)
@@ -131,7 +131,7 @@ c-----------------------------------------------------------------------
       subroutine vecpot ( xobs,zobs,nobs, xsce,zsce,xscp,zscp,nsce,
      $     isg, phi, axrl,axil, azrl,azil )
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       dimension xobs(*),zobs(*),xsce(*),zsce(*),xscp(*),zscp(*),
@@ -185,7 +185,7 @@ c-----------------------------------------------------------------------
      $     isg,creal,cimag,cdriv,sdriv, ip,ipm, cpwr1,cpwi1,
      $     dchxr,dchxi,dchzr,dchzi)
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       dimension xobs(*),zobs(*), xsce(*),zsce(*),xscp(*),zscp(*)
@@ -279,7 +279,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine diff5 ( fin, h, df5 )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension fin(*)
 c-----------------------------------------------------------------------
@@ -304,7 +305,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine difspl ( nsp,the,xin,xout )
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       dimension  the(*), xin(*), xout(*)
@@ -336,7 +337,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine matwrtn ( a, maxj1,maxj2,l1,l2,jmax1,jmax2,jn1,jn2,
      $     label, nout1,nout2 )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       character*(*) label
       dimension a ( maxj1, maxj2 ), jw2(101)
@@ -391,7 +393,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine matwrt9 ( a, maxj1,maxj2,l1,l2, label, nout1,nout2 )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       character*(*) label
       dimension a ( maxj1, maxj2 ), jw2(101)
@@ -439,7 +442,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine mtrans ( a, nd, n )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension a(nd,nd)
 c-----------------------------------------------------------------------
@@ -465,7 +469,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine mtransr ( a, nd1,nd2, n1,n2, b )
-      implicit real*8 (a-h,o-z)
+      use local_mod, only: r8
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
       dimension a(nd1,nd2), b(nd2,nd1)
 c-----------------------------------------------------------------------

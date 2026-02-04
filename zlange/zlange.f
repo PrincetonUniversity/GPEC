@@ -151,7 +151,7 @@
 *       ..
 *       .. Array Arguments ..
 *       DOUBLE PRECISION   WORK( * )
-*       COMPLEX*16         A( LDA, * )
+*       COMPLEX(r8)         A( LDA, * )
 *       ..
 *
 *
@@ -208,7 +208,7 @@
 *>
 *> \param[in] A
 *> \verbatim
-*>          A is COMPLEX*16 array, dimension (LDA,N)
+*>          A is COMPLEX(r8) array, dimension (LDA,N)
 *>          The m by n matrix A.
 *> \endverbatim
 *>
@@ -239,7 +239,7 @@
 *
 *  =====================================================================
       DOUBLE PRECISION FUNCTION ZLANGE( NORM, M, N, A, LDA, WORK )
-*
+      USE local_mod, ONLY: r8
 *  -- LAPACK auxiliary routine (version 3.7.0) --
 *  -- LAPACK is a software package provided by Univ. of Tennessee,    --
 *  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..--
@@ -251,7 +251,7 @@
 *     ..
 *     .. Array Arguments ..
       DOUBLE PRECISION   WORK( * )
-      COMPLEX*16         A( LDA, * )
+      COMPLEX(r8)         A( LDA, * )
 *     ..
 *
 * =====================================================================
@@ -363,7 +363,7 @@
 *       DOUBLE PRECISION   SCALE, SUMSQ
 *       ..
 *       .. Array Arguments ..
-*       COMPLEX*16         X( * )
+*       COMPLEX(r8)         X( * )
 *       ..
 *
 *
@@ -403,7 +403,7 @@
 *>
 *> \param[in] X
 *> \verbatim
-*>          X is COMPLEX*16 array, dimension (N)
+*>          X is COMPLEX(r8) array, dimension (N)
 *>          The vector x as described above.
 *>             x( i )  = X( 1 + ( i - 1 )*INCX ), 1 <= i <= n.
 *> \endverbatim
@@ -443,7 +443,7 @@
 *
 *  =====================================================================
       SUBROUTINE ZLASSQ( N, X, INCX, SCALE, SUMSQ )
-*
+      USE local_mod, ONLY: r8
 *  -- LAPACK auxiliary routine (version 3.7.0) --
 *  -- LAPACK is a software package provided by Univ. of Tennessee,    --
 *  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..--
@@ -454,7 +454,7 @@
       DOUBLE PRECISION   SCALE, SUMSQ
 *     ..
 *     .. Array Arguments ..
-      COMPLEX*16         X( * )
+      COMPLEX(r8)         X( * )
 *     ..
 *
 * =====================================================================

@@ -63,8 +63,6 @@ c-----------------------------------------------------------------------
          psilow = op_psilow
          IF(verbose) WRITE(*,*) "Reforming equilibrium with new psilow"
       ENDIF
-      IF(verbose) WRITE(*,'(1x,a,es10.3)')"psihigh =",psihigh
-      IF(verbose) WRITE(*,'(1x,a,es10.3)')"psilow =",psilow
       psihigh=MIN(psihigh,1._r8)
 c-----------------------------------------------------------------------
 c     define Jacobian.
@@ -99,7 +97,8 @@ c-----------------------------------------------------------------------
 c     write equilibrium and jacobian data.
 c-----------------------------------------------------------------------
       IF(.NOT. PRESENT(op_psihigh))THEN  ! only need this once
-        IF(verbose) WRITE(*,'(1x,4a/1x,2a,3(a,i1))')
+        IF(verbose) WRITE(*,'(1x,a)') "Forming the equilibirum"
+        IF(verbose) WRITE(*,'(3x,4a/3x,2a,3(a,i1))')
      $       "Equilibrium: ",TRIM(eq_filename),", Type: ",TRIM(eq_type),
      $       "Jac_type = ",TRIM(jac_type),", power_bp = ",power_bp,
      $       ", power_b = ",power_b,", power_r = ",power_r
@@ -108,6 +107,8 @@ c-----------------------------------------------------------------------
      $       "Jac_type = ",TRIM(jac_type),", power_bp = ",power_bp,
      $       ", power_b = ",power_b,", power_r = ",power_r
       ENDIF
+      IF(verbose) WRITE(*,'(3x,(a,es10.3))')"psilow  =",psilow
+      IF(verbose) WRITE(*,'(3x,(a,es10.3))')"psihigh =",psihigh
 c-----------------------------------------------------------------------
 c     read equilibrium data and diagnose.
 c-----------------------------------------------------------------------
@@ -121,9 +122,13 @@ c-----------------------------------------------------------------------
       CASE("galkin")
          CALL read_eq_galkin
       CASE("chease")
-         CALL read_eq_chease
+         CALL read_eq_chease_inp1
       CASE("chease2")
-         CALL read_eq_chease2
+         WRITE(*,*) "   !! Warning: eq_type chease2 is deprecated, "//
+     $      "use chease_ascii instead"
+         CALL read_eq_chease_inp1_ascii
+      CASE("chease_ascii")
+         CALL read_eq_chease_inp1_ascii
       CASE("chease3")
          CALL read_eq_chease3
       CASE("chease4")
@@ -173,10 +178,13 @@ c-----------------------------------------------------------------------
       CASE("t7")
          CALL read_eq_t7
       CASE("marklin_direct")
+         CALL program_stop("Error: Deprecated eq_type "//TRIM(eq_type))
          CALL read_eq_marklin_direct
       CASE("marklin_inverse")
+         CALL program_stop("Error: Deprecated eq_type "//TRIM(eq_type))
          CALL read_eq_marklin_inverse
       CASE("hansen_inverse")
+         CALL program_stop("Error: Deprecated eq_type "//TRIM(eq_type))
          CALL read_eq_hansen_inverse
       CASE("pfrc")
          CALL read_eq_pfrc

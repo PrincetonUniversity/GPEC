@@ -6,9 +6,7 @@
 **	fits functions to cubic splines.
 ***********************************************************************/
 #include <stdio.h>
-#if !defined(__MACH__)
-#include <malloc.h>
-#endif
+#include <stdlib.h>
 #include "gendefs.h"
 #include "spline.h"
 

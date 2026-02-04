@@ -5,7 +5,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. debug_mod.
+c     0. stride_debug_mod.
 c     1. debug1.
 c     2. debug2.
 c     3. debug3.
@@ -13,7 +13,7 @@ c-----------------------------------------------------------------------
 c     subprogram 0. debug_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
-      MODULE debug_mod
+      MODULE stride_debug_mod
       USE local_mod
       IMPLICIT NONE
 
@@ -157,4 +157,4 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE debug3
-      END MODULE debug_mod
+      END MODULE stride_debug_mod

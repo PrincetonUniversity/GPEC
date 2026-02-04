@@ -1,4 +1,5 @@
       module innerc_module
+      use local_mod, only: r8
       contains
       subroutine innerc(q,e,f,g,h,k,de,do,ifail,epsd,rmatch)
 c**************************************************************
@@ -14,9 +15,9 @@ c      de,do are ratios(returned) for even psi and odd psi solutions
 c      ifail is returned 0 if a convergent answer is obtained
 c      epsd is error tolorance (default is 1.e-4)
 c
-      real(8) :: e,f,g,h,k,epsd,rmatch
+      real(r8) :: e,f,g,h,k,epsd,rmatch
 c++++++++++++++++++
-      complex(8) de,do,dey,doy,hv,gv,gp,gpp,hsq,q,qsq,sq,
+      complex(r8) de,do,dey,doy,hv,gv,gp,gpp,hsq,q,qsq,sq,
      1        sum,sum1,sum2,sum3,suma,sumb,a,b,c,dd2,dd3,
      2        t1,t2,wk,ev,vec,psia,psiap,aa,cc,dd,
      3        bquad,cquad,disc,s,sqdisc,denom,
@@ -26,9 +27,9 @@ c+++++++++++++++++++++++++++rg 30/3/82
       dimension psi(1610),si(1610),ups(1610),
      1  a(3,3,1610),b(3,3,1610),c(3,3,1610),ev(3,3,1610),
      2  t1(3,3),t2(3,3),xary(1610)
-      complex(8) sc1,sc2,ai,sc1i,sc2i,cfac1,cfac2
-      complex(8) tl1c1,tl2c1,tl3c1,tp1c1,tp2c1,tp3c1
-      complex(8) tl1c2,tl2c2,tl3c2,tp1c2,tp2c2,tp3c2
+      complex(r8) sc1,sc2,ai,sc1i,sc2i,cfac1,cfac2
+      complex(r8) tl1c1,tl2c1,tl3c1,tp1c1,tp2c1,tp3c1
+      complex(r8) tl1c2,tl2c2,tl3c2,tp1c2,tp2c2,tp3c2
 c
       dimension hv(3,3),gv(3,3),dd2(3,3),dd3(3,3),dd3i(3,3),wk(9),
      1          d4(3,3),aa(3,3),psia(4,3),psiap(4,3),xv(3),
@@ -509,7 +510,7 @@ c   language            - fortran
 c-----------------------------------------------------------------------
 c   latest revision     - august 15, 1973
 c
-      implicit complex(8) (a-h,o-z)
+      implicit complex(r8) (a-h,o-z)
       dimension          a(ia,1),b(ia,1),wkarea(1)
 c                                  initialize ier
       ier=0
@@ -592,9 +593,9 @@ c   language            - fortran
 c-----------------------------------------------------------------------
 c   latest revision     - august 15, 1973
 c
-      implicit complex(8) (a-h,o-z)
+      implicit complex(r8) (a-h,o-z)
       dimension          a(ia,1),lu(ia,1),ipvt(1),equil(1)
-      complex(8)               lu,ipvt,equil
+      complex(r8)               lu,ipvt,equil
       data               zero,one,four,sixtn,sixth/0.0,1.,4.,16.,.0625/
 c                                  initialization
       ier = 0
@@ -749,9 +750,9 @@ c   language            - fortran
 c-----------------------------------------------------------------------
 c   latest revision     - april 11,1975
 c
-      implicit complex(8) (a-h,o-z)
+      implicit complex(r8) (a-h,o-z)
       dimension          a(ia,1),b(1),ipvt(1),x(1)
-      complex(8) ipvt
+      complex(r8) ipvt
 c                                  solve ly = b for y
       do 5 i=1,n
     5 x(i) = b(i)
@@ -828,7 +829,7 @@ c     print error message
       return
       end subroutine
       subroutine leqt3fc(c,b,n)
-      implicit complex(8)(a-h,o-z)
+      implicit complex(r8)(a-h,o-z)
       dimension c(9),b(3,n)
 c changed b(3,3) into b(3,n)
       t2 = c(1)*c(5)-c(4)*c(2)

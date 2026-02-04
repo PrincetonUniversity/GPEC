@@ -1,21 +1,7 @@
-GPEC User Agreement
-===================
+LICENSE
+=======
 
-:Date:
-    2016.03.18
-
-GPEC development is funded by the US Department of Energy (DoE) through the Princeton Plasma Physics Laboratory (PPPL), and distribution is subject to DoE and PPPL requirements and restrictions.
-
-The scientific results from the use of GPEC are intended for publication and sharing in the open scientific community.
-
-In order to acquire access to the code sources and/or executables, the user must agree to the following:
-
-1. The user will not rename, modify or redistribute the code, in whole or in part, to 3rd parties without consent of the authors, although the code may be imbedded unmodified and shared within a larger software project.
-
-2. If modifications or improvements are needed, these will be developed in collaboration with the authors, so that they may be redistributed through the GPEC git versioning distributions to the benefit of all GPEC users.
-
-3. The users will include the proper code name(s) and appropriate references in published results and presentations. The will must email a draft of any article/report/presentation/etc. using GPEC results to the authors prior to publishing.
-
+The Generalized Perturbed Equilibrium Code (GPEC) package is available for use under the terms of the standard MIT license.
 
 .. _installation:
 
@@ -54,7 +40,7 @@ but this should be used with the understanding that many of it's features are in
 Personal
 --------
 
-Personal copies of GPEC should be cloned from the `Github repository <https://github.com/PrincetonUniversity/GPEC>`_, as the make process uses git commands assuming the installation is a git repository. The repository remains private for now, so only those with access will be able to install/update the package. Contact nlogan@pppl.gov for access.
+Personal copies of GPEC should be cloned from the `Github repository <https://github.com/PrincetonUniversity/GPEC>`_, as the make process uses git commands assuming the installation is a git repository. The repository remains private for now, so only those with access will be able to install/update the package. Contact nikolas.logan@columbia.edu for access.
 
 The global makefile can be found in the install directory. This essentially enters and makes each individual subdirectory. Each subdirectory's makefile references the DEFAULTS.inc file, also in install.
 Compiled using this install makefile, the executables will then be available in their individual subdirectories as well as collected in the bin directory.

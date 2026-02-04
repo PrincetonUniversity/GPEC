@@ -14,24 +14,25 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE aleg_new(x,nloc,pm,pn,pp, aleg0,aleg1 )
+      USE local_mod, ONLY: r8
       IMPLICIT NONE
 
-      REAL(8), INTENT(IN) :: x
+      REAL(r8), INTENT(IN) :: x
       INTEGER, INTENT(IN) :: nloc
-      REAL(8), INTENT(OUT) :: pm,pn,pp,aleg0,aleg1
+      REAL(r8), INTENT(OUT) :: pm,pn,pp,aleg0,aleg1
 
       INTEGER :: i,ierbu,ig,ing,kcbu,kloc,ngauss,nng
       REAL, PARAMETER :: pye=3.141592653589793_8,pii=2.0_8/pye,
      $     sqtwo=1.4142135623730951_8,half=0.5_8,
      $     sqpi=1.7724538509055159_8
-      REAL(8) :: agaus,ak,ak02,anumr,bgaus,convbu,dnom,dnomp,elipe,
+      REAL(r8) :: agaus,ak,ak02,anumr,bgaus,convbu,dnom,dnomp,elipe,
      $     elipk,errbu,gam,gamn,gamp,gint,ginti,gintip,gintp,
      $     pcoef,pnp,rhohat,rhohatsq,sinhtg1,sinhtg12,
      $     sinhtg12p,sinhtg1p,tg0,tg02,tg1,tg1p,twopi,w,xxq,y,ysq,
      $     zk1,zk1i,zk1sq,zk1sqrt,zk1sqrti
 
-      REAL(8), DIMENSION(32) :: tg32,wg32,xg32
-      REAL(8), DIMENSION(5) :: xu,xl
+      REAL(r8), DIMENSION(32) :: tg32,wg32,xg32
+      REAL(r8), DIMENSION(5) :: xu,xl
 
 !.... Weights and abscissae for 32 points gaussian quadrature.
 
@@ -240,16 +241,17 @@ c
 
 !...................................................
        SUBROUTINE ek3(eta,ier,error,maxit,cel1,cel2,convg, kounter)
+       USE local_mod, ONLY: r8
        IMPLICIT NONE
 
-       REAL(8), INTENT(IN) :: eta,error
+       REAL(r8), INTENT(IN) :: eta,error
        INTEGER, INTENT(IN) :: maxit
        INTEGER, INTENT(OUT) :: ier,kounter
-       REAL(8), INTENT(OUT) :: cel1,cel2,convg
+       REAL(r8), INTENT(OUT) :: cel1,cel2,convg
 
       INTEGER :: logcnv
-      REAL(8), PARAMETER :: pi=3.1415926535897932385,pi2=pi/2.0
-      REAL(8) :: aa,aval0,aval1,aval2,bb1,bb2,bval1,bval2,cnvlog,emval,
+      REAL(r8), PARAMETER :: pi=3.1415926535897932385,pi2=pi/2.0
+      REAL(r8) :: aa,aval0,aval1,aval2,bb1,bb2,bval1,bval2,cnvlog,emval,
      $     eval,fval,gval,hval1,hval2,pp,pval,pval0,qcval,qval1,qval2,
      $     rval,snorm,sval,tval
 

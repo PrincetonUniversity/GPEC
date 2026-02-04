@@ -2,7 +2,7 @@
 include ../install/DEFAULTS.inc
 
 IFLAGS = -I../equil -I$(MATHINC)
-F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
+F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS) $(RECURSFLAG)
 export FFLAGS
 
 .f.o:
@@ -12,7 +12,7 @@ LIBDIR = ../lib
 
 LIBS = \
 	-llsode \
-	-lequil
+	-lequil \
 
 OBJS = \
 	orbit_mod.o \
@@ -33,7 +33,7 @@ equil:
 	cd ../equil; make
 
 orbit: $(OBJS)
-	$(F90) -o orbit $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS)
+	$(F90) -o orbit $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS) $(LDFLAGS)
 	mkdir -p ../bin
 	cp -f orbit ../bin
 
@@ -49,4 +49,4 @@ outer_gc.o: field.o restart.o
 orbit.o: inner.o outer.o inner_gc.o outer_gc.o
 
 clean:
-	rm -f *.o *.mod *.out *.bin orbit
+	rm -f *.o *.mod *.out *.bin orbit *.original

@@ -1,7 +1,11 @@
 
 include ../install/DEFAULTS.inc
 
-F90 = $(FC) $(FFLAGS) $(OMPFLAG)
+F90 = $(FC) $(FFLAGS) $(RECURSFLAG) $(LEGACYFLAG) $(OMPFLAG) -I../equil
+
+LIBDIR = ../lib
+LIBS = \
+	-lequil \
 
 .f.o: 
 	$(F90) -c $*.f
@@ -37,4 +41,4 @@ liblsode: $(OBJS)
 	ar -r ../lib/liblsode.a *.o
 
 clean:
-	rm -f *.o *.a
+	rm -f *.o *.a *.original
