@@ -1889,7 +1889,7 @@ c-----------------------------------------------------------------------
      $        "real(singbwp)","imag(singbwp)",
      $        "real(Delta)","imag(Delta)",
      $        "half_w_isl","chirikov",
-     $        "half_w_isl_crit","singflx_crit",
+     $        "half_w_isl_v_crit","singflx_crit",
      $        "half_w_sat","half_w_min"
          DO ising=1,msing
             WRITE(out_unit,'(1x,f6.3,15(es17.8e3))')
@@ -1943,12 +1943,12 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(fncid, wc_id, "units", "psi_n") )
          CALL check( nf90_put_att(fncid, wc_id, "long_name",
      $     "Critical width for island growth from Callen model") )
-         CALL check( nf90_def_var(fncid, "w_isl_v_min", nf90_double,
+         CALL check( nf90_def_var(fncid, "w_isl_min", nf90_double,
      $      (/q_id/), wmin_id) )
          CALL check( nf90_put_att(fncid, wmin_id, "units", "psi_n") )
          CALL check( nf90_put_att(fncid, wmin_id, "long_name",
      $     "Minimum island width for growth from Callen model") )
-         CALL check( nf90_def_var(fncid, "w_isl_v_sat", nf90_double,
+         CALL check( nf90_def_var(fncid, "w_isl_sat", nf90_double,
      $      (/q_id/), wsat_id) )
          CALL check( nf90_put_att(fncid, wsat_id, "units", "psi_n") )
          CALL check( nf90_put_att(fncid, wsat_id, "long_name",
