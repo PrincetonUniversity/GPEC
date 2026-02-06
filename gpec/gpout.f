@@ -1583,7 +1583,7 @@ c-----------------------------------------------------------------------
       INTEGER :: i_id,q_id,m_id,p_id,c_id,bp_id,w_id,k_id,n_id,d_id,
      $           a_id,pp_id,cp_id,wp_id,np_id,dp_id,dd_id,pr_id,
      $           bc_id,ti_id, te_id, ni_id, ne_id, we_id, wi_id, q1_id,
-     $           rh_id, r1_id,wc_id,wmin_id,wsat_id,
+     $           rh_id, r1_id,wc_id,wmin_id,wsat_id,pm_id,ps_id,
      $           astat
 
       INTEGER :: itheta,ising,icoup
@@ -1618,9 +1618,14 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(msing) :: b_crit, ti_r, te_r, ni_r, ne_r,
      $    q1_r, we_r, wi_r, rh_r, r1_r, dP_r, P_r
-      REAL(r8) :: omega_i,omega_e,jxb,omega_sol,br_th, 
-     $     pleft, pright
+      REAL(r8) :: omega_i,omega_e,jxb,omega_sol,br_th,
+     $     pleft, pright, psileft, psiright
       COMPLEX(r8) :: delta_s,psi0
+
+      INTEGER, PARAMETER :: npsi_tmp = 1000
+      INTEGER :: ipsi
+      REAL(r8), DIMENSION(0:npsi_tmp) :: psi_tmp, dp_tmp, p_tmp
+      REAL(r8), DIMENSION(0:mpsi) :: p_mod
 
 c-----------------------------------------------------------------------
 c     solve equation from the given poloidal perturbation.
@@ -1913,6 +1918,64 @@ c-----------------------------------------------------------------------
       CALL cspline_dealloc(fsp_sol)
       CALL gpeq_dealloc
 c-----------------------------------------------------------------------
+c     Calculate modified pressure profile from saturated islands
+c-----------------------------------------------------------------------
+      IF (callen_threshold_flag) THEN
+         ! Create fine temporary grid for pressure calculation
+         DO ipsi=0,npsi_tmp
+            psi_tmp(ipsi) = REAL(ipsi,r8)/REAL(npsi_tmp,r8)
+         ENDDO
+
+         ! Get pressure derivative at each point
+         DO ipsi=0,npsi_tmp
+            CALL spline_eval(sq,psi_tmp(ipsi),1)
+            dp_tmp(ipsi) = sq%f1(2) / mu0
+         ENDDO
+
+         ! Zero out pressure derivative in island regions
+         DO ising=1,msing
+            IF (hw_sat(ising) > 0.0_r8) THEN
+               psileft = MAX(0.0_r8,
+     $              singtype(ising)%psifac - hw_sat(ising))
+               psiright = MIN(1.0_r8,
+     $              singtype(ising)%psifac + hw_sat(ising))
+               DO ipsi=0,npsi_tmp
+                  IF (psi_tmp(ipsi) >= psileft .AND.
+     $                 psi_tmp(ipsi) <= psiright) THEN
+                     dp_tmp(ipsi) = 0.0_r8
+                  ENDIF
+               ENDDO
+            ENDIF
+         ENDDO
+
+         ! Integrate using trapezoidal rule to get modified pressure
+         CALL spline_eval(sq,1.0_r8,0)
+         p_tmp(npsi_tmp) = sq%f(2) / mu0
+         DO ipsi=npsi_tmp-1,0,-1
+            p_tmp(ipsi) = p_tmp(ipsi+1) + 0.5_r8 *
+     $           (dp_tmp(ipsi+1) + dp_tmp(ipsi)) /
+     $           REAL(npsi_tmp,r8)
+         ENDDO
+
+         ! Interpolate to sq%xs grid (0:mpsi) using spline
+         CALL spline_alloc(spl,npsi_tmp,1)
+         spl%xs = psi_tmp
+         spl%fs(:, 1) = p_tmp
+         CALL spline_fit(spl,"extrap")
+         DO ipsi=0,mpsi
+            CALL spline_eval(spl,sq%xs(ipsi),0)
+            p_mod(ipsi) = spl%f(1)
+         ENDDO
+         CALL spline_dealloc(spl)
+      ELSE
+         ! No island correction - use equilibrium pressure
+         DO ipsi=0,mpsi
+            CALL spline_eval(sq,sq%xs(ipsi),0)
+            p_mod(ipsi) = sq%f(2) / mu0
+         ENDDO
+      ENDIF
+
+c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
       IF(ascii_flag)THEN
@@ -2069,6 +2132,14 @@ c-----------------------------------------------------------------------
             CALL check( nf90_put_att(fncid, a_id, "long_name",
      $        "Surface area of rational surface") )
          ENDIF
+         astat = nf90_inq_dimid(fncid, "psi_n", ps_id)
+         IF(astat==nf90_noerr)THEN
+            CALL check( nf90_def_var(fncid, "p_mod", nf90_double,
+     $         (/ps_id/), pm_id) )
+            CALL check( nf90_put_att(fncid, pm_id, "units", "Pa") )
+            CALL check( nf90_put_att(fncid, pm_id, "long_name",
+     $         "Modified pressure with saturated island correction") )
+         ENDIF
          CALL check( nf90_enddef(fncid) )
          singflx = (/(singflx_mn(resnum(ising),ising), ising=1,msing)/)
          CALL check( nf90_put_var(fncid, p_id,
@@ -2098,6 +2169,9 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_var(fncid, r1_id, r1_r) )
          IF(astat/=nf90_noerr)THEN
             CALL check( nf90_put_var(fncid, a_id, area) )
+         ENDIF
+         IF(astat==nf90_noerr)THEN
+            CALL check( nf90_put_var(fncid, pm_id, p_mod) )
          ENDIF
          CALL check( nf90_close(fncid) )
       ENDIF

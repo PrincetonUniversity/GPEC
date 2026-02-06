@@ -30,17 +30,17 @@
 	coil_cur(1,5)=-656
 	coil_cur(1,6)= 326
 	coil_name(2)="il"			! External correction coil set
-	coil_cur(2,1)= 1e3			! 1kA, 30 degree phase n=1 field
+	coil_cur(2,1)= 1e5			! 1kA, 30 degree phase n=1 field
 	coil_cur(2,2)= 5e2
 	coil_cur(2,3)=-5e2
-	coil_cur(2,4)=-1e3
+	coil_cur(2,4)=-1e5
 	coil_cur(2,5)=-5e2
 	coil_cur(2,6)= 5e2
 	coil_name(3)="iu"			! External correction coil set
-	coil_cur(3,1)= 1e3			! 1kA, 30 degree phase n=1 field
+	coil_cur(3,1)= 1e6			! 1kA, 30 degree phase n=1 field
 	coil_cur(3,2)= 5e2
 	coil_cur(3,3)=-5e2
-	coil_cur(3,4)=-1e3
+	coil_cur(3,4)=-1e6
 	coil_cur(3,5)=-5e2
 	coil_cur(3,6)= 5e2
 
