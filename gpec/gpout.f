@@ -1782,6 +1782,9 @@ c-----------------------------------------------------------------------
      $        SQRT(ABS(4*vsingfld(ising)*area(ising)/
      $        (twopi*shear*sq%f(4)*chi1)))
 
+            ! Solve cubic equation A*w^3 + B*w + C = 0 using trigonometric method
+            ! Transform to depressed cubic: w^3 + p*w + q = 0
+            ! Solution using Vieta's trigonometric substitution for three real roots
             A_trig=delta_callen
             B_trig=delta_rmp
      $        * (2*visland_hwidth(ising)*sr%f1(1))**2 ! converting island width to meters from psi_n
@@ -1842,14 +1845,15 @@ c-----------------------------------------------------------------------
          IF (verbose) THEN
 
             IF (callen_threshold_flag .OR. slayer_threshold_flag) THEN
-               IF(ising == 1) WRITE(*,'(1x,9a13)')
-     $              "psi","q","singflx","chirikov",
-     $              "w_island","w_crit","singflx_crit",
+               IF(ising == 1) WRITE(*,'(1x,10a13)')
+     $              "psi","q","singflx","singlfx_crit","chirikov",
+     $              "w_island", "w_v", "w_v_crit",
      $              "w_sat","w_min"
-               WRITE(*,'(1x,es13.3,f13.3,es13.3,f13.3,7es13.3)')
+               WRITE(*,'(1x,es13.3,f13.3,2es13.3,f13.3,5es13.3)')
      $              respsi,sq%f(4),ABS(singflx_mn(resnum(ising),ising)),
+     $              ABS(b_crit(ising)),
      $              chirikov(ising),2*island_hwidth(ising),
-     $              2*hw_crit(ising),b_crit(ising),
+     $              2*hw_v(ising),2*hw_v_crit(ising),
      $              2*hw_sat(ising),2*hw_min(ising)
             ELSE
        
@@ -1888,7 +1892,7 @@ c-----------------------------------------------------------------------
      $        "half_w_isl_crit","singflx_crit",
      $        "half_w_sat","half_w_min"
          DO ising=1,msing
-            WRITE(out_unit,'(1x,f6.3,14(es17.8e3))')
+            WRITE(out_unit,'(1x,f6.3,15(es17.8e3))')
      $           singtype(ising)%q,singtype(ising)%psifac,
      $           REAL(singflx_mn(resnum(ising),ising)),
      $           AIMAG(singflx_mn(resnum(ising),ising)),
