@@ -169,13 +169,13 @@ c-----------------------------------------------------------------------
 c     log eigenvalues with harvest
 c-----------------------------------------------------------------------
       ierr=set_harvest_payload_dbl_array(hlog,"s_P"//nul,
-     $     REAL(permeabev(resp_index,:)),mpert)
+     $     REAL(permeabev(resp_index,:), r8),mpert)
       ierr=set_harvest_payload_dbl_array(hlog,"s_L"//nul,
-     $     surf_indev(:),mpert)
+     $     REAL(surf_indev(:), r8),mpert)
       ierr=set_harvest_payload_dbl_array(hlog,"s_Lambda"//nul,
-     $     plas_indev(resp_index,:),mpert)
+     $     REAL(plas_indev(resp_index,:), r8),mpert)
       ierr=set_harvest_payload_dbl_array(hlog,"s_rho"//nul,
-     $     reluctev(resp_index,:),mpert)
+     $     REAL(reluctev(resp_index,:), r8),mpert)
 c-----------------------------------------------------------------------
 c     fundamental matrices in netcdf
 c-----------------------------------------------------------------------
@@ -1581,9 +1581,9 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: i_id,q_id,m_id,p_id,c_id,bp_id,w_id,k_id,n_id,d_id,
-     $           a_id,pp_id,cp_id,wp_id,np_id,dp_id,wc_id,bc_id,
-     $           ti_id, te_id, ni_id, ne_id, we_id, wi_id, q1_id,
-     $           rh_id, r1_id,
+     $           a_id,pp_id,cp_id,wp_id,np_id,dp_id,
+     $           bc_id,ti_id, te_id, ni_id, ne_id, we_id, wi_id, q1_id,
+     $           rh_id, r1_id,wc_id,wmin_id,wsat_id,
      $           astat
 
       INTEGER :: itheta,ising,icoup
@@ -1594,8 +1594,8 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(msing) :: area,j_c,aq,asingflx
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,sqreqb,jcfun
       COMPLEX(r8), DIMENSION(mpert) :: fkaxmn
-
-      REAL(r8), DIMENSION(msing) :: island_hwidth,chirikov,hw_crit
+      REAL(r8), DIMENSION(msing) :: hw_isl,hw_v,
+     $     chirikov,hw_v_crit,hw_sat,hw_min
       REAL(r8), DIMENSION(nsingcoup,msing) :: op
       COMPLEX(r8), DIMENSION(msing) :: delta,delcur,singcur,
      $     singflx,singbwp
@@ -1606,8 +1606,12 @@ c-----------------------------------------------------------------------
       TYPE(cspline_type) :: fsp_sol
       COMPLEX(r8), DIMENSION(mpert) :: interpbwn
 
+      LOGICAL :: trig_checks
       INTEGER :: resm
       REAL(r8) :: qintb, rho_gyro, wpol, delta_callen, delta_rmp
+      REAL(r8) :: A_trig, B_trig, C_trig, p_trig, q_trig, R_trig,
+     $     theta_trig, root_trig_1, root_trig_2, root_trig_3,
+     $     min_trig, max_trig
       REAL(r8), DIMENSION(0:mpsi) :: psitor, rhotor
       REAL(r8), DIMENSION(0:mthsurf) :: r_tmp
       TYPE(spline_type) :: sr
@@ -1706,7 +1710,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute half-width of magnetic island.
 c-----------------------------------------------------------------------
-         island_hwidth(ising)=
+         hw_isl(ising)=
      $        SQRT(ABS(4*singflx_mn(resnum(ising),ising)*area(ising)/
      $        (twopi*shear*sq%f(4)*chi1)))
 c-----------------------------------------------------------------------
@@ -1720,13 +1724,18 @@ c-----------------------------------------------------------------------
             hdist=MIN(singtype(ising+1)%psifac-respsi,
      $           respsi-singtype(ising-1)%psifac)/2.0
          ENDIF
-         chirikov(ising)=island_hwidth(ising)/hdist
+         chirikov(ising)=hw_isl(ising)/hdist
 c-----------------------------------------------------------------------
 c     prepare layer analysis.
 c-----------------------------------------------------------------------
          CALL spline_eval(sr,respsi,1)
          rh_r(ising) = sr%f(1)
          r1_r(ising) = sr%f1(1)
+         hw_v(ising) = 0.0_r8
+         hw_v_crit(ising) = 0.0_r8
+         hw_sat(ising) = 0.0_r8
+         hw_min(ising) = 0.0_r8
+         b_crit(ising) = 0.0_r8
          IF (callen_threshold_flag. OR. slayer_threshold_flag) THEN
             resm = mfac(resnum(ising))
             CALL spline_eval(kin,respsi,1)
@@ -1742,15 +1751,13 @@ c-----------------------------------------------------------------------
             we_r(ising) = omega_e
             wi_r(ising) = omega_i
          ELSE
-            hw_crit(ising) = 0.0
-            b_crit(ising) = 0.0
-            ti_r(ising) = 0.0
-            te_r(ising) = 0.0
-            ni_r(ising) = 0.0
-            ne_r(ising) = 0.0
-            q1_r(ising) = 0.0
-            we_r(ising) = 0.0
-            wi_r(ising) = 0.0
+            ti_r(ising) = 0.0_r8
+            te_r(ising) = 0.0_r8
+            ni_r(ising) = 0.0_r8
+            ne_r(ising) = 0.0_r8
+            q1_r(ising) = 0.0_r8
+            we_r(ising) = 0.0_r8
+            wi_r(ising) = 0.0_r8
          ENDIF
 c-----------------------------------------------------------------------
 c     compute Callen critical island width parameter [UW-CPTC 16-4, 2016].
@@ -1767,11 +1774,93 @@ c-----------------------------------------------------------------------
             ! Delta'_m/n in Callen... should the 2 be generalized to nn?
             delta_callen = -2 * resm / sr%f(1)
             ! Callen critical vac width
-            hw_crit(ising) = 0.5 * wpol ** (2./3) * sr%f(1) ** (1./3)
-     $         * ((27. / 4) * abs(sr%f(1) * delta_callen) ) ** (1./6)
-     $         / sqrt(sr%f(1) * delta_rmp)
-            ! convert from meters to psi_n for clear comparision to island_hwidth
-            hw_crit(ising) = hw_crit(ising) / sr%f1(1)
+            hw_v_crit(ising) = 0.5 * (wpol) ** (2./3)
+     $         * ((27. / 4) * abs(delta_callen)) ** (1./6)
+     $         / (delta_rmp) ** (1./2)
+
+            ! computing Callen w_sat and w_min from cubic equation roots
+            ! requires vacuum island width (should be the same as in the vsingfld subroutine)
+            IF (ALLOCATED(vsingfld)) THEN
+               hw_v(ising)=
+     $           SQRT(ABS(4*vsingfld(ising)*area(ising)/
+     $           (twopi*shear*sq%f(4)*chi1)))
+            ELSE
+               hw_v(ising) = 0.0_r8
+               IF (ising == 1) THEN
+                   WRITE(*,*) "Warning: vsingfld not allocated,"//
+     $                    "setting hw_v to 0 and skipping "//
+     $                    "w_min, w_sat calculations"
+               ENDIF
+            ENDIF
+
+            ! Solve cubic equation A*w^3 + B*w + C = 0 using trigonometric method
+            ! Transform to depressed cubic: w^3 + p*w + q = 0
+            ! Solution using Vieta's trigonometric substitution for three real roots
+            A_trig=delta_callen
+            B_trig=delta_rmp
+     $        * (2*hw_v(ising)*sr%f1(1))**2 ! converting island width to meters from psi_n
+            C_trig=-(wpol**2)
+            p_trig=B_trig/A_trig ! always negative as defined by delta_callen
+            q_trig=C_trig/A_trig ! always negative as definted by delta_callen
+            trig_checks = .TRUE.
+            IF (hw_v(ising) > 0.0_r8) THEN
+                ! if the vacuum island width is nonzero, then we should have real roots and can proceed with the trig solution
+                IF (p_trig > 0.0) THEN
+                    trig_checks = .FALSE.
+                    R_trig=0.0_r8
+                ELSE
+                    R_trig=(-p_trig/3)**(1./2) ! should be real
+                    IF (abs(q_trig/(2*R_trig**3)) > 1.0) THEN
+                        trig_checks = .FALSE.
+                    ENDIF
+                ENDIF
+            ELSE
+                ! if hw_v were really zero, we could skip the trig solution and solve w^3 + q = 0
+                ! but really it is going to be zero here when we didn't have coil_flag to get vsingfld and reporting (-q)^1/3 would be wrong
+                ! so here we are going to just report 0 to indicate that something is off
+                trig_checks = .FALSE.
+            ENDIF
+
+            IF (trig_checks) THEN
+                theta_trig=ACOS(-q_trig/(2*R_trig**3))
+                
+                ! these are all half-widths!
+                root_trig_1=R_trig*COS(theta_trig/3)
+                root_trig_2=R_trig*COS((theta_trig+2*pi)/3)
+                root_trig_3=R_trig*COS((theta_trig+4*pi)/3)
+
+                min_trig=HUGE(1.0_r8)
+                max_trig=0.0_r8
+                ! appropriately assigning the roots to w_min and w_sat
+                IF (root_trig_1 > 0.0_r8) THEN
+                    min_trig=MIN(min_trig,root_trig_1)
+                    max_trig=MAX(max_trig,root_trig_1)
+                ENDIF
+                IF (root_trig_2 > 0.0_r8) THEN
+                    min_trig=MIN(min_trig,root_trig_2)
+                    max_trig=MAX(max_trig,root_trig_2)
+                ENDIF
+                IF (root_trig_3 > 0.0_r8) THEN
+                    min_trig=MIN(min_trig,root_trig_3)
+                    max_trig=MAX(max_trig,root_trig_3)
+                ENDIF
+                IF (max_trig > 0.0_r8) THEN
+                    hw_sat(ising)=max_trig
+                ELSE
+                    hw_sat(ising)=0.0_r8
+                ENDIF
+                IF (min_trig < HUGE(1.0_r8)) THEN
+                    hw_min(ising)=min_trig
+                ELSE
+                    hw_min(ising)=0.0_r8
+                ENDIF
+
+                ! convert from meters to psi_n for clear comparision to hw_isl
+                hw_sat(ising) = hw_sat(ising) / sr%f1(1)
+                hw_min(ising) = hw_min(ising) / sr%f1(1)
+            ENDIF
+            ! convert from meters to psi_n for clear comparision to hw_isl
+            hw_v_crit(ising) = hw_v_crit(ising) / sr%f1(1)
          ENDIF
 c-----------------------------------------------------------------------
 c     compute threshold by linear drift mhd with slayer module.
@@ -1787,20 +1876,23 @@ c-----------------------------------------------------------------------
          IF (verbose) THEN
 
             IF (callen_threshold_flag .OR. slayer_threshold_flag) THEN
-               IF(ising == 1) WRITE(*,'(1x,7a13)')
-     $              "psi","q","singflx","chirikov",
-     $              "w_island","w_crit","singflx_crit"
-               WRITE(*,'(1x,es13.3,f13.3,es13.3,f13.3,3es13.3)')
+               IF(ising == 1) WRITE(*,'(1x,10a13)')
+     $              "psi","q","singflx","singlfx_crit","chirikov",
+     $              "w_island", "w_v", "w_v_crit",
+     $              "w_sat","w_min"
+               WRITE(*,'(1x,es13.3,f13.3,2es13.3,f13.3,5es13.3)')
      $              respsi,sq%f(4),ABS(singflx_mn(resnum(ising),ising)),
-     $              chirikov(ising),2*island_hwidth(ising),
-     $              2*hw_crit(ising),b_crit(ising)    
+     $              ABS(b_crit(ising)),
+     $              chirikov(ising),2*hw_isl(ising),
+     $              2*hw_v(ising),2*hw_v_crit(ising),
+     $              2*hw_sat(ising),2*hw_min(ising)
             ELSE
        
                IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12,a12)') "psi",
      $              "q","singflx","chirikov","w_island"
                WRITE(*,'(1x,es12.3,f12.3,es12.3,f12.3,es12.3)')
      $              respsi,sq%f(4),ABS(singflx_mn(resnum(ising),ising)),
-     $              chirikov(ising),2*island_hwidth(ising)
+     $              chirikov(ising),2*hw_isl(ising)
             ENDIF
          ENDIF
       ENDDO
@@ -1822,23 +1914,25 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1x,a12,es17.8e3)')"sweet-spot =",spot
          WRITE(out_unit,'(1x,a12,1x,I4)')"msing =",msing
          WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a6,14(1x,a16))')"q","psi",
+         WRITE(out_unit,'(1x,a6,16(1x,a16))')"q","psi",
      $        "real(singflx)","imag(singflx)",
      $        "real(singcur)","imag(singcur)",
      $        "real(singbwp)","imag(singbwp)",
      $        "real(Delta)","imag(Delta)",
      $        "half_w_isl","chirikov",
-     $        "half_w_isl_crit","singflx_crit"
+     $        "half_w_isl_v_crit","singflx_crit",
+     $        "half_w_sat","half_w_min"
          DO ising=1,msing
-            WRITE(out_unit,'(1x,f6.3,14(es17.8e3))')
+            WRITE(out_unit,'(1x,f6.3,15(es17.8e3))')
      $           singtype(ising)%q,singtype(ising)%psifac,
      $           REAL(singflx_mn(resnum(ising),ising)),
      $           AIMAG(singflx_mn(resnum(ising),ising)),
      $           REAL(singcur(ising)),AIMAG(singcur(ising)),
      $           REAL(singbwp(ising)),AIMAG(singbwp(ising)),
      $           REAL(delta(ising)),AIMAG(delta(ising)),
-     $           island_hwidth(ising),chirikov(ising),
-     $           hw_crit(ising),b_crit(ising)
+     $           hw_isl(ising),chirikov(ising),
+     $           hw_v_crit(ising),b_crit(ising),
+     $           hw_sat(ising),hw_min(ising)
          ENDDO
          WRITE(out_unit,*)
       ENDIF
@@ -1880,6 +1974,16 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(fncid, wc_id, "units", "psi_n") )
          CALL check( nf90_put_att(fncid, wc_id, "long_name",
      $     "Critical width for island growth from Callen model") )
+         CALL check( nf90_def_var(fncid, "w_isl_min", nf90_double,
+     $      (/q_id/), wmin_id) )
+         CALL check( nf90_put_att(fncid, wmin_id, "units", "psi_n") )
+         CALL check( nf90_put_att(fncid, wmin_id, "long_name",
+     $     "Minimum island width for growth from Callen model") )
+         CALL check( nf90_def_var(fncid, "w_isl_sat", nf90_double,
+     $      (/q_id/), wsat_id) )
+         CALL check( nf90_put_att(fncid, wsat_id, "units", "psi_n") )
+         CALL check( nf90_put_att(fncid, wsat_id, "long_name",
+     $     "Saturated island width from Callen model") )
          CALL check( nf90_def_var(fncid, "Phi_res_crit", nf90_double,
      $      (/q_id/), bc_id) )
          CALL check( nf90_put_att(fncid, bc_id, "units", "T") )
@@ -1951,8 +2055,10 @@ c-----------------------------------------------------------------------
      $      RESHAPE((/REAL(singbwp), AIMAG(singbwp)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, c_id,
      $      RESHAPE((/REAL(singcur), AIMAG(singcur)/), (/msing,2/))) )
-         CALL check( nf90_put_var(fncid, w_id, 2*island_hwidth) )
-         CALL check( nf90_put_var(fncid, wc_id, 2*hw_crit) )
+         CALL check( nf90_put_var(fncid, w_id, 2*hw_isl) )
+         CALL check( nf90_put_var(fncid, wc_id, 2*hw_v_crit) )
+         CALL check( nf90_put_var(fncid, wmin_id, 2*hw_min) )
+         CALL check( nf90_put_var(fncid, wsat_id, 2*hw_sat) )
          CALL check( nf90_put_var(fncid, bc_id, b_crit) )
          CALL check( nf90_put_var(fncid, k_id, chirikov) )
          CALL check( nf90_put_var(fncid, ti_id, ti_r) )
