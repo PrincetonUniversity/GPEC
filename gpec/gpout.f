@@ -169,13 +169,13 @@ c-----------------------------------------------------------------------
 c     log eigenvalues with harvest
 c-----------------------------------------------------------------------
       ierr=set_harvest_payload_dbl_array(hlog,"s_P"//nul,
-     $     REAL(permeabev(resp_index,:)),mpert)
+     $     REAL(permeabev(resp_index,:), r8),mpert)
       ierr=set_harvest_payload_dbl_array(hlog,"s_L"//nul,
-     $     surf_indev(:),mpert)
+     $     REAL(surf_indev(:), r8),mpert)
       ierr=set_harvest_payload_dbl_array(hlog,"s_Lambda"//nul,
-     $     plas_indev(resp_index,:),mpert)
+     $     REAL(plas_indev(resp_index,:), r8),mpert)
       ierr=set_harvest_payload_dbl_array(hlog,"s_rho"//nul,
-     $     reluctev(resp_index,:),mpert)
+     $     REAL(reluctev(resp_index,:), r8),mpert)
 c-----------------------------------------------------------------------
 c     fundamental matrices in netcdf
 c-----------------------------------------------------------------------
@@ -1606,6 +1606,7 @@ c-----------------------------------------------------------------------
       TYPE(cspline_type) :: fsp_sol
       COMPLEX(r8), DIMENSION(mpert) :: interpbwn
 
+      LOGICAL :: trig_checks
       INTEGER :: resm
       REAL(r8) :: qintb, rho_gyro, wpol, delta_callen, delta_rmp
       REAL(r8) :: A_trig, B_trig, C_trig, p_trig, q_trig, R_trig,
@@ -1730,11 +1731,11 @@ c-----------------------------------------------------------------------
          CALL spline_eval(sr,respsi,1)
          rh_r(ising) = sr%f(1)
          r1_r(ising) = sr%f1(1)
-         hw_v(ising) = 0.0
-         hw_v_crit(ising) = 0.0
-         hw_sat(ising) = 0.0
-         hw_min(ising) = 0.0
-         b_crit(ising) = 0.0
+         hw_v(ising) = 0.0_r8
+         hw_v_crit(ising) = 0.0_r8
+         hw_sat(ising) = 0.0_r8
+         hw_min(ising) = 0.0_r8
+         b_crit(ising) = 0.0_r8
          IF (callen_threshold_flag. OR. slayer_threshold_flag) THEN
             resm = mfac(resnum(ising))
             CALL spline_eval(kin,respsi,1)
@@ -1750,13 +1751,13 @@ c-----------------------------------------------------------------------
             we_r(ising) = omega_e
             wi_r(ising) = omega_i
          ELSE
-            ti_r(ising) = 0.0
-            te_r(ising) = 0.0
-            ni_r(ising) = 0.0
-            ne_r(ising) = 0.0
-            q1_r(ising) = 0.0
-            we_r(ising) = 0.0
-            wi_r(ising) = 0.0
+            ti_r(ising) = 0.0_r8
+            te_r(ising) = 0.0_r8
+            ni_r(ising) = 0.0_r8
+            ne_r(ising) = 0.0_r8
+            q1_r(ising) = 0.0_r8
+            we_r(ising) = 0.0_r8
+            wi_r(ising) = 0.0_r8
          ENDIF
 c-----------------------------------------------------------------------
 c     compute Callen critical island width parameter [UW-CPTC 16-4, 2016].
@@ -1779,9 +1780,18 @@ c-----------------------------------------------------------------------
 
             ! computing Callen w_sat and w_min from cubic equation roots
             ! requires vacuum island width (should be the same as in the vsingfld subroutine)
-            hw_v(ising)=
-     $        SQRT(ABS(4*vsingfld(ising)*area(ising)/
-     $        (twopi*shear*sq%f(4)*chi1)))
+            IF (ALLOCATED(vsingfld)) THEN
+               hw_v(ising)=
+     $           SQRT(ABS(4*vsingfld(ising)*area(ising)/
+     $           (twopi*shear*sq%f(4)*chi1)))
+            ELSE
+               hw_v(ising) = 0.0_r8
+               IF (ising == 1) THEN
+                   WRITE(*,*) "Warning: vsingfld not allocated,"//
+     $                    "setting hw_v to 0 and skipping "//
+     $                    "w_min, w_sat calculations"
+               ENDIF
+            ENDIF
 
             ! Solve cubic equation A*w^3 + B*w + C = 0 using trigonometric method
             ! Transform to depressed cubic: w^3 + p*w + q = 0
@@ -1792,19 +1802,33 @@ c-----------------------------------------------------------------------
             C_trig=-(wpol**2)
             p_trig=B_trig/A_trig ! always negative as defined by delta_callen
             q_trig=C_trig/A_trig ! always negative as definted by delta_callen
-            trig_checks = .true.
-            IF (p_trig > 0.0) THEN
-                WRITE(*,*) "Error in Callen cubic equation solution: p_trig > 0"
-                trig_checks = .false.
-                R_trig=0.0_r8
-            ELSE
-                R_trig=(-p_trig/3)**(1./2) ! should be real
-                IF (abs(q_trig/(2*R_trig**3)) > 1.0) THEN
-                    WRITE(*,*) "Error in Callen cubic equation solution: "
-     $                         //"abs(q_trig/(2*R_trig^3)) > 1"
-                    trig_checks = .false.
+            trig_checks = .TRUE.
+            IF (hw_v(ising) > 0.0_r8) THEN
+                ! if the vacuum island width is nonzero, then we should have real roots and can proceed with the trig solution
+                IF (p_trig > 0.0) THEN
+                   WRITE(*,*) "Error in Callen cubic equation solution:"
+     $               //" p_trig > 0"
+                    trig_checks = .FALSE.
+                    R_trig=0.0_r8
+                ELSE
+                    R_trig=(-p_trig/3)**(1./2) ! should be real
+                    IF (abs(q_trig/(2*R_trig**3)) > 1.0) THEN
+                        WRITE(*,'(1x,a,es10.3,a)') "Error in Callen "//
+     $                    "cubic equation solution: "//
+     $                    "abs(q_trig/(2*R_trig^3)) =",
+     $                    abs(q_trig/(2*R_trig**3))," > 1"
+                        trig_checks = .FALSE.
+                    ENDIF
                 ENDIF
+            ELSE
+                ! if hw_v were really zero, we could skip the trig solution and solve w^3 + q = 0
+                ! but really it is going to be zero here when we didn't have coil_flag to get vsingfld and reporting (-q)^1/3 would be wrong
+                ! so here we are going to just report 0 to indicate that something is off
+                hw_min(ising) = 0.0_r8
+                hw_sat(ising) = 0.0_r8
+                trig_checks = .FALSE.
             ENDIF
+
             IF (trig_checks) THEN
                 theta_trig=ACOS(-q_trig/(2*R_trig**3))
                 
@@ -1840,11 +1864,11 @@ c-----------------------------------------------------------------------
                 ENDIF
 
                 ! convert from meters to psi_n for clear comparision to hw_isl
-                hw_v_crit(ising) = hw_v_crit(ising) / sr%f1(1)
                 hw_sat(ising) = hw_sat(ising) / sr%f1(1)
                 hw_min(ising) = hw_min(ising) / sr%f1(1)
             ENDIF
-
+            ! convert from meters to psi_n for clear comparision to hw_isl
+            hw_v_crit(ising) = hw_v_crit(ising) / sr%f1(1)
          ENDIF
 c-----------------------------------------------------------------------
 c     compute threshold by linear drift mhd with slayer module.
