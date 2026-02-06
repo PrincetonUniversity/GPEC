@@ -1806,17 +1806,11 @@ c-----------------------------------------------------------------------
             IF (hw_v(ising) > 0.0_r8) THEN
                 ! if the vacuum island width is nonzero, then we should have real roots and can proceed with the trig solution
                 IF (p_trig > 0.0) THEN
-                   WRITE(*,*) "Error in Callen cubic equation solution:"
-     $               //" p_trig > 0"
                     trig_checks = .FALSE.
                     R_trig=0.0_r8
                 ELSE
                     R_trig=(-p_trig/3)**(1./2) ! should be real
                     IF (abs(q_trig/(2*R_trig**3)) > 1.0) THEN
-                        WRITE(*,'(1x,a,es10.3,a)') "Error in Callen "//
-     $                    "cubic equation solution: "//
-     $                    "abs(q_trig/(2*R_trig^3)) =",
-     $                    abs(q_trig/(2*R_trig**3))," > 1"
                         trig_checks = .FALSE.
                     ENDIF
                 ENDIF
@@ -1824,8 +1818,6 @@ c-----------------------------------------------------------------------
                 ! if hw_v were really zero, we could skip the trig solution and solve w^3 + q = 0
                 ! but really it is going to be zero here when we didn't have coil_flag to get vsingfld and reporting (-q)^1/3 would be wrong
                 ! so here we are going to just report 0 to indicate that something is off
-                hw_min(ising) = 0.0_r8
-                hw_sat(ising) = 0.0_r8
                 trig_checks = .FALSE.
             ENDIF
 
