@@ -1730,6 +1730,10 @@ c-----------------------------------------------------------------------
          CALL spline_eval(sr,respsi,1)
          rh_r(ising) = sr%f(1)
          r1_r(ising) = sr%f1(1)
+         hw_crit(ising) = 0.0
+         hw_sat(ising) = 0.0
+         hw_min(ising) = 0.0
+         b_crit(ising) = 0.0
          IF (callen_threshold_flag. OR. slayer_threshold_flag) THEN
             resm = mfac(resnum(ising))
             CALL spline_eval(kin,respsi,1)
@@ -1745,10 +1749,6 @@ c-----------------------------------------------------------------------
             we_r(ising) = omega_e
             wi_r(ising) = omega_i
          ELSE
-            hw_crit(ising) = 0.0
-            hw_sat(ising) = 0.0
-            hw_min(ising) = 0.0
-            b_crit(ising) = 0.0
             ti_r(ising) = 0.0
             te_r(ising) = 0.0
             ni_r(ising) = 0.0
@@ -1791,44 +1791,58 @@ c-----------------------------------------------------------------------
             C_trig=-(wpol**2)
             p_trig=B_trig/A_trig ! always negative as defined by delta_callen
             q_trig=C_trig/A_trig ! always negative as definted by delta_callen
-            R_trig=(-p_trig/3)**(1./2) ! should be real
-            theta_trig=ACOS(-q_trig/(2*R_trig**3))
-            
-            ! these are all half-widths!
-            root_trig_1=R_trig*COS(theta_trig/3)
-            root_trig_2=R_trig*COS((theta_trig+2*pi)/3)
-            root_trig_3=R_trig*COS((theta_trig+4*pi)/3)
-
-            min_trig=HUGE(1.0_r8)
-            max_trig=0.0_r8
-            ! appropriately assigning the roots to w_min and w_sat
-            IF (root_trig_1 > 0.0_r8) THEN
-                min_trig=MIN(min_trig,root_trig_1)
-                max_trig=MAX(max_trig,root_trig_1)
-            ENDIF
-            IF (root_trig_2 > 0.0_r8) THEN
-                min_trig=MIN(min_trig,root_trig_2)
-                max_trig=MAX(max_trig,root_trig_2)
-            ENDIF
-            IF (root_trig_3 > 0.0_r8) THEN
-                min_trig=MIN(min_trig,root_trig_3)
-                max_trig=MAX(max_trig,root_trig_3)
-            ENDIF
-            IF (max_trig > 0.0_r8) THEN
-                hw_sat(ising)=max_trig
+            trig_checks = .true.
+            IF (p_trig > 0.0) THEN
+                WRITE(*,*) "Error in Callen cubic equation solution: p_trig > 0"
+                trig_checks = .false.
+                R_trig=0.0_r8
             ELSE
-                hw_sat(ising)=0.0_r8
+                R_trig=(-p_trig/3)**(1./2) ! should be real
+                IF (abs(q_trig/(2*R_trig**3)) > 1.0) THEN
+                    WRITE(*,*) "Error in Callen cubic equation solution: "
+     $                         //"abs(q_trig/(2*R_trig^3)) > 1"
+                    trig_checks = .false.
+                ENDIF
             ENDIF
-            IF (min_trig < HUGE(1.0_r8)) THEN
-                hw_min(ising)=min_trig
-            ELSE
-                hw_min(ising)=0.0_r8
-            ENDIF
+            IF (trig_checks) THEN
+                theta_trig=ACOS(-q_trig/(2*R_trig**3))
+                
+                ! these are all half-widths!
+                root_trig_1=R_trig*COS(theta_trig/3)
+                root_trig_2=R_trig*COS((theta_trig+2*pi)/3)
+                root_trig_3=R_trig*COS((theta_trig+4*pi)/3)
 
-            ! convert from meters to psi_n for clear comparision to island_hwidth
-            hw_crit(ising) = hw_crit(ising) / sr%f1(1)
-            hw_sat(ising) = hw_sat(ising) / sr%f1(1)
-            hw_min(ising) = hw_min(ising) / sr%f1(1)
+                min_trig=HUGE(1.0_r8)
+                max_trig=0.0_r8
+                ! appropriately assigning the roots to w_min and w_sat
+                IF (root_trig_1 > 0.0_r8) THEN
+                    min_trig=MIN(min_trig,root_trig_1)
+                    max_trig=MAX(max_trig,root_trig_1)
+                ENDIF
+                IF (root_trig_2 > 0.0_r8) THEN
+                    min_trig=MIN(min_trig,root_trig_2)
+                    max_trig=MAX(max_trig,root_trig_2)
+                ENDIF
+                IF (root_trig_3 > 0.0_r8) THEN
+                    min_trig=MIN(min_trig,root_trig_3)
+                    max_trig=MAX(max_trig,root_trig_3)
+                ENDIF
+                IF (max_trig > 0.0_r8) THEN
+                    hw_sat(ising)=max_trig
+                ELSE
+                    hw_sat(ising)=0.0_r8
+                ENDIF
+                IF (min_trig < HUGE(1.0_r8)) THEN
+                    hw_min(ising)=min_trig
+                ELSE
+                    hw_min(ising)=0.0_r8
+                ENDIF
+
+                ! convert from meters to psi_n for clear comparision to island_hwidth
+                hw_crit(ising) = hw_crit(ising) / sr%f1(1)
+                hw_sat(ising) = hw_sat(ising) / sr%f1(1)
+                hw_min(ising) = hw_min(ising) / sr%f1(1)
+            ENDIF
 
          ENDIF
 c-----------------------------------------------------------------------
