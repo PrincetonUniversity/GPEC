@@ -1594,8 +1594,8 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(msing) :: area,j_c,aq,asingflx
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,sqreqb,jcfun
       COMPLEX(r8), DIMENSION(mpert) :: fkaxmn
-      REAL(r8), DIMENSION(msing) :: island_hwidth,visland_hwidth,
-     $     chirikov,hw_crit,hw_sat,hw_min
+      REAL(r8), DIMENSION(msing) :: hw_isl,hw_v,
+     $     chirikov,hw_v_crit,hw_sat,hw_min
       REAL(r8), DIMENSION(nsingcoup,msing) :: op
       COMPLEX(r8), DIMENSION(msing) :: delta,delcur,singcur,
      $     singflx,singbwp
@@ -1709,7 +1709,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute half-width of magnetic island.
 c-----------------------------------------------------------------------
-         island_hwidth(ising)=
+         hw_isl(ising)=
      $        SQRT(ABS(4*singflx_mn(resnum(ising),ising)*area(ising)/
      $        (twopi*shear*sq%f(4)*chi1)))
 c-----------------------------------------------------------------------
@@ -1723,14 +1723,15 @@ c-----------------------------------------------------------------------
             hdist=MIN(singtype(ising+1)%psifac-respsi,
      $           respsi-singtype(ising-1)%psifac)/2.0
          ENDIF
-         chirikov(ising)=island_hwidth(ising)/hdist
+         chirikov(ising)=hw_isl(ising)/hdist
 c-----------------------------------------------------------------------
 c     prepare layer analysis.
 c-----------------------------------------------------------------------
          CALL spline_eval(sr,respsi,1)
          rh_r(ising) = sr%f(1)
          r1_r(ising) = sr%f1(1)
-         hw_crit(ising) = 0.0
+         hw_v(ising) = 0.0
+         hw_v_crit(ising) = 0.0
          hw_sat(ising) = 0.0
          hw_min(ising) = 0.0
          b_crit(ising) = 0.0
@@ -1772,13 +1773,13 @@ c-----------------------------------------------------------------------
             ! Delta'_m/n in Callen... should the 2 be generalized to nn?
             delta_callen = -2 * resm / sr%f(1)
             ! Callen critical vac width
-            hw_crit(ising) = 0.5 * (wpol) ** (2./3) 
+            hw_v_crit(ising) = 0.5 * (wpol) ** (2./3)
      $         * ((27. / 4) * abs(delta_callen)) ** (1./6)
      $         / (delta_rmp) ** (1./2)
 
             ! computing Callen w_sat and w_min from cubic equation roots
             ! requires vacuum island width (should be the same as in the vsingfld subroutine)
-            visland_hwidth(ising)=
+            hw_v(ising)=
      $        SQRT(ABS(4*vsingfld(ising)*area(ising)/
      $        (twopi*shear*sq%f(4)*chi1)))
 
@@ -1787,7 +1788,7 @@ c-----------------------------------------------------------------------
             ! Solution using Vieta's trigonometric substitution for three real roots
             A_trig=delta_callen
             B_trig=delta_rmp
-     $        * (2*visland_hwidth(ising)*sr%f1(1))**2 ! converting island width to meters from psi_n
+     $        * (2*hw_v(ising)*sr%f1(1))**2 ! converting island width to meters from psi_n
             C_trig=-(wpol**2)
             p_trig=B_trig/A_trig ! always negative as defined by delta_callen
             q_trig=C_trig/A_trig ! always negative as definted by delta_callen
@@ -1838,8 +1839,8 @@ c-----------------------------------------------------------------------
                     hw_min(ising)=0.0_r8
                 ENDIF
 
-                ! convert from meters to psi_n for clear comparision to island_hwidth
-                hw_crit(ising) = hw_crit(ising) / sr%f1(1)
+                ! convert from meters to psi_n for clear comparision to hw_isl
+                hw_v_crit(ising) = hw_v_crit(ising) / sr%f1(1)
                 hw_sat(ising) = hw_sat(ising) / sr%f1(1)
                 hw_min(ising) = hw_min(ising) / sr%f1(1)
             ENDIF
@@ -1866,7 +1867,7 @@ c-----------------------------------------------------------------------
                WRITE(*,'(1x,es13.3,f13.3,2es13.3,f13.3,5es13.3)')
      $              respsi,sq%f(4),ABS(singflx_mn(resnum(ising),ising)),
      $              ABS(b_crit(ising)),
-     $              chirikov(ising),2*island_hwidth(ising),
+     $              chirikov(ising),2*hw_isl(ising),
      $              2*hw_v(ising),2*hw_v_crit(ising),
      $              2*hw_sat(ising),2*hw_min(ising)
             ELSE
@@ -1875,7 +1876,7 @@ c-----------------------------------------------------------------------
      $              "q","singflx","chirikov","w_island"
                WRITE(*,'(1x,es12.3,f12.3,es12.3,f12.3,es12.3)')
      $              respsi,sq%f(4),ABS(singflx_mn(resnum(ising),ising)),
-     $              chirikov(ising),2*island_hwidth(ising)
+     $              chirikov(ising),2*hw_isl(ising)
             ENDIF
          ENDIF
       ENDDO
@@ -1913,8 +1914,8 @@ c-----------------------------------------------------------------------
      $           REAL(singcur(ising)),AIMAG(singcur(ising)),
      $           REAL(singbwp(ising)),AIMAG(singbwp(ising)),
      $           REAL(delta(ising)),AIMAG(delta(ising)),
-     $           island_hwidth(ising),chirikov(ising),
-     $           hw_crit(ising),b_crit(ising),
+     $           hw_isl(ising),chirikov(ising),
+     $           hw_v_crit(ising),b_crit(ising),
      $           hw_sat(ising),hw_min(ising)
          ENDDO
          WRITE(out_unit,*)
@@ -2038,8 +2039,8 @@ c-----------------------------------------------------------------------
      $      RESHAPE((/REAL(singbwp), AIMAG(singbwp)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, c_id,
      $      RESHAPE((/REAL(singcur), AIMAG(singcur)/), (/msing,2/))) )
-         CALL check( nf90_put_var(fncid, w_id, 2*island_hwidth) )
-         CALL check( nf90_put_var(fncid, wc_id, 2*hw_crit) )
+         CALL check( nf90_put_var(fncid, w_id, 2*hw_isl) )
+         CALL check( nf90_put_var(fncid, wc_id, 2*hw_v_crit) )
          CALL check( nf90_put_var(fncid, wmin_id, 2*hw_min) )
          CALL check( nf90_put_var(fncid, wsat_id, 2*hw_sat) )
          CALL check( nf90_put_var(fncid, bc_id, b_crit) )
