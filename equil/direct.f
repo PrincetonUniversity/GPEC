@@ -664,38 +664,45 @@ c-----------------------------------------------------------------------
          CALL lsode(direct_fl_der,neq,y,eta,eta2,itol,rtol,atol,
      $        itask,istate,iopt,rwork,lrw,iwork,liw,jac,mf)
       ENDDO
+      len_y_out = istep
       IF(out_fl)WRITE(out_2d_unit,20)
       IF(bin_fl)WRITE(bin_2d_unit)
 c-----------------------------------------------------------------------
 c     abort if istep > nstepd.
 c-----------------------------------------------------------------------
-      IF(.FALSE.)THEN!(bp/bt)<=min_BpOnBt .AND. ABS(dy1)>max_dy1)THEN
-         !IF(probe_xpt)THEN
-         !   rx=r
-         !   zx=z
-         !   CALL direct_xpoint(rx,zx,num_xpts+1,new_xpt)
-         !   IF(new_xpt)THEN
-         !      num_xpts=num_xpts+1
-         !   ENDIF
-         !ENDIF
-         !eval_dy1=ABS(dy1)
-         !eval_BpOnBt=(bp/bt)
-      ELSEIF(eta < eta2)THEN
+      IF((bp/bt)<BpBt_tol.AND.ABS(dy1)>dqdeps_tol.AND.psifac>0.9
+     $ .AND. (.NOT. simp))THEN
+         IF(probe_xpt)THEN
+            rx=r
+            zx=z
+            CALL direct_xpoint(rx,zx,num_xpts+1,new_xpt)
+            IF(new_xpt)THEN
+               num_xpts=num_xpts+1
+            ENDIF
+         ENDIF
+c-----------------------------------------------------------------------
+c     get tolerance terms.
+c-----------------------------------------------------------------------
+         CALL int_validity_check(r,z,rfac,eta,valid,eval_xpt_tol)
+         eval_dy1=ABS(dy1)
+         eval_BpOnBt=(bp/bt)
+         RETURN
+      ELSEIF(eta < eta2 .AND. cooloff)THEN
          WRITE(message,61)istep,nstepd
          WRITE(message2,11)eta,eta1,eta2
          PRINT "(A)", message
-         PRINT "(A)", "Increase nstepd or decrease etol."
+         PRINT "(3A)","Field line integrator failed before the",
+     $"analytic x-point formulas became valid. Increase nstepd to ", 
+     $"keep accuracy, or decrease etol/reduce psihigh to retain speed."
          CALL program_stop(message2)
-      ELSEIF(verbose .AND. eta2==twopi .AND. eta1==zero)THEN
-         WRITE(message,61)istep,nstepd
-         IF(verbose)PRINT "(A)", message
-      ELSEIF(verbose)THEN
-         WRITE(message,62)istep,nstepd
-         IF(verbose)PRINT "(A)", message
       ENDIF
-      len_y_out = istep
-      !eval_dy1=-1.0
-      !eval_BpOnBt=-1.0
+c-----------------------------------------------------------------------
+c     if .NOT.(eval_dy1==eval_BpOnBt==-1.0), and early exit, we know the 
+c     separatrix integral died because of min_BpOnBt,max_dy1 criteria.
+c-----------------------------------------------------------------------
+      eval_dy1=-1.d0
+      eval_BpOnBt=-1.d0
+      eval_xpt_tol=-1.d0
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
