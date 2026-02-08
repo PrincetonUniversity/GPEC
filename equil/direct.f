@@ -43,7 +43,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(1:2) :: xpt_etas, rxs, zxs, xpt_b11s 
       REAL(r8), DIMENSION(1:2) :: xpt_gammas, xpt_varthetas
       REAL(r8), DIMENSION(1:2) :: xpt_gammas2, xpt_varthetas2
-      LOGICAL, DIMENSION(1:2) :: outside_sep,usevth2
+      LOGICAL, DIMENSION(1:2) :: outside_sep
       REAL(r8), DIMENSION(2,2) :: xpt_brackets
       TYPE(bicube_type) :: psi_in
       LOGICAL :: direct_infinite_loop_flag,plot_convergence1
