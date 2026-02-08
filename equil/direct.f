@@ -46,7 +46,7 @@ c-----------------------------------------------------------------------
 
       INTEGER, PRIVATE :: istep
       REAL(r8) :: rmin,rmax,zmin,zmax,rs1,rs2
-      REAL(r8), DIMENSION(1:2) :: xpt_etas, rxs, zxs, xpt_b11s 
+      REAL(r8), DIMENSION(1:2) :: xpt_etas, rxs, zxs, xpt_c11s 
       REAL(r8), DIMENSION(1:2) :: xpt_gammas, xpt_varthetas
       REAL(r8), DIMENSION(1:2) :: xpt_gammas2, xpt_varthetas2
       LOGICAL, DIMENSION(1:2) :: outside_sep
@@ -1394,17 +1394,19 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     subprogram 13. direct_psisaddle.
 c     calculates the linear term of psi_in at the saddle point, as well
-c     as gamma, and vartheta
+c     as gamma, and vartheta (please refer to 
+c     https://doi.org/10.1088/1361-6587/add9ca for definitions
+c     of these parameters).
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE direct_psisaddle(rx,zx,
-     $                              nu,b11,gamma,vartheta,lincheck)
+     $                              nu,c11,gamma,vartheta,lincheck)
 
       REAL(r8), INTENT(IN) :: rx,zx
       REAL(r8), DIMENSION(2), INTENT(IN) :: nu
-      REAL(r8), INTENT(OUT) :: b11,lincheck,gamma,vartheta
+      REAL(r8), INTENT(OUT) :: c11,lincheck,gamma,vartheta
 
       REAL(r8), PARAMETER :: nuh_eps=1e-13, nuh_eps2=1e-6
       INTEGER :: ir
@@ -1471,14 +1473,14 @@ c-----------------------------------------------------------------------
       y = -sinfact*Rlocal + cosfact*Zlocal
       chi = -COS(gamma)*x+SIN(gamma)*y
 c-----------------------------------------------------------------------
-c     extracting linear component b11, where psi = psi(rx,zx)+b11*x*chi.
+c     extracting linear component c11, where psi = psi(rx,zx)+c11*x*chi.
 c-----------------------------------------------------------------------
       CALL direct_get_bfield(rx,zx,bf,1)
       psix = bf%psi
       CALL direct_get_bfield(rx+r*cosfac,zx+r*sinfac,bf,1)
       psinuh = bf%psi
 
-      b11 = -(psinuh-psix)/(x*chi)
+      c11 = -(psinuh-psix)/(x*chi)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -1502,7 +1504,7 @@ c-----------------------------------------------------------------------
       INTEGER :: i
       REAL(r8), PARAMETER :: psi_eps=1e-4, r_eps1=1e-9
       REAL(r8) :: r,z
-      REAL(r8) :: b11,lincheck,gamma,vartheta
+      REAL(r8) :: c11,lincheck,gamma,vartheta
       REAL(r8), DIMENSION(1:2) :: nu
       REAL(r8) :: oangle,nu_var,Bnua,Bnub,Bnuc
       TYPE(direct_bfield_type) :: bf
@@ -1626,13 +1628,13 @@ c-----------------------------------------------------------------------
          PRINT "(A)", "------------------------------------------"
       ENDIF
 c-----------------------------------------------------------------------
-c     calculating xpoint angles gamma, vartheta, and linear term b11.
+c     calculating xpoint angles gamma, vartheta, and linear term c11.
 c-----------------------------------------------------------------------
-      CALL direct_psisaddle(r,z,nu,b11,gamma,vartheta,lincheck)
+      CALL direct_psisaddle(r,z,nu,c11,gamma,vartheta,lincheck)
 c-----------------------------------------------------------------------
 c     filling out x-point module variables.
 c-----------------------------------------------------------------------
-      xpt_b11s(x_i) = b11
+      xpt_c11s(x_i) = c11
       xpt_gammas(x_i) = gamma
       xpt_varthetas(x_i) = vartheta
 c-----------------------------------------------------------------------
