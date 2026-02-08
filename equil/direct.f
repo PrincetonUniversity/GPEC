@@ -1716,7 +1716,6 @@ c     separatrix. this is captured in the vartheta variable
 c-----------------------------------------------------------------------
       x = cosfact*Rlocal + sinfact*Zlocal
       y = -sinfact*Rlocal + cosfact*Zlocal
-      Zlocal = Zshft-zxs(x_i)
 c-----------------------------------------------------------------------
 c     calculating chi angle variable, defined such that nabla chi is 
 c     orthogonal to the x-point leg that leaves the
