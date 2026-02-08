@@ -1575,14 +1575,11 @@ c     checks if outside separatrix.
 c-----------------------------------------------------------------------
       IF (bf%psi < -psi_eps*psio) THEN
          outside_sep(x_i)=.TRUE.
-         usevth2(x_i)=.FALSE.
       ELSE
          outside_sep(x_i)=.FALSE.
-         usevth2(x_i)=.TRUE.
       ENDIF
 c-----------------------------------------------------------------------
-c     updating xpt_etas with a more exact value than that calculated by
-c     direct_initialise_xpoints.
+c     updating xpt_etas with a more exact value.
 c-----------------------------------------------------------------------
       xpt_etas(x_i)=ATAN2(zxs(x_i)-zo,rxs(x_i)-ro)
       xpt_etas(x_i)=xpt_etas(x_i) - twopi*floor(xpt_etas(x_i)/twopi)
@@ -1639,70 +1636,9 @@ c-----------------------------------------------------------------------
       xpt_gammas(x_i) = gamma
       xpt_varthetas(x_i) = vartheta
 c-----------------------------------------------------------------------
-c     second vartheta to make sure x1 in direct_analytic_ints correctly
-c     approaches 0 as psifac goes to 1.
-c-----------------------------------------------------------------------
-      CALL find_fl_surface(one,xpt_brackets(x_i,1),r,z)
-      nu(1)=ATAN2(z-zxs(x_i),r-rxs(x_i))
-      CALL find_fl_surface(one,xpt_brackets(x_i,2),r,z)
-      nu(2)=ATAN2(z-zxs(x_i),r-rxs(x_i))
-c-----------------------------------------------------------------------
-c     some useful debugging statements.
-c-----------------------------------------------------------------------
-      !IF(x_i==2)THEN
-      !   xpt_brackets(x_i,1)=xpt_etas(x_i)-1e-3
-      !   xpt_brackets(x_i,2)=xpt_etas(x_i)+1e-3
-      !ENDIF
-
-      !CALL direct_get_bfield(rxs(x_i),zxs(x_i),bf,1)
-
-      !IF(x_i==2)THEN
-      !      CALL direct_get_bfield(rxs(x_i),zxs(x_i),bf,1)
-      !      CALL find_fl_surface(one,xpt_brackets(x_i,1),r,z)
-      !      nu(1)=ATAN2(z-zxs(x_i),r-rxs(x_i))
-      !      PRINT "(A)", "First x-point leg's angle nu (mthd 2):"
-      !      PRINT "(f17.14)", nu(1)/pi
-      !      CALL find_fl_surface(bf%f,xpt_brackets(x_i,2),r,z)
-      !      nu(2)=ATAN2(z-zxs(x_i),r-rxs(x_i))
-      !      PRINT "(A)", "Second x-point leg's angle nu (mthd 2):"
-      !      PRINT "(f17.14)", nu(2)/pi
-      !ELSE
-      !ENDIF
-c-----------------------------------------------------------------------
-c     defining xpt_varthetas2, xpt_gammas2. these angles are
-c     calculated out at the eta-location where we switch from numerical
-c     to analytic integrals (xpt_brackets), instead of asymptotically
-c     close to the x-point as is the case for xpt_varthetas, xpt_gammas.
-c-----------------------------------------------------------------------
-      xpt_varthetas2(x_i) = nu(1)-pi/2
-      xpt_gammas2(x_i) = nu(1)-nu(2)
-
-      xpt_varthetas2(x_i) = xpt_varthetas2(x_i) 
-     $                        - twopi*floor(xpt_varthetas2(x_i)/twopi)
-      xpt_gammas2(x_i) = xpt_gammas2(x_i) 
-     $                        - twopi*floor(xpt_gammas2(x_i)/twopi)
-c-----------------------------------------------------------------------
 c     acknowledges new xpoint after all module variables filled
 c-----------------------------------------------------------------------
       new_xpt=.TRUE.
-c-----------------------------------------------------------------------
-c     making sure there isn't much difference between the varthetas and
-c     gamma angles asymptotically close to the x-point vs at the 
-c     switch-over location. Note if the x-point is slightly outside the
-c     separatrix such that outside_sep(x_i)=.TRUE., xpt_varthetas2
-c     amd xpt_gammas2 will have big error and should not be used.
-c-----------------------------------------------------------------------
-      IF((ABS(xpt_varthetas(x_i)-xpt_varthetas2(x_i))>twopi/100 .OR.
-     $ ABS(xpt_gammas2(x_i)-xpt_gammas(x_i))>twopi/100) .AND. 
-     $ (.NOT.outside_sep(x_i)))THEN
-         PRINT "(A)", "Straight x-point leg assumption bad for Xpt"
-         !PRINT "(i6)", x_i
-         !PRINT "(es16.10)", xpt_gammas(x_i)/pi
-         !PRINT "(es16.10)", xpt_gammas2(x_i)/pi
-         IF(.NOT.plot_convergence1)THEN
-            CALL program_stop("increase dq_eps.")
-         ENDIF
-      ENDIF
 c-----------------------------------------------------------------------
 c     regular print statements. eta bracket describes the region where
 c     the analytic formulas will take over from the numerical 
