@@ -1850,7 +1850,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE direct_analytic_ints(x_i,r1,eta1,eta2,yi1,yi2,yi3,yi4,
-     $       outmat,debug)
+     $       outmat,outmat2,debug)
 
       REAL(r8), INTENT(IN) :: r1,eta1,eta2
       INTEGER, INTENT(IN) :: x_i
@@ -1859,32 +1859,20 @@ c-----------------------------------------------------------------------
 
       REAL(r8), INTENT(OUT) :: yi1,yi2,yi3,yi4
       REAL(r8), DIMENSION(1:4,1:2,0:1),INTENT(OUT) :: outmat
+      REAL(r8), DIMENSION(1:8),INTENT(OUT) :: outmat2
 
-      REAL(r8) :: x1,y1,x2,y2,chi,I1,I2,I3,bt,b,root,xo,yo,chio
-      REAL(r8) :: y3d,y3r1,y3r2,singmt,a,c,yi2b,yi3b
+      REAL(r8) :: x1,y1,x2,y2,chi,J1,J2,J3,bt,b,root,xo,yo,chio,d,C00
+      REAL(r8) :: y3d,y3r1,y3r2,singmt,a,c,yi2b,yi3b,cosgam
       REAL(r8) :: cosvt,sinvt,cotgam,singam,cscgam,etax,vartheta,gamma
       TYPE(direct_bfield_type) :: bf
 
       outmat=0.0
-c-----------------------------------------------------------------------
-c     Asymptotic assumptions that are necessary for the formulas used
-c     in this function
-c-----------------------------------------------------------------------
-c     chi/a<<1 must be a small number, x/a<<1 must be a small number
-c           ^Important for the definition of Bp as a linear term
-c           ^a here is minor radius. chi and x calculated by 
-c           direct_saddle_coords
-c     |Bp|/|Bt|<<1 must be a small number 
-c           ^important for ignoring |Bp| when calculating |B|.
-c     I don't think x1/x2 necessarily has to be small, however I'll 
-c     still double check.
-c     Initial observation shows that y(2) - aka minor radius has its 
-c     error grow the fastest as the above assumptions are relaxed
+      usevth2=.TRUE. 
 c-----------------------------------------------------------------------
 c     getting local coordinates.
 c-----------------------------------------------------------------------
-      CALL direct_saddle_coords(x_i,r1,eta1,x1,y1,chi)
-      CALL direct_saddle_coords(x_i,zero,zero,xo,yo,chio)
+      CALL direct_saddle_coords(x_i,r1,eta1,x1,y1,chi,.TRUE.)
+      CALL direct_saddle_coords(x_i,zero,zero,xo,yo,chio,.TRUE.)
 c-----------------------------------------------------------------------
 c     pre-calculationg useful terms 
 c-----------------------------------------------------------------------
@@ -1935,40 +1923,41 @@ c-----------------------------------------------------------------------
          outmat(1,2,1)=y2
 
          CALL direct_saddle_coords_inv(x_i,x1,y1,outmat(2,1,0),
-     $      outmat(2,2,0),outmat(3,1,0),outmat(3,2,0))
+     $      outmat(2,2,0),outmat(3,1,0),outmat(3,2,0),.TRUE.)
       ENDIF
       CALL direct_saddle_coords_inv(x_i,x2,y2,outmat(2,1,1),
-     $      outmat(2,2,1),outmat(3,1,1),outmat(3,2,1))
+     $      outmat(2,2,1),outmat(3,1,1),outmat(3,2,1),.TRUE.)
 c-----------------------------------------------------------------------
 c     evaluating y1
 c-----------------------------------------------------------------------
-      yi1 = -(cscgam/xpt_b11s(x_i))*(rxs(x_i)*LOG(x2/x1)
-     $         +(cosvt-cotgam*sinvt)*(x2-x1)+sinvt*(y1-x1)*(x1/x2-one))
+      yi1 = -(cscgam/xpt_c11s(x_i))*(rxs(x_i)*LOG(x2/x1)
+     $                        +(x2-x1)*(cosvt-(one-x1/x2)*cotgam*sinvt)
+     $                        -(one-x1/x2)*y1*sinvt)
 c-----------------------------------------------------------------------
 c     evaluating y2
 c-----------------------------------------------------------------------
       yi2=outmat(3,1,1)
       
-      !The following formula is wrong...
-      IF(debug)yi2b = -(cscgam/xpt_b11s(x_i))*abs(-SIN(etax+gamma
+      !The following formula for minor radius integral is wrong... 
+      IF(debug)yi2b = -(cscgam/xpt_c11s(x_i))*abs(-SIN(etax+gamma
      $         -vartheta)*(x2-x1)
      $         +singam*SIN(etax-vartheta)*(y1-x1)*(one-x1/x2))
 c-----------------------------------------------------------------------
 c     evaluating y3
 c-----------------------------------------------------------------------
       a=cscgam*singmt
-      c=x1*(x1-y1)*sinvt
+      c=x1*(x1*cotgam-y1)*sinvt
 
-      y3d=rxs(x_i)**2-4*a*c
+      y3d=rxs(x_i)**2.d0-4.d0*a*c
 
       y3r1=(one/(2*a))*(-rxs(x_i)+SQRT(y3d))
       y3r2=(one/(2*a))*(-rxs(x_i)-SQRT(y3d))
 
-      yi3 = -(cscgam/xpt_b11s(x_i))*(one/SQRT(y3d))*
+      yi3 = -(cscgam/xpt_c11s(x_i))*(one/SQRT(y3d))*
      $       LOG((x2-y3r1)*(x1-y3r2)/((x2-y3r2)*(x1-y3r1)))
-      IF(debug)yi3b = -(cscgam/(xpt_b11s(x_i)*rxs(x_i)))*(LOG(x2/x1)
-     $         -(cosvt-cotgam*sinvt)*(x2-x1)/rxs(x_i)
-     $         +sinvt*(y1-x1)*(one-x1/x2)/rxs(x_i))
+      IF(debug)yi3b = -(cscgam/(xpt_c11s(x_i)*rxs(x_i)))*(LOG(x2/x1)
+     $         -(cosvt-(one-x1/x2)*cotgam*sinvt)*(x2-x1)/rxs(x_i)
+     $         +sinvt*y1*(one-x1/x2)/rxs(x_i))
 
       IF(debug)THEN
          outmat(4,1,0)=yi2
