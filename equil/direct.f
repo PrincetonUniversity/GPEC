@@ -524,17 +524,19 @@ c-----------------------------------------------------------------------
       END SUBROUTINE direct_position
 c-----------------------------------------------------------------------
 c     subprogram 4. direct_fl_int.
-c     integrates along field line.
+c     integrates along field line. exits based on proximity to x-point
+c     if simp = false
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE direct_fl_int(psifac,eta1,eta2,y_out,bf,len_y_out)
-      !$    min_BpOnBt,max_dy1,eval_BpOnBt,eval_dy1,probe_xpt)
+      SUBROUTINE direct_fl_int(psifac,eta1,eta2,y_out,len_y_out,
+     $        eval_BpOnBt,eval_dy1,eval_xpt_tol,probe_xpt,bf,simp)
 
-      REAL(r8), INTENT(IN) :: psifac,eta1,eta2!,min_BpOnBt,max_dy1
-      !REAL(r8), INTENT(OUT) :: eval_BpOnBt,eval_dy1
-      !LOGICAL, INTENT(IN) :: probe_xpt
+      REAL(r8), INTENT(IN) :: psifac,eta1,eta2
+      REAL(r8), INTENT(OUT) :: eval_BpOnBt,eval_dy1,eval_xpt_tol
+      LOGICAL, INTENT(IN) :: probe_xpt !
+      LOGICAL, INTENT(IN) :: simp !set true to skip x-point checks
       INTEGER, INTENT(OUT) :: len_y_out
       REAL(r8), DIMENSION(0:,0:), INTENT(OUT) :: y_out
       TYPE(direct_bfield_type), INTENT(OUT) :: bf
@@ -546,9 +548,10 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(liw) :: iwork
       REAL(r8), PARAMETER :: eps=1e-12
       REAL(r8) :: atol,rtol,rfac,deta,r,z,eta,err,psi0,bp,bt,rx,zx,dy1
+      REAL(r8) :: cooleta
       REAL(r8), DIMENSION(neq) :: y
       REAL(r8), DIMENSION(lrw) :: rwork
-      LOGICAL :: new_xpt
+      LOGICAL :: new_xpt,valid,cooloff=.FALSE.
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
