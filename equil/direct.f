@@ -1733,26 +1733,26 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_saddle_coords
 c-----------------------------------------------------------------------
-c     subprogram 14. direct_saddle_coords_inv. 
+c     subprogram 16. direct_saddle_coords_inv. 
 c     inverse of direct_saddle_coords. takes x,y, returns R,Z,rho,eta.
-c     rho is minor radius
+c     rho is minor radius.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE direct_saddle_coords_inv(x_i,x,y,R,Z,rho,eta)
+      SUBROUTINE direct_saddle_coords_inv(x_i,x,y,R,Z,rho,eta,usevth2)
 
       INTEGER, INTENT(IN) :: x_i
+      LOGICAL, INTENT(IN) :: usevth2
       REAL(r8), INTENT(IN) :: x,y
       REAL(r8), INTENT(OUT) :: R,Z,rho,eta
 
       REAL(r8) :: cosfact,sinfact
       REAL(r8) :: Rlocal,Zlocal
-
 c-----------------------------------------------------------------------
 c     precalculating trig components.
 c-----------------------------------------------------------------------
-      IF(usevth2(x_i))THEN
+      IF(usevth2)THEN
          cosfact=COS(xpt_varthetas2(x_i))
          sinfact=SIN(xpt_varthetas2(x_i))
       ELSE
@@ -1760,16 +1760,8 @@ c-----------------------------------------------------------------------
          sinfact=SIN(xpt_varthetas(x_i))
       ENDIF
 c-----------------------------------------------------------------------
-c     inverse coordinate transform. commented out lines are the forwards
-c     transform from direct_saddle_coords.
+c     inverse coordinate transform.
 c-----------------------------------------------------------------------
-      !Rshft = ro + r1*cosfac
-      !Zshft = zo + r1*sinfac
-      !Rlocal = Rshft-rxs(x_i)
-      !Zlocal = Zshft-zxs(x_i)
-      !x = cosfact*Rlocal + sinfact*Zlocal
-      !y = -sinfact*Rlocal + cosfact*Zlocal
-
       Rlocal = cosfact*x - sinfact*y
       Zlocal = sinfact*x + cosfact*y
 
