@@ -1252,7 +1252,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_xpt_y_out
 c-----------------------------------------------------------------------
-c     subprogram 8. direct_local_xpoint.
+c     subprogram 11. direct_local_xpoint.
 c     finds location of nearby x-point where |Bp|=0 using Newton method.
 c     can and will search outside separatrix.
 c-----------------------------------------------------------------------
@@ -1448,7 +1448,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_saddle_angle
 c-----------------------------------------------------------------------
-c     subprogram 10. direct_psisaddle.
+c     subprogram 13. direct_psisaddle.
 c     calculates the linear term of psi_in at the saddle point, as well
 c     as gamma, and vartheta
 c-----------------------------------------------------------------------
@@ -1541,7 +1541,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_psisaddle
 c-----------------------------------------------------------------------
-c     subprogram 11. direct_xpoint.
+c     subprogram 14. direct_xpoint.
 c     finds location and angles of nearby x-point, checks if it's inside
 C     separatrix.
 c-----------------------------------------------------------------------
