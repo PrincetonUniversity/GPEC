@@ -923,9 +923,10 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE find_fl_surface
 c-----------------------------------------------------------------------
-c     subprogram 4.6. find_fl_surface2.
+c     subprogram 9. find_fl_surface2.
 c     finds r,z given psi, eta. Uses a bisection method instead of the
-c     Newton method used in find_fl_surface, motivated by special cases.
+c     Newton method used in find_fl_surface, motivated by special cases
+c     where the Newton method fails to converge eg. near x-points.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
