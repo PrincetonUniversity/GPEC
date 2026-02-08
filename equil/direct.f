@@ -709,8 +709,173 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_fl_int
 c-----------------------------------------------------------------------
-c     subprogram 4.5. find_fl_surface.
-c     finds r,z given psi, eta.
+c     subprogram 5. direct_fl_der.
+c     contains differential equations for field line averages.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE direct_fl_der(neq,eta,y,dy)
+
+      INTEGER, INTENT(IN) :: neq
+      REAL(r8), INTENT(IN) :: eta
+      REAL(r8), INTENT(IN) :: y(neq)
+      REAL(r8), INTENT(OUT) :: dy(neq)
+
+      REAL(r8) :: cosfac,sinfac,bp,r,z,jacfac,bt,b
+      TYPE(direct_bfield_type) :: bf
+c-----------------------------------------------------------------------
+c     preliminary computations.
+c     here magnetic coordinates are defined
+c-----------------------------------------------------------------------
+      cosfac=COS(eta)
+      sinfac=SIN(eta)
+      r=ro+y(2)*cosfac
+      z=zo+y(2)*sinfac
+      CALL direct_get_bfield(r,z,bf,1)
+      bp=SQRT(bf%br**2+bf%bz**2)
+      bt=bf%f/r
+      b=SQRT(bp*bp+bt*bt)
+      jacfac=bp**power_bp*b**power_b/r**power_r
+c-----------------------------------------------------------------------
+c     compute derivatives.
+c-----------------------------------------------------------------------
+      dy(1)=y(2)/(bf%bz*cosfac-bf%br*sinfac)
+      dy(2)=dy(1)*(bf%br*cosfac+bf%bz*sinfac)
+      dy(3)=dy(1)/(r*r)
+      dy(4)=dy(1)*jacfac
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE direct_fl_der
+c-----------------------------------------------------------------------
+c     subprogram 6. direct_refine.
+c     moves a point orthogonally to a specified flux surface.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE direct_refine(rfac,eta,psi0)
+
+      REAL(r8) :: rfac,eta,psi0
+
+      REAL(r8) :: dpsi,cosfac,sinfac,drfac,r,z
+      REAL(r8), PARAMETER :: eps=1e-12
+      TYPE(direct_bfield_type) :: bf
+      INTEGER :: ir
+c-----------------------------------------------------------------------
+c     initialize iteration.
+c-----------------------------------------------------------------------
+      cosfac=COS(eta)
+      sinfac=SIN(eta)
+      r=ro+rfac*cosfac
+      z=zo+rfac*sinfac
+      CALL direct_get_bfield(r,z,bf,1)
+      dpsi=bf%psi-psi0
+c-----------------------------------------------------------------------
+c     refine rfac by newton iteration.
+c-----------------------------------------------------------------------
+      ir = 0
+      DO
+         drfac=-dpsi/(bf%psir*cosfac+bf%psiz*sinfac)
+         rfac=rfac+drfac
+         r=ro+rfac*cosfac
+         z=zo+rfac*sinfac
+         CALL direct_get_bfield(r,z,bf,1)
+         dpsi=bf%psi-psi0
+         IF(ABS(dpsi) <= eps*psi0 .OR. ABS(drfac) <= eps*rfac)EXIT
+
+         ir = ir+1
+         IF (ir  > direct_infinite_loop_count) THEN
+            direct_infinite_loop_flag = .TRUE.
+            CALL program_stop("Took too many steps to refine rfac.")
+         ENDIF
+      ENDDO
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE direct_refine
+c-----------------------------------------------------------------------
+c     subprogram 7. direct_output.
+c     diagnoses input.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE direct_output
+
+      INTEGER :: ix,iy
+      REAL(r8), DIMENSION(:,:), POINTER :: x,y
+c-----------------------------------------------------------------------
+c     format statements.
+c-----------------------------------------------------------------------
+ 10   FORMAT(/4x,"ix",4x,"iy",6x,"r",10x,"z",9x,"psi"/)
+ 20   FORMAT(2i6,1p,3e11.3)
+c-----------------------------------------------------------------------
+c     open output files.
+c-----------------------------------------------------------------------
+      IF(.NOT. (out_eq_1d .OR. bin_eq_1d .OR. out_eq_2d .OR. bin_eq_2d))
+     $     RETURN
+      IF(out_eq_1d .OR. out_eq_2d)
+     $     CALL ascii_open(out_2d_unit,"input.out","UNKNOWN")
+c-----------------------------------------------------------------------
+c     diagnose 1d output.
+c-----------------------------------------------------------------------
+      IF(out_eq_1d)WRITE(out_2d_unit,'(a)')"input surface quantities:"
+      IF(bin_eq_1d)CALL bin_open(bin_2d_unit,"sq_in.bin","UNKNOWN",
+     $     "REWIND","none")
+      CALL spline_write1(sq_in,out_eq_1d,bin_eq_1d,
+     $     out_2d_unit,bin_2d_unit,interp)
+      IF(bin_eq_1d)CALL bin_close(bin_2d_unit)
+c-----------------------------------------------------------------------
+c     ascii table of psi.
+c-----------------------------------------------------------------------
+      IF(out_eq_2d)THEN
+         DO iy=0,psi_in%my
+            WRITE(out_2d_unit,10)
+            DO ix=0,psi_in%mx
+               WRITE(out_2d_unit,20)
+     $              ix,iy,psi_in%xs(ix),psi_in%ys(iy),psi_in%fs(ix,iy,1)
+            ENDDO
+         ENDDO
+         WRITE(out_2d_unit,10)
+      ENDIF
+c-----------------------------------------------------------------------
+c     draw contour plot of psi.
+c-----------------------------------------------------------------------
+      IF(bin_eq_2d)THEN
+         CALL bin_open(bin_2d_unit,"psi_in.bin","UNKNOWN","REWIND",
+     $        "none")
+         WRITE(bin_2d_unit)1,0
+         WRITE(bin_2d_unit)psi_in%mx,psi_in%my
+         ALLOCATE(x(0:psi_in%mx,0:psi_in%my),y(0:psi_in%mx,0:psi_in%my))
+         DO ix=0,psi_in%mx
+            DO iy=0,psi_in%my
+               x(ix,iy)=psi_in%xs(ix)
+               y(ix,iy)=psi_in%ys(iy)
+            ENDDO
+         ENDDO
+         WRITE(bin_2d_unit)REAL(x,4),REAL(y,4)
+         WRITE(bin_2d_unit)REAL(psi_in%fs,4)
+         DEALLOCATE(x,y)
+         CALL bin_close(bin_2d_unit)
+      ENDIF
+c-----------------------------------------------------------------------
+c     close output files.
+c-----------------------------------------------------------------------
+      IF(out_eq_1d .OR. out_eq_2d)CALL ascii_close(out_2d_unit)
+      IF(input_only)CALL program_stop("Termination by direct_output.")
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE direct_output
+c-----------------------------------------------------------------------
+c     subprogram 8. find_fl_surface.
+c     finds r,z given psi, eta. Uses a Newton method, similar to 
+c     direct_position.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
