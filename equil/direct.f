@@ -2109,439 +2109,368 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE interp_through_zero
 c-----------------------------------------------------------------------
-c     ordering the two etas for numerical field line integration
+c     subprogram 20. patch_two_a.
+c     combines two y_outs together. assumes y_out1 is anticlockwise,
+c     from etaii to etaiv, and y_out2 is clockwise from etaiii to etai
+c     where etavi>etaiii>etaii>etai. Also assumes we aren't going more 
+c     than twopi around the loop. Stitches splines together at
+c     0.5*(etaii+etaiii). Returns y_out, len_y_out, which will seem
+c     like a single integral.
 c-----------------------------------------------------------------------
-         eta1 = xpt_brackets(1,1) - twopi*floor(xpt_brackets(1,1)/twopi)
-         eta2 = xpt_brackets(1,2) - twopi*floor(xpt_brackets(1,2)/twopi)
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE patch_two_a(y_out1,y_out2,
+     $                           len_y_out1,len_y_out2,y_out,len_y_out)
 
-         IF(eta2<eta1)THEN
-            eta2=eta2+twopi
+      REAL(r8), DIMENSION(0:,0:), INTENT(INOUT) :: y_out1,y_out2
+      REAL(r8), DIMENSION(0:,0:), INTENT(INOUT) :: y_out
+      REAL(r8), DIMENSION(0:(4*nstepd+2*nstep2+6),0:4) :: y_cpy
+      REAL(r8), DIMENSION(0:4) :: yinterim1,yinterim2
+      INTEGER, INTENT(IN) :: len_y_out1,len_y_out2
+      INTEGER, INTENT(INOUT) :: len_y_out
+      REAL(r8) :: etai,etaii,etaiii,etaiv,eta_s
+      INTEGER :: ii,i
+      y_out=0.0
+      len_y_out=0
+c-----------------------------------------------------------------------
+c     assert angles.
+c-----------------------------------------------------------------------
+      etaii =y_out1(0,0)
+      etaiv =y_out1(len_y_out1,0)
+      etaiii=y_out2(0,0)
+      etai  =y_out2(len_y_out2,0)
+      IF(.NOT.((etaiv>etaiii).AND.(etaiii>etaii).AND.(etaii>etai)))THEN
+         WRITE(*,*)"Incorrect use of patch_two_a (s1)."
+         WRITE(*,*)y_out2(len_y_out2,0)
+         WRITE(*,*)y_out2(len_y_out2-1,0)
+         WRITE(*,*)y_out2(0,0)
+         WRITE(*,*)"Angles:" 
+         WRITE(*,*)etaiv
+         WRITE(*,*)etaiii
+         WRITE(*,*)etaii
+         WRITE(*,*)etai
+         CALL program_stop("Incorrect use of patch_two_a. (s1)")
+      ELSEIF((etaiv-etai)>twopi)THEN
+         CALL program_stop("Incorrect use of patch_two_a. (s2)")
+      ENDIF
+c-----------------------------------------------------------------------
+c     find main stitch point.
+c-----------------------------------------------------------------------
+      eta_s=0.5*(etaiii+etaii)
+c-----------------------------------------------------------------------
+c     create stich points.
+c-----------------------------------------------------------------------
+      CALL yinterim(y_out1,len_y_out1,eta_s,yinterim1)
+      CALL yinterim(y_out2,len_y_out2,eta_s,yinterim2)
+c-----------------------------------------------------------------------
+c     checking radii are similar.
+c-----------------------------------------------------------------------
+      IF(ABS(yinterim1(2)-yinterim2(2))/ro > r_tol)THEN
+         WRITE(*,*)"patch_two_a:"
+         WRITE(*,*)ABS(yinterim1(2)-yinterim2(2))/ro
+         CALL program_stop(
+     $ "Radial discontinuity > r_tol during field line stitching.")
+      ENDIF
+c-----------------------------------------------------------------------
+c     renormalising y_out1 so the integrals are zero at stitch point.
+c-----------------------------------------------------------------------
+      DO i=0,len_y_out1,+1
+         y_out1(i,1)=y_out1(i,1)-yinterim1(1)
+         y_out1(i,3)=y_out1(i,3)-yinterim1(3)
+         y_out1(i,4)=y_out1(i,4)-yinterim1(4)
+      ENDDO
+c-----------------------------------------------------------------------
+c     resigning those integrals of absolute values in y_out2
+c-----------------------------------------------------------------------
+      y_cpy(0:len_y_out2,0)=y_out2(0:len_y_out2,0)
+      y_cpy(0:len_y_out2,1)=y_out2(0:len_y_out2,1)
+      y_cpy(0:len_y_out2,2)=y_out2(0:len_y_out2,2)
+      y_cpy(0:len_y_out2,3)=y_out2(0:len_y_out2,3)
+      y_cpy(0:len_y_out2,4)=y_out2(0:len_y_out2,4)
+      DO i=len_y_out2,0,-1
+         y_out2(i,1)=-(y_cpy(i,1)-y_cpy(len_y_out2,1))
+         y_out2(i,3)=-(y_cpy(i,3)-y_cpy(len_y_out2,3))
+         y_out2(i,4)=-(y_cpy(i,4)-y_cpy(len_y_out2,4))
+      ENDDO
+c-----------------------------------------------------------------------
+c     writing y_out2 to y_out.
+c-----------------------------------------------------------------------
+      ii=0
+      DO i=len_y_out2,0,-1
+         IF(y_out2(i,0)<eta_s)THEN
+            y_out(ii,:)=y_out2(i,:)
+            ii=ii+1
+         ELSE
+            EXIT
          ENDIF
-         xpt_brackets(1,1)=eta1
-         xpt_brackets(1,2)=eta2
-
-         eta2=eta2-twopi
+      ENDDO
 c-----------------------------------------------------------------------
-c     calling numerical integration between field lines
+c     adding stitch point values to y_out
 c-----------------------------------------------------------------------
-         CALL direct_fl_int(psifac,eta2,eta1,y_out1,bf,len_y1_out)
+      y_out(ii,0)=yinterim2(0)
+      y_out(ii,1)=yinterim2(1)
+      y_out(ii,2)=yinterim2(2)
+      y_out(ii,3)=yinterim2(3)
+      y_out(ii,4)=yinterim2(4)
+      ii=ii+1
+c-----------------------------------------------------------------------
+c     writing y_out1 to y_out.
+c-----------------------------------------------------------------------
+      DO i=0,len_y_out1,+1
+         IF(y_out1(i,0)>eta_s)THEN
+            !Theta and radius values just flat equals
+            y_out(ii,0)=y_out1(i,0)
+            y_out(ii,2)=y_out1(i,2)
 
-         IF(out)THEN
-            CALL ascii_open(out_xpt_unit,"y_out1.out","UNKNOWN")
-            DO i=0,len_y1_out,+1
-               WRITE(out_xpt_unit,412)
-     $                y_out1(i,0),
-     $                y_out1(i,1),
-     $                y_out1(i,2),
-     $                y_out1(i,3),
-     $                y_out1(i,4)
-            ENDDO
-            CALL ascii_close(out_xpt_unit)
+            !Integrals need to add previous:
+            y_out(ii,1)=y_out1(i,1)+yinterim2(1)
+            y_out(ii,3)=y_out1(i,3)+yinterim2(3)
+            y_out(ii,4)=y_out1(i,4)+yinterim2(4)
+            ii=ii+1
          ENDIF
+      ENDDO
+      len_y_out=ii-1
 c-----------------------------------------------------------------------
-c     calling direct_initialise_xpoints to check for a second x-point.
+c     terminate.
 c-----------------------------------------------------------------------
-         CALL direct_initialise_xpoints(y_out1,len_y1_out,.FALSE.,
-     $                              .FALSE.,bf,dqdeps_tol,BpBt_tol,
-     $                              eta_maxes,eta_brackets,maxima_count)
-         IF(dbg1xpt)PRINT "(A)", "Maxima count for numerical integral"
-         IF(dbg1xpt)PRINT "(i6)", maxima_count
-         IF(dbg1xpt .AND. maxima_count>0)THEN
-            PRINT "(A)", "|||||||||||||||||||||||||||||||||||||||||||"
-            PRINT "(i6)", maxima_count
-            DO i=1,maxima_count
-               PRINT "(i6)", i
-               PRINT "(f16.5)", (eta_brackets(i,1)
-     $            )!-twopi*floor(eta_brackets(i,1)/twopi))
-               PRINT "(f16.5)", (eta_maxes(i)
-     $            )!-twopi*floor(eta_maxes(i)/twopi))
-               PRINT "(f16.5)", (eta_brackets(i,2)
-     $            )!-twopi*floor(eta_brackets(i,2)/twopi))
-            ENDDO
+      RETURN
+      END SUBROUTINE patch_two_a
+c-----------------------------------------------------------------------
+c     subprogram 21. patch_two_b.
+c     combines two y_outs together. assumes y_out1 and y_out2 are both
+c     travelling anticlockwise and start/end at the same point. 
+c     Returns y_out, len_y_out, which will seem like a single integral.
+c     Assumes integral doens't travel more than twopi in eta.
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE patch_two_b(y_out1,y_out2,
+     $                           len_y_out1,len_y_out2,y_out,len_y_out)
+
+      REAL(r8), DIMENSION(0:,0:), INTENT(IN) :: y_out1,y_out2
+      REAL(r8), DIMENSION(0:,0:), INTENT(INOUT) :: y_out
+      INTEGER, INTENT(IN) :: len_y_out1,len_y_out2
+      INTEGER, INTENT(INOUT) :: len_y_out
+      REAL(r8) :: etai,etaii,etaiii,etaiv
+      INTEGER :: ii,i
+      y_out=0.0
+      len_y_out=0
+c-----------------------------------------------------------------------
+c     assert angles.
+c-----------------------------------------------------------------------
+      etai  =y_out1(0,0)
+      etaii =y_out1(len_y_out1,0)
+      etaiii=y_out2(0,0)
+      etaiv =y_out2(len_y_out2,0)
+      !IF(.NOT.(((etaiv>etaiii).AND.(etaiii==etaii).AND.(etaii>etai)).OR.
+      !$((etaiv>etaiii).AND.(etaiii>etaii).AND.((etaiii-etaii)<0.0001*pi)
+      !$.AND. (etaii>etai))))THEN
+      IF(.NOT.((etaiv>etaiii).AND.(etaiii==etaii).AND.(etaii>etai)))THEN
+         WRITE(*,*)"Incorrect use of patch_two_b (s1)."
+         WRITE(*,*)y_out2(len_y_out2,0)
+         WRITE(*,*)y_out2(len_y_out2-1,0)
+         WRITE(*,*)y_out2(0,0)
+         WRITE(*,*)"Angles:" 
+         WRITE(*,*)etaiv
+         WRITE(*,*)etaiii
+         WRITE(*,*)etaii
+         WRITE(*,*)etai
+         CALL program_stop("Incorrect use of patch_two_b (s1).")
+      ELSEIF((etaiv-etai)>twopi)THEN
+         CALL program_stop("Incorrect use of patch_two_b (s2).")
+      ENDIF
+c-----------------------------------------------------------------------
+c     checking radii are similar.
+c-----------------------------------------------------------------------
+      IF(ABS(y_out1(len_y_out1,2)-y_out2(0,2))/ro > r_tol)THEN
+         WRITE(*,*)"patch_two_b:" 
+         WRITE(*,*)y_out1(0,2)
+         WRITE(*,*)y_out2(0,2)
+         WRITE(*,*)ABS(y_out1(len_y_out1,2)-y_out2(0,2))/ro
+         CALL program_stop(
+     $ "Radial discontinuity > r_tol during field line stitching.")
+      ENDIF
+c-----------------------------------------------------------------------
+c     adding y_out1 to y_out.
+c-----------------------------------------------------------------------
+      ii=0
+      DO i=0,len_y_out1,+1
+         y_out(ii,:)=y_out1(i,:)
+         ii=ii+1
+      ENDDO
+c-----------------------------------------------------------------------
+c     writing y_out2 to y_out.
+c-----------------------------------------------------------------------
+      DO i=1,len_y_out2,+1
+         y_out(ii,0)=y_out2(i,0)
+         y_out(ii,2)=y_out2(i,2)
+
+         y_out(ii,1)=y_out2(i,1)+y_out1(len_y_out1,1)
+         y_out(ii,3)=y_out2(i,3)+y_out1(len_y_out1,3)
+         y_out(ii,4)=y_out2(i,4)+y_out1(len_y_out1,4)
+         ii=ii+1
+      ENDDO
+      len_y_out=ii-1
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE patch_two_b
+c-----------------------------------------------------------------------
+c     subprogram 22. patch_two_c.
+c     combines two y_outs together. assumes y_out1 is anticlockwise,
+c     from etai>=0 to etaii, and y_out2 is clockwise from 
+c     etaiv>twopi to etaiii=etaii.
+c     iswtch is the index where the output spline y_out switches from
+c     y_out1 to y_out2 (technically index of final y_out1 point)
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE patch_two_c(y_out1,y_out2,
+     $       len_y_out1,len_y_out2,y_out,len_y_out,iswtch)
+
+      REAL(r8), DIMENSION(0:,0:), INTENT(INOUT) :: y_out1,y_out2
+      REAL(r8), DIMENSION(0:(4*nstepd+2*nstep2+6),0:4) :: y_cpy
+      REAL(r8), DIMENSION(0:,0:), INTENT(INOUT) :: y_out
+      REAL(r8), DIMENSION(0:4) :: yinterim1,yinterim2
+      REAL(r8) :: etai,etaii,etaiii,etaiv,eta_s
+      INTEGER, INTENT(INOUT) :: len_y_out1,len_y_out2
+      INTEGER, INTENT(INOUT) :: len_y_out
+      INTEGER, INTENT(OUT) :: iswtch
+      INTEGER :: ii,i1,i_zero,i
+      y_out=0.0
+      len_y_out=0
+c-----------------------------------------------------------------------
+c     assert angles.
+c-----------------------------------------------------------------------
+      etai  =y_out1(0,0)
+      etaii =y_out1(len_y_out1,0)
+      etaiv =y_out2(0,0)
+      etaiii=y_out2(len_y_out2,0)
+      IF(.NOT.((etaiv>etaiii).AND.(etaiii==etaii).AND.(etaii>etai).AND.
+     $   (etai==zero).AND.(etaiv>twopi).AND.(etaiii<twopi)))THEN
+         WRITE(*,*)"Incorrect use of patch_two_c."
+         WRITE(*,*)y_out2(len_y_out2,0)
+         WRITE(*,*)y_out2(0,0)
+         WRITE(*,*)"Angles:" 
+         WRITE(*,*)etaiv
+         WRITE(*,*)etaiii
+         WRITE(*,*)etaii
+         WRITE(*,*)etai
+         CALL program_stop("Incorrect use of patch_two_c.")
+      ENDIF
+c-----------------------------------------------------------------------
+c     adding point in y_out2 at twopi
+c-----------------------------------------------------------------------
+      CALL interp_through_zero(y_out2,len_y_out2,i_zero)
+c-----------------------------------------------------------------------
+c     resigning y_out2 so it runs anticlockwise
+c-----------------------------------------------------------------------
+      y_cpy(0:len_y_out2,0)=y_out2(0:len_y_out2,0)
+      y_cpy(0:len_y_out2,1)=y_out2(0:len_y_out2,1)
+      y_cpy(0:len_y_out2,2)=y_out2(0:len_y_out2,2)
+      y_cpy(0:len_y_out2,3)=y_out2(0:len_y_out2,3)
+      y_cpy(0:len_y_out2,4)=y_out2(0:len_y_out2,4)
+      DO i=len_y_out2,0,-1
+         y_out2(i,1)=-(y_cpy(len_y_out2,1)-y_cpy(i,1))
+         y_out2(i,3)=-(y_cpy(len_y_out2,3)-y_cpy(i,3))
+         y_out2(i,4)=-(y_cpy(len_y_out2,4)-y_cpy(i,4))
+      ENDDO
+c-----------------------------------------------------------------------
+c     find main stitch point.
+c-----------------------------------------------------------------------
+      eta_s=0.5*(twopi+etaiv)
+c-----------------------------------------------------------------------
+c     create stich points.
+c-----------------------------------------------------------------------
+      CALL yinterim(y_out1,len_y_out1,eta_s-twopi,yinterim1)
+      CALL yinterim(y_out2,len_y_out2,eta_s,yinterim2)
+c-----------------------------------------------------------------------
+c     checking radii are similar.
+c-----------------------------------------------------------------------
+      IF(ABS(yinterim1(2)-yinterim2(2))/ro > r_tol)THEN
+         WRITE(*,*)"patch_two_c:"
+         WRITE(*,*)ABS(yinterim1(2)-yinterim2(2))/ro
+         CALL program_stop(
+     $ "Radial discontinuity > r_tol during field line stitching.")
+      ENDIF
+c-----------------------------------------------------------------------
+c     renormalising y_out1 so the integrals are zero at stitch point.
+c-----------------------------------------------------------------------
+      DO i=0,len_y_out1,+1
+         y_out1(i,1)=y_out1(i,1)-yinterim1(1)
+         y_out1(i,3)=y_out1(i,3)-yinterim1(3)
+         y_out1(i,4)=y_out1(i,4)-yinterim1(4)
+      ENDDO
+c-----------------------------------------------------------------------
+c     adding start of y_out2 (eta twopi to stitch point) to y_out.
+c-----------------------------------------------------------------------
+      ii=0
+      DO i=len_y_out2,0,-1
+         IF(y_out2(i,0)>=twopi .AND. y_out2(i,0)<eta_s)THEN
+            y_out(ii,0)=(y_out2(i,0)-twopi)
+            y_out(ii,1)=(y_out2(i,1)-y_out2(i_zero,1))
+            y_out(ii,3)=(y_out2(i,3)-y_out2(i_zero,3))
+            y_out(ii,4)=(y_out2(i,4)-y_out2(i_zero,4))
+
+            y_out(ii,2)=y_out2(i,2)
+            
+            ii=ii+1
          ENDIF
+      ENDDO
 c-----------------------------------------------------------------------
-c     check first and last maxima to make sure they are unique.
+c     adding stitch at eta_s.
 c-----------------------------------------------------------------------
-         IF(maxima_count>0)THEN
+      y_out(ii,0)=yinterim2(0)-twopi
+      y_out(ii,1)=yinterim2(1)-y_out2(i_zero,1)
+      y_out(ii,2)=yinterim2(2)
+      y_out(ii,3)=yinterim2(3)-y_out2(i_zero,3)
+      y_out(ii,4)=yinterim2(4)-y_out2(i_zero,4)
+      ii=ii+1
+      i1=ii-1
 c-----------------------------------------------------------------------
-c     if first maxima not unique, eliminate it
-c-----------------------------------------------------------------------  
-            IF(ABS(eta_brackets(1,1)-eta2)<1e-6 .AND. 
-     $         ABS(eta_maxes(1)-eta2)<1e-3)THEN
-               maxima_count=maxima_count-1
-               DO i=1,maxima_count,+1
-                  eta_brackets(i,1:2)=eta_brackets(i+1,1:2)
-                  eta_maxes(i)=eta_maxes(i+1)
-               ENDDO
-            ENDIF
-            IF(dbg1xpt)PRINT "(A)", "Maxima count for numerical int."
-            IF(dbg1xpt)PRINT "(i6)", maxima_count
-            IF(dbg1xpt .AND. maxima_count>0)THEN
-               PRINT "(A)", "||||||||||||||||||||||||||||||||||||||||||"
-               DO i=1,maxima_count
-                  PRINT "(i6)", i
-                  PRINT "(f16.5)", (eta_brackets(i,1)
-     $            )!-twopi*floor(eta_brackets(i,1)/twopi))
-                  PRINT "(f16.5)", (eta_maxes(i)
-     $            )!-twopi*floor(eta_brackets(i,1)/twopi))
-                  PRINT "(f16.5)", (eta_brackets(i,2)
-     $            )!-twopi*floor(eta_brackets(i,1)/twopi))
-               ENDDO
-            ENDIF
+c     writing y_out1 to y_out.
 c-----------------------------------------------------------------------
-c     if last maxima not unique, eliminate it
-c-----------------------------------------------------------------------  
-            IF(ABS(eta_brackets(maxima_count,2)-eta1)<1e-6 .AND. 
-     $         ABS(eta_maxes(maxima_count)-eta1)<1e-3)THEN
-               eta_brackets(maxima_count,1:2)=0.0
-               eta_maxes(maxima_count)=0.0
-               maxima_count=maxima_count-1
-            ENDIF
-            IF(dbg1xpt .AND. maxima_count>0)THEN
-               PRINT "(A)", "||||||||||||||||||||||||||||||||||||||||||"
-               PRINT "(i6)", maxima_count
-               DO i=1,maxima_count
-                  PRINT "(i6)", i
-                  PRINT "(f16.5)", (eta_brackets(i,1)
-     $            )!-twopi*floor(eta_brackets(i,1)/twopi))
-                  PRINT "(f16.5)", (eta_maxes(i)
-     $            )!-twopi*floor(eta_brackets(i,1)/twopi))
-                  PRINT "(f16.5)", (eta_brackets(i,2)
-     $            )!-twopi*floor(eta_brackets(i,1)/twopi))
-               ENDDO
-            ENDIF
+      iswtch=0
+      DO i=0,len_y_out1,+1
+         IF(y_out1(i,0)>(eta_s-twopi))THEN
+            y_out(ii,0)=y_out1(i,0)
+            y_out(ii,2)=y_out1(i,2)
+
+            y_out(ii,1)=y_out1(i,1)+y_out(i1,1)
+            y_out(ii,3)=y_out1(i,3)+y_out(i1,3)
+            y_out(ii,4)=y_out1(i,4)+y_out(i1,4)
+
+            ii=ii+1
+            iswtch=iswtch+1
          ENDIF
+      ENDDO
+      i1=ii-1
+      iswtch=i1 !end of y_out1 in y_out
 c-----------------------------------------------------------------------
-c     loop over new unique local maxes that flag as x-points.
+c     writing rest of y_out2s to y_out.
 c-----------------------------------------------------------------------
-         DO i=1,maxima_count,+1
-c-----------------------------------------------------------------------
-c     making sure all angles are in [0,2pi).
-c-----------------------------------------------------------------------
-            eta_maxes(i)=eta_maxes(i) - twopi*floor(eta_maxes(i)/twopi)
-            eta_brackets(i,1)=
-     $         eta_brackets(i,1) - twopi*floor(eta_brackets(i,1)/twopi)
-            eta_brackets(i,2)=
-     $         eta_brackets(i,2) - twopi*floor(eta_brackets(i,2)/twopi)
-c-----------------------------------------------------------------------
-c     updating module variables.
-c-----------------------------------------------------------------------
-            num_xpts=num_xpts+1
-            IF(num_xpts>2)
-     $         CALL program_stop("More than 2 x-points detected")
+      iswtch=0
+      DO i=len_y_out2,0,-1
+         IF(y_out2(i,0)<=twopi .AND. y_out2(i,0)>=y_out(i1,0))THEN
+            y_out(ii,0)=y_out2(i,0)
+            y_out(ii,2)=y_out2(i,2)
 
-            xpt_etas(num_xpts)=eta_maxes(i)
-            xpt_brackets(num_xpts,1)=eta_brackets(i,1)
-            xpt_brackets(num_xpts,2)=eta_brackets(i,2)
+            y_out(ii,1)=y_out2(i,1)+y_out(i1,1)
+            y_out(ii,3)=y_out2(i,3)+y_out(i1,3)
+            y_out(ii,4)=y_out2(i,4)+y_out(i1,4)
 
-            CALL find_fl_surface(one,xpt_etas(num_xpts),r,z)
-            CALL direct_xpoint(r,z,num_xpts,new_xpt)
-         ENDDO
-
-c-----------------------------------------------------------------------
-c     interpolating the numerical integral around an eta=0.0 point.
-c     I assume eta=0.0 won't be within the xpt_brackets since most 
-c     tokamaks wont have an xpoint in line with the magnetic axis
-c-----------------------------------------------------------------------
-         DO i=0,len_y1_out,+1
-            IF(y_out1(i,0)>zero)THEN
-               eta0i=i
-               EXIT
-            ENDIF
-         ENDDO
-
-         i=MAX(eta0i-5,0)
-         j=MIN(eta0i+5,len_y1_out)
-
-         CALL spline_alloc(yi,j-i,4)
-
-         DO k=i,j,+1
-            yi%xs(k-i)=y_out1(k,0)
-            yi%fs(k-i,1)=y_out1(k,1)
-            yi%fs(k-i,2)=y_out1(k,2)
-            yi%fs(k-i,3)=y_out1(k,3)
-            yi%fs(k-i,4)=y_out1(k,4)
-
-         ENDDO
-
-         CALL spline_fit(yi,"extrap")
-         CALL spline_eval(yi,zero,0)
-         y01=yi%f(1)
-         y02=yi%f(2)
-         y03=yi%f(3)
-         y04=yi%f(4)
-         CALL spline_dealloc(yi)
-c-----------------------------------------------------------------------
-c     adding consecutive integral sections. spline length of tot_steps
-c     +1 is used to make space for the interpolated point at eta=0.0
-c-----------------------------------------------------------------------
-         IF(istep /= len_y1_out)CALL program_stop("minor err. direct.f")
-         istep=len_y1_out
-
-         tot_steps=istep+nstep2
-         i1=istep+1
-         i2=tot_steps
-
-         CALL spline_alloc(yi,tot_steps+1,4)
-c-----------------------------------------------------------------------
-c     filling out points up to eta = 0.0
-c-----------------------------------------------------------------------
-         yi%xs(0:(eta0i-1))=y_out1(0:(eta0i-1),0)
-         yi%fs(0:(eta0i-1),1)=y_out1(0:(eta0i-1),1)
-         yi%fs(0:(eta0i-1),2)=y_out1(0:(eta0i-1),2)
-         yi%fs(0:(eta0i-1),3)=y_out1(0:(eta0i-1),3)
-         yi%fs(0:(eta0i-1),4)=y_out1(0:(eta0i-1),4)
-c-----------------------------------------------------------------------
-c     putting in interpolated point at eta = 0.0
-c-----------------------------------------------------------------------
-         yi%xs(eta0i)=zero
-         yi%fs(eta0i,1)=y01
-         yi%fs(eta0i,2)=y02
-         yi%fs(eta0i,3)=y03
-         yi%fs(eta0i,4)=y04 
-c-----------------------------------------------------------------------
-c     putting in the rest of the numerically integrated points
-c-----------------------------------------------------------------------
-         yi%xs((eta0i+1):istep+1)=y_out1(eta0i:istep,0)
-         yi%fs((eta0i+1):istep+1,1)=y_out1(eta0i:istep,1)
-         yi%fs((eta0i+1):istep+1,2)=y_out1(eta0i:istep,2)
-         yi%fs((eta0i+1):istep+1,3)=y_out1(eta0i:istep,3)
-         yi%fs((eta0i+1):istep+1,4)=y_out1(eta0i:istep,4)
-c-----------------------------------------------------------------------
-c     adding analytic integral sections 
-c-----------------------------------------------------------------------
-         yi%xs((i1+1):(i2+1))=yi1(1:nstep2,0)
-         yi%fs((i1+1):(i2+1),1)=yi1(1:nstep2,1)+yi%fs(i1,1)
-         yi%fs((i1+1):(i2+1),2)=yi1(1:nstep2,2)
-         yi%fs((i1+1):(i2+1),3)=yi1(1:nstep2,3)+yi%fs(i1,3)
-         yi%fs((i1+1):(i2+1),4)=yi1(1:nstep2,4)+yi%fs(i1,4)
-c-----------------------------------------------------------------------
-c     wrapping around to start yi at eta = 0.0
-c-----------------------------------------------------------------------
-         istep=tot_steps+1
-
-         DO i=0,istep,+1
-            j=eta0i+i
-
-            IF(j>istep)THEN
-               j=j-istep-1
-               y_out(i,1)=yi%fs(j,1)+yi%fs(istep,1)
-               y_out(i,3)=yi%fs(j,3)+yi%fs(istep,3)
-               y_out(i,4)=yi%fs(j,4)+yi%fs(istep,4)
-            ELSE
-               y_out(i,1)=yi%fs(j,1)
-               y_out(i,3)=yi%fs(j,3)
-               y_out(i,4)=yi%fs(j,4)
-            ENDIF
-            y_out(i,2)=yi%fs(j,2)
-
-            IF(yi%xs(j)<0.0)THEN
-               y_out(i,0)=yi%xs(j)+twopi
-            ELSE
-               y_out(i,0)=yi%xs(j)
-            ENDIF
-         ENDDO
-
-         y_out(:,1)=y_out(:,1)-yi%fs(eta0i,1)
-         y_out(:,3)=y_out(:,3)-yi%fs(eta0i,3)
-         y_out(:,4)=y_out(:,4)-yi%fs(eta0i,4)
-c-----------------------------------------------------------------------
-c     building ff
-c-----------------------------------------------------------------------
-         CALL spline_alloc(ff,istep,4)
-         ff%xs(0:istep)=y_out(0:istep,4)/y_out(istep,4)
-         ff%fs(0:istep,1)=y_out(0:istep,2)**2
-         ff%fs(0:istep,2)=y_out(0:istep,0)/twopi-ff%xs(0:istep)
-         ff%fs(0:istep,3)=bf%f*
-     $        (y_out(0:istep,3)-ff%xs(0:istep)*y_out(istep,3))
-         ff%fs(0:istep,4)=y_out(0:istep,1)/y_out(istep,1)
-     $                                                            -ff%xs
-c-----------------------------------------------------------------------
-c     deallocating spline, printing important information for 
-c     direct_spline_comparison
-c-----------------------------------------------------------------------
-         CALL spline_dealloc(yi)
-         !IF(debug_in)PRINT "(A)", "ff x-pt start point:"
-         !IF(debug_in)PRINT "(i6)", (istep+1-eta0i)
-         xpt_starts(1)=(istep+1-eta0i)
-c-----------------------------------------------------------------------
-c     fakeout option is used for testing integrator error/debugging.
-c     won't be used in normal operation
-c-----------------------------------------------------------------------
-      ELSEIF(num_xpts==1 .AND. fakeout)THEN
-c-----------------------------------------------------------------------
-c     testing script to identify mysterious error source 0_0 :3
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     calling direct_analytic_ints on the initial x-point over full eta 
-c     span. Note we don't need to call find_fl_surface, direct_xpoint
-c     since these were already called for this x-point in direct_run's 
-c     psi loop
-c-----------------------------------------------------------------------
-         CALL find_fl_surface(psifac,xpt_brackets(1,1),r,z)
-         r_loc1 = SQRT((r-ro)**2+(z-zo)**2)
-         CALL direct_get_bfield(r,z,bf,1)
-c-----------------------------------------------------------------------
-c     ordering the two etas for numerical field line integration
-c-----------------------------------------------------------------------
-         eta1 = xpt_brackets(1,1) - twopi*floor(xpt_brackets(1,1)/twopi)
-         eta2 = xpt_brackets(1,2) - twopi*floor(xpt_brackets(1,2)/twopi)
-
-         IF(eta2<eta1)THEN
-            eta2=eta2+twopi
+            ii=ii+1
+         ELSEIF(y_out2(i,0)>twopi)THEN
+            EXIT
          ENDIF
-         xpt_brackets(1,1)=eta1
-         xpt_brackets(1,2)=eta2
-
-         eta2=eta2-twopi
+      ENDDO
+      len_y_out=ii-1
 c-----------------------------------------------------------------------
-c     calling numerical integration between field lines
+c     terminate.
 c-----------------------------------------------------------------------
-         CALL direct_fl_int(psifac,eta2,eta2+twopi,y_out1,bf,len_y1_out)
-c-----------------------------------------------------------------------
-c     interpolating the numerical integral around an eta=0.0 point.
-c     I assume eta=0.0 won't be within the xpt_brackets since most 
-c     tokamaks wont have an xpoint in line with the magnetic axis
-c-----------------------------------------------------------------------
-         DO i=0,len_y1_out,+1
-            IF(y_out1(i,0)>zero)THEN
-               eta0i=i
-               EXIT
-            ENDIF
-         ENDDO
-
-         i=MAX(eta0i-5,0)
-         j=MIN(eta0i+5,len_y1_out)
-
-         CALL spline_alloc(yi,j-i,4)
-
-         DO k=i,j,+1
-            yi%xs(k-i)=y_out1(k,0)
-            yi%fs(k-i,1)=y_out1(k,1)
-            yi%fs(k-i,2)=y_out1(k,2)
-            yi%fs(k-i,3)=y_out1(k,3)
-            yi%fs(k-i,4)=y_out1(k,4)
-
-         ENDDO
-
-         CALL spline_fit(yi,"extrap")
-         CALL spline_eval(yi,zero,0)
-         y01=yi%f(1)
-         y02=yi%f(2)
-         y03=yi%f(3)
-         y04=yi%f(4)
-         CALL spline_dealloc(yi)
-c-----------------------------------------------------------------------
-c     adding consecutive integral sections. spline length of tot_steps
-c     +1 is used to make space for the interpolated point at eta=0.0
-c-----------------------------------------------------------------------
-         IF(istep /= len_y1_out)CALL program_stop("minor err. direct.f")
-         istep=len_y1_out
-
-         tot_steps=istep
-
-         CALL spline_alloc(yi,tot_steps+1,4)
-c-----------------------------------------------------------------------
-c     filling out points up to eta = 0.0
-c-----------------------------------------------------------------------
-         yi%xs(0:(eta0i-1))=y_out1(0:(eta0i-1),0)
-         yi%fs(0:(eta0i-1),1)=y_out1(0:(eta0i-1),1)
-         yi%fs(0:(eta0i-1),2)=y_out1(0:(eta0i-1),2)
-         yi%fs(0:(eta0i-1),3)=y_out1(0:(eta0i-1),3)
-         yi%fs(0:(eta0i-1),4)=y_out1(0:(eta0i-1),4)
-c-----------------------------------------------------------------------
-c     putting in interpolated point at eta = 0.0
-c-----------------------------------------------------------------------
-         yi%xs(eta0i)=zero
-         yi%fs(eta0i,1)=y01
-         yi%fs(eta0i,2)=y02
-         yi%fs(eta0i,3)=y03
-         yi%fs(eta0i,4)=y04 
-c-----------------------------------------------------------------------
-c     putting in the rest of the numerically integrated points
-c-----------------------------------------------------------------------
-         yi%xs((eta0i+1):istep+1)=y_out1(eta0i:istep,0)
-         yi%fs((eta0i+1):istep+1,1)=y_out1(eta0i:istep,1)
-         yi%fs((eta0i+1):istep+1,2)=y_out1(eta0i:istep,2)
-         yi%fs((eta0i+1):istep+1,3)=y_out1(eta0i:istep,3)
-         yi%fs((eta0i+1):istep+1,4)=y_out1(eta0i:istep,4)
-c-----------------------------------------------------------------------
-c     wrapping around to start yi at eta = 0.0
-c-----------------------------------------------------------------------
-         istep=tot_steps+1
-
-         DO i=0,istep,+1
-            j=eta0i+i
-
-            IF(j>istep)THEN
-               j=j-istep-1
-               y_out(i,1)=yi%fs(j,1)+yi%fs(istep,1)
-               y_out(i,3)=yi%fs(j,3)+yi%fs(istep,3)
-               y_out(i,4)=yi%fs(j,4)+yi%fs(istep,4)
-            ELSE
-               y_out(i,1)=yi%fs(j,1)
-               y_out(i,3)=yi%fs(j,3)
-               y_out(i,4)=yi%fs(j,4)
-            ENDIF
-            y_out(i,2)=yi%fs(j,2)
-
-            IF(yi%xs(j)<0.0)THEN
-               y_out(i,0)=yi%xs(j)+twopi
-            ELSE
-               y_out(i,0)=yi%xs(j)
-            ENDIF
-         ENDDO
-
-         y_out(:,1)=y_out(:,1)-yi%fs(eta0i,1)
-         y_out(:,3)=y_out(:,3)-yi%fs(eta0i,3)
-         y_out(:,4)=y_out(:,4)-yi%fs(eta0i,4)
-c-----------------------------------------------------------------------
-c     building ff
-c-----------------------------------------------------------------------
-         CALL spline_alloc(ff,istep,4)
-         ff%xs(0:istep)=y_out(0:istep,4)/y_out(istep,4)
-         ff%fs(0:istep,1)=y_out(0:istep,2)**2
-         ff%fs(0:istep,2)=y_out(0:istep,0)/twopi-ff%xs(0:istep)
-         ff%fs(0:istep,3)=bf%f*
-     $        (y_out(0:istep,3)-ff%xs(0:istep)*y_out(istep,3))
-         ff%fs(0:istep,4)=y_out(0:istep,1)/y_out(istep,1)
-     $                                                            -ff%xs
-c-----------------------------------------------------------------------
-c     deallocating spline, printing important information for 
-c     direct_spline_comparison
-c-----------------------------------------------------------------------
-         CALL spline_dealloc(yi)
-         !IF(debug_in)PRINT "(A)", "ff x-pt start point:"
-         !IF(debug_in)PRINT "(i6)", (istep+1-eta0i)
-         xpt_starts(1)=(istep+1-eta0i)
-      ELSE
-c-----------------------------------------------------------------------
-c     2 x-points: making sure all brackets are in [0,2pi)
-c-----------------------------------------------------------------------
-         xpt_brackets(1,1)=
-     $         xpt_brackets(1,1) - twopi*floor(xpt_brackets(1,1)/twopi)
-         xpt_brackets(1,2)=
-     $         xpt_brackets(1,2) - twopi*floor(xpt_brackets(1,2)/twopi)
-         xpt_brackets(2,1)=
-     $         xpt_brackets(2,1) - twopi*floor(xpt_brackets(2,1)/twopi)
-         xpt_brackets(2,2)=
-     $         xpt_brackets(2,2) - twopi*floor(xpt_brackets(2,2)/twopi)
-c-----------------------------------------------------------------------
-c     making sure there are no wrap-arounds within each set of brackets
-c-----------------------------------------------------------------------
-         IF(xpt_brackets(1,2)<xpt_brackets(1,1))THEN
-            xpt_brackets(1,2)=xpt_brackets(1,2)+twopi
-         ENDIF
-         IF(xpt_brackets(2,2)<xpt_brackets(2,1))THEN
-            xpt_brackets(2,2)=xpt_brackets(2,2)+twopi
-         ENDIF
-c-----------------------------------------------------------------------
-c     calculating minor radii that start each divergent analytic int.
-c-----------------------------------------------------------------------
-         CALL find_fl_surface(psifac,xpt_brackets(1,1),r,z)
-         r_loc1 = SQRT((r-ro)**2+(z-zo)**2)
-         CALL find_fl_surface(psifac,xpt_brackets(2,1),r,z)
-         r_loc2 = SQRT((r-ro)**2+(z-zo)**2)
+      RETURN
+      END SUBROUTINE patch_two_c
 c-----------------------------------------------------------------------
 c     calculating divergent analytic integrals over x-point brackets
 c-----------------------------------------------------------------------
