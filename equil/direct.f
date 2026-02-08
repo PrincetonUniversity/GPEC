@@ -117,6 +117,8 @@ c-----------------------------------------------------------------------
      $        "Warning: direct equilibrium with psihigh =",psihigh,
      $        " could hang on separatrix."
       direct_infinite_loop_flag = .FALSE.
+      IF(nstepd>30000)CALL program_stop(
+     $    "Random pointer errors may appear for large arrays..")
 c-----------------------------------------------------------------------
 c     fit input to cubic splines and diagnose.
 c-----------------------------------------------------------------------
