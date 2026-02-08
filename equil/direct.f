@@ -2050,271 +2050,64 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_analytic_ints
 c-----------------------------------------------------------------------
-c     adddressing case of only one x-point.
+c     subprogram 19. interp_through_zero.
+c     adds a spline knot at zero (or twopi). 
 c-----------------------------------------------------------------------
-      IF(num_xpts==1 .AND. (.NOT.fakeout))THEN
+c     declarations.
 c-----------------------------------------------------------------------
-c     calling direct_analytic_ints on the initial x-point over full eta 
-c     span. Note we don't need to call find_fl_surface, direct_xpoint
-c     since these were already called for this x-point in direct_run's 
-c     psi loop
+      SUBROUTINE interp_through_zero(y_out,len_y_out,i_zero)
+
+      REAL(r8), DIMENSION(0:,0:), INTENT(INOUT) :: y_out
+      REAL(r8), DIMENSION(0:(4*nstepd+2*nstep2+6),0:4) :: y_cpy
+      INTEGER, INTENT(INOUT) :: len_y_out
+      INTEGER, INTENT(OUT) :: i_zero
+      REAL(r8), DIMENSION(0:4) :: yinterim1
+      INTEGER :: i,len_y_out_tmp
+      LOGICAL :: interpd
+      !force_twopi=.TRUE.
 c-----------------------------------------------------------------------
-         CALL find_fl_surface(psifac,xpt_brackets(1,1),r,z)
-         r_loc1 = SQRT((r-ro)**2+(z-zo)**2)
-         CALL direct_get_bfield(r,z,bf,1)
-
-         IF(out)CALL ascii_open(out_xpt_unit,"yi1.csv","UNKNOWN")
-
-         DO i=1,nstep2,+1
-            eta=xpt_brackets(1,1)+(xpt_brackets(1,2)-
-     $      xpt_brackets(1,1))*(one*i/nstep2)
-            yi1(i,0)=eta
-            
-            CALL direct_analytic_ints(1,r_loc1,xpt_brackets(1,1)
-     $          ,eta,yi1(i,1),yi1(i,2),yi1(i,3),yi1(i,4),outmat,.TRUE.)
-
-            IF(debug)CALL direct_fl_int(psifac,xpt_brackets(1,1),eta,
-     $                                          y_out1,bf,len_y1_out)
-
-            IF(i==nstep2)THEN
-               CALL direct_get_bfield(outmat(2,1,0),outmat(2,2,0),bf,1)
-               bp1=SQRT(bf%br**2+bf%bz**2)
-               bt1=bf%f/outmat(2,1,0)
-               CALL direct_get_bfield(outmat(2,1,1),outmat(2,2,1),bf,1)
-               bp2=SQRT(bf%br**2+bf%bz**2)
-               bt2=bf%f/outmat(2,1,1)
-               PRINT "(A,es10.3)","   max Bp/Bt (x-point)=",
-     $                     MAX(bp1/bt1,bp2/bt2)
-               maxBpBt=MAX(bp1/bt1,bp2/bt2)
-            ENDIF
-
-            IF(out)WRITE(out_xpt_unit,412)
-     $                eta,
-     $                yi1(i,1),
-     $                yi1(i,2),
-     $                yi1(i,3),
-     $                yi1(i,4)
-         ENDDO
-
-         IF(out)CALL ascii_close(out_xpt_unit)
+c     if integrals pass through twopi, we add a point there.
 c-----------------------------------------------------------------------
-c     printing field line paths comparison between numerical and
-c     analytic methods. COMMENTED OUT
-c-----------------------------------------------------------------------
-      IF(.FALSE.)THEN
-         PRINT "(A)", "STARTING THE PATH SHOW:::::::::::::::::::::::::"
+      interpd=.FALSE.
 
-         !xpt_brackets(1,1)=4.32562
-         !xpt_brackets(1,2)=4.33276
+      y_cpy(0:len_y_out,0)=y_out(0:len_y_out,0)
+      y_cpy(0:len_y_out,1)=y_out(0:len_y_out,1)
+      y_cpy(0:len_y_out,2)=y_out(0:len_y_out,2)
+      y_cpy(0:len_y_out,3)=y_out(0:len_y_out,3)
+      y_cpy(0:len_y_out,4)=y_out(0:len_y_out,4)
 
-         CALL ascii_open(out_xpt_unit,"xpt.out","UNKNOWN")
-         k=1
-         DO j=1,9,+3
-            psifac=one-(10*one)**(-1-j)
-            DO k=1,4,+1
-               CALL find_fl_surface(psifac,xpt_brackets(1,1),r,z)
-               r_loc1 = SQRT((r-ro)**2+(z-zo)**2)
-               CALL direct_get_bfield(r,z,bf,1)
-            IF (k==1 .AND. j==1)THEN
-               PRINT "(A)", "Ro, Zo"
-               !WRITE(out_2d_unit) "(A)", "Ro, Zo"
-               PRINT "(f12.10,A,f12.10)",ro,",",zo
-               PRINT "(A)", "RX, ZX, rx, etax"
-               WRITE(out_xpt_unit,400)
-               PRINT 410,rxs(1),zxs(1),SQRT((ro-rxs(1))**2+
-     $               (zo-zxs(1))**2),xpt_etas(1)
-               WRITE(out_xpt_unit,410)rxs(1),zxs(1),
-     $    SQRT((ro-rxs(1))**2+(zo-zxs(1))**2),xpt_etas(1)
-               PRINT "(A)", "Rsep, Zsep"
-            ELSE
-               IF(K==2 .AND. j==1)PRINT "(A)", "psifac:"
-               IF(K==2 .AND. j==1)THEN
-                  PRINT "(f15.13)", psifac
-                  WRITE(out_xpt_unit,401)psifac
-               ENDIF
-               IF(K==1 .AND. j>1)PRINT "(A)", "psifac:"
-               IF(K==1 .AND. j>1)THEN
-                  PRINT "(f15.13)", psifac
-                  WRITE(out_xpt_unit,401)psifac
-               ENDIF
-            IF (k==2)THEN
-               PRINT "(A)", "R_Numerical, Z_Numerical,r_num,eta_num"
-               etat=ATAN2(z-zo,r-ro)
-               etat=etat-twopi*floor(etat/twopi)
-               PRINT 410,r,z,SQRT((ro-r)**2+(zo-z)**2),etat
-               WRITE(out_xpt_unit,410)r,z,
-     $    SQRT((ro-r)**2+(zo-z)**2),etat
-            ENDIF
-            IF (k==3)THEN
-               PRINT "(A)", "R_A, Z_A,r_a,eta_a, origvarthetas"
-               usevth2(1)=.FALSE.
-            ENDIF
-            IF (k==4)THEN
-               PRINT "(A)", "R_A, Z_A,r_a,eta_a, new varthetas"
-               usevth2(1)=.TRUE.
-            ENDIF
-            
-            ENDIF
-               DO i=1,nstep2,+1
-                  eta=xpt_brackets(1,1)+(xpt_brackets(1,2)-
-     $      xpt_brackets(1,1))*(one*i/nstep2)
-                  yi1(i,0)=eta
-                  
-                  !PRINT "(es16.9)", one*i/nstep2
-                  CALL direct_analytic_ints(1,r_loc1,xpt_brackets(1,1)
-     $           ,eta,yi1(i,1),yi1(i,2),yi1(i,3),yi1(i,4),outmat,.TRUE.)
-                  verbose=.FALSE.
-                  CALL direct_fl_int(psifac,xpt_brackets(1,1),eta,
-     $                                          y_out1,bf,len_y1_out)
-     
-                  IF (k==1 .AND. j==1)THEN !Sep values
-                     CALL find_fl_surface(one,eta,r,z)
-                     etat=ATAN2(z-zo,r-ro)
-                     etat=etat-twopi*floor(etat/twopi)
-                     PRINT 410,r,z,SQRT((ro-r)**2+(zo-z)**2),etat
-                     WRITE(out_xpt_unit,410)r,z,
-     $ SQRT((ro-r)**2+(zo-z)**2),etat
-                  ELSEIF(k==2)THEN !Numerical int values
-                     r=ro+y_out1(istep,2)*COS(y_out1(istep,0))
-                     z=zo+y_out1(istep,2)*SIN(y_out1(istep,0))
-                     etat=y_out1(istep,0)
-                     etat=etat-twopi*floor(etat/twopi)
-                     PRINT 410,r,z,y_out1(istep,2),etat
-                     WRITE(out_xpt_unit,410)r,z,y_out1(istep,2),etat
-                  ELSEIF(k==3 .OR. k==4)THEN  !Analytic int values
-                     etat=outmat(3,2,0)
-                     etat=etat-twopi*floor(etat/twopi)
-                     IF(i==1)THEN
-                        PRINT 410,outmat(2,1,0),outmat(2,2,0),
-     $                                  outmat(3,1,0),etat
-                        WRITE(out_xpt_unit,410)outmat(2,1,0),
-     $                  outmat(2,2,0),outmat(3,1,0),etat
-                     ENDIF
-                     etat=outmat(3,2,1)
-                     etat=etat-twopi*floor(etat/twopi)
-                     PRINT 410,outmat(2,1,1),outmat(2,2,1),outmat(3,1,1)
-     $                                                   ,etat
-                     WRITE(out_xpt_unit,410)outmat(2,1,1),outmat(2,2,1)
-     $                  ,outmat(3,1,1),etat
-                  ENDIF
+      len_y_out_tmp=len_y_out
+      DO i=0,len_y_out_tmp-1,+1
+         IF(y_out(i+1,0)==twopi)THEN
+            WRITE(*,*)"patch_two_c no interp at 0 required, s2"
+            i_zero=i+1
+            EXIT !no interp requied
+         ELSEIF(y_out(i,0)>twopi .AND.
+     $         y_out(i+1,0)<twopi)THEN 
+               IF(interpd)CALL program_stop("Error interp_through_zero")
 
-                  IF (.FALSE.)THEN
-                     PRINT "(A)", "y(1)"
-                     PRINT "(f16.9)", y_out1(istep,1)-y_out1(0,1)
-                     PRINT "(f16.9)", yi1(1,1)
-                     PRINT "(A)", "y(2)"
-                     PRINT "(f16.9)", y_out1(istep,2)-y_out1(0,2)
-                     PRINT "(f16.9)", yi1(1,2)
-                     PRINT "(A)", "y(3)"
-                     PRINT "(f16.9)", y_out1(istep,3)-y_out1(0,3)
-                     PRINT "(f16.9)", yi1(1,3)
-                     PRINT "(A)", "y(4)"
-                     PRINT "(f16.9)", y_out1(istep,4)-y_out1(0,4)
-                     PRINT "(f16.9)", yi1(1,4)
-                  ENDIF
-               ENDDO
-            ENDDO
-         ENDDO
-
-         CALL ascii_close(out_xpt_unit)
-         CALL program_stop("numerical vs analytic integral paths print")
-     $
-      ENDIF
-c-----------------------------------------------------------------------
-c     printing divergent integrals, comparison between numerical and
-c     analytic methods. COMMENTED OUT
-c-----------------------------------------------------------------------
-      IF(.FALSE.)THEN
-         !nstep2=100
-
-         PRINT "(A)", "STARTING THE INT SHOW:::::::::::::::::::::::::"
-         k=1
-         usevth2(1)=.TRUE.
-
-         PRINT "(A)", "power_bp:"
-         PRINT "(i6)", power_bp
-         PRINT "(A)", "power_b:"
-         PRINT "(i6)", power_b
-         PRINT "(A)", "power_t:"
-         PRINT "(i6)", power_r
-
-         DO j=1,1,+3!,+3
-            !psifac=one-(10*one)**(-1-j)
-
-            DO k=2,4,+2
-                  IF(k==2)PRINT "(A)", "psifac:"
-                  IF(k==2)PRINT "(f15.13)", psifac
-
-                  IF(k==2)PRINT "(A)", ""
-                  IF(k==2)PRINT "(f15.13)", psifac
-
-                  IF(k==2)PRINT "(A)", "Num ints:"
-                  IF(k==4)PRINT "(A)", "Analytic ints:"
-               CALL find_fl_surface(psifac,xpt_brackets(1,1),r,z)
-               r_loc1 = SQRT((r-ro)**2+(z-zo)**2)
-               CALL direct_get_bfield(r,z,bf,1)
+               CALL yinterim(y_out,len_y_out,twopi,yinterim1)
+               i_zero=i+1
+               interpd=.TRUE.
+         ELSEIF(y_out(i,0)<twopi)THEN
+            y_out(i+1,:)=y_cpy(i,:)
+         ENDIF
+      ENDDO
       
-               IF(k==2)CALL ascii_open(out_xpt_unit,"y_n.out","UNKNOWN")
-               IF(k==4)CALL ascii_open(out_xpt_unit,"y_a.out","UNKNOWN")
-
-               DO i=1,nstep2,+1
-                  eta=xpt_brackets(1,1)+(xpt_brackets(1,2)-
-     $      xpt_brackets(1,1))*(one*i/nstep2)
-                  yi1(i,0)=eta
-                  
-                  !PRINT "(es16.9)", one*i/nstep2
-                  CALL direct_analytic_ints(1,r_loc1,xpt_brackets(1,1)
-     $           ,eta,yi1(i,1),yi1(i,2),yi1(i,3),yi1(i,4),outmat,.TRUE.)
-                  verbose=.FALSE.
-                  CALL direct_fl_int(psifac,xpt_brackets(1,1),eta,
-     $                                          y_out1,bf,len_y1_out)
-
-                  IF(k==2)THEN !Numerical int values
-                     r=ro+y_out1(istep,2)*COS(y_out1(istep,0))
-                     z=zo+y_out1(istep,2)*SIN(y_out1(istep,0))
-                     etat=y_out1(istep,0)
-                     etat=etat-twopi*floor(etat/twopi)
-                     WRITE(out_xpt_unit,412)
-     $                y_out1(istep,0),
-     $                (y_out1(istep,1)-y_out1(0,1)),
-     $                (y_out1(istep,2)),!-y_out1(0,2)),
-     $                (y_out1(istep,3)-y_out1(0,3)),
-     $                (y_out1(istep,4)-y_out1(0,4))
-
-                  ELSEIF(k==4)THEN  !Analytic int values
-                     etat=outmat(3,2,0)
-                     etat=etat-twopi*floor(etat/twopi)
-                     IF(i==1)THEN
-                     ENDIF
-                     WRITE(out_xpt_unit,412)
-     $                eta,
-     $                yi1(i,1),
-     $                yi1(i,2),!-y_out1(0,2)),     $                outmat(4,1,1),     $                outmat(4,2,1),
-     $                yi1(i,3),
-     $                yi1(i,4)
-                  ENDIF
-
-                  IF (.FALSE.)THEN
-                     PRINT "(A)", "y(1)"
-                     PRINT "(f16.9)", y_out1(istep,1)-y_out1(0,1)
-                     PRINT "(f16.9)", yi1(1,1)
-                     PRINT "(A)", "y(2)"
-                     PRINT "(f16.9)", y_out1(istep,2)-y_out1(0,2)
-                     PRINT "(f16.9)", yi1(1,2)
-                     PRINT "(A)", "y(3)"
-                     PRINT "(f16.9)", y_out1(istep,3)-y_out1(0,3)
-                     PRINT "(f16.9)", yi1(1,3)
-                     PRINT "(A)", "y(4)"
-                     PRINT "(f16.9)", y_out1(istep,4)-y_out1(0,4)
-                     PRINT "(f16.9)", yi1(1,4)
-                  ENDIF
-               ENDDO
-               CALL ascii_close(out_xpt_unit)
-            ENDDO
-         ENDDO
-
-         CALL program_stop("divergent integral numerical comparison ")
+      IF(interpd)THEN
+         y_out(len_y_out+1,:)=y_cpy(len_y_out,:)
+         y_out(i_zero,0)=yinterim1(0)
+         y_out(i_zero,1)=yinterim1(1)
+         y_out(i_zero,2)=yinterim1(2)
+         y_out(i_zero,3)=yinterim1(3)
+         y_out(i_zero,4)=yinterim1(4)
+         len_y_out=len_y_out+1
       ENDIF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE interp_through_zero
 c-----------------------------------------------------------------------
 c     ordering the two etas for numerical field line integration
 c-----------------------------------------------------------------------
