@@ -1062,169 +1062,195 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE find_fl_surface2
 c-----------------------------------------------------------------------
-c     subprogram 5. direct_fl_der.
-c     contains differential equations for field line averages.
+c     subprogram 10. direct_xpt_y_out.
+c     makes y_out, splicing in analytic integrals.
+c     called when the numerical integral in direct_fl_int was terminated
+c     due to proximity to an x-point. can account for up to 2 x-points,
+c     if two are present, they must occur either side of the interval 
+c     eta = [0.9pi,pi] for this script to work... aka they can't lie too 
+c     close to the inboard midplane.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE direct_fl_der(neq,eta,y,dy)
+      SUBROUTINE direct_xpt_y_out(y_out1,len_y_out1,psifac,y_out,
+     $    len_y_out,eval_BpOnBt,eval_dy1,eval_xpt_tol,ix,diffs_raw,
+     $    outmat2f)
 
-      INTEGER, INTENT(IN) :: neq
-      REAL(r8), INTENT(IN) :: eta
-      REAL(r8), INTENT(IN) :: y(neq)
-      REAL(r8), INTENT(OUT) :: dy(neq)
-
-      REAL(r8) :: cosfac,sinfac,bp,r,z,jacfac,bt,b
+      REAL(r8), DIMENSION(0:,0:), INTENT(IN) :: y_out1
+      REAL(r8),DIMENSION(1:4),INTENT(OUT) :: diffs_raw
+      REAL(r8),DIMENSION(1:17),INTENT(OUT) :: outmat2f
+      INTEGER, INTENT(IN) :: len_y_out1
+      INTEGER, DIMENSION(2), INTENT(OUT) :: ix
+      REAL(r8), DIMENSION(0:,0:),INTENT(INOUT) :: 
+     $ y_out
+      REAL(r8), INTENT(IN) :: psifac
+      REAL(r8), INTENT(OUT) :: eval_BpOnBt,eval_dy1,eval_xpt_tol
+      INTEGER,INTENT(INOUT) :: len_y_out
+      REAL(r8), DIMENSION(0:(4*nstepd+2*nstep2+6),0:4) :: y_outf
+      REAL(r8), DIMENSION(0:(nstepd+2),0:4) :: y_out2,y_out3,
+     $ y_out4
+      REAL(r8), DIMENSION(0:(nstep2+2),0:4) :: yi1!,yi2
       TYPE(direct_bfield_type) :: bf
-c-----------------------------------------------------------------------
-c     preliminary computations.
-c     here magnetic coordinates are defined
-c-----------------------------------------------------------------------
-      cosfac=COS(eta)
-      sinfac=SIN(eta)
-      r=ro+y(2)*cosfac
-      z=zo+y(2)*sinfac
-      CALL direct_get_bfield(r,z,bf,1)
-      bp=SQRT(bf%br**2+bf%bz**2)
-      bt=bf%f/r
-      b=SQRT(bp*bp+bt*bt)
-      jacfac=bp**power_bp*b**power_b/r**power_r
-c-----------------------------------------------------------------------
-c     compute derivatives.
-c-----------------------------------------------------------------------
-      dy(1)=y(2)/(bf%bz*cosfac-bf%br*sinfac)
-      dy(2)=dy(1)*(bf%br*cosfac+bf%bz*sinfac)
-      dy(3)=dy(1)/(r*r)
-      dy(4)=dy(1)*jacfac
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE direct_fl_der
-c-----------------------------------------------------------------------
-c     subprogram 6. direct_refine.
-c     moves a point orthogonally to a specified flux surface.
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     declarations.
-c-----------------------------------------------------------------------
-      SUBROUTINE direct_refine(rfac,eta,psi0)
 
-      REAL(r8) :: rfac,eta,psi0
-
-      REAL(r8) :: dpsi,cosfac,sinfac,drfac,r,z
-      REAL(r8), PARAMETER :: eps=1e-12
-      TYPE(direct_bfield_type) :: bf
-      INTEGER :: ir
+      INTEGER :: len_y_out2,len_y_out3,len_y_out4,len_y_outf
+      INTEGER :: ix1,ix2,i
+      ix=-1
 c-----------------------------------------------------------------------
-c     initialize iteration.
+c     setting bounardies on integration interval:
 c-----------------------------------------------------------------------
-      cosfac=COS(eta)
-      sinfac=SIN(eta)
-      r=ro+rfac*cosfac
-      z=zo+rfac*sinfac
-      CALL direct_get_bfield(r,z,bf,1)
-      dpsi=bf%psi-psi0
+      xpt_brackets(1,1)=y_out1(len_y_out1,0)
 c-----------------------------------------------------------------------
-c     refine rfac by newton iteration.
+c     integrating opposite direction (clockwise).
 c-----------------------------------------------------------------------
-      ir = 0
-      DO
-         drfac=-dpsi/(bf%psir*cosfac+bf%psiz*sinfac)
-         rfac=rfac+drfac
-         r=ro+rfac*cosfac
-         z=zo+rfac*sinfac
-         CALL direct_get_bfield(r,z,bf,1)
-         dpsi=bf%psi-psi0
-         IF(ABS(dpsi) <= eps*psi0 .OR. ABS(drfac) <= eps*rfac)EXIT
-
-         ir = ir+1
-         IF (ir  > direct_infinite_loop_count) THEN
-            direct_infinite_loop_flag = .TRUE.
-            CALL program_stop("Took too many steps to refine rfac.")
+      CALL direct_fl_int(psifac,twopi+0.1*pi,zero,y_out2,
+     $  len_y_out2,eval_BpOnBt,eval_dy1,eval_xpt_tol,.TRUE.,bf,.FALSE.)
+      IF(debug_xpt)WRITE(*,*)"Clockwise integral w. length:",len_y_out2
+      IF(debug_xpt)WRITE(*,*)y_out2(len_y_out2-3:len_y_out2,0)
+      IF(debug_xpt)WRITE(*,*)y_out2(len_y_out2-3:len_y_out2,1)
+      IF(debug_xpt)WRITE(*,*)y_out2(len_y_out2-3:len_y_out2,2)
+      IF(debug_xpt)WRITE(*,*)y_out2(len_y_out2-3:len_y_out2,3)
+      IF(debug_xpt)WRITE(*,*)y_out2(len_y_out2-3:len_y_out2,4)
+c-----------------------------------------------------------------------
+c     flagging case where one integral passed x-point while other 
+c     did not, which should not happen.
+c-----------------------------------------------------------------------
+      IF(y_out2(len_y_out2,0)<y_out1(len_y_out1,0))THEN 
+         CALL program_stop("one integral failed while other did not")
+      ENDIF
+c-----------------------------------------------------------------------
+c     numerical integrals aborted either side of the same x-point.
+c-----------------------------------------------------------------------
+      IF(y_out2(len_y_out2,0)-y_out1(len_y_out1,0) < 0.2*pi)THEN
+         xpt_brackets(1,2)=y_out2(len_y_out2,0)
+         IF(debug_xpt)WRITE(*,*)"Identified one x-point"
+         IF(debug_xpt)WRITE(*,*)"y_out1 bounds:"
+         IF(debug_xpt)WRITE(*,*)y_out1(0,0),y_out1(len_y_out1,0)
+         IF(debug_xpt)WRITE(*,*)"y_out2 bounds:"
+         IF(debug_xpt)WRITE(*,*)y_out2(0,0),y_out2(len_y_out2,0)
+c-----------------------------------------------------------------------
+c     filling missing arc with analytic integral
+c-----------------------------------------------------------------------
+         CALL analytic_y_out(psifac,y_out1(len_y_out1,0),
+     $ y_out1(len_y_out1,2),y_out2(len_y_out2,0),y_out2(len_y_out2,2),
+     $ nstep2,yi1,diffs_raw,outmat2f)
+         IF(debug_xpt)WRITE(*,*)"yi1 bounds:"
+         IF(debug_xpt)WRITE(*,*)yi1(0,0),yi1(nstep2,0)
+c-----------------------------------------------------------------------
+c     combining initial clockwise numerical integral (y_out1) with  
+c     clockwise analytic integral (yi1), to create y_outf.
+c-----------------------------------------------------------------------
+         CALL patch_two_b(y_out1,yi1,len_y_out1,nstep2,
+     $                                                y_outf,len_y_outf)
+         IF(debug_xpt)WRITE(*,*)"y_outf bounds:"
+         IF(debug_xpt)WRITE(*,*)y_outf(0,0),y_outf(len_y_outf,0)
+         IF(debug_xpt)WRITE(*,*)len_y_outf,(nstepd+2)
+c-----------------------------------------------------------------------
+c     reconstructing full 2pi integral from y_outf and second clockwise 
+c     numerical integral y_out2.
+c-----------------------------------------------------------------------
+         CALL patch_two_c(y_outf,y_out2,len_y_outf,len_y_out2,
+     $                                      y_out,len_y_out,ix1)
+         ix1=ix1-nstep2 !index right before first x-point analytic 
+         ! intgral section in y_out
+         ix(1)=ix1
+c-----------------------------------------------------------------------
+c     numerical integrals aborted on two different x-points.
+c-----------------------------------------------------------------------
+      ELSE 
+         IF(debug_xpt)WRITE(*,*)"Identified two x-points"
+         IF(num_xpts<2)CALL program_stop("Xpt int. err1, needs debug")
+         xpt_brackets(2,2)=y_out2(len_y_out2,0)
+c-----------------------------------------------------------------------
+c     initiating field line integrators on inboard side of the plasma.
+c-----------------------------------------------------------------------
+         CALL direct_fl_int(psifac,pi,zero,y_out3,
+     $ len_y_out3,eval_BpOnBt,eval_dy1,eval_xpt_tol,.FALSE.,bf,.FALSE.)
+         CALL direct_fl_int(psifac,pi-(0.1*pi),twopi,y_out4,
+     $ len_y_out4,eval_BpOnBt,eval_dy1,eval_xpt_tol,.FALSE.,bf,.FALSE.)
+c-----------------------------------------------------------------------
+c     flagging cases where one integral passed its x-point while other 
+c     stuck, which should not happen.
+c-----------------------------------------------------------------------
+         IF(y_out3(len_y_out3,0)<y_out1(len_y_out1,0) .OR.
+     $      y_out4(len_y_out4,0)>y_out2(len_y_out2,0))THEN 
+            CALL program_stop("Xpt int. err2, needs debug")
          ENDIF
-      ENDDO
+         xpt_brackets(1,2)=y_out3(len_y_out3,0)
+         xpt_brackets(2,1)=y_out4(len_y_out4,0)
 c-----------------------------------------------------------------------
-c     terminate.
+c     combining the two inboard numerical integrals into one 
+c     anti-clockwise integral y_out
 c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE direct_refine
+         IF(debug_xpt)WRITE(*,*)"y_out3 bounds:"
+         IF(debug_xpt)WRITE(*,*)y_out3(0,0),y_out3(len_y_out3,0)
+         IF(debug_xpt)WRITE(*,*)"y_out4 bounds:"
+         IF(debug_xpt)WRITE(*,*)y_out4(0,0),y_out4(len_y_out4,0)
+         CALL patch_two_a(y_out4,y_out3,len_y_out4,len_y_out3,
+     $                                                y_out,len_y_out)
+         IF(debug_xpt)WRITE(*,*)"y_out bounds:"
+         IF(debug_xpt)WRITE(*,*)y_out(0,0),y_out(len_y_out,0)
+         ix2=len_y_out
 c-----------------------------------------------------------------------
-c     subprogram 7. direct_output.
-c     diagnoses input.
+c     writing 1st analytic x-point integral and combining with inboard 
+c     integrals. 
+c     y_out, yi1 and y_outf all used as intermediaries in the splicing, 
+c     but final result is in y_outf.
 c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     declarations.
-c-----------------------------------------------------------------------
-      SUBROUTINE direct_output
+         CALL analytic_y_out(psifac,y_out4(len_y_out4,0),
+     $ y_out4(len_y_out4,2),y_out2(len_y_out2,0),y_out2(len_y_out2,2),
+     $ nstep2,yi1,diffs_raw,outmat2f)
+         IF(debug_xpt)WRITE(*,*)"yi1 bounds:"
+         IF(debug_xpt)WRITE(*,*)yi1(0,0),yi1(nstep2,0)
+         CALL patch_two_b(y_out,yi1,len_y_out,nstep2,
+     $                                             y_outf,len_y_outf)
 
-      INTEGER :: ix,iy
-      REAL(r8), DIMENSION(:,:), POINTER :: x,y
+         IF(debug_xpt)WRITE(*,*)"y_outf bounds:"
+         IF(debug_xpt)WRITE(*,*)y_outf(0,0),y_outf(len_y_outf,0)
 c-----------------------------------------------------------------------
-c     format statements.
+c     writing 2nd analytic x-point integral and combining with y_outf.
+c     y_out, yi1 and y_outf all used as intermediaries in the splicing, 
+c     but final result is in y_out.
 c-----------------------------------------------------------------------
- 10   FORMAT(/4x,"ix",4x,"iy",6x,"r",10x,"z",9x,"psi"/)
- 20   FORMAT(2i6,1p,3e11.3)
+         CALL analytic_y_out(psifac,y_out1(len_y_out1,0),
+     $ y_out1(len_y_out1,2),y_out3(len_y_out3,0),y_out3(len_y_out3,2),
+     $ nstep2,yi1,diffs_raw,outmat2f)
+         IF(debug_xpt)WRITE(*,*)"yi1 bounds: ROUND 2"
+         IF(debug_xpt)WRITE(*,*)yi1(0,0),yi1(nstep2,0)
+         CALL patch_two_b(yi1,y_outf,nstep2,len_y_outf,
+     $                                             y_out,len_y_out)
+         IF(debug_xpt)WRITE(*,*)"y_out bounds:"
+         IF(debug_xpt)WRITE(*,*)y_out(0,0),y_out(len_y_out,0)
+         ix2=ix2+nstep2
 c-----------------------------------------------------------------------
-c     open output files.
+c     reconstructing full 2pi integral, combining initial anti-clockwise 
+c     numerical integral (y_out1) with y_out (inboard integrals plus
+c     both analytic x-point integrals), and then combining that with the 
+c     second clockwise numerical integral (y_out2).
 c-----------------------------------------------------------------------
-      IF(.NOT. (out_eq_1d .OR. bin_eq_1d .OR. out_eq_2d .OR. bin_eq_2d))
-     $     RETURN
-      IF(out_eq_1d .OR. out_eq_2d)
-     $     CALL ascii_open(out_2d_unit,"input.out","UNKNOWN")
-c-----------------------------------------------------------------------
-c     diagnose 1d output.
-c-----------------------------------------------------------------------
-      IF(out_eq_1d)WRITE(out_2d_unit,'(a)')"input surface quantities:"
-      IF(bin_eq_1d)CALL bin_open(bin_2d_unit,"sq_in.bin","UNKNOWN",
-     $     "REWIND","none")
-      CALL spline_write1(sq_in,out_eq_1d,bin_eq_1d,
-     $     out_2d_unit,bin_2d_unit,interp)
-      IF(bin_eq_1d)CALL bin_close(bin_2d_unit)
-c-----------------------------------------------------------------------
-c     ascii table of psi.
-c-----------------------------------------------------------------------
-      IF(out_eq_2d)THEN
-         DO iy=0,psi_in%my
-            WRITE(out_2d_unit,10)
-            DO ix=0,psi_in%mx
-               WRITE(out_2d_unit,20)
-     $              ix,iy,psi_in%xs(ix),psi_in%ys(iy),psi_in%fs(ix,iy,1)
-            ENDDO
-         ENDDO
-         WRITE(out_2d_unit,10)
+         IF(debug_xpt)WRITE(*,*)"y_out1 bounds:"
+         IF(debug_xpt)WRITE(*,*)y_out1(0,0),y_out1(len_y_out1,0)
+         CALL patch_two_b(y_out1,y_out,len_y_out1,len_y_out,
+     $                                             y_outf,len_y_outf)
+         IF(debug_xpt)WRITE(*,*)"y_outf bounds:"
+         IF(debug_xpt)WRITE(*,*)y_outf(0,0),y_outf(len_y_outf,0)
+         ix2=ix2+len_y_out+1 
+         CALL patch_two_c(y_outf,y_out2,len_y_outf,len_y_out2,   
+     $                                         y_out,len_y_out,ix1)    
+         ix2=ix2+nstep2+ix1+1  
+         ix(1)=ix1
+         ix(2)=ix2
       ENDIF
-c-----------------------------------------------------------------------
-c     draw contour plot of psi.
-c-----------------------------------------------------------------------
-      IF(bin_eq_2d)THEN
-         CALL bin_open(bin_2d_unit,"psi_in.bin","UNKNOWN","REWIND",
-     $        "none")
-         WRITE(bin_2d_unit)1,0
-         WRITE(bin_2d_unit)psi_in%mx,psi_in%my
-         ALLOCATE(x(0:psi_in%mx,0:psi_in%my),y(0:psi_in%mx,0:psi_in%my))
-         DO ix=0,psi_in%mx
-            DO iy=0,psi_in%my
-               x(ix,iy)=psi_in%xs(ix)
-               y(ix,iy)=psi_in%ys(iy)
-            ENDDO
-         ENDDO
-         WRITE(bin_2d_unit)REAL(x,4),REAL(y,4)
-         WRITE(bin_2d_unit)REAL(psi_in%fs,4)
-         DEALLOCATE(x,y)
-         CALL bin_close(bin_2d_unit)
-      ENDIF
-c-----------------------------------------------------------------------
-c     close output files.
-c-----------------------------------------------------------------------
-      IF(out_eq_1d .OR. out_eq_2d)CALL ascii_close(out_2d_unit)
-      IF(input_only)CALL program_stop("Termination by direct_output.")
+      IF(debug_xpt)WRITE(*,*)y_out(1:100,0)
+      IF(debug_xpt)WRITE(*,*)y_out(1:4,1)
+      IF(debug_xpt)WRITE(*,*)y_out(1:4,2)
+      IF(debug_xpt)WRITE(*,*)y_out(1:4,3)
+      IF(debug_xpt)WRITE(*,*)y_out(1:4,4)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE direct_output
+      END SUBROUTINE direct_xpt_y_out
 c-----------------------------------------------------------------------
 c     subprogram 8. direct_local_xpoint.
 c     finds location of nearby x-point where |Bp|=0 using Newton method.
