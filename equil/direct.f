@@ -84,44 +84,31 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE direct_run
 
-      INTEGER :: ir,iz,itheta,ipsi,len_y_out,len_y_last
-      INTEGER :: maxima_count,i,ipri,pl
-      REAL(r8) :: f0fac,f0,ffac,rfac,eta,r,jacfac,w11,w12,delpsi,q,flast
-      REAL(r8), DIMENSION(0:nstepd,0:4) :: y_out_last
-      REAL(r8), DIMENSION(0:(2*nstepd+2*nstep2+1),0:4) :: y_out,y_outnum
+      INTEGER :: ir,iz,itheta,ipsi
+      INTEGER :: len_y_out1,len_y_out
+      INTEGER, DIMENSION(2) :: x_starts
+      REAL(r8) :: f0fac,f0,ffac,rfac,eta,r,jacfac,w11,w12,delpsi,q
+      REAL(r8), DIMENSION(0:(4*nstepd+2*nstep2+6),0:4) :: y_out
+      REAL(r8), DIMENSION(0:(nstepd+2),0:4) :: y_out1
       REAL(r8), DIMENSION(2, mpsi+1) :: xdx
       REAL(r8), DIMENSION(3,3) :: v
-      REAL(r8), DIMENSION(3,2) :: eta_brackets
-      REAL(r8), DIMENSION(3) :: eta_maxes
-      INTEGER, DIMENSION(2) :: xpt_starts
+      REAL(r8), DIMENSION(1:4) :: difs
+      REAL(r8), DIMENSION(1:17) :: outmat2f
 
-      LOGICAL :: use_analytic,run_xpt,debug,xmsg,plot_convergence
-      LOGICAL :: new_xpt
+      LOGICAL :: debug
 
-      REAL(r8) :: xm,dx,rholow,rhohigh,rx,zx,maxBpBt
+      REAL(r8) :: xm,dx,rholow,rhohigh
+      REAL(r8) :: eval_BpOnBt,eval_dy1,eval_xpt_tol
       TYPE(direct_bfield_type) :: bf
-      TYPE(spline_type) :: ff,ffnum
+      TYPE(spline_type) :: ff
 
-      CHARACTER(64) :: message
-
-      pl=25
-      plot_convergence=.FALSE. !
-      plot_convergence1=plot_convergence
-      use_analytic=.FALSE. !must be initialised to false
-      run_xpt=.TRUE. !set to false to avoid all x-point scripts
+      plot_convergence=.False.
       debug=.FALSE.  !dumps all spline info to csv 
-      xmsg=.TRUE.
+      debug_xpt=.TRUE.  !verbose x-point outputs
+
       xpt_etas=0.0
       xpt_brackets=0.0
-      eta_maxes=0.0
-      eta_brackets=0.0 
       num_xpts=0
-      maxima_count=0
-      y_outnum=0
-      dqdeps_tmp=dqdeps_tol
-412   FORMAT(f16.12,",",f16.12,",",f16.12,",",f16.12,",",f16.12)
-413   FORMAT(1x,"ipsi =",i4,"/",i4)
-414   FORMAT(1x,"psifac =",f13.10)
 c-----------------------------------------------------------------------
 c     warning.
 c-----------------------------------------------------------------------
