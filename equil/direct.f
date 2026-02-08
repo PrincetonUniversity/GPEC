@@ -2717,7 +2717,7 @@ c-----------------------------------------------------------------------
       RETURN 
       END SUBROUTINE analytic_y_out
 c-----------------------------------------------------------------------
-c     subprogram 18. direct_Blocal.
+c     subprogram 25. direct_Blocal.
 c     calculates local B-field displaced from some r,z point in polar
 c     coordinates. either Bnu or Brho depending on Bcase
 c-----------------------------------------------------------------------
