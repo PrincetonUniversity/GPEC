@@ -558,10 +558,8 @@ c-----------------------------------------------------------------------
  20   FORMAT(/2x,"is",5x,"eta",8x,"deta",8x,"s",9x,"rfac",8x,"r",10x,
      $     "z",9x,"psi",8x,"err"/)
  30   FORMAT(i4,1p,8e11.3)
- 40   FORMAT(a,i4,a,es10.3,a,i3)
  51   FORMAT(1x,"psifac =",f18.15)
  61   FORMAT(3x,"integrator took",i6," steps of max",i6,".")
- 62   FORMAT(3x,"non. div. integrator took",i6," steps of max",i6,".")
  11   FORMAT(1x,"Incomplete: eta=",es10.2," of [",es10.2,",",es10.2,"]")
 c-----------------------------------------------------------------------
 c     find flux surface.
