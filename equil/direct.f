@@ -611,9 +611,9 @@ c-----------------------------------------------------------------------
 c     compute ratio of Bp to Bt, as well as divergent integrand related
 c     to q (dy1)
 c-----------------------------------------------------------------------
-         !bp=SQRT(bf%br**2+bf%bz**2)
-         !bt=bf%f/r
-         !dy1=rfac/(bf%bz*COS(eta)-bf%br*SIN(eta))
+         bp=SQRT(bf%br**2+bf%bz**2)
+         bt=bf%f/r
+         dy1=rfac/(bf%bz*COS(eta)-bf%br*SIN(eta))
 c-----------------------------------------------------------------------
 c     compute and print output for each step.
 c-----------------------------------------------------------------------
@@ -623,11 +623,40 @@ c-----------------------------------------------------------------------
      $        REAL(eta,4),REAL(rwork(11),4),REAL(y(1:4),4),REAL(r,4),
      $        REAL(z,4),REAL(psifac,4),REAL(err,4)
 c-----------------------------------------------------------------------
-c     stopping conditions.
+c     xpoint stopping conditions.
 c-----------------------------------------------------------------------
-         IF(eta >= eta2 .OR. istep >= nstepd  .OR.  istate < 0
+         IF((bp/bt)<BpBt_tol.AND.ABS(dy1)>dqdeps_tol.AND.psifac>0.9
+     $ .AND. (.NOT. simp))THEN
+            IF(probe_xpt)THEN 
+               !looking for x-points, exit because you've found one
+               !will automatically call int_validity_check
+               EXIT 
+            ELSEIF(cooloff)THEN 
+               !cooloff active, do nothing unless you've gone far enough
+               !to reset it.
+               IF(ABS(eta-cooleta)>0.2*pi)THEN
+                  cooloff=.FALSE. 
+               ENDIF
+            ELSE
+               CALL int_validity_check(r,z,rfac,eta,valid,eval_xpt_tol)
+               IF(valid)THEN
+                  !its a valid time to use analytic formulas, exit
+                  !numerical integration 
+                  EXIT
+               ELSE!not a valid time to use formulas, power through
+                  !and hope you don't hit one of the accuracy limits
+                  cooloff = .TRUE.
+                  cooleta = eta
+               ENDIF
+            ENDIF
+         ENDIF
+c-----------------------------------------------------------------------
+c     regular stopping conditions.
+c-----------------------------------------------------------------------
+         IF((eta2 > eta1 .AND. eta >= eta2) .OR. 
+     $      (eta2 < eta1 .AND. eta <= eta2)  
+     $        .OR.   istep >= nstepd  .OR.  istate < 0
      $        .OR. ABS(err) >= 1)EXIT
-      !$      .OR. ((bp/bt)<min_BpOnBt .AND. ABS(dy1)>max_dy1))EXIT
 c-----------------------------------------------------------------------
 c     advance differential equations.
 c-----------------------------------------------------------------------
