@@ -2552,128 +2552,170 @@ c-----------------------------------------------------------------------
       RETURN 
       END SUBROUTINE yinterim
 c-----------------------------------------------------------------------
-c     subprogram 17. direct_spline_comparison.
-c     print data from mixed analytic/numerical method, and solely
-c     numerically integrated method
-c-----------------------------------------------------------------------
+c     subprogram 24. analytic_y_out.
+c     computes y_out using analytic integrals.
+c     assume eta2>eta1
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE direct_spline_comparison(ffnum,ffa,y_outnum,len_y_out,
-     $    bf,y_outa,ipsi,ipri,psifac,maxBpBt,xpt_starts,dq_deps_in)
+      SUBROUTINE analytic_y_out(psifac,eta1,r1,eta2,r2,nstep2,yi,ydiffs,
+     $    outmat2f)
+
+      REAL(r8), INTENT(IN) :: psifac,eta1,r1,eta2,r2
+      INTEGER, INTENT(IN) :: nstep2
+      REAL(r8), DIMENSION(0:,0:), INTENT(INOUT) :: yi
+      REAL(r8), DIMENSION(1:4,1:2,0:1) :: outmat
+      REAL(r8), DIMENSION(1:8) :: outmat2
+      REAL(r8), DIMENSION(1:17), INTENT(OUT) :: outmat2f
+      LOGICAL :: debugL=.FALSE.,out=.FALSE.
+      REAL(r8), DIMENSION(1:2):: nu, xpt_dists
+      REAL(r8) :: r,z,eta,eval_BpOnBt,eval_dy1,eval_xpt_tol
+      REAL(r8), DIMENSION(0:nstepd,0:4) :: y_out1
+      REAL(r8), DIMENSION(1:4), INTENT(OUT) :: ydiffs
+      INTEGER :: x_i,i,len_y1_out
+      TYPE(direct_bfield_type) :: bf
+      
+      yi=0.0
+      ydiffs=0.0
+      IF(eta2<eta1)CALL program_stop("Input angles incorrect.")
+c-----------------------------------------------------------------------
+c     get cartesian location.
+c-----------------------------------------------------------------------
+      r=ro+r1*COS(eta1)
+      z=zo+r1*SIN(eta1)
+c-----------------------------------------------------------------------
+c     find nearest x-point.
+c-----------------------------------------------------------------------
+      IF(num_xpts==0)CALL program_stop("X-point init missed something.")
+      xpt_dists(1)=SQRT((r-rxs(1))**2+(z-zxs(1))**2)
+      IF(num_xpts==2)THEN
+         xpt_dists(2)=SQRT((r-rxs(2))**2+(z-zxs(2))**2)
+      ELSE
+         xpt_dists(2)=1d99
+      ENDIF
+      IF(debug_xpt)WRITE(*,*)"xpt distances:"
+      IF(debug_xpt)WRITE(*,*)xpt_dists(1),xpt_dists(2)
+      IF(debug_xpt)WRITE(*,*)"r,z:"
+      IF(debug_xpt)WRITE(*,*)r,z
+      IF(debug_xpt)WRITE(*,*)"eta1,r1:"
+      IF(debug_xpt)WRITE(*,*)eta1,r1
+      x_i=MINLOC(xpt_dists,1)
+c-----------------------------------------------------------------------
+c     write xpt_varthetas2 to make sure x1 in direct_analytic_ints 
+c     correctly approaches 0 as psifac goes to 1.
+c-----------------------------------------------------------------------
+      CALL find_fl_surface(one,xpt_brackets(x_i,1),r,z)
+      nu(1)=ATAN2(z-zxs(x_i),r-rxs(x_i))
+      CALL find_fl_surface(one,xpt_brackets(x_i,2),r,z)
+      nu(2)=ATAN2(z-zxs(x_i),r-rxs(x_i))
+c-----------------------------------------------------------------------
+c     defining xpt_varthetas2, xpt_gammas2. these angles are
+c     calculated out at the eta-location where we switch from numerical
+c     to analytic integrals (xpt_brackets), instead of asymptotically
+c     close to the x-point as is the case for xpt_varthetas, xpt_gammas.
+c-----------------------------------------------------------------------
+      xpt_varthetas2(x_i) = nu(1)-pi/2
+      xpt_gammas2(x_i) = nu(1)-nu(2)
+
+      xpt_varthetas2(x_i) = xpt_varthetas2(x_i) 
+     $                        - twopi*floor(xpt_varthetas2(x_i)/twopi)
+      xpt_gammas2(x_i) = xpt_gammas2(x_i) 
+     $                        - twopi*floor(xpt_gammas2(x_i)/twopi)
+c-----------------------------------------------------------------------
+c     making sure there isn't much difference between the varthetas and
+c     gamma angles asymptotically close to the x-point vs at the 
+c     switch-over location. Note if the x-point is slightly outside the
+c     separatrix such that outside_sep(x_i)=.TRUE., xpt_varthetas2
+c     amd xpt_gammas2 will have big error and should not be used.
+c-----------------------------------------------------------------------
+      IF((ABS(xpt_varthetas(x_i)-xpt_varthetas2(x_i))>twopi/100 .OR.
+     $ ABS(xpt_gammas2(x_i)-xpt_gammas(x_i))>twopi/100) .AND. 
+     $ (.NOT.outside_sep(x_i)))THEN
+         PRINT "(A)", "Straight x-point leg assumption bad for Xpt"
+         !PRINT "(i6)", x_i
+         !PRINT "(es16.10)", xpt_gammas(x_i)/pi
+         !PRINT "(es16.10)", xpt_gammas2(x_i)/pi
+         IF(.NOT.plot_convergence)THEN
+            CALL program_stop("fiddle with x-point settings.")
+         ENDIF
+      ENDIF
+c-----------------------------------------------------------------------
+c     Setting initial values of yi. 
+c-----------------------------------------------------------------------
+      yi(0,0)=eta1
+      yi(0,1)=0.0
+      yi(0,2)=r1
+      yi(0,3)=0.0
+      yi(0,4)=0.0
+c-----------------------------------------------------------------------
+c     Print outputs directly if onecase is True:
+c-----------------------------------------------------------------------
+412   FORMAT(e20.12,",",e20.12,",",e20.12,",",e20.12,",",e20.12
+     $",",e20.12,",",e20.12,",",e20.12,",",e20.12)
+      IF(onecase)CALL ascii_open(out_xpt_unit,
+     $ "xpt_tests/local_comp.csv","UNKNOWN")
+c-----------------------------------------------------------------------
+c     Loop through eta values, computing analytic integrals
+c-----------------------------------------------------------------------
+      DO i=1,nstep2,+1
+         eta=eta1+(eta2-eta1)*(one*i/nstep2)
+         yi(i,0)=eta
          
-      TYPE(spline_type), INTENT(IN) :: ffnum,ffa
-      REAL(r8), INTENT(IN), DIMENSION(0:(2*nstepd+2*nstep2+1),0:4):: 
-     $ y_outnum,y_outa
-      REAL(r8), INTENT(IN) :: psifac,dq_deps_in,maxBpBt
-      INTEGER, INTENT(IN) :: ipsi,ipri,len_y_out
-      TYPE(direct_bfield_type), INTENT(IN) :: bf
-      INTEGER, DIMENSION(2), INTENT(IN) :: xpt_starts
+         CALL direct_analytic_ints(x_i,r1,eta1
+     $       ,eta,yi(i,1),yi(i,2),yi(i,3),yi(i,4),outmat,outmat2,debugL)
+         IF(i==nstep2)THEN
+            outmat2f(1:8)=outmat2(1:8)
+         ENDIF
 
-      CHARACTER(1024) :: filename
-      REAL(r8), DIMENSION(1:len_y_out) :: dqdeta
-      REAL(r8) :: maxdqdeps
-      INTEGER :: i,len_ff,len_ffa
-c-----------------------------------------------------------------------
-c     checking lengths.
-c-----------------------------------------------------------------------
-      len_ff=SIZE(ffnum%xs,1)
-      len_ffa=SIZE(ffa%xs,1)
-
-      !IF(len_ff/=SIZE(y_outnum,1))CALL program_stop("blerg1")
-      !IF(len_ffa/=SIZE(y_outa,1))CALL program_stop("blerg2")
-
-      !PRINT "(A)", "Length ffnum:"
-      !PRINT "(i6)", len_ff
-      !PRINT "(A)", "Length ffa:"
-      !PRINT "(i6)", len_ffa
-c-----------------------------------------------------------------------
-c     generate maxdqdeta from numerical y_outnum.
-c-----------------------------------------------------------------------
-      DO i=0,(len_y_out-1),+1
-         dqdeta(i+1) = (bf%f)*(y_outnum(i+1,3)-y_outnum(i,3))
-     $                 /(y_outnum(i+1,0)-y_outnum(i,0))!
+         IF(.TRUE.)CALL direct_fl_int(psifac,xpt_brackets(1,1),eta,
+     $y_out1,len_y1_out,eval_BpOnBt,eval_dy1,eval_xpt_tol,.FALSE.,bf,
+     $    .TRUE.)
+         
+            WRITE(out_xpt_unit,412)
+     $                eta,
+     $                yi(i,1),
+     $                yi(i,2),
+     $                yi(i,3),
+     $                yi(i,4),
+     $                y_out1(len_y1_out,1),
+     $                y_out1(len_y1_out,2),
+     $                y_out1(len_y1_out,3),
+     $                y_out1(len_y1_out,4)
       ENDDO
-      maxdqdeps=MAXVAL(dqdeta)
+      ydiffs(1)=(yi(nstep2,1)-y_out1(len_y1_out,1))
+     $    /y_out1(len_y1_out,1)
+      ydiffs(2)=(yi(nstep2,2)-y_out1(len_y1_out,2))
+     $    /y_out1(len_y1_out,2)
+      ydiffs(3)=(yi(nstep2,3)-y_out1(len_y1_out,3))
+     $    /y_out1(len_y1_out,3)
+      ydiffs(4)=(yi(nstep2,4)-y_out1(len_y1_out,4))
+     $    /y_out1(len_y1_out,4)
+
+      outmat2f(9)=y_out1(len_y1_out,4) 
+      outmat2f(10)=REAL(len_y1_out,8) !Number of integration steps....
+      outmat2f(11)=y_out1(len_y1_out,1)
+      outmat2f(12)=y_out1(len_y1_out,2)
+      outmat2f(13)=y_out1(len_y1_out,3)
+      outmat2f(14)=yi(nstep2,1)
+      outmat2f(15)=yi(nstep2,2)
+      outmat2f(16)=yi(nstep2,3)
+      outmat2f(17)=yi(nstep2,4)
+      IF(onecase)CALL ascii_close(out_xpt_unit)
 c-----------------------------------------------------------------------
-c     printing data
+c     check how much r has shifted.
 c-----------------------------------------------------------------------
-415   FORMAT(f16.12,",",f16.12,",",f40.12,",",I9.9,",",I9.9,",",I9.9,
-     $  ",",f40.12)
-      filename=""
-      WRITE (filename, "(A17,I5.5,A1,I5.5,A4)") "xpt_tests/spldata",
-     $ ipsi,"_",ipri,".csv" 
-      CALL ascii_open(out_xpt_unit,TRIM(filename),"UNKNOWN")
-      WRITE(out_xpt_unit,415)psifac,maxBpBt,maxdqdeps,nstep2,
-     $ xpt_starts(1),xpt_starts(2),dq_deps_in
-      CALL ascii_close(out_xpt_unit)
-c-----------------------------------------------------------------------
-c     printing the splines
-c-----------------------------------------------------------------------
-412   FORMAT(f16.12,",",f16.12,",",f16.12,",",f16.12,",",f16.12)
-
-      filename=""
-      WRITE (filename, "(A16,I5.5,A1,I5.5,A4)") "xpt_tests/ff_num",
-     $ ipsi,"_",ipri,".csv" 
-      CALL ascii_open(out_xpt_unit,TRIM(filename),"UNKNOWN")
-
-      DO i=0,(len_ff-1),+1
-         IF(.TRUE.)WRITE(out_xpt_unit,412)ffnum%xs(i),
-     $                ffnum%fs(i,1),
-     $                ffnum%fs(i,2),
-     $                ffnum%fs(i,3),
-     $                ffnum%fs(i,4)
-      ENDDO
-      CALL ascii_close(out_xpt_unit)
-
-      filename=""
-      WRITE (filename, "(A14,I5.5,A1,I5.5,A4)") "xpt_tests/ff_a",
-     $ ipsi,"_",ipri,".csv" 
-      CALL ascii_open(out_xpt_unit,TRIM(filename),"UNKNOWN")
-
-      DO i=0,(len_ffa-1),+1
-         IF(.TRUE.)WRITE(out_xpt_unit,412)ffa%xs(i),
-     $                ffa%fs(i,1),
-     $                ffa%fs(i,2),
-     $                ffa%fs(i,3),
-     $                ffa%fs(i,4)
-      ENDDO
-      CALL ascii_close(out_xpt_unit)
-
-      filename=""
-      WRITE (filename, "(A18,I5.5,A1,I5.5,A4)") "xpt_tests/y_outnum",
-     $ ipsi,"_",ipri,".csv" 
-      CALL ascii_open(out_xpt_unit,TRIM(filename),"UNKNOWN")
-
-      DO i=0,(len_ff-1),+1
-         IF(.TRUE.)WRITE(out_xpt_unit,412)
-     $                y_outnum(i,0),
-     $                y_outnum(i,1),
-     $                y_outnum(i,2),
-     $                y_outnum(i,3),
-     $                y_outnum(i,4)
-      ENDDO
-      CALL ascii_close(out_xpt_unit)
-
-      filename=""
-      WRITE (filename, "(A16,I5.5,A1,I5.5,A4)") "xpt_tests/y_outa",
-     $ ipsi,"_",ipri,".csv" 
-      CALL ascii_open(out_xpt_unit,TRIM(filename),"UNKNOWN")
-
-      DO i=0,(len_ffa-1),+1
-         IF(.TRUE.)WRITE(out_xpt_unit,412)
-     $                y_outa(i,0),
-     $                y_outa(i,1),
-     $                y_outa(i,2),
-     $                y_outa(i,3),
-     $                y_outa(i,4)
-      ENDDO
-      CALL ascii_close(out_xpt_unit)
+      IF(ABS(yi(nstep2,2)-r2)>r_tol)THEN
+         IF(.NOT. plot_convergence)WRITE(*,*)
+     $    "Analytic ints introduce radial discontinuity:"
+         IF(.NOT. plot_convergence)WRITE(*,*)ABS(yi(nstep2,2)-r2)
+         IF(.NOT. plot_convergence)CALL program_stop(     
+     $ "Analytic integrals introduce a radial discontinuity > r_tol.")
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE direct_spline_comparison
+      RETURN 
+      END SUBROUTINE analytic_y_out
 c-----------------------------------------------------------------------
 c     subprogram 18. direct_Blocal.
 c     calculates local B-field displaced from some r,z point in polar
