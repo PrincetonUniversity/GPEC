@@ -55,8 +55,9 @@ c-----------------------------------------------------------------------
       REAL(r8) :: br,bz,brr,brz,bzr,bzz
       END TYPE direct_bfield_type
 
-      REAL(r8) :: etol=1e-8, dqdeps_tol=80, BpBt_tol=0.00001
-      INTEGER :: nstepd=2048
+      REAL(r8) :: etol=1e-8, dqdeps_tol=40, BpBt_tol=0.01, r_tol=1e-5
+      REAL(r8) :: xpt_tol=0.2
+      INTEGER :: nstepd=20000
       INTEGER :: nstep2=2048
       REAL(r8) :: xcheck=0.99, dqdeps_tmp
 
