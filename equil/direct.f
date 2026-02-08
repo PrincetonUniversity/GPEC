@@ -1679,10 +1679,10 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE direct_saddle_coords(x_i,r1,eta1,x,y,chi)
+      SUBROUTINE direct_saddle_coords(x_i,r1,eta1,x,y,chi,usevth2)
 
       INTEGER, INTENT(IN) :: x_i
-
+      LOGICAL, INTENT(IN) :: usevth2
       REAL(r8), INTENT(IN) :: r1,eta1
       REAL(r8), INTENT(OUT) :: x,y,chi
 
@@ -1694,7 +1694,7 @@ c     precalculating trig components.
 c-----------------------------------------------------------------------
       cosfac=COS(eta1)
       sinfac=SIN(eta1)
-      IF(usevth2(x_i))THEN
+      IF(usevth2)THEN
          cosfact=COS(xpt_varthetas2(x_i))
          sinfact=SIN(xpt_varthetas2(x_i))
       ELSE
@@ -1722,7 +1722,7 @@ c     calculating chi angle variable, defined such that nabla chi is
 c     orthogonal to the x-point leg that leaves the
 c     x-point when travelling anticlockwise around the separatrix.
 c-----------------------------------------------------------------------
-      IF(usevth2(x_i))THEN
+      IF(usevth2)THEN
          chi = -COS(xpt_gammas2(x_i))*x+SIN(xpt_gammas2(x_i))*y
       ELSE
          chi = -COS(xpt_gammas(x_i))*x+SIN(xpt_gammas(x_i))*y
