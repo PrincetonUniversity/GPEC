@@ -202,20 +202,11 @@ c     start loop over flux surfaces.
 c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,'(a,1p,es10.3)')" etol = ",etol
       IF(verbose) WRITE(*,'(a,1p,i6)')" nstepd = ",nstepd
-      DO ipsi=0,mpsi,+1
-         IF(verbose.AND.xmsg.AND.sq%xs(ipsi)>xcheck.AND.run_xpt)THEN
-         PRINT "(A)", "________________________________________________"
-            PRINT"(A)"," checking for x-points... =>"
-            xmsg=.FALSE.
-         ENDIF
-
-         IF(verbose)WRITE(message,413)ipsi,mpsi
-         IF(verbose)PRINT "(A)", message
-         IF(verbose)WRITE(message,414)sq%xs(ipsi)
-         IF(verbose)PRINT "(A)", message
+      DO ipsi=mpsi,0,-1
+         IF(debug_xpt)WRITE(*,*)"psifac:"
+         IF(debug_xpt)WRITE(*,*)sq%xs(ipsi)
 c-----------------------------------------------------------------------
-c     logic whether to integrate around whole field line or use analytic
-c     integral formulas near separatrix.
+c     integrating anticlockwise.
 c-----------------------------------------------------------------------
          IF(use_analytic .AND. run_xpt)THEN
             IF(debug)THEN
@@ -358,7 +349,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     allocate space for rzphi and define grids.
 c-----------------------------------------------------------------------
-         IF(ipsi == 0)THEN
+         IF(ipsi == mpsi)THEN
             IF(mtheta == 0)mtheta=istep
             CALL bicube_alloc(rzphi,mpsi,mtheta,4) !change mtheta
             CALL bicube_alloc(eqfun,mpsi,mtheta,3) ! new eq information
