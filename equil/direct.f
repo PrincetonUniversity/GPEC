@@ -50,6 +50,13 @@ c-----------------------------------------------------------------------
       INTEGER :: direct_infinite_loop_count = 2000
       INTEGER :: num_xpts
 
+      LOGICAL :: debug_xpt,plot_convergence 
+      INTEGER :: btsc1=10 ! used in plot_convergence
+      INTEGER :: btsc2=30 ! used in plot_convergence
+      INTEGER :: psfc1=10 ! used in plot_convergence
+      INTEGER :: psfc2=30 ! used in plot_convergence
+      LOGICAL :: onecase=.FALSE. ! set true to print local x-point ints
+
       TYPE :: direct_bfield_type
       REAL(r8) :: psi,psir,psiz,psirz,psirr,psizz,f,f1,p,p1
       REAL(r8) :: br,bz,brr,brz,bzr,bzz
