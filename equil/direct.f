@@ -1559,8 +1559,8 @@ c     checks if this xpoint has already been identified
 c-----------------------------------------------------------------------
       IF(x_i>0)THEN
          DO i=1,(x_i-1),+1
-            IF(ABS(r-rxs(i))<(0.001*ro) .AND. 
-     $         ABS(z-zxs(i))<(0.001*ro))THEN 
+            IF(ABS(r-rxs(i))<(0.0001*ro) .AND. 
+     $         ABS(z-zxs(i))<(0.0001*ro))THEN 
                RETURN
             ENDIF
          ENDDO
