@@ -2750,4 +2750,225 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_Blocal
+c-----------------------------------------------------------------------
+c     subprogram 26. plot_xpt_convergence.
+c     calculates numerical vs analytic + numerical y_out integrals
+c     for a range of xpt_tol & BpBt_tol values, before printing outputs.
+c     used to generate the data that is plotted in 
+c     https://doi.org/10.1088/1361-6587/add9ca Figs. 7 & 9.
+c     works on an equilibrium with 1 x-point.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE plot_xpt_convergence
+
+      REAL(r8), DIMENSION(0:(4*nstepd+2*nstep2+6),0:4) :: y_outA,y_outI,
+     $   y_outDIFFS
+      REAL(r8), DIMENSION(0:(nstepd+2),0:4) :: y_out1
+      REAL(r8) :: eval_BpOnBt,eval_dy1,eval_xpt_tol
+      TYPE(direct_bfield_type) :: bf
+      INTEGER :: len_y_out1,len_y_outA,len_y_outI
+      INTEGER :: i,j,ii
+      REAL(r8) :: psifac
+      
+      !Independent variables actual values
+      REAL(r8), DIMENSION(0:40,0:40,1:2) :: BpBt_evals,xpt_tol_evals,
+     $  dy1_evals
+      !Dependent variables
+      REAL(r8), DIMENSION(btsc1:btsc2,psfc1:psfc2,1:4) :: y_out_convgs
+      REAL(r8), DIMENSION(btsc1:btsc2,psfc1:psfc2,0:4) :: ff_convgs
+      REAL(r8), DIMENSION(btsc1:btsc2,psfc1:psfc2,1:17) :: outmat2big
+      REAL(r8), DIMENSION(1:4) :: difs
+      REAL(r8), DIMENSION(1:17) :: outmat2f
+      INTEGER, DIMENSION(2) :: x_starts
+      REAL(r8) :: psifacone,BpBt_tolone
+      REAL(r8), DIMENSION(btsc1:btsc2) :: BpBt_scan
+      REAL(r8), DIMENSION(psfc1:psfc2) :: psifac_vec
+      DO i=btsc1,btsc2,+1 !48
+         BpBt_scan(i)=10.d0**(-i*0.1)
+      ENDDO
+      DO i=psfc1,psfc2,+1 !48
+         !psifac_vec(i-8)=1.d0-10.d0**(-i*0.25)
+         psifac_vec(i)=1.d0-10.d0**(-i*0.2)
+      ENDDO
+
+      psifacone=0.9987654321
+      BpBt_tolone=0.012345
+c-----------------------------------------------------------------------
+c     initialisations:
+c-----------------------------------------------------------------------
+      WRITE(*,*)"running convergence"
+      IF(num_xpts/=1)CALL program_stop("Need 1 x-point for convg. stud")
+      BpBt_evals=0.0
+      xpt_tol_evals=0.0
+      dy1_evals=0.0
+      y_out_convgs=0.0
+      ff_convgs=0.0
+
+      !xpt_tol=100 !will never be restained by angle 
+
+      DO i=btsc1,btsc2,+1
+         WRITE(*,*)"BpBt_scan NEW:",BpBt_scan(i)
+         DO j=psfc1,psfc2,+1
+            WRITE(*,*)i,j,"L0"
+            psifac=psifac_vec(j)
+            WRITE(*,*)"Psifac, BpBt:"
+            WRITE(*,*)psifac,BpBt_scan(i)
+c-----------------------------------------------------------------------
+c     GENERATING THE NUMERICALLY INTEGRATED y_out::
+c-----------------------------------------------------------------------
+            IF(onecase)THEN
+               psifac=psifacone
+            ENDIF
+            etol=1.d-14 !lowest we can go?
+            nstepd=20000 !big KEEP UNDER 20000
+            BpBt_tol=1d-99 !we will never 'snag' an x-point'
+            CALL direct_fl_int(psifac,zero,twopi,y_outI,len_y_outI
+     $    ,eval_BpOnBt,eval_dy1,eval_xpt_tol,.FALSE.,bf,.FALSE.)
+c-----------------------------------------------------------------------
+c     GENERATING THE ANALYTICALLY INTEGRATED y_out::
+c     ASSUME 1xpt equilibrium
+c-----------------------------------------------------------------------
+            BpBt_tol=BpBt_scan(i)
+            IF(onecase)THEN
+               BpBt_tol=BpBt_tolone
+            ENDIF
+            CALL direct_fl_int(psifac,zero,twopi,y_out1,len_y_out1
+     $        ,eval_BpOnBt,eval_dy1,eval_xpt_tol,.TRUE.,bf,.FALSE.)
+c-----------------------------------------------------------------------
+c     GENERATING THE COMBINED y_out (analytic + numerical)::
+c-----------------------------------------------------------------------
+            IF(y_out1(len_y_out1,0)<twopi)THEN 
+               BpBt_evals(i,j,1)=eval_BpOnBt
+               dy1_evals(i,j,1)=eval_dy1
+               xpt_tol_evals(i,j,1)=eval_xpt_tol
+               CALL direct_xpt_y_out(y_out1,len_y_out1,psifac,
+     $y_outA,len_y_outA,eval_BpOnBt,eval_dy1,eval_xpt_tol,x_starts,difs,
+     $ outmat2f)
+               
+               BpBt_evals(i,j,2)=eval_BpOnBt
+               dy1_evals(i,j,2)=eval_dy1
+               xpt_tol_evals(i,j,2)=eval_xpt_tol
+               istep=len_y_outA
+c-----------------------------------------------------------------------
+c     Evaluating dependent variables:: writing diff scalars
+c-----------------------------------------------------------------------
+               y_out_convgs(i,j,1)=ABS(y_outI(len_y_outI,1)-
+     $          y_outA(len_y_outA,1))/y_outI(len_y_outI,1)
+               y_out_convgs(i,j,3)=ABS(y_outI(len_y_outI,3)-
+     $          y_outA(len_y_outA,3))/y_outI(len_y_outI,3)
+               y_out_convgs(i,j,4)=ABS(y_outI(len_y_outI,4)-
+     $          y_outA(len_y_outA,4))/y_outI(len_y_outI,4)
+               ff_convgs(i,j,0)=0.0
+               ff_convgs(i,j,1)=difs(1)
+               ff_convgs(i,j,2)=difs(2)
+               ff_convgs(i,j,3)=difs(3)
+               ff_convgs(i,j,4)=difs(4)
+               outmat2big(i,j,1)=outmat2f(1)
+               outmat2big(i,j,2)=outmat2f(2)
+               outmat2big(i,j,3)=outmat2f(3)
+               outmat2big(i,j,4)=outmat2f(4)
+               outmat2big(i,j,5)=outmat2f(5)
+               outmat2big(i,j,6)=outmat2f(6)
+               outmat2big(i,j,7)=outmat2f(7)
+               outmat2big(i,j,8)=outmat2f(8)
+               outmat2big(i,j,9)=outmat2f(9)
+               outmat2big(i,j,10)=outmat2f(10)
+               outmat2big(i,j,11)=outmat2f(11)
+               outmat2big(i,j,12)=outmat2f(12)
+               outmat2big(i,j,13)=outmat2f(13)
+               outmat2big(i,j,14)=outmat2f(14)
+               outmat2big(i,j,15)=outmat2f(15)
+               outmat2big(i,j,16)=outmat2f(16)
+               outmat2big(i,j,17)=outmat2f(17)
+412   FORMAT(e20.12,",",e20.12,",",e20.12,",",e20.12,",",e20.12)
+
+               IF(.FALSE.)THEN
+                  CALL ascii_open(out_xpt_unit,
+     $ "xpt_tests/y_outA.csv","UNKNOWN")
+                  DO ii=0,(len_y_outA-1),+1
+                     WRITE(out_xpt_unit,412)y_outA(ii,0),
+     $                y_outA(ii,1),
+     $                y_outA(ii,2),
+     $                y_outA(ii,3),
+     $                y_outA(ii,4)
+                  ENDDO
+                  CALL ascii_close(out_xpt_unit)
+
+                  CALL ascii_open(out_xpt_unit,
+     $ "xpt_tests/y_outDIFF.csv","UNKNOWN")
+                  DO ii=0,(len_y_outA-1),+1
+                     WRITE(out_xpt_unit,412)y_outDIFFS(ii,0),
+     $                y_outDIFFS(ii,1),
+     $                y_outDIFFS(ii,2),
+     $                y_outDIFFS(ii,3),
+     $                y_outDIFFS(ii,4)
+                  ENDDO
+                  CALL ascii_close(out_xpt_unit)
+
+                  CALL ascii_open(out_xpt_unit,
+     $ "xpt_tests/y_outI.csv","UNKNOWN")
+                  DO ii=0,(len_y_outI-1),+1
+                     IF(.TRUE.)WRITE(out_xpt_unit,412)y_outI(ii,0),
+     $                y_outI(ii,1),
+     $                y_outI(ii,2),
+     $                y_outI(ii,3),
+     $                y_outI(ii,4)
+                  ENDDO
+                  CALL ascii_close(out_xpt_unit)
+               ENDIF
+            ENDIF
+            WRITE(*,*)i,j,"COMPLETE"
+         ENDDO
+      ENDDO
+
+
+      CALL ascii_open(out_xpt_unit,
+     $ "xpt_tests/difs_scan_BOOZERFixedI3.csv","UNKNOWN")
+413   FORMAT(e20.12,",",e20.12,",",e20.12,",",e20.12,",",
+     $ e20.12,",",e20.12,",",e20.12,",",e20.12,",",
+     $ e20.12,",",e20.12,",",e20.12,",",e20.12,",",e20.12,",",
+     $ e20.12,",",e20.12,",",e20.12,",",e20.12,",",
+     $ e20.12,",",e20.12,",",e20.12,",",e20.12,",",e20.12,",",
+     $ e20.12,",",e20.12,",",e20.12,",",e20.12,",",e20.12,",",
+     $ e20.12,",",e20.12)
+      DO i=btsc1,btsc2,+1
+         DO j=psfc1,psfc2,+1
+            WRITE(out_xpt_unit,413)
+     $       psifac_vec(j),BpBt_scan(i),
+     $       BpBt_evals(i,j,1), xpt_tol_evals(i,j,1),
+     $                ff_convgs(i,j,1), !4
+     $                ff_convgs(i,j,2),
+     $                ff_convgs(i,j,3),
+     $                ff_convgs(i,j,4),
+     $                y_out_convgs(i,j,1),
+     $                y_out_convgs(i,j,2),
+     $                y_out_convgs(i,j,3),
+     $                y_out_convgs(i,j,4), !11
+     $                outmat2big(i,j,1),
+     $                outmat2big(i,j,2),
+     $                outmat2big(i,j,3),
+     $                outmat2big(i,j,4),
+     $                outmat2big(i,j,5),
+     $                outmat2big(i,j,6),
+     $                outmat2big(i,j,7),
+     $                outmat2big(i,j,8),
+     $                outmat2big(i,j,9), !yn4
+     $                outmat2big(i,j,10), !num int points
+     $                outmat2big(i,j,11), !yn1 22
+     $                outmat2big(i,j,12), !yn2
+     $                outmat2big(i,j,13), !yn3
+     $                outmat2big(i,j,14), !ya1 25
+     $                outmat2big(i,j,15), !ya2
+     $                outmat2big(i,j,16), !ya3
+     $                outmat2big(i,j,17) !ya4
+         ENDDO
+      ENDDO
+      CALL ascii_close(out_xpt_unit)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE plot_xpt_convergence
       END MODULE direct_mod
