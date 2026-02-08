@@ -1855,6 +1855,7 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: r1,eta1,eta2
       INTEGER, INTENT(IN) :: x_i
       LOGICAL, INTENT(IN) :: debug
+      LOGICAL :: usevth2
 
       REAL(r8), INTENT(OUT) :: yi1,yi2,yi3,yi4
       REAL(r8), DIMENSION(1:4,1:2,0:1),INTENT(OUT) :: outmat
@@ -1887,7 +1888,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     pre-calculationg useful terms 
 c-----------------------------------------------------------------------
-      IF(usevth2(x_i))THEN
+      IF(usevth2)THEN
          vartheta=xpt_varthetas2(x_i)
          gamma=xpt_gammas2(x_i)
       ELSE
@@ -1900,6 +1901,7 @@ c-----------------------------------------------------------------------
 
       cotgam = one/TAN(gamma)
       singam = SIN(gamma)
+      cosgam = COS(gamma)
       singmt = SIN(gamma-vartheta)
 
       cscgam = one/singam
