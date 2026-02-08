@@ -1775,10 +1775,76 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_saddle_coords_inv
 c-----------------------------------------------------------------------
-c     subprogram 15. direct_analytic_ints.
-c     takes the linear term b11, angle and position data, and calculates
+c     subprogram 17. int_validity_check.
+c     checks if we are close enough to the x-point for the analytic
+c     formulas to be valid. This is Eq. 12 in 
+c     https://doi.org/10.1088/1361-6587/add9ca.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE int_validity_check(r,z,r_loc,eta,valid,eval_xpt_tol)
+
+      REAL(r8), INTENT(IN) :: r,z,r_loc
+      REAL(r8), INTENT(INOUT) :: eta
+      REAL(r8), DIMENSION(1:2) :: xpt_dists
+      LOGICAL, INTENT(OUT) :: valid
+      REAL(r8), INTENT(OUT) :: eval_xpt_tol
+      REAL(r8) :: x,y,chi
+      INTEGER :: ixpt
+      !x1_tol gonna 
+c-----------------------------------------------------------------------
+c     find nearest x-point.
+c-----------------------------------------------------------------------
+      IF(num_xpts==0)CALL program_stop("X-point init missed something.")
+      xpt_dists(1)=SQRT((r-rxs(1))**2+(z-zxs(1))**2)
+      IF(num_xpts==2)THEN
+         xpt_dists(2)=SQRT((r-rxs(2))**2+(z-zxs(2))**2)
+      ELSE
+         xpt_dists(2)=1d99
+      ENDIF
+      ixpt=MINLOC(xpt_dists,1)
+c-----------------------------------------------------------------------
+c     check we are actually near this x-point in angle-space.
+c-----------------------------------------------------------------------
+      eta=eta-twopi*floor(eta/twopi)
+      IF(ABS(xpt_etas(ixpt)-eta)>0.1*pi.OR.xpt_dists(ixpt)>0.1*ro)THEN
+         CALL program_stop("Poloidal field vanishing far from x-point")
+      ENDIF
+c-----------------------------------------------------------------------
+c     if eta<eta2 getting angle v simple: since we're approaching 
+c     along the x-point's local 'y-axis', the a
+c-----------------------------------------------------------------------
+      CALL direct_saddle_coords(ixpt,r_loc,eta,x,y,chi,.FALSE.)
+      !since we're specifying usevth2=.FAKLSE., there's a small
+      !chance x is negative... 
+      IF(eta<xpt_etas(ixpt))THEN
+         IF(ABS(x)>ABS(chi))CALL program_stop("angle sanity ch. fail 1")
+         !^We are approaching anticlockwise, travelling down the x-axis. 
+         !The int. point should be closer to the first leg of the sep.
+         !then the second
+         eval_xpt_tol=ABS(x/xpt_dists(ixpt))
+      ELSE
+         IF(ABS(chi)>ABS(x))CALL program_stop("angle sanity ch. fail 2")
+         eval_xpt_tol=ABS(chi/xpt_dists(ixpt))
+         !chi is the orthogonal distance from the second leg of the
+         !x-point. The second leg is the one pointing in the 
+         !anticlockwise direction as we travel and the psi surface in
+         !a normal poloidal cross section image.
+      ENDIF
+      valid=eval_xpt_tol<xpt_tol
+      IF(debug_xpt)WRITE(*,*) "validity check =>", valid
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE int_validity_check
+c-----------------------------------------------------------------------
+c     subprogram 18. direct_analytic_ints.
+c     takes the linear term c11, angle and position data, and calculates
 c     integrals y(1), y(2), y(3), y(4) replacing direct_fl_int. assumes
 c     logarithmic trajectories near the saddle point.
+c     for more information see https://doi.org/10.1088/1361-6587/add9ca. 
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
