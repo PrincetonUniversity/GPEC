@@ -1969,80 +1969,86 @@ c-----------------------------------------------------------------------
 c     y4 special case.
 c-----------------------------------------------------------------------
       IF(abs(power_bp)>1e-13)THEN
-         CALL program_stop("Analytic sep. incompat. w power_bp =/= 0")
+         IF(.NOT. debug)THEN
+            CALL program_stop("Analytic int incompat. w power_bp =/= 0")
+         ELSE
+            WRITE(*,*)"Analytic integrals incompatible w power_bp != 0"
+            WRITE(*,*)"Printing data"
+         ENDIF
+         !Refer to https://doi.org/10.1088/1361-6587/add9ca for the 
+         !the full writeup of the y4 formula. 
+         !Need all ingredients for these Appellf1 functions:
+         !Ingredients for J1, J2, J3 in Mathematica:
+         !d = x1*y1-x1*x1
+         C00=-cscgam*(b**power_b)*(ABS(xpt_c11s(x_i)**(power_bp-one)))*
+     $    (xpt_c11s(x_i)/ABS(xpt_c11s(x_i))) !keeping sign consistent
+         outmat2(1)=y1
+         outmat2(2)=x1
+         outmat2(3)=x2
+         outmat2(4)=gamma
+         outmat2(5)=power_bp
+
+         outmat2(6)=C00*
+     $      rxs(x_i)**(one-power_r-power_bp)
+         outmat2(7)=C00*
+     $      (one-power_r-power_bp)*
+     $      (cosvt-cotgam*sinvt)/(rxs(x_i)**(power_r+power_bp))
+         outmat2(8)=C00*
+     $      (-one)*(one-power_r-power_bp)*
+     $      sinvt*(x1*y1-x1*x1*cotgam)/(rxs(x_i)**(power_r+power_bp))
+
+         !yi4=outmat2(6)*J1+outmat2(7)*J2+outmat2(8)*J3
+         yi4=0.0
+
+         !Full writeup:
+         !yi4 = -cscgam*(b**power_b)*(xpt_c11s(x_i)**(power_bp-one))*(
+      !$   J1*rxs(x_i)**(one-power_r-power_bp)+
+      !$   J2*(one-power_r-power_bp)*
+      !$      (cosvt-cotgam*sinvt)/(rxs(x_i)**(power_r+power_bp))
+      !$   -J3*(one-power_r-power_bp)*
+      !$      sinvt*(x1*y1-x1*x1)/(rxs(x_i)**(power_r+power_bp)))
+      
+      !AppellF1 entries (Can't appel package since xf1,yf1 complex)
+         !a(1)=-alpha_p/2.d0
+         !b1(1)=-alpha_p/2.d0
+         !b2(1)=-alpha_p/2.d0
+         !c(1)=1.d0-alpha_p/2.d0
+
+         !a(2)=1.d0/2.d0-alpha_p/2.d0
+         !b1(2)=-alpha_p/2.d0
+         !b2(2)=-alpha_p/2.d0
+         !c(2)=3.d0/2.d0-alpha_p/2.d0
+
+         !a(3)=-1.d0/2.d0-alpha_p/2.d0
+         !b1(3)=-alpha_p/2.d0
+         !b2(3)=-alpha_p/2.d0
+         !c(3)=1.d0/2.d0-alpha_p/2.d0
+
+         !xf1=x**2/(d*cosgam*singam - sqrt(-d**2*singam**4))
+         !yf1=xf1
       ELSE
-         I1 = LOG(x2/x1)
-         I2 = x2-x1
-         I3 = -(one/x2)+one/x1
+         outmat2(1)=0.d0
+         outmat2(2)=0.d0
+         outmat2(3)=0.d0
+         outmat2(4)=0.d0
+         outmat2(5)=0.d0
+         outmat2(6)=0.d0
+         outmat2(7)=0.d0
+         outmat2(8)=0.d0
+
+         J1 = LOG(x2/x1)
+         J2 = x2-x1
+         J3 = -(one/x2)+one/x1
+         yi4 = -cscgam*(b**power_b)*(xpt_c11s(x_i)**(power_bp-one))*(
+     $ J1*rxs(x_i)**(one-power_r)+
+     $ J2*(one-power_r)*(cosvt-cotgam*sinvt)/(rxs(x_i)**power_r)
+     $ -J3*(one-power_r)*sinvt*(x1*y1-x1*x1*cotgam)/(rxs(x_i)**power_r))
       ENDIF
-      yi4 = -cscgam*(b**power_b)*(xpt_b11s(x_i)**(power_bp-one))*(
-     $   I1*rxs(x_i)**(one-power_r)+
-     $   I2*(one-power_r)*(cosvt-cotgam*sinvt)/(rxs(x_i)**power_r)
-     $   -I3*(one-power_r)*sinvt*(x1*y1-x1*x1)/(rxs(x_i)**power_r))
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_analytic_ints
-c-----------------------------------------------------------------------
-c     subprogram 16. direct_mixed_spline_builder.
-c     builds y_out and ff spline using a combination of analytic 
-c     integrals over divergent x-point regions, and numerically 
-c     integrated sections inbetween x-points.
-c-----------------------------------------------------------------------
-c     declarations.
-c-----------------------------------------------------------------------
-      SUBROUTINE direct_mixed_spline_builder(psifac,ff,y_out,debug_in,
-     $ maxBpBt,xpt_starts)
-
-      REAL(r8), INTENT(INOUT) :: psifac
-      REAL(r8), INTENT(OUT) :: maxBpBt
-      INTEGER, DIMENSION(2), INTENT(OUT) :: xpt_starts
-      LOGICAL, INTENT(IN) :: debug_in
-
-      REAL(r8) :: eta,eta1,eta2,R,Z,etat,y01,y02,y03,y04
-      REAL(r8) :: bt1,bp1,bt2,bp2
-      REAL(r8) :: eta3,eta4,r_loc1,r_loc2
-      REAL(r8), DIMENSION(1:nstep2,0:4) :: yi1, yi2, yi_i
-      
-      REAL(r8), DIMENSION(0:nstepd,0:4) :: y_out1,y_out2
-      REAL(r8), DIMENSION(0:(nstepd+1),0:4) :: y_out2i
-      REAL(r8), DIMENSION(0:(2*nstepd+2*nstep2+1),0:4),
-     $                                         INTENT(INOUT) :: y_out
-      REAL(r8), DIMENSION(1:4,1:2,0:1) :: outmat
-      INTEGER :: len_y1_out,len_y2_out,maxima_count,tot_steps,ist1,ist2
-      INTEGER :: i1,i2,i,j,k,eta0i
-      LOGICAL :: dbg1xpt,debug,out,fakeout,new_xpt
-
-      REAL(r8), DIMENSION(6,2) :: eta_brackets
-      REAL(r8), DIMENSION(6) :: eta_maxes
-
-      TYPE(direct_bfield_type) :: bf
-      TYPE(spline_type) :: yi,ffi
-      TYPE(spline_type), INTENT(OUT) :: ff
-
-      yi1=0.0
-      yi2=0.0
-      y_out1=0.0
-      y_out2=0.0
-      y_out=0.0
-      maxBpBt=0.0
-      xpt_starts=-1
-      dbg1xpt=.FALSE.
-      debug=.FALSE.
-      out=.FALSE.
-      fakeout=.TRUE.
-c-----------------------------------------------------------------------
-c     preparing print statements.
-c-----------------------------------------------------------------------
-400   FORMAT(/,"R_X",10x,"Z_X",11x,"r_x",10x,"eta_x"/)
-401   FORMAT(/,"psi_fac=",f15.13/)
-410   FORMAT(f12.10,",",f13.10,",",f12.10,",",f12.10)
-411   FORMAT(f13.10,",",f13.10,",",f12.10,",",f13.10,",",f13.10
-     $ ,",",f13.10,",",f12.10)
-412   FORMAT(f16.12,",",f16.12,",",f16.12,",",f16.12,",",f16.12)
-413   FORMAT(f13.10,",",f13.10,",",f13.10,",",f13.10,",",f12.10
-     $ ,",",f13.10,",",f12.10,",",f13.10,",",f13.10,",",f12.10)
 c-----------------------------------------------------------------------
 c     adddressing case of only one x-point.
 c-----------------------------------------------------------------------
