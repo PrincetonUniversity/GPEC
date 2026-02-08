@@ -2472,296 +2472,85 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE patch_two_c
 c-----------------------------------------------------------------------
-c     calculating divergent analytic integrals over x-point brackets
+c     subprogram 23. yinterim.
+c     evaluates interpolated point at eta_i. assumes eta_i is within
+c     the eta-range of y_out
 c-----------------------------------------------------------------------
-         DO i=1,nstep2,+1
+c     declarations.
 c-----------------------------------------------------------------------
-c     first x-point divergent analytic integrals:
+      SUBROUTINE yinterim(y_out,len_y_out,eta_i,yinterim1)
+
+      REAL(r8), DIMENSION(0:,0:), INTENT(IN) :: y_out
+      INTEGER, INTENT(IN) :: len_y_out
+      REAL(r8), INTENT(IN) :: eta_i
+      REAL(r8), DIMENSION(0:4), INTENT(OUT) :: yinterim1
+      INTEGER :: i,j,eta_ii,k
+      TYPE(spline_type) :: yi
+      LOGICAL :: r_avg=.TRUE.
 c-----------------------------------------------------------------------
-            eta=xpt_brackets(1,1)+
-     $      (xpt_brackets(1,2)-xpt_brackets(1,1))*(one*i/nstep2)
-            yi1(i,0)=eta
-            CALL direct_analytic_ints(1,r_loc1,xpt_brackets(1,1),
-     $      eta,yi1(i,1),yi1(i,2),yi1(i,3),yi1(i,4),outmat,.FALSE.)
-            !PRINT "(f20.10)",eta
+c     checking eta_i in range of y_out.
 c-----------------------------------------------------------------------
-c     printing maximum value of Bp/Bt at first x-point
+      IF(eta_i<MINVAL(y_out(0:len_y_out,0)) .OR. 
+     $    eta_i>MAXVAL(y_out(0:len_y_out,0)))THEN
+         CALL program_stop("improper use of yinterim")
+      ENDIF 
 c-----------------------------------------------------------------------
-            IF(i==nstep2)THEN
-               CALL direct_get_bfield(outmat(2,1,0),outmat(2,2,0),bf,1)
-               bp1=SQRT(bf%br**2+bf%bz**2)
-               bt1=bf%f/outmat(2,1,0)
-               CALL direct_get_bfield(outmat(2,1,1),outmat(2,2,1),bf,1)
-               bp2=SQRT(bf%br**2+bf%bz**2)
-               bt2=bf%f/outmat(2,1,1)
-               PRINT "(A,es10.3)","   max Bp/Bt (1st x-point) =",
-     $                                  MAX(bp1/bt1,bp2/bt2)
-               maxBpBt=MAX(bp1/bt1,bp2/bt2)
-            ENDIF
+c     interpolating the numerical integral around an eta=0.0 point.
+c     I assume eta=0.0 won't be within the xpt_brackets since most 
+c     tokamaks wont have an xpoint at the top or bottom of the LCFS
 c-----------------------------------------------------------------------
-c     second x-point divergent analytic integrals:
-c-----------------------------------------------------------------------
-            eta=xpt_brackets(2,1)
-     $      +(xpt_brackets(2,2)-xpt_brackets(2,1))*(one*i/nstep2)
-            yi2(i,0)=eta
-            CALL direct_analytic_ints(2,r_loc2,xpt_brackets(2,1),
-     $      eta,yi2(i,1),yi2(i,2),yi2(i,3),yi2(i,4),outmat,.FALSE.)
-c-----------------------------------------------------------------------
-c     printing maximum value of Bp/Bt at second x-point
-c-----------------------------------------------------------------------
-            IF(i==nstep2)THEN
-               CALL direct_get_bfield(outmat(2,1,0),outmat(2,2,0),bf,1)
-               bp1=SQRT(bf%br**2+bf%bz**2)
-               bt1=bf%f/outmat(2,1,0)
-               CALL direct_get_bfield(outmat(2,1,1),outmat(2,2,1),bf,1)
-               bp2=SQRT(bf%br**2+bf%bz**2)
-               bt2=bf%f/outmat(2,1,1)
-               PRINT "(A,es10.3)","   max Bp/Bt (2nd x-point) =",
-     $                                  MAX(bp1/bt1,bp2/bt2)
-               IF(MAX(bp1/bt1,bp2/bt2)>maxBpBt)THEN
-                  maxBpBt=MAX(bp1/bt1,bp2/bt2)
-               ENDIF
-            ENDIF
-         ENDDO
-c-----------------------------------------------------------------------
-c     ordering etas in the brackets to define two non-divergent 
-c     intervals: [eta1,eta2] and [eta3,eta4]. x points should lie in
-c     [eta2,eta3] and [eta4-twopi,eta1]. twopi will be between eta3,eta4
-c-----------------------------------------------------------------------
-         IF(xpt_brackets(2,1)>xpt_brackets(1,1))THEN
-            IF(xpt_brackets(2,1)<xpt_brackets(1,2))
-     $          CALL program_stop("x-pt bracket angle calc. req. debug")
-            eta1=xpt_brackets(1,2)
-            eta2=xpt_brackets(2,1)
-            eta3=xpt_brackets(2,2)
-            IF(xpt_brackets(1,1)<xpt_brackets(2,2))THEN
-               eta4=xpt_brackets(1,1)+twopi
-            ELSE
-               CALL program_stop("x-pt bracket angle calc. req. debug")
-            ENDIF
-         ELSE
-            yi_i=yi1
-            yi1=yi2
-            yi2=yi_i
-            IF(xpt_brackets(1,1)<xpt_brackets(2,2))
-     $          CALL program_stop("x-pt bracket angle calc. req. debug")
-            eta1=xpt_brackets(2,2)
-            eta2=xpt_brackets(1,1)
-            eta3=xpt_brackets(1,2)
-            IF(xpt_brackets(2,1)<xpt_brackets(1,2))THEN
-               eta4=xpt_brackets(2,1)+twopi
-            ELSE
-               CALL program_stop("x-pt bracket angle calc. req. debug")
-            ENDIF
-         ENDIF
-c-----------------------------------------------------------------------
-c     calling direct_fl_int over non-divergent intervals
-c-----------------------------------------------------------------------
-         CALL direct_fl_int(psifac,eta1,eta2,y_out1,bf,len_y1_out)
-         ist1=len_y1_out
-         CALL direct_fl_int(psifac,eta3,eta4,y_out2,bf,len_y2_out)
-         ist2=len_y2_out
-c-----------------------------------------------------------------------
-c     interpolating an eta=twopi point for y_out2. 
-c-----------------------------------------------------------------------
-         DO i=0,ist2,+1
-            IF(y_out2(i,0)>twopi)THEN
-               eta0i=i
+      IF(y_out(len_y_out,0)>eta_i)THEN
+         DO i=0,len_y_out,+1
+            IF(y_out(i,0)>eta_i)THEN
+               eta_ii=i
                EXIT
             ENDIF
          ENDDO
-
-         i=MAX(eta0i-5,0)
-         j=MIN(eta0i+5,ist2)
-
-         CALL spline_alloc(yi,j-i,4)
-
-         DO k=i,j,+1
-            yi%xs(k-i)=y_out2(k,0)
-            yi%fs(k-i,1)=y_out2(k,1)
-            yi%fs(k-i,2)=y_out2(k,2)
-            yi%fs(k-i,3)=y_out2(k,3)
-            yi%fs(k-i,4)=y_out2(k,4)
-         ENDDO
-
-         CALL spline_fit(yi,"extrap")
-         CALL spline_eval(yi,twopi,0)
-         y01=yi%f(1)
-         y02=yi%f(2)
-         y03=yi%f(3)
-         y04=yi%f(4)
-         CALL spline_dealloc(yi)
-c-----------------------------------------------------------------------
-c     filling out points up to eta = twopi
-c-----------------------------------------------------------------------
-         y_out2i(0:(eta0i-1),0)=y_out2(0:(eta0i-1),0)
-         y_out2i(0:(eta0i-1),1)=y_out2(0:(eta0i-1),1)
-         y_out2i(0:(eta0i-1),2)=y_out2(0:(eta0i-1),2)
-         y_out2i(0:(eta0i-1),3)=y_out2(0:(eta0i-1),3)
-         y_out2i(0:(eta0i-1),4)=y_out2(0:(eta0i-1),4)
-c-----------------------------------------------------------------------
-c     putting in interpolated point at eta = twopi
-c-----------------------------------------------------------------------
-         y_out2i(eta0i,0)=twopi
-         y_out2i(eta0i,1)=y01
-         y_out2i(eta0i,2)=y02
-         y_out2i(eta0i,3)=y03
-         y_out2i(eta0i,4)=y04
-c-----------------------------------------------------------------------
-c     putting in the rest of the numerically integrated points
-c-----------------------------------------------------------------------
-         y_out2i((eta0i+1):(ist2+1),0)=y_out2(eta0i:ist2,0)
-         y_out2i((eta0i+1):(ist2+1),1)=y_out2(eta0i:ist2,1)
-         y_out2i((eta0i+1):(ist2+1),2)=y_out2(eta0i:ist2,2)
-         y_out2i((eta0i+1):(ist2+1),3)=y_out2(eta0i:ist2,3)
-         y_out2i((eta0i+1):(ist2+1),4)=y_out2(eta0i:ist2,4)
-c-----------------------------------------------------------------------
-c     redefining y_out2 with the new interpolated point at eta=twopi
-c-----------------------------------------------------------------------
-         y_out2 = y_out2i
-         ist2=ist2+1
-c-----------------------------------------------------------------------
-c     adding consecutive integrals
-c-----------------------------------------------------------------------
-         DO i=1,4,+1
-            IF(i==2)CYCLE
-            y_out1(:,i)=y_out1(:,i)+yi1(nstep2,i)
-            yi2(:,i)=yi2(:,i)+y_out1(ist1,i)
-            y_out2(:,i)=y_out2(:,i)+yi2(nstep2,i)
-         ENDDO
-c-----------------------------------------------------------------------
-c     constructing y_out and ff
-c-----------------------------------------------------------------------
-         tot_steps=2*nstep2+ist1+1+ist2 !extra 1 because both y_out1, y_out2 are indexed from 0
-
-         CALL spline_alloc(yi,tot_steps,4)
-         !CALL spline_alloc(y_out,tot_steps,4)
-         CALL spline_alloc(ff,tot_steps,4)
-         CALL spline_alloc(ffi,tot_steps,4)
-
-         yi%xs(0:(nstep2-1))=yi1(1:nstep2,0)
-         yi%fs(0:(nstep2-1),1)=yi1(1:nstep2,1)
-         yi%fs(0:(nstep2-1),2)=yi1(1:nstep2,2)
-         yi%fs(0:(nstep2-1),3)=yi1(1:nstep2,3)
-         yi%fs(0:(nstep2-1),4)=yi1(1:nstep2,4)
-         ffi%xs(0:(nstep2-1))=yi1(1:nstep2,4)/y_out2(ist2,4)
-         ffi%fs(0:(nstep2-1),1)=yi1(1:nstep2,2)**2
-         ffi%fs(0:(nstep2-1),2)=yi1(1:nstep2,0)/twopi-
-     $        ffi%xs(0:(nstep2-1))
-         ffi%fs(0:(nstep2-1),3)=bf%f*
-     $        (yi1(1:nstep2,3)-ffi%xs(0:(nstep2-1))*y_out2(ist2,3))
-         ffi%fs(0:(nstep2-1),4)=yi1(1:nstep2,1)/y_out2(ist2,1)-
-     $        ffi%xs(0:(nstep2-1))
-
-         i1=nstep2
-         i2=nstep2+ist1
-         
-         yi%xs(i1:i2)=y_out1(0:ist1,0)
-         yi%fs(i1:i2,1)=y_out1(0:ist1,1)
-         yi%fs(i1:i2,2)=y_out1(0:ist1,2)
-         yi%fs(i1:i2,3)=y_out1(0:ist1,3)
-         yi%fs(i1:i2,4)=y_out1(0:ist1,4)
-         ffi%xs(i1:i2)=y_out1(0:ist1,4)/y_out2(ist2,4)
-         ffi%fs(i1:i2,1)=y_out1(0:ist1,2)**2
-         ffi%fs(i1:i2,2)=y_out1(0:ist1,0)/twopi-
-     $        ffi%xs(i1:i2)
-         ffi%fs(i1:i2,3)=bf%f*
-     $        (y_out1(0:ist1,3)-ffi%xs(i1:i2)*y_out2(ist2,3))
-         ffi%fs(i1:i2,4)=y_out1(0:ist1,1)/y_out2(ist2,1)-
-     $        ffi%xs(i1:i2)
-
-         i1=nstep2+ist1+1
-         i2=nstep2+ist1+1+(nstep2-1)
-
-         yi%xs(i1:i2)=yi2(1:nstep2,0)
-         yi%fs(i1:i2,1)=yi2(1:nstep2,1)
-         yi%fs(i1:i2,2)=yi2(1:nstep2,2)
-         yi%fs(i1:i2,3)=yi2(1:nstep2,3)
-         yi%fs(i1:i2,4)=yi2(1:nstep2,4)
-         ffi%xs(i1:i2)=yi2(1:nstep2,4)/y_out2(ist2,4)
-         ffi%fs(i1:i2,1)=yi2(1:nstep2,2)**2
-         ffi%fs(i1:i2,2)=yi2(1:nstep2,0)/twopi-
-     $        ffi%xs(i1:i2)
-         ffi%fs(i1:i2,3)=bf%f*
-     $        (yi2(1:nstep2,3)-ffi%xs(i1:i2)*y_out2(ist2,3))
-         ffi%fs(i1:i2,4)=yi2(1:nstep2,1)/y_out2(ist2,1)-
-     $        ffi%xs(i1:i2)
-
-         i1=nstep2+ist1+1+nstep2
-         i2=nstep2+ist1+1+nstep2+ist2
-
-         yi%xs(i1:i2)=y_out2(0:ist2,0)
-         yi%fs(i1:i2,1)=y_out2(0:ist2,1)
-         yi%fs(i1:i2,2)=y_out2(0:ist2,2)
-         yi%fs(i1:i2,3)=y_out2(0:ist2,3)
-         yi%fs(i1:i2,4)=y_out2(0:ist2,4)
-         ffi%xs(i1:i2)=y_out2(0:ist2,4)/y_out2(ist2,4)
-         ffi%fs(i1:i2,1)=y_out2(0:ist2,2)**2
-         ffi%fs(i1:i2,2)=y_out2(0:ist2,0)/twopi-
-     $        ffi%xs(i1:i2)
-         ffi%fs(i1:i2,3)=bf%f*
-     $        (y_out2(0:ist2,3)-ffi%xs(i1:i2)*y_out2(ist2,3))
-         ffi%fs(i1:i2,4)=y_out2(0:ist2,1)/y_out2(ist2,1)-
-     $        ffi%xs(i1:i2)
-c-----------------------------------------------------------------------
-c     wrapping ff spline to start at eta=0
-c-----------------------------------------------------------------------
-         eta0i=2*nstep2+ist1+1+eta0i
-
-         DO i=0,tot_steps,+1
-            j=i+eta0i
-
-            IF(j>tot_steps)THEN
-               j=j-tot_steps-1
-               ff%xs(i)=ffi%xs(j)+ffi%xs(tot_steps)
-               y_out(i,1)=yi%fs(j,1)+yi%fs(tot_steps,1)
-               y_out(i,3)=yi%fs(j,3)+yi%fs(tot_steps,3)
-               y_out(i,4)=yi%fs(j,4)+yi%fs(tot_steps,4)
-            ELSE
-               ff%xs(i)=ffi%xs(j)
-               y_out(i,1)=yi%fs(j,1)
-               y_out(i,3)=yi%fs(j,3)
-               y_out(i,4)=yi%fs(j,4)
-            ENDIF
-
-            ff%fs(i,1)=ffi%fs(j,1)
-            ff%fs(i,2)=ffi%fs(j,2)
-            ff%fs(i,3)=ffi%fs(j,3)
-            ff%fs(i,4)=ffi%fs(j,4)
-            y_out(i,2)=yi%fs(j,2)
-
-            IF(yi%xs(j)>twopi)THEN
-               y_out(i,0)=yi%xs(j)-twopi
-            ELSE
-               y_out(i,0)=yi%xs(j)
+      ELSEIF(y_out(len_y_out,0)<eta_i)THEN
+         DO i=0,len_y_out,+1
+            IF(y_out(i,0)<eta_i)THEN
+               eta_ii=i
+               EXIT
             ENDIF
          ENDDO
-
-         ff%xs(:)=ff%xs(:)-ff%xs(0)
-         ff%fs(:,2)=ff%fs(:,2)-ff%fs(0,2)
-         ff%fs(:,3)=ff%fs(:,3)-ff%fs(0,3)
-         ff%fs(:,4)=ff%fs(:,4)-ff%fs(0,4)
-         y_out(:,1)=y_out(:,1)-yi%fs(eta0i,1)
-         y_out(:,3)=y_out(:,3)-yi%fs(eta0i,3)
-         y_out(:,4)=y_out(:,4)-yi%fs(eta0i,4)
-
-         y_out(0,0)=zero
-
-         !IF(debug_in)PRINT "(A)", "ff 1st x-pt start point:"
-         !IF(debug_in)PRINT "(i6)", (tot_steps+1-eta0i)
-         !IF(debug_in)PRINT "(A)", "ff 2nd x-pt start point:"
-         !IF(debug_in)PRINT "(i6)", (tot_steps+1-eta0i+nstep2+ist1+1)
-         xpt_starts(1)=(tot_steps+1-eta0i)
-         xpt_starts(2)=(tot_steps+1-eta0i+nstep2+ist1+1)
-
-         CALL spline_dealloc(ffi)
-         CALL spline_dealloc(yi)
       ENDIF
+
+      i=MAX(eta_ii-10,0)
+      j=MIN(eta_ii+10,len_y_out)
+
+      CALL spline_alloc(yi,j-i,4)
+
+      DO k=i,j,+1
+         yi%xs(k-i)=y_out(k,0)
+         yi%fs(k-i,1)=y_out(k,1)
+         yi%fs(k-i,2)=y_out(k,2)
+         yi%fs(k-i,3)=y_out(k,3)
+         yi%fs(k-i,4)=y_out(k,4)
+      ENDDO
+
+      CALL spline_fit(yi,"extrap")
+      CALL spline_eval(yi,eta_i,0)
+      yinterim1(0)=eta_i
+      yinterim1(1)=yi%f(1)
+
+      yinterim1(3)=yi%f(3)
+      yinterim1(4)=yi%f(4)
+
+
+      IF(r_avg)THEN
+         yinterim1(2)=y_out(eta_ii-1,2)+
+     $((eta_i-y_out(eta_ii-1,0))/(y_out(eta_ii,0)-y_out(eta_ii-1,0)))*
+     $(y_out(eta_ii,2)-y_out(eta_ii-1,2))
+      ELSE
+         yinterim1(2)=yi%f(2)
+      ENDIF
+
+      CALL spline_dealloc(yi)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE direct_mixed_spline_builder
+      RETURN 
+      END SUBROUTINE yinterim
 c-----------------------------------------------------------------------
 c     subprogram 17. direct_spline_comparison.
 c     print data from mixed analytic/numerical method, and solely
