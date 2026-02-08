@@ -52,7 +52,7 @@ c-----------------------------------------------------------------------
       LOGICAL, DIMENSION(1:2) :: outside_sep
       REAL(r8), DIMENSION(2,2) :: xpt_brackets
       TYPE(bicube_type) :: psi_in
-      LOGICAL :: direct_infinite_loop_flag,plot_convergence1
+      LOGICAL :: direct_infinite_loop_flag
       INTEGER :: direct_infinite_loop_count = 2000
       INTEGER :: num_xpts
 
@@ -72,7 +72,6 @@ c-----------------------------------------------------------------------
       REAL(r8) :: xpt_tol=0.2
       INTEGER :: nstepd=20000
       INTEGER :: nstep2=2048
-      REAL(r8) :: xcheck=0.99, dqdeps_tmp
 
       CONTAINS
 c-----------------------------------------------------------------------
