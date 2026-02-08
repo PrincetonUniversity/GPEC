@@ -1049,7 +1049,6 @@ c-----------------------------------------------------------------------
             direct_infinite_loop_flag = .TRUE.
             CALL program_stop("find_fl_surface2 failed.")
          ENDIF
-         !PRINT "(es25.14)",radii(2)
       ENDDO
 c-----------------------------------------------------------------------
 c     calculating r, z.
@@ -1525,6 +1524,8 @@ c-----------------------------------------------------------------------
          PRINT "(A)", "direct_local_xpoint output =>"
          PRINT "(A)", "X-point number:"
          PRINT "(i6)", x_i
+         PRINT "(A)", "eta:"
+         PRINT "(f16.10)", ATAN2(z-zo,r-ro)
          CALL direct_get_bfield(ro,zo,bf,1)
          PRINT "(A)", "psi at origin:"
          PRINT "(f20.14)", bf%psi
@@ -1709,22 +1710,24 @@ c     integrator.
 c-----------------------------------------------------------------------
 c501   FORMAT(1x,i1," x-point(s) detected:")
 c502   FORMAT(1x,"over eta bracket (",f10.8,",",f10.8,")")
-600   FORMAT(1x,"x-point detected at eta = ",f7.5,". analytic")
-601   FORMAT(1x,"2nd x-point detected at eta = ",f7.5,". analytic")
+600   FORMAT(1x," x-point detected at eta, r = ",f6.4,",",f6.4)
+601   FORMAT(1x," 2nd x-point detected at eta, r = ",f6.4,",",f6.4)
 603   FORMAT(1x,"integrals applied for eta = (",
      $  f7.5,",",f7.5,").")
       IF(verbose)THEN
-         PRINT "(A)", "________________________________________________"
+         PRINT "(A)", " _______________________________________________"
          IF(x_i==1)THEN
-            WRITE(message,600)xpt_etas(x_i)
+            WRITE(message,600)xpt_etas(x_i),
+     $                           SQRT((zxs(x_i)-zo)**2+(rxs(x_i)-ro)**2)
             PRINT "(A)",message
          ELSEIF(x_i==2)THEN
-            WRITE(message,601)xpt_etas(x_i)
+            WRITE(message,601)xpt_etas(x_i),
+     $                           SQRT((zxs(x_i)-zo)**2+(rxs(x_i)-ro)**2)
             PRINT "(A)",message
          ENDIF
-         WRITE(message,603)xpt_brackets(x_i,1),xpt_brackets(x_i,2)
-         PRINT "(A)",message
-         PRINT "(A)", "------------------------------------------------"
+         !WRITE(message,603)xpt_brackets(x_i,1),xpt_brackets(x_i,2)
+         !PRINT "(A)",message
+         PRINT "(A)", " -----------------------------------------------"
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
