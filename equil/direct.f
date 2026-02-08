@@ -208,144 +208,39 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     integrating anticlockwise.
 c-----------------------------------------------------------------------
-         IF(use_analytic .AND. run_xpt)THEN
-            IF(debug)THEN
-               CALL direct_fl_int(sq%xs(ipsi),zero,twopi,y_outnum,bf,
-     $                                                        len_y_out)
-               CALL spline_alloc(ffnum,istep,4)
-               ffnum%xs(0:istep)=y_outnum(0:istep,4)/y_outnum(istep,4)
-               ffnum%fs(0:istep,1)=y_outnum(0:istep,2)**2
-               ffnum%fs(0:istep,2)=y_outnum(0:istep,0)/twopi
-     $ -ffnum%xs(0:istep)
-               ffnum%fs(0:istep,3)=bf%f*
-     $ (y_outnum(0:istep,3)-ffnum%xs(0:istep)*y_outnum(istep,3))
-               ffnum%fs(0:istep,4)=y_outnum(0:istep,1)/y_outnum(istep,1)
-     $ -ffnum%xs
+         CALL direct_fl_int(sq%xs(ipsi),zero,twopi,y_out1,len_y_out1
+     $        ,eval_BpOnBt,eval_dy1,eval_xpt_tol,.FALSE.,bf, .FALSE.)
 
-               CALL direct_mixed_spline_builder(sq%xs(ipsi),ff,y_out,
-     $         debug,maxBpBt,xpt_starts)
-               istep=SIZE(ff%xs,1)-1
-
-               CALL direct_spline_comparison(ffnum,ff,y_outnum,len_y_out
-     $ ,bf,y_out,ipsi,0,sq%xs(ipsi),maxBpBt,xpt_starts,dqdeps_tol)
-            ELSE
-               CALL direct_mixed_spline_builder(sq%xs(ipsi),ff,y_out,
-     $         debug,maxBpBt,xpt_starts)
-               istep=SIZE(ff%xs,1)-1
-            ENDIF
+         IF(y_out1(len_y_out1,0)<twopi)THEN 
+c-----------------------------------------------------------------------
+c     integral terminated due to proximity to an x-point,
+c     launching direct_xpt_y_out.
+c-----------------------------------------------------------------------
+            CALL direct_xpt_y_out(y_out1,len_y_out1,sq%xs(ipsi),
+     $ y_out,len_y_out,eval_BpOnBt,eval_dy1,eval_xpt_tol,x_starts,difs,
+     $ outmat2f)
          ELSE
-            CALL direct_fl_int(sq%xs(ipsi),zero,twopi,y_out,bf,
-     $                                                        len_y_out)
-c-----------------------------------------------------------------------
-c     checks whether q-integral is diverging.  
-c-----------------------------------------------------------------------
-            IF(sq%xs(ipsi)>xcheck .AND. run_xpt)THEN
-               DO ipri=0,pl,+1
-                  IF(plot_convergence)THEN
-                     IF(ipri>0)THEN
-                        dqdeps_tol=dqdeps_tol*sqrt(sqrt(sqrt(10.0)))
-                        IF(ipri<pl)THEN                     
-                           CALL spline_dealloc(ff)
-                           IF(num_xpts>0)THEN
-                              CALL spline_dealloc(ffnum)
-                           ENDIF
-                        ENDIF
-                     ELSE
-                        dqdeps_tol=dqdeps_tmp
-                     ENDIF
-                     xpt_etas=0.0
-                     xpt_brackets=0.0
-                     eta_maxes=0.0
-                     eta_brackets=0.0 
-                     num_xpts=0
-                     maxima_count=0
-                     y_outnum=0
-                  ENDIF
-                  CALL direct_initialise_xpoints(y_out,len_y_out,.TRUE.,
-     $                  .FALSE.,bf,dqdeps_tol,BpBt_tol,eta_maxes,
-     $                  eta_brackets,maxima_count)
-
-                  IF(maxima_count > 0 .AND. run_xpt)THEN
-                     IF(.NOT.plot_convergence)THEN
-                        use_analytic=.TRUE.
-                     ENDIF
-                     num_xpts=maxima_count
-
-                     DO i=1,maxima_count,+1
-                        xpt_etas(i)=eta_maxes(i)!updated by direct_xpoint
-                        xpt_brackets(i,1)=eta_brackets(i,1)
-                        xpt_brackets(i,2)=eta_brackets(i,2)
-
-                        CALL find_fl_surface(one,xpt_etas(i),rx,zx)
-                        CALL direct_xpoint(rx,zx,i,new_xpt)
-                     ENDDO
-
-                     IF(debug)THEN
-41234                FORMAT(I9.9,",",I9.9,",",I9.9,",",f17.14,",",
-     $   f17.14,",",f17.14,",",f17.14,",",f17.14)
-                        message=""
-                        WRITE (message, "(A18)") "xpt_tests/data.csv" 
-                        CALL ascii_open(out_xpt_unit,trim(message)
-     $ ,"UNKNOWN")
-                        WRITE(out_xpt_unit,41234)ipsi,mpsi,mtheta,
-     $ sq%xs(ipsi),ro,zo,rxs(1),zxs(1)
-                        CALL ascii_close(out_xpt_unit)
-
-                        CALL spline_alloc(ffnum,istep,4)
-                        ffnum%xs(0:istep)=y_out(0:istep,4)/
-     $ y_out(istep,4)
-                        ffnum%fs(0:istep,1)=y_out(0:istep,2)**2
-                        ffnum%fs(0:istep,2)=y_out(0:istep,0)/twopi
-     $ -ffnum%xs(0:istep)
-                        ffnum%fs(0:istep,3)=bf%f*
-     $ (y_out(0:istep,3)-ffnum%xs(0:istep)*y_out(istep,3))
-                        ffnum%fs(0:istep,4)=y_out(0:istep,1)/
-     $ y_out(istep,1) -ffnum%xs
-                        y_outnum=y_out
-                        PRINT "(A)","Fakeout NORan"
-                        CALL direct_mixed_spline_builder(sq%xs(ipsi),
-     $ ff,y_out,debug,maxBpBt,xpt_starts)
-                        PRINT "(A)","Fakeout Ran"
-                        CALL direct_spline_comparison(ffnum,ff,y_outnum,
-     $ len_y_out,bf,y_out,ipsi,ipri,sq%xs(ipsi),maxBpBt,
-     $ xpt_starts,dqdeps_tol)
-                     ELSE
-                        CALL direct_mixed_spline_builder(sq%xs(ipsi),
-     $ ff,y_out,debug,maxBpBt,xpt_starts)
-                        istep=SIZE(ff%xs,1)-1
-                     ENDIF
-c-----------------------------------------------------------------------
-c     no x-points found, fit numerically integrated 
-c     data to cubic splines
-c-----------------------------------------------------------------------
-                  ELSE
-                     CALL spline_alloc(ff,istep,4)
-                     ff%xs(0:istep)=y_out(0:istep,4)/y_out(istep,4)
-                     ff%fs(0:istep,1)=y_out(0:istep,2)**2
-                     ff%fs(0:istep,2)=y_out(0:istep,0)/twopi
-     $        -ff%xs(0:istep)
-                     ff%fs(0:istep,3)=bf%f*
-     $        (y_out(0:istep,3)-ff%xs(0:istep)*y_out(istep,3))
-                     ff%fs(0:istep,4)=y_out(0:istep,1)/y_out(istep,1)
-     $        -ff%xs
-                     CALL spline_fit(ff,"periodic")
-                  ENDIF
-                  IF(.NOT.plot_convergence)EXIT
-               ENDDO
-            ELSE
+            IF(debug_xpt)WRITE(*,*)"No x-point detected"
+            IF(debug_xpt)WRITE(*,*)y_out1(0,3)
+            IF(debug_xpt)WRITE(*,*)y_out(0,3)
+            IF(debug_xpt)WRITE(*,*)y_out1(len_y_out1,3)
+            IF(debug_xpt)WRITE(*,*)y_out(len_y_out1,3)
+            y_out=y_out1
+            len_y_out=len_y_out1
+            istep=len_y_out1
+         ENDIF
 c-----------------------------------------------------------------------
 c     if not diverging, fit numerically integrated data to cubic splines  
 c-----------------------------------------------------------------------
-               CALL spline_alloc(ff,istep,4)
-               ff%xs(0:istep)=y_out(0:istep,4)/y_out(istep,4)
-               ff%fs(0:istep,1)=y_out(0:istep,2)**2
-               ff%fs(0:istep,2)=y_out(0:istep,0)/twopi-ff%xs(0:istep)
-               ff%fs(0:istep,3)=bf%f*
+         CALL spline_alloc(ff,istep,4)
+         ff%xs(0:istep)=y_out(0:istep,4)/y_out(istep,4)
+         ff%fs(0:istep,1)=y_out(0:istep,2)**2
+         ff%fs(0:istep,2)=y_out(0:istep,0)/twopi-ff%xs(0:istep)
+         ff%fs(0:istep,3)=bf%f*
      $        (y_out(0:istep,3)-ff%xs(0:istep)*y_out(istep,3))
-               ff%fs(0:istep,4)=y_out(0:istep,1)/y_out(istep,1)-ff%xs
-               CALL spline_fit(ff,"periodic")
-            ENDIF
-         ENDIF
+         ff%fs(0:istep,4)=y_out(0:istep,1)/y_out(istep,1)-ff%xs
+         CALL spline_fit(ff,"periodic")
+         IF(debug_xpt)CALL program_stop("stopping: x-point debug ended")
 c-----------------------------------------------------------------------
 c     allocate space for rzphi and define grids.
 c-----------------------------------------------------------------------
@@ -379,14 +274,6 @@ c-----------------------------------------------------------------------
          sq%fs(ipsi,3)=y_out(istep,1)*twopi*psio
          sq%fs(ipsi,4)=y_out(istep,3)*bf%f/twopi
          CALL spline_dealloc(ff)
-c-----------------------------------------------------------------------
-c     log maximum y_out, flast for x-point plotting.
-c-----------------------------------------------------------------------
-         IF (ipsi == mpsi) THEN
-               y_out_last = y_out
-               len_y_last=len_y_out
-               flast = bf%f*twopi
-         ENDIF
       ENDDO
 c-----------------------------------------------------------------------
 c     close output files.
