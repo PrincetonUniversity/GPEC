@@ -178,6 +178,26 @@ c-----------------------------------------------------------------------
       IF(bin_fl)CALL bin_open(bin_2d_unit,"flint.bin","UNKNOWN",
      $     "REWIND","none")
 c-----------------------------------------------------------------------
+c     check for and initialise x-points if present.
+c-----------------------------------------------------------------------
+      !Integrated around psi=1 anticlockwise, auto exits calling 
+      !direct_fl_int if BpBt_tol or xpt_tol exceeded.
+      CALL direct_fl_int(1.d0-1.d-14,zero,twopi,y_out1,len_y_out1
+     $          ,eval_BpOnBt,eval_dy1,eval_xpt_tol,.TRUE.,bf, .FALSE.)
+      IF(num_xpts>0 .AND. xpt_etas(1)<pi)THEN
+         PRINT "(A)", " Searching for second x-pt..."
+         !Found x-point in top half of plasma, searching bottom half
+         !with anti-clockwise integration.
+         CALL direct_fl_int(1.d0-1.d-14,2.d-1,-twopi,y_out1,len_y_out1
+     $           ,eval_BpOnBt,eval_dy1,eval_xpt_tol,.TRUE.,bf, .FALSE.)
+         IF(num_xpts==1)PRINT "(A)", 
+     $    "                              none found."
+      ENDIF
+      IF(plot_convergence)THEN
+         CALL plot_xpt_convergence
+         CALL program_stop("plot_xpt_convergence ran, stopping program")
+      ENDIF
+c-----------------------------------------------------------------------
 c     start loop over flux surfaces.
 c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,'(a,1p,es10.3)')" etol = ",etol
