@@ -387,10 +387,9 @@ c-----------------------------------------------------------------------
       IF(mat_flag .OR. ode_flag .OR. gal_flag)THEN
          IF(verbose) WRITE(*,'(3x,1p,4(a,es10.3))')"q0 = ",q0,
      $        ", qmin = ",qmin,", qmax = ",qmax,", qa = ",qa
-         IF(verbose) WRITE(*,'(3x,a,l1,1p,5(a,es10.3))')
+         IF(verbose) WRITE(*,'(3x,a,l1,1p,3(a,es10.3))')
      $        "sas_flag = ",sas_flag,", dmlim = ",dmlim,
-     $        ", qlim = ",qlim,", psilim = ",psilim,", psilow = ",psilow
-     $        ,", psihigh = ",psihigh
+     $        ", qlim = ",qlim,", psilim = ",psilim
          IF(verbose) WRITE(*,'(3x,1p,3(a,es10.3))')"betat = ",betat,
      $        ", betan = ",betan,", betaj = ",betaj
          IF(verbose) WRITE(*,'(3x,5(a,i3))')"nn = ",nn,", mlow = ",mlow,
