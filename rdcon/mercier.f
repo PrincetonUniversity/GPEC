@@ -221,10 +221,7 @@ c     note psi in eqs. 6.15, 6.16 is poloidal flux/(2pi), same as psi_in
 c-----------------------------------------------------------------------
             Jpara=psio*f1*avg(16)+p1*avg(18)*twopif/(twopi*psio) + 
      $      (twopif/twopi)**2*f1*avg(17)/psio !(mu0 included in p1))
-            !Jtor=p1*avg(18)*twopif/(twopi*psio) + 
-      !$      (twopif/twopi)**2*f1*avg(17)/psio !(mu0 included in p1))
             Jtor=p1*avg(12)/psio + (twopif/twopi)*f1*avg(13)/psio 
-      !$      (twopif/twopi)**2*f1*avg(17)/psio !(mu0 included in p1))
 c-----------------------------------------------------------------------
 c     compute Hbs_prefac from Shi et al. 2024, using identity from 
 c     Glasser et al. 1975. Shi doi -> https://doi.org/10.1063/5.0183474 
