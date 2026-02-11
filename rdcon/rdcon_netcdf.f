@@ -231,8 +231,6 @@ c-----------------------------------------------------------------------
      $     "ftr", nf90_double, p_dim, ftr_id))
          CALL check( nf90_def_var(ncid,
      $     "mufrac", nf90_double, p_dim, muf_id))
-         !CALL check( nf90_def_var(ncid,
-         !$     "avg_mu0Jbs_dot_B", nf90_double, p_dim, jbs_id))
          CALL check( nf90_def_var(ncid,
      $     "Dnc", nf90_double, p_dim, dnc_id))
          CALL check( nf90_def_var(ncid,
@@ -388,7 +386,6 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_var(ncid,tr_id, mreterms%fs(:,3)))
          CALL check( nf90_put_var(ncid,ftr_id, mreterms%fs(:,4)))
          CALL check( nf90_put_var(ncid,muf_id, mreterms%fs(:,5)))
-         !CALL check( nf90_put_var(ncid,jbs_id, mreterms%fs(:,6)))
          CALL check( nf90_put_var(ncid,dnc_id, mreterms%fs(:,7)))
          CALL check( nf90_put_var(ncid,wc_id, mreterms%fs(:,8)))
          CALL check( nf90_put_var(ncid,jp_id, mreterms%fs(:,9)))
