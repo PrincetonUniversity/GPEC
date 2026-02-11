@@ -195,7 +195,7 @@ c-----------------------------------------------------------------------
             mufrac=ftr*(1.d0+0.533d0/Zeff)/
      $                            ((1.d0-ftr)+ftr*(1.d0+0.533d0/Zeff))
             avg_Jboot_dot_B=-mufrac*(twopif/chi1)*p1 !mu0 included in p1
-            ! Broken, not printing the above out
+            ! ^Broken, not printing the above out in netcdf
 c-----------------------------------------------------------------------
 c     evaluate geometric prefactors of MRE stability terms from 
 c     Hegna 1999 https://doi.org/10.1063/1.873661
@@ -234,12 +234,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     save terms.
 c-----------------------------------------------------------------------
-            mreterms%fs(ipsi,1)=Hbs !Hbs avg_Jboot_dot_B broken
+            mreterms%fs(ipsi,1)=Hbs
             mreterms%fs(ipsi,2)=taua_prefac
             mreterms%fs(ipsi,3)=taur_prefac
             mreterms%fs(ipsi,4)=ftr
             mreterms%fs(ipsi,5)=mufrac
-            mreterms%fs(ipsi,6)=avg_Jboot_dot_B
+            mreterms%fs(ipsi,6)=avg_Jboot_dot_B !broken formula
             mreterms%fs(ipsi,7)=Dnc
             mreterms%fs(ipsi,8)=Wc_prefac
             mreterms%fs(ipsi,9)=Jpara
