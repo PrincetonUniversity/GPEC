@@ -222,14 +222,14 @@ c-----------------------------------------------------------------------
      $     tol_nr,tol_r,crossover,ucrit,singfac_min,singfac_max,
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,sort_type,
      $     gal_flag,regrid_flag,sing1_flag,
-     $     sing_order_ceiling,degen_tol,coil
+     $     sing_order_ceiling,degen_tol,coil,Zeff
       NAMELIST/rdcon_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
      $     out_fl,bin_fl,out_evals,bin_evals,bin_euler,euler_stride,
      $     bin_vac,ahb_flag,mthsurf0,msol_ahb,diagnose_fixup,verbose,
-     $     out_ahg2msc
+     $     out_ahg2msc,MRE_flag,geom_flag
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -320,6 +320,16 @@ c-----------------------------------------------------------------------
       locstab%name="locstb"
       locstab%title=(/"  di  ","  dr  ","  h   "," ca1  "," ca2  "/)
       IF(verbose) WRITE(*,*)"Evaluating Mercier criterion"
+c-----------------------------------------------------------------------
+c     optionally compute modified Rutherford equation (MRE) terms.
+c-----------------------------------------------------------------------
+      IF(MRE_flag)THEN
+         CALL spline_alloc(mreterms,mpsi,30)
+         mreterms%xs=sq%xs
+         mreterms%fs=0
+         mreterms%name="mreterms"
+         IF(verbose) WRITE(*,*)"Evaluating MRE terms"
+      ENDIF
       CALL mercier_scan
       IF(bal_flag)THEN
          IF(verbose) WRITE(*,*)"Evaluating ballooning criterion"
@@ -344,7 +354,7 @@ c-----------------------------------------------------------------------
      $        REAL(sq%fs(ipsi,4),4),
      $        REAL(asinh(locstab%fs(ipsi,1)/sq%xs(ipsi)),4),
      $        REAL(asinh(locstab%fs(ipsi,2)/sq%xs(ipsi)),4),
-     $        REAL(asinh(locstab%fs(ipsi,3)/sq%xs(ipsi)),4),
+     $        REAL(asinh(locstab%fs(ipsi,3)),4),
      $        REAL(asinh(locstab%fs(ipsi,4)),4),
      $        REAL(-sq%fs1(ipsi,1)/twopi,4)
       ENDDO

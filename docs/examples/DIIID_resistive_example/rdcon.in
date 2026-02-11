@@ -74,6 +74,8 @@
     bin_bal1=f           ! Binary output for bal_flag poloidal functions
     out_bal2=f           ! Ascii output for bal_flag functions
     bin_bal2=f           ! Binary output for bal_flag functions
+    MRE_flag=t           ! Netcdf output for various modified Rutherford equation terms (defined in mercier.f)
+    geom_flag=t          ! Netcdf output for more flux-surface averaged terms (defined in mercier.f). To use, must set MRE_flag = t
 /
 
 &UA_DIAGNOSE_LIST

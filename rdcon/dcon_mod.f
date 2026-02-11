@@ -71,6 +71,8 @@ c-----------------------------------------------------------------------
       LOGICAL :: ahb_flag=.FALSE.
       LOGICAL :: out_ahg2msc=.TRUE.
       LOGICAL :: vac_memory=.FALSE.
+      LOGICAL :: MRE_flag=.FALSE.
+      LOGICAL :: geom_flag=.FALSE.
 
       INTEGER, PARAMETER :: sol_base=50
       INTEGER :: mlow,mhigh,mpert,mband,nn,nstep=HUGE(0),bin_sol_min,
@@ -79,10 +81,10 @@ c-----------------------------------------------------------------------
      $     sing_start=0,nzero=0
       REAL(r8) :: thmax0=1,ucrit=1e4,tol_r=1e-5,tol_nr=1e-5,
      $     crossover=1e-2,mthsurf0=1,prefac=1.0,
-     $     plasma1=0.0,vacuum1=0.0,total1=0.0
+     $     plasma1=0.0,vacuum1=0.0,total1=0.0,Zeff=1.52
 
       REAL(r8) :: dpsi_intvl=0.1,dpsi1_intvl=0.1
-      TYPE(spline_type) :: locstab
+      TYPE(spline_type) :: locstab, mreterms
 
       TYPE :: resist_type
       REAL(r8) :: e,f,h,m,g,k,eta,rho,taua,taur,v1
