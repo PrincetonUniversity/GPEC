@@ -222,7 +222,7 @@ c-----------------------------------------------------------------------
      $       (/r_dim, rp_dim, i_dim/), gp_id) )
          CALL check( nf90_def_var(ncid, "Delta_prime", nf90_double,
      $       (/r_dim, rp_dim, i_dim/), dpp_id) )
-         CALL check( nf90_put_att(ncid,dp_id,"long_name",
+         CALL check( nf90_put_att(ncid,dpp_id,"long_name",
      $     "PEST3 Delta Prime Matrix"))
       ENDIF
       ! end definitions

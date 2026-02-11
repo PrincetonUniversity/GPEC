@@ -295,6 +295,58 @@
 #     LDFLAGS += -L/opt/X11/lib
 #     LIBS += -lX11
 #
+# On WSL Ubuntu - Windows Subsystem for Linux
+#   Paste the following lines (uncommented) at the end of this file or export each line in the terminal
+#   prior to compiling. Note that you must have gfortran, libblas-dev, liblapack-dev, libnetcdf-dev, and libnetcdff-dev installed.
+#    # Compiler and flags
+#    FC = gfortran
+#    LDFLAGS = -fopenmp
+#    OMPFLAG = -fopenmp
+#    LIBS = -llapack -lblas
+#    NETCDFLIBS = -lnetcdff
+#    RECURSFLAG = -frecursive
+#   Exporting these lines would look like:
+#    $ export FC=gfortran
+#    $ export LIBS="-llapack -lblas"
+#   And so forth.
+#
+#   Similar to the MIT mferws01 machine, one needs to set environment variables manually.
+#   To achieve this, ensure these paths match those on your machine and either add the following lines to your ~/.bashrc file 
+#   or paste them in the Ubuntu-connected terminal (if put in the terminal they will only last for the current session):
+#    export NETCDFHOME=/usr/lib/x86_64-linux-gnu
+#    export NETCDF_DIR=/usr/lib/x86_64-linux-gnu
+#    export NETCDF_FORTRAN_HOME=/usr/lib/x86_64-linux-gnu
+#    export LAPACKHOME=/usr/lib/x86_64-linux-gnu
+#    export OPENBLASHOME=/usr/lib/x86_64-linux-gnu
+#    export NETCDF_C_HOME=/usr/lib/x86_64-linux-gnu/
+#    export NETCDFINC=/usr/include
+#
+#   If the environment variables are set in the ~/.bashrc file, either restart your terminal or source your ~/.bashrc file
+#     $ source ~/.bashrc
+#
+#   Executing,
+#     $ make v
+#   in this install directory should produce the following verbose message.
+#   ------------------------------------------------------------
+#   Defaults tailored for
+#   Compiling with FC = gfortran
+#      using math libraries -lopenblas
+#      from /usr/lib/x86_64-linux-gnu
+#      including /usr/lib/x86_64-linux-gnu
+#      and netcdf libraries -lnetcdff -lnetcdf
+#      from /usr/lib/x86_64-linux-gnu /usr/lib/x86_64-linux-gnu//lib
+#      including /usr/include
+#      and compiler libraries
+#      from .
+#      including .
+#      and using OMPFLAG -fopenmp
+#  
+#   Set environment FC,LAPACKHOME,NETCDFHOME to change these
+#   ------------------------------------------------------------
+#
+#   Now compile using
+#     $ make 2>&1 | tee make.log
+#
 # If your platform is not properly included in this make file
 # contact nikolas.logan@columbia.edu with your operating system, compiler, and
 # library installation details.

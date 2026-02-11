@@ -38,6 +38,7 @@
 	delg=15.01
 	delfac=1e-3
 	cn0=1
+	use_legacy_greens_function = f
 /
 	
 &shape
