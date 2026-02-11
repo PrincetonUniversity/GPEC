@@ -115,6 +115,24 @@ c-----------------------------------------------------------------------
             ff%fs(itheta,3)=1/bsq
             ff%fs(itheta,4)=1/(bsq*dpsisq)
             ff%fs(itheta,5)=bsq
+            IF(MRE_flag)THEN
+               ff%fs(itheta,6)=dpsisq/bsq
+               ff%fs(itheta,7)=dpsisq
+               ff%fs(itheta,8)=SQRT(bsq)        ! |B|
+               ff%fs(itheta,9)=bt               ! |B_toroidal|
+               ff%fs(itheta,10)=SQRT(bsq-bt**2) ! |B_poloidal|
+               ff%fs(itheta,11)=rfac            ! minor radius
+               ff%fs(itheta,12)=r               ! major radius
+               ff%fs(itheta,13)=1.d0/r          ! 1/major radius
+               ff%fs(itheta,14)=dpsisq/(r**2)
+               ff%fs(itheta,15)=1.d0/(r**2)
+               ff%fs(itheta,16)=dpsisq/(r**2*SQRT(bsq))
+               ff%fs(itheta,17)=1.d0/(r**2*SQRT(bsq))
+               ff%fs(itheta,18)=1.d0/SQRT(bsq)
+               ff%fs(itheta,19)=SQRT(dpsisq)/r
+               ff%fs(itheta,20)=r**2*v1/jac !overbar{R^2}     (Hegna 1999)
+               ff%fs(itheta,21)=r**2        !avg{R^2} ~ [m^2] (Hegna 1999)
+            ENDIF
             ff%fs(itheta,:)=ff%fs(itheta,:)*jac/v1
          ENDDO
 c-----------------------------------------------------------------------
