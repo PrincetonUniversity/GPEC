@@ -233,6 +233,10 @@ c-----------------------------------------------------------------------
       IF(mat_flag .OR. ode_flag)THEN
          WRITE(*,'(3x,1p,4(a,e10.3))')"q0 = ",q0,", qmin = ",qmin,
      $        ", qmax = ",qmax,", qa = ",qa
+         WRITE(*,'(3x,a,l1,1p,5(a,es10.3))')
+     $        "sas_flag = ",sas_flag,", dmlim = ",dmlim,
+     $        ", qlim = ",qlim,", psilim = ",psilim,", psilow = ",psilow
+     $        ,", psihigh = ",psihigh
          WRITE(*,'(3x,1p,3(a,e10.3))')"betat = ",betat,
      $        ", betan = ",betan,", betaj = ",betaj
          WRITE(*,'(3x,5(a,i3))')"nn = ",nn,", mlow = ",mlow,
