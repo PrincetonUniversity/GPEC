@@ -52,13 +52,21 @@ c     compute surface quantities.
 c-----------------------------------------------------------------------
       DO ipsi=0,mpsi
          psifac=sq%xs(ipsi)
-         twopif=sq%fs(ipsi,1)
+         twopif=sq%fs(ipsi,1)    ! f = toroidal B field * major radius
+         f1=sq%fs1(ipsi,1)/twopi ! df/dpsi, 
          p1=sq%fs1(ipsi,2)
-         v1=sq%fs(ipsi,3)
+         v1=sq%fs(ipsi,3)     ! d(volume inside flux surface)/d(psi)
          v2=sq%fs1(ipsi,3)
          q=sq%fs(ipsi,4)
          q1=sq%fs1(ipsi,4)
-         chi1=twopi*psio
+         chi1=twopi*psio      ! d(poloidal flux)/dpsi, chi=poloidal flux
+c-----------------------------------------------------------------------
+c     initialise extremum surface locations.
+c-----------------------------------------------------------------------
+         rmax_loc=0.0
+         rmin_loc=HUGE(1.0_8)
+         zmax_loc=-HUGE(1.0_8)
+         zmin_loc=HUGE(1.0_8)
 c-----------------------------------------------------------------------
 c     evaluate coordinates and jacobian.
 c-----------------------------------------------------------------------
