@@ -76,7 +76,7 @@ c-----------------------------------------------------------------------
             rfac=SQRT(rzphi%f(1))        ! minor radius
             eta=twopi*(theta+rzphi%f(2)) ! machine poloidal angle
             r=ro+rfac*COS(eta)           ! major radius R
-            z=ro+rfac*SIN(eta)           ! vertical coordinate Z
+            z=zo+rfac*SIN(eta)           ! vertical coordinate Z
             jac=rzphi%f(4)               ! jacobian of mag. coordinates
             bt=twopif/(twopi*r)          ! toroidal B field
 c-----------------------------------------------------------------------
@@ -177,7 +177,7 @@ c-----------------------------------------------------------------------
             deltatop_loc=(rmean_loc-zmax_loc(1))/amean_loc
             deltabot_loc=(rmean_loc-zmin_loc(1))/amean_loc
             delta_loc=0.5d0*(deltatop_loc+deltabot_loc)
-            eps_eff=0.67d0*(1.d0-1.4d0*delta_loc*ABS(delta_loc))*eps_loc
+            eps_eff=MAX(0.d0, 0.67d0*(1.d0-1.4d0*delta_loc*ABS(delta_loc))*eps_loc)
 c-----------------------------------------------------------------------
 c     simple estimates of trapped fraction from Sauter 2002:
 c     <https://infoscience.epfl.ch/server/api/core/bitstreams/c42baba0-9
@@ -187,7 +187,7 @@ c-----------------------------------------------------------------------
      $                                        (1.d0+2.d0*SQRT(eps_eff))   
             ftr=MIN(ftr,1.0d0)
 c-----------------------------------------------------------------------
-c     simple estimates of bootstrap drive-relaged terms from 
+c     simple estimates of bootstrap drive-related terms from 
 c     Callen, 2010 UW-CPTC 09-6R, and Hegna PoP 1999
 c-----------------------------------------------------------------------
             ! mu_e_on_nu_e=(ftr/(1.d0-ftr))*(1.d0+0.533d0/Zeff)
