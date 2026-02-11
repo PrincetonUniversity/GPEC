@@ -36,6 +36,7 @@ c-----------------------------------------------------------------------
      $     rmean_loc,amean_loc,deltatop_loc,deltabot_loc,delta_loc,
      $     eps_eff
       REAL(r8), DIMENSION(:), POINTER :: avg
+      REAL(r8), DIMENSION(2) :: rmax_loc, rmin_loc, zmax_loc, zmin_loc
       TYPE(spline_type), TARGET :: ff
 c-----------------------------------------------------------------------
 c     prepare spline types.
