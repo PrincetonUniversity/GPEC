@@ -72,11 +72,32 @@ c     evaluate coordinates and jacobian.
 c-----------------------------------------------------------------------
          DO itheta=0,mtheta
             CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),1)
-            theta=rzphi%ys(itheta)
-            rfac=SQRT(rzphi%f(1))
-            eta=twopi*(theta+rzphi%f(2))
-            r=ro+rfac*COS(eta)
-            jac=rzphi%f(4)
+            theta=rzphi%ys(itheta)       ! magnetic poloidal angle
+            rfac=SQRT(rzphi%f(1))        ! minor radius
+            eta=twopi*(theta+rzphi%f(2)) ! machine poloidal angle
+            r=ro+rfac*COS(eta)           ! major radius R
+            z=ro+rfac*SIN(eta)           ! vertical coordinate Z
+            jac=rzphi%f(4)               ! jacobian of mag. coordinates
+            bt=twopif/(twopi*r)          ! toroidal B field
+c-----------------------------------------------------------------------
+c     update extremum surface locations.
+c-----------------------------------------------------------------------
+            IF(r>rmax_loc(1))THEN
+               rmax_loc(1)=r
+               rmax_loc(2)=z
+            ENDIF
+            IF(r<rmin_loc(1))THEN
+               rmin_loc(1)=r
+               rmin_loc(2)=z
+            ENDIF
+            IF(z>zmax_loc(2))THEN
+               zmax_loc(1)=r
+               zmax_loc(2)=z
+            ENDIF
+            IF(z<zmin_loc(2))THEN
+               zmin_loc(1)=r
+               zmin_loc(2)=z
+            ENDIF
 c-----------------------------------------------------------------------
 c     evaluate other local quantities.
 c-----------------------------------------------------------------------
