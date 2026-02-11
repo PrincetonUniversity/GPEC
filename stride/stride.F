@@ -361,8 +361,6 @@ c-----------------------------------------------------------------------
          vacuum1=0_r8
          total1=0_r8
          ALLOCATE(mx0(mpert,mpert),vx0(mpert))
-         !mx0=0_c8
-         !vx0=0_c8
          CALL stride_netcdf_out(mx0,mx0,mx0,vx0,vx0,vx0,
      $          delta_prime_mat,plasma1,vacuum1,total1)
          CALL stride_dealloc
