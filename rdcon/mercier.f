@@ -32,7 +32,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: bsq,chi1,di,dpsisq,eta,h,jac,p1,psifac,q,q1,r,z,
      $     rfac,term,theta,twopif,v1,v2,v21,v22,v23,v33,
      $     bt,f1,Dnc,Dnc_prefac,Wc_prefac,eps_loc,Jpara,ftr,M,Jtor,
-     $     Hbs,avg_Jboot_dot_B,mufrac,taua_prefac,taur_prefac,
+     $     Hbs_prefac,avg_Jboot_dot_B,mufrac,taua_prefac,taur_prefac,
      $     rmean_loc,amean_loc,deltatop_loc,deltabot_loc,delta_loc,
      $     eps_eff
       REAL(r8), DIMENSION(:), POINTER :: avg
@@ -226,15 +226,15 @@ c-----------------------------------------------------------------------
             Jtor=p1*avg(12)/psio + (twopif/twopi)*f1*avg(13)/psio 
       !$      (twopif/twopi)**2*f1*avg(17)/psio !(mu0 included in p1))
 c-----------------------------------------------------------------------
-c     compute H_bs defined in Shi et al. 2024, using identity from 
+c     compute Hbs_prefac from Shi et al. 2024, using identity from 
 c     Glasser et al. 1975. Shi doi -> https://doi.org/10.1063/5.0183474 
 c-----------------------------------------------------------------------
-            Hbs=(avg(1)/avg(5))* ! [m^2]
-     $  (-v1/(twopi**2*psio**2*q1))! *avg_Jboot_dot_B ! [m^-5*m^3]
+            Hbs_prefac=(avg(1)/avg(5))*
+     $  (-v1/(twopi**2*psio**2*q1))! mult by avg_Jboot_dot_B to get Hbs
 c-----------------------------------------------------------------------
 c     save terms.
 c-----------------------------------------------------------------------
-            mreterms%fs(ipsi,1)=Hbs
+            mreterms%fs(ipsi,1)=Hbs_prefac
             mreterms%fs(ipsi,2)=taua_prefac
             mreterms%fs(ipsi,3)=taur_prefac
             mreterms%fs(ipsi,4)=ftr
