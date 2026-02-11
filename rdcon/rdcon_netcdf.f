@@ -57,7 +57,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: i, ncid,
      $    i_dim, m_dim, mo_dim, p_dim, i_id, m_id, mo_id, p_id,
-     $    f_id, q_id, dv_id, mu_id, di_id, dr_id, ca_id,
+     $    f_id, q_id, dv_id, mu_id, di_id, dr_id, h_id, ca_id,
      $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id, wt0_id,
      $    l_dim, l_id, coil_dim, coil_id, dpc_id, dc_id,
      $    lp_dim, lp_id, r_dim, r_id, rp_dim, rp_id, pr_id, qr_id,
@@ -215,6 +215,7 @@ c-----------------------------------------------------------------------
      $       "Safety Factor") )
       CALL check( nf90_def_var(ncid, "di", nf90_double, p_dim, di_id) )
       CALL check( nf90_def_var(ncid, "dr", nf90_double, p_dim, dr_id) )
+      CALL check( nf90_def_var(ncid, "h", nf90_double, p_dim, h_id) )
       CALL check( nf90_def_var(ncid, "ca1", nf90_double, p_dim, ca_id))
       IF(ode_flag .AND. vac_flag)THEN !shift to .OR.
         CALL check( nf90_def_var(ncid, "W_p_eigenvector", nf90_double,
@@ -311,6 +312,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,q_id, sq%fs(:,4)))
       CALL check( nf90_put_var(ncid,di_id, locstab%fs(:,1)/sq%xs(:)))
       CALL check( nf90_put_var(ncid,dr_id, locstab%fs(:,2)/sq%xs(:)))
+      CALL check( nf90_put_var(ncid,h_id,  locstab%fs(:,3)))
       CALL check( nf90_put_var(ncid,ca_id, locstab%fs(:,4)))
 
       IF(ode_flag .AND. vac_flag)THEN !Shift to .OR. 
