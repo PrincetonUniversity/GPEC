@@ -41,7 +41,11 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     prepare spline types.
 c-----------------------------------------------------------------------
-      CALL spline_alloc(ff,mtheta,5)
+      IF(MRE_flag)THEN
+         CALL spline_alloc(ff,mtheta,21)
+      ELSE
+         CALL spline_alloc(ff,mtheta,5)
+      ENDIF
       ff%xs=rzphi%ys
 c-----------------------------------------------------------------------
 c     compute surface quantities.
