@@ -187,8 +187,8 @@ c-----------------------------------------------------------------------
      $                                        (1.d0+2.d0*SQRT(eps_eff))   
             ftr=MIN(ftr,1.0d0)
 c-----------------------------------------------------------------------
-c     simple estimates of Jboot and bootstrap drive from 
-c     Callen, 2010 UW-CPTC 09-6R, and Hegna 1999
+c     simple estimates of bootstrap drive-relaged terms from 
+c     Callen, 2010 UW-CPTC 09-6R, and Hegna PoP 1999
 c-----------------------------------------------------------------------
             ! mu_e_on_nu_e=(ftr/(1.d0-ftr))*(1.d0+0.533d0/Zeff)
             ! ^ Taking banana limit of eq. B17 (& B14) in Callen 
