@@ -1587,7 +1587,7 @@ c-----------------------------------------------------------------------
       INTEGER :: i_id,q_id,m_id,p_id,c_id,bp_id,w_id,k_id,n_id,d_id,
      $           a_id,pp_id,cp_id,wp_id,np_id,dp_id,wc_id,bc_id,ti_id,
      $           te_id,ni_id,ne_id,we_id,wi_id,q1_id,rh_id,r1_id,ssp_id,
-     $           lq_id,rt_id,at_id,astat,wc_id,wmin_id,wsat_id
+     $           lq_id,rt_id,at_id,astat,wmin_id,wsat_id
 
       INTEGER :: itheta,ising,icoup
       REAL(r8) :: respsi,lpsi,rpsi,shear,hdist,sbnosurf
