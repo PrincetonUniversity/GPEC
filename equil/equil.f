@@ -155,9 +155,13 @@ c-----------------------------------------------------------------------
       CASE("galkin")
          CALL read_eq_galkin
       CASE("chease")
-         CALL read_eq_chease
+         CALL read_eq_chease_inp1
       CASE("chease2")
-         CALL read_eq_chease2
+         WRITE(*,*) "   !! Warning: eq_type chease2 is deprecated, "//
+     $      "use chease_ascii instead"
+         CALL read_eq_chease_inp1_ascii
+      CASE("chease_ascii")
+         CALL read_eq_chease_inp1_ascii
       CASE("chease3")
          CALL read_eq_chease3
       CASE("chease4")
@@ -207,10 +211,13 @@ c-----------------------------------------------------------------------
       CASE("t7")
          CALL read_eq_t7
       CASE("marklin_direct")
+         CALL program_stop("Error: Deprecated eq_type "//TRIM(eq_type))
          CALL read_eq_marklin_direct
       CASE("marklin_inverse")
+         CALL program_stop("Error: Deprecated eq_type "//TRIM(eq_type))
          CALL read_eq_marklin_inverse
       CASE("hansen_inverse")
+         CALL program_stop("Error: Deprecated eq_type "//TRIM(eq_type))
          CALL read_eq_hansen_inverse
       CASE("pfrc")
          CALL read_eq_pfrc
