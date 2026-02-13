@@ -51,9 +51,9 @@ c-----------------------------------------------------------------------
       SUBROUTINE direct_run
 
       INTEGER :: ir,iz,itheta,ipsi
-      INTEGER, PARAMETER :: nstep=2048
+      INTEGER, PARAMETER :: nstep=8192
       REAL(r8) :: f0fac,f0,ffac,rfac,eta,r,jacfac,w11,w12,delpsi,q
-      REAL(r8), DIMENSION(0:nstep,0:4) :: y_out
+      REAL(r8), ALLOCATABLE, DIMENSION(:,:) :: y_out
       REAL(r8), DIMENSION(2, mpsi+1) :: xdx
       REAL(r8), DIMENSION(3,3) :: v
 
@@ -68,6 +68,7 @@ c-----------------------------------------------------------------------
      $        "Warning: direct equilibrium with psihigh =",psihigh,
      $        " could hang on separatrix."
       direct_infinite_loop_flag = .FALSE.
+      ALLOCATE(y_out(0:nstep,0:4))
 c-----------------------------------------------------------------------
 c     fit input to cubic splines and diagnose.
 c-----------------------------------------------------------------------
@@ -95,7 +96,7 @@ c-----------------------------------------------------------------------
          CALL spline_dealloc(sq)
          CALL spline_alloc(sq,mpsi,4)
       ENDIF
-      
+
       sq%name="  sq  "
       sq%title=(/"psifac","twopif","mu0 p ","dvdpsi","  q   "/)
 c-----------------------------------------------------------------------
@@ -250,6 +251,7 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
       CALL bicube_fit(eqfun,"extrap","periodic")
+      DEALLOCATE(y_out)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -388,7 +390,7 @@ c-----------------------------------------------------------------------
             ird=ird+1
             r=((3-0.5*ird)*rmin+ro)/(1+3-0.5*ird)
             ir=0
-            IF (ird==6) THEN 
+            IF (ird==6) THEN
                direct_infinite_loop_flag = .TRUE.
                CALL program_stop("Took too many steps to find inb spx.")
             ENDIF
@@ -412,7 +414,7 @@ c-----------------------------------------------------------------------
             ird=ird+1
             r=(ro+(3-0.5*ird)*rmax)/(1+3-0.5*ird)
             ir=0
-            IF (ird==6) THEN 
+            IF (ird==6) THEN
                direct_infinite_loop_flag = .TRUE.
                CALL program_stop
      $              ("Took too many steps to find outb spx.")
@@ -443,7 +445,7 @@ c-----------------------------------------------------------------------
       INTEGER, PARAMETER :: neq=4,liw=30,lrw=22+neq*16
       INTEGER :: iopt,istate,itask,itol,jac,mf,ir
       INTEGER, DIMENSION(liw) :: iwork
-      INTEGER, PARAMETER :: nstep=2048
+      INTEGER, PARAMETER :: nstep=8192
       REAL(r8), PARAMETER :: eps=1e-12
       REAL(r8) :: atol,rtol,rfac,deta,r,z,eta,err,psi0,psifac,dr
       REAL(r8), DIMENSION(neq) :: y

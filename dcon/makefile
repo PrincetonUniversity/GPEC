@@ -57,7 +57,7 @@ pentrc:
 	cd ../pentrc; make pentrc
 
 # note we explicitly make pentrc to force sync the compile-time version variable
-dcon: pentrc $(OBJS)
+dcon: pentrc vacuum equil lsode harvest $(OBJS)
 	$(F90) -o dcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS) $(LDFLAGS)
 	mkdir -p ../bin
 	cp -f dcon ../bin
@@ -67,21 +67,15 @@ clean:
 
 # dependencies
 
-dcon_mod.o: ../equil/spline_mod.mod ../equil/global_mod.mod \
-	../equil/equil_mod.mod ../equil/equil_out_mod.mod ../pentrc/dcon_interface.mod
+dcon_mod.o: equil pentrc
 mercier.o: dcon_mod.o
 bal.o: dcon_mod.o
-fourfit.o: ../equil/fspline_mod.mod ../equil/global_mod.mod \
-	../pentrc/pentrc_interface.mod ../pentrc/utilities.mod ../pentrc/torque.mod ../pentrc/inputs.mod \
-	../pentrc/energy_integration.mod ../pentrc/pitch_integration.mod ../pentrc/dcon_interface.mod \
-	dcon_mod.o
+fourfit.o: equil pentrc dcon_mod.o
 sing.o: fourfit.o
-debug.o: ../equil/local_mod.mod
+debug.o: equil
 ode_output.o: dcon_mod.o sing.o debug.o
 ode.o: ode_output.o free.o
-dcon_netcdf.o: dcon_mod.o
-free.o: ../equil/global_mod.mod dcon_netcdf.o ode_output.o
+dcon_netcdf.o: dcon_mod.o sing.o
+free.o: equil dcon_netcdf.o ode_output.o
 resist.o: dcon_mod.o
-dcon.o: ../equil/equil_mod.mod ../equil/equil_out_mod.mod \
-	../pentrc/inputs.o ../pentrc/pentrc_interface.o \
-	bal.o mercier.o ode.o free.o resist.o
+dcon.o: equil pentrc dcon_mod.o sing.o debug.o ode_output.o dcon_netcdf.o bal.o mercier.o ode.o free.o resist.o

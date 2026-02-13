@@ -380,7 +380,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:,:), INTENT(IN) :: xx,ff
       REAL(r8), INTENT(IN) :: x
       REAL(r8), DIMENSION(SIZE(ff,2)) :: f
-      
+
       INTEGER :: i,j,m
       REAL(r8), DIMENSION(SIZE(ff,2)) :: term
 c-----------------------------------------------------------------------

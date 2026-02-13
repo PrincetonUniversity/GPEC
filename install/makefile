@@ -12,8 +12,6 @@ export LDFLAGS
 
 # compile package
 
-.IGNORE:
-
 all: v harvest equil lsode zlange zvode orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum xdraw slayer coil gpec stride mkbin
 

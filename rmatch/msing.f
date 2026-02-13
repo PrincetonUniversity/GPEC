@@ -31,11 +31,12 @@ c-----------------------------------------------------------------------
       COMPLEX(r8) :: alpha
       COMPLEX(r8), DIMENSION(:,:,:,:), POINTER :: vmatl,vmatr
       END TYPE sing_type
-      
+
       LOGICAL :: msing_diagnose=.FALSE.
       LOGICAL :: us_flag=.TRUE.,ul_flag=.TRUE.
       CHARACTER(80) :: vmat_filename
       INTEGER, PRIVATE :: mpert,msing
+      INTEGER :: msing_bounds
       TYPE(sing_type), DIMENSION(:), POINTER, PRIVATE :: sing
       TYPE(sing_type), POINTER, PRIVATE :: singp
 
@@ -59,6 +60,7 @@ c-----------------------------------------------------------------------
       OPEN(UNIT=debug_unit,FILE=TRIM(vmat_filename),STATUS="OLD",
      $     FORM="UNFORMATTED")
       READ(debug_unit)mpert,msing
+      msing_bounds=msing
       ALLOCATE(sing(msing))
       DO ising=1,msing
          singp => sing(ising)
@@ -100,7 +102,7 @@ c-----------------------------------------------------------------------
          dpsi=singp%psifac-psifac
       ELSE
          vmat => singp%vmatr
-         dpsi=psifac-singp%psifac         
+         dpsi=psifac-singp%psifac
       ENDIF
       r1 => singp%r1
       r2 => singp%r2
@@ -147,7 +149,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,2*mpert,2) :: ua
 c-----------------------------------------------------------------------
 c     compute range of psi values on left of singular surface.
-c----------------------------------------------------------------------- 
+c-----------------------------------------------------------------------
       singp => sing(ising)
       IF(ising == 1)THEN
          psil=(1-sing_frac)*singp%psifac
@@ -158,7 +160,7 @@ c-----------------------------------------------------------------------
       dpsil=(singp%psifac-psil)/sing_nout
 c-----------------------------------------------------------------------
 c     compute range of psi values on right of singular surface.
-c----------------------------------------------------------------------- 
+c-----------------------------------------------------------------------
       IF(ising == msing)THEN
          psir=singp%psifac+sing_frac*(1-singp%psifac)
       ELSE
@@ -187,7 +189,7 @@ c-----------------------------------------------------------------------
             sol=sol+cofout(ksing)*ul
          ENDIF
          IF (us_flag) THEN
-            DO jsing=1,2*msing 
+            DO jsing=1,2*msing
                sol=sol+cofout(jsing)*delta(jsing,ksing)*us
             ENDDO
          ENDIF
@@ -211,13 +213,13 @@ c-----------------------------------------------------------------------
       SUBROUTINE msing_run(cofout,delta)
       COMPLEX(r8), INTENT(IN), DIMENSION(:) :: cofout
       COMPLEX(r8), DIMENSION(:,:), INTENT(IN) :: delta
-      
+
       CHARACTER(100):: filename
       INTEGER :: ising
       IF (.NOT.msing_diagnose) RETURN
 c-----------------------------------------------------------------------
 c     do msing diagnostic.
-c-----------------------------------------------------------------------     
+c-----------------------------------------------------------------------
       DO ising=1,msing
          WRITE (filename,"(I4)")ising
          filename=ADJUSTL(filename)
@@ -236,14 +238,14 @@ c-----------------------------------------------------------------------
       END SUBROUTINE msing_run
 c-----------------------------------------------------------------------
 c     subprogram 5. msing_estimate_zo.
-c     estimate zo value for zeroth order dominant 
+c     estimate zo value for zeroth order dominant
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       SUBROUTINE msing_estimate_zo(zo,ising)
       REAL(r8), INTENT(OUT) :: zo
-      INTEGER, INTENT(IN) :: ising 
+      INTEGER, INTENT(IN) :: ising
       REAL(r8) :: tmp1,tmp2,tmp3,tmp4
       singp => sing(ising)
       tmp1=MAXVAL(ABS(singp%vmatr(:,singp%r2(1),1,0)))
@@ -256,7 +258,7 @@ c-----------------------------------------------------------------------
       zo=tmp3
 c-----------------------------------------------------------------------
 c     terminate.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       END SUBROUTINE msing_estimate_zo
 c-----------------------------------------------------------------------
 c     subprogram 6. msing_init.

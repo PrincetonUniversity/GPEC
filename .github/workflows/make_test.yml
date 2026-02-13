@@ -26,7 +26,6 @@ jobs:
       - name: Install dependencies
         if: steps.netcdf-cache.outputs.cache-hit != 'true'
         run: |
-          sudo rm /var/lib/man-db/auto-update
           sudo apt update
           sudo apt install -y build-essential gfortran m4 curl libhdf5-dev libnetcdf-dev
 
@@ -70,7 +69,7 @@ jobs:
       PREFIX: ${{ github.workspace }}/deps
       ONEAPI_ROOT: /opt/intel/oneapi
       FC: ifort
-      
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -85,7 +84,6 @@ jobs:
       - name: Install Intel oneAPI + deps
         if: steps.netcdf-cache.outputs.cache-hit != 'true'
         run: |
-          sudo rm /var/lib/man-db/auto-update
           wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
           echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
           sudo apt update
@@ -104,7 +102,7 @@ jobs:
         if: steps.netcdf-cache.outputs.cache-hit != 'true'
         run: |
           source /opt/intel/oneapi/setvars.sh
-          
+
           mkdir -p $PREFIX/src
           cd $PREFIX/src
           curl -L -o netcdf-fortran.tar.gz https://github.com/Unidata/netcdf-fortran/archive/refs/tags/v4.6.1.tar.gz
@@ -130,12 +128,12 @@ jobs:
           else
             echo "Cache not found. Built from source."
           fi
-          
+
       - name: Confirm all shared libs
         run: |
           ls -lh $PREFIX/lib
           ls -lh $PREFIX/include
-          
+
   make_gpec_gfortran:
     runs-on: ubuntu-latest
     needs: build-netcdf-gfortran
@@ -157,10 +155,9 @@ jobs:
           git config --file .gitmodules submodule.harvest.url https://github.com/gafusion/harvest_client.git
           git submodule sync
           git submodule update --init --recursive
-          
+
       - name: Install Dependencies
         run: |
-          sudo rm /var/lib/man-db/auto-update
           sudo apt update
           sudo apt install -y gfortran libopenblas-dev libx11-dev libnetcdf-dev
 
@@ -217,7 +214,6 @@ jobs:
 
       - name: Install Intel oneAPI + deps
         run: |
-          sudo rm /var/lib/man-db/auto-update
           wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
           echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
           sudo apt update

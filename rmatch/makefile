@@ -41,8 +41,9 @@ gamma.o: ../equil/local_mod.mod
 deltar.o: gamma.o
 inps.o:  ../equil/local_mod.mod ../equil/utils.o
 inpso.o: inps.o
-deltac.o: ../equil/jacobi.o inpso.o
+deltac.o: ../equil/jacobi.o inpso.o msing.o
 inner.o: deltac.o ../equil/local_mod.mod
+rmatch_netcdf.o: deltar.o deltac.o inner.o msing.o
 match.o: deltar.o deltac.o inner.o msing.o
 
 clean:

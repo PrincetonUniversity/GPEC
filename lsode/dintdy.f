@@ -1,6 +1,6 @@
       SUBROUTINE DINTDY (T, K, YH, NYH, DKY, IFLAG)
       USE local_mod, ONLY: r8
-     
+
 C***BEGIN PROLOGUE  DINTDY
 C***SUBSIDIARY
 C***PURPOSE  Interpolate solution derivatives.

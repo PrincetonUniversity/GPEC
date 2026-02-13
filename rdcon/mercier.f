@@ -50,7 +50,7 @@ c-----------------------------------------------------------------------
       DO ipsi=0,mpsi
          psifac=sq%xs(ipsi)
          twopif=sq%fs(ipsi,1)    ! f = toroidal B field * major radius
-         f1=sq%fs1(ipsi,1)/twopi ! df/dpsi, 
+         f1=sq%fs1(ipsi,1)/twopi ! df/dpsi,
          p1=sq%fs1(ipsi,2)
          v1=sq%fs(ipsi,3)     ! d(volume inside flux surface)/d(psi)
          v2=sq%fs1(ipsi,3)
@@ -133,8 +133,8 @@ c-----------------------------------------------------------------------
 c     computes geometric prefactors of Alfven and resistive time scales
 c     from Glasser 2016 eqs. A12, A13
 c-----------------------------------------------------------------------
-            taua_prefac=SQRT(M*mu0)/ABS(twopi*q1*chi1/v1) 
-            !to get taua, multiply by local sqrt(rho) and divide by 
+            taua_prefac=SQRT(M*mu0)/ABS(twopi*q1*chi1/v1)
+            !to get taua, multiply by local sqrt(rho) and divide by
             !toroidal mode number nn (see resist.f)
             taur_prefac=avg(1)/avg(5)*mu0
             !to get taur, divide by local resistivity (see resist.f)
@@ -148,38 +148,38 @@ c-----------------------------------------------------------------------
      $       (SQRT(1-eps_loc**2)*(1.d0+1.46d0*SQRT(eps_loc)))
             ftr=MIN(ftr,1.0d0)
 c-----------------------------------------------------------------------
-c     simple estimates of Jboot and bootstrap drive from 
+c     simple estimates of Jboot and bootstrap drive from
 c     Callen, 2010 UW-CPTC 09-6R, and Hegna 1999
 c-----------------------------------------------------------------------
             mufrac=ftr*(1.d0+0.533d0/Zeff)/
      $                            ((1.d0-ftr)+ftr*(1.d0+0.533d0/Zeff))
             avg_Jboot_dot_B=-mufrac*(twopif/chi1)*p1 !mu0 included in p1
 c-----------------------------------------------------------------------
-c     evaluate geometric prefactors of MRE stability terms from 
+c     evaluate geometric prefactors of MRE stability terms from
 c     Hegna 1999 https://doi.org/10.1063/1.873661
 c-----------------------------------------------------------------------
             Dnc_prefac=-q*(p1/(q1*avg(5)))*  !unitless
      $      avg(20)*                         ! \overbar{R^2} ~ [m^2]
-     $      avg(1)/(psio**2)                 ! [1/m^2]  
+     $      avg(1)/(psio**2)                 ! [1/m^2]
             Dnc=Dnc_prefac*mufrac
 c-----------------------------------------------------------------------
-c     evaluate geometric prefactor of Wc from 
+c     evaluate geometric prefactor of Wc from
 c     Schlutt and Hegna 2012 https://doi.org/10.1063/1.4747500
 c-----------------------------------------------------------------------
-            Wc_prefac=(v1*avg(5)/(q*psio))* 
-     $      v1*avg(7)*(q*psio)*             
-     $      q**6/((q1/psio)**2)     
+            Wc_prefac=(v1*avg(5)/(q*psio))*
+     $      v1*avg(7)*(q*psio)*
+     $      q**6/((q1/psio)**2)
             !Divide by mode num. m^2 to finish, units are Wb^4
             !Note, psi coordinate in original paper is toroidal flux
 c-----------------------------------------------------------------------
 c     parallel current density from Freidberg Ideal MHD eqs. 6.15, 6.16.
 c     note psi in eqs. 6.15, 6.16 is poloidal flux/(2pi), same as psi_in
 c-----------------------------------------------------------------------
-            Jpara=psio*f1*avg(16) + p1*avg(18)*twopif/(twopi*psio) + 
+            Jpara=psio*f1*avg(16) + p1*avg(18)*twopif/(twopi*psio) +
      $      (twopif/twopi)**2*f1*avg(17)/psio !(mu0 included in p1))
 c-----------------------------------------------------------------------
-c     compute H_bs defined in Shi et al. 2024, using identity from 
-c     Glasser et al. 1975. Shi doi -> https://doi.org/10.1063/5.0183474 
+c     compute H_bs defined in Shi et al. 2024, using identity from
+c     Glasser et al. 1975. Shi doi -> https://doi.org/10.1063/5.0183474
 c-----------------------------------------------------------------------
             Hbs=(avg(1)/avg(5))* ! [m^2]
      $  (-v1/(twopi**2*psio**2*q1))*avg_Jboot_dot_B ! [m^-5*m^3]
@@ -204,15 +204,15 @@ c-----------------------------------------------------------------------
             mreterms%fs(ipsi,16)=avg(20) !overbar{R^2}     (Hegna 1999)
             mreterms%fs(ipsi,17)=avg(21) !avg{R^2} ~ [m^2] (Hegna 1999)
             ! will only print out the following if geom_flag is true:
-            mreterms%fs(ipsi,18)=avg(1) 
-            mreterms%fs(ipsi,19)=avg(2) 
-            mreterms%fs(ipsi,20)=avg(3) 
-            mreterms%fs(ipsi,21)=avg(4) 
-            mreterms%fs(ipsi,22)=avg(5) 
-            mreterms%fs(ipsi,23)=avg(6) 
-            mreterms%fs(ipsi,24)=avg(7) 
-            mreterms%fs(ipsi,25)=avg(14) 
-            mreterms%fs(ipsi,26)=avg(15) 
+            mreterms%fs(ipsi,18)=avg(1)
+            mreterms%fs(ipsi,19)=avg(2)
+            mreterms%fs(ipsi,20)=avg(3)
+            mreterms%fs(ipsi,21)=avg(4)
+            mreterms%fs(ipsi,22)=avg(5)
+            mreterms%fs(ipsi,23)=avg(6)
+            mreterms%fs(ipsi,24)=avg(7)
+            mreterms%fs(ipsi,25)=avg(14)
+            mreterms%fs(ipsi,26)=avg(15)
             mreterms%fs(ipsi,27)=avg(16)
             mreterms%fs(ipsi,28)=avg(17)
             mreterms%fs(ipsi,29)=avg(18)

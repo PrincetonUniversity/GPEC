@@ -26,6 +26,7 @@ c-----------------------------------------------------------------------
       USE gpglobal_mod
       USE vacuum_mod, ONLY: mscvac
       USE ismath_mod
+      USE equil_mod, ONLY: equil_loadnamelists,vac_memory
       USE netcdf
       IMPLICIT NONE
 
@@ -45,6 +46,10 @@ c-----------------------------------------------------------------------
       REAL(r8) :: sfac0
 
       REAL(r4), DIMENSION(:,:), POINTER :: rgarr,zgarr,psigarr
+c-----------------------------------------------------------------------
+c     reload equil namelists.
+c-----------------------------------------------------------------------
+      CALL equil_loadnamelists()
 c-----------------------------------------------------------------------
 c     open euler.bin and read header.
 c-----------------------------------------------------------------------
@@ -468,28 +473,21 @@ c-----------------------------------------------------------------------
       u2%fs=0
       u3%fs=0
       u4%fs=0
+      ! Find the solution given edge boundary condition
       IF (galsol%gal_flag) THEN
-         ! direct solutions from rmatch (single m at boundary)
-         !DO istep=0,galsol%tot_grids
-         !   u1%fs(istep,:) = galsol%u(:,istep,egnum)
-         !ENDDO
-
-         ! convert rdcon solutions with single m at psilim
-         ! to energy ranked solutions with multiple m at psilim
-         istep=galsol%tot_grids
-         DO ipert=1,galsol%mpert
-            temp2(:,ipert)=galsol%u(:,istep,ipert)
-         ENDDO
+         bpsi%fs=0
+         ! use galerkin solutions from rmatch
+         temp2 = galsol%u(:,galsol%tot_grids,1:galmpert)
          CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
-         tuedge=uedge
-         CALL zgetrs('N',mpert,1,temp2,mpert,ipiv,tuedge,mpert,info)
+         CALL zgetrs('N',mpert,1,temp2,mpert,ipiv,uedge,mpert,info)
+         temp1=uedge
          DO istep=0,galsol%tot_grids
-            DO ipert=1,galsol%mpert
-               u1%fs(istep,:)=u1%fs(istep,:)
-     $                       +galsol%u(:,istep,ipert)*tuedge(ipert)
-            ENDDO
+            u1%fs(istep,:)=MATMUL(galsol%u(:,istep,1:galmpert),temp1)
+            bpsi%fs(istep,:)=MATMUL(galsol%bpsi(:,istep,1:galmpert)
+     $                                                           ,temp1)
          ENDDO
       ELSE
+         ! use dcon solutions from euler.bin
          temp2=soltype(mstep)%u(:,1:mpert,1)
          CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
          CALL zgetrs('N',mpert,1,temp2,mpert,ipiv,uedge,mpert,info)
@@ -517,6 +515,11 @@ c-----------------------------------------------------------------------
       CALL cspline_fit(u2,"extrap")
       CALL cspline_fit(u3,"extrap")
       CALL cspline_fit(u4,"extrap")
+      IF (galsol%gal_flag) THEN
+         bpsi%xs=psifac
+         CALL cspline_fit(bpsi,"extrap")
+      ENDIF
+c-----------------------------------------------------------------------
       IF(debug_flag) PRINT *, "->Leaving idcon_build"
 c-----------------------------------------------------------------------
 c     terminate.
@@ -895,12 +898,12 @@ c-----------------------------------------------------------------------
       nths2=nths*2
       nfm2=mpert*2
       IF(verbose) WRITE(*,*)"Calculating vacuum energy matrices"
-      
+
       ahg_fname='ahg2msc_gpec.out'
       CALL ahg_write(psilim,ahg_fname)
 
       ALLOCATE(grri(nths2,nfm2),grre(nths2,nfm2),
-     $        griw(nths2,nfm2),grrw(nths2,nfm2),xzpts(nths,4))     
+     $        griw(nths2,nfm2),grrw(nths2,nfm2),xzpts(nths,4))
       IF(debug_flag) PRINT *,'mscvac - ',mthvac,mtheta,mthsurf,nths2
       farwal_flag=.TRUE.
       kernelsignin = -1.0
@@ -911,7 +914,7 @@ c-----------------------------------------------------------------------
      $      kernelsignin,wall_flag,farwal_flag,grre,xzpts,ahg_fname)
       IF(wv_farwall_flag)THEN
          temp=wv
-      ENDIF        
+      ENDIF
 
       farwal_flag=.FALSE.
       kernelsignin = -1.0
@@ -923,7 +926,7 @@ c-----------------------------------------------------------------------
       IF(wv_farwall_flag)THEN
          wv=temp
       ENDIF
-      
+
       if (vac_memory) CALL unset_dcon_params
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1131,7 +1134,7 @@ c-----------------------------------------------------------------------
       INTEGER :: i,itheta,rtheta,vn,lwork
       REAL(r8) :: qa,kernelsignin
       CHARACTER(1), PARAMETER :: tab=CHAR(9)
-      LOGICAL, PARAMETER :: complex_flag=.TRUE.,wall_flag=.FALSE.      
+      LOGICAL, PARAMETER :: complex_flag=.TRUE.,wall_flag=.FALSE.
       LOGICAL, PARAMETER :: farwal_flag=.TRUE.
 
       INTEGER, DIMENSION(mpert) :: ipiv

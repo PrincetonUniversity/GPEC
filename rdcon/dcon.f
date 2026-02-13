@@ -229,7 +229,7 @@ c-----------------------------------------------------------------------
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
      $     out_fl,bin_fl,out_evals,bin_evals,bin_euler,euler_stride,
      $     bin_vac,ahb_flag,mthsurf0,msol_ahb,diagnose_fixup,verbose,
-     $     out_ahg2msc,MRE_flag,geom_flag
+     $     MRE_flag,geom_flag,netcdf_out
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -257,15 +257,6 @@ c-----------------------------------------------------------------------
       ENDIF
       CALL ascii_close(in_unit)
 
-      IF (out_ahg2msc) THEN
-         WRITE(*,*) "WARNING: ahg2msc.out is deprecated and will be " //
-     $        "removed in a future version. Set out_ahg2msc = .FALSE."
-         WRITE(*,*) "         to disable this warning."
-         vac_memory=.FALSE.
-      ELSE
-         vac_memory=.TRUE.
-      ENDIF
-
 c-----------------------------------------------------------------------
 c     open output files, read, process, and diagnose equilibrium.
 c-----------------------------------------------------------------------
@@ -288,13 +279,13 @@ c-----------------------------------------------------------------------
          PRINT *, "  > Forcing reform_eq_with_psilim=t"
          reform_eq_with_psilim = .TRUE.
       ENDIF
-      IF(psilim /= psihigh .OR. psilow /= sq%xs(0))THEN
-         psilow_tmp = psilow  ! if we feed psilow directly, it get's overwritten by namelist read
-         psilim_tmp = psilim
-         CALL equil_read(out_unit, psilim_tmp, psilow_tmp)
-         CALL equil_out_global
-         CALL equil_out_qfind
-      ENDIF
+      ! IF(psilim /= psihigh .OR. psilow /= sq%xs(0))THEN
+      !    psilow_tmp = psilow  ! if we feed psilow directly, it get's overwritten by namelist read
+      !    psilim_tmp = psilim
+      !    CALL equil_read(out_unit, psilim_tmp, psilow_tmp)
+      !    CALL equil_out_global
+      !    CALL equil_out_qfind
+      ! ENDIF
 c-----------------------------------------------------------------------
 c     define poloidal mode numbers.
 c-----------------------------------------------------------------------
@@ -435,7 +426,8 @@ c-----------------------------------------------------------------------
          ALLOCATE(mx0(mpert,mpert),vx0(mpert))
          mx0=0
          vx0=0
-         CALL rdcon_netcdf_out(mx0,mx0,mx0,mx0,vx0,vx0,vx0)
+         IF (netcdf_out)
+     $    CALL rdcon_netcdf_out(mx0,mx0,mx0,mx0,vx0,vx0,vx0)
       ENDIF
       IF(mat_flag .OR. ode_flag)DEALLOCATE(amat,bmat,cmat,ipiva,jmat)
       IF(bin_euler)CALL bin_close(euler_bin_unit)
@@ -511,4 +503,4 @@ c-----------------------------------------------------------------------
          ENDIF
          CALL dcon_run
       END SUBROUTINE dcon_interface_run
-      
+
