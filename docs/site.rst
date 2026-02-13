@@ -13,4 +13,5 @@ GPEC documentation website site map
    releases.rst
    developers.rst
    source_documentation.rst
+   installation.rst
 
