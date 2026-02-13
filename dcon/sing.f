@@ -1316,6 +1316,14 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,mpert,4) :: kwmat,ktmat
       COMPLEX(r8), DIMENSION(mpert*mpert) :: work
       CHARACTER(128) :: message
+      INTEGER :: detmode = 2 ! 1 for determinant, 2 for ratio of singular values.
+      ! Singular value decomposition variables
+      INTEGER :: lwork_svd, info_svd
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: s
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: a_svd
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: work_svd
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: rwork_svd
+      COMPLEX(r8) :: workq(1)
 c-----------------------------------------------------------------------
 c     compute q and singfac.
 c-----------------------------------------------------------------------
@@ -1471,11 +1479,49 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     calculate the determinant of A.
 c-----------------------------------------------------------------------
-      d=1.0
-      DO i=1,m
-         IF (ipiv(i).ne.i) d=-d
-      ENDDO
-      det=PRODUCT(lumat(kl+kl+1,:))*d
+      IF (detmode==1) THEN
+         d=1.0
+         DO i=1,m
+            IF (ipiv(i).ne.i) d=-d
+         ENDDO
+         det=PRODUCT(lumat(kl+kl+1,:))*d
+      ELSE IF (detmode==2) THEN
+         ALLOCATE(s(m))
+         ALLOCATE(a_svd(m,n))
+         a_svd = f
+
+c        Workspace query
+         lwork_svd = -1
+         ALLOCATE(rwork_svd(5*MIN(m,n)))
+         CALL zgesvd('N','N', m, n, a_svd, m, s,
+     $               a_svd, 1, a_svd, 1, workq, lwork_svd, rwork_svd, 
+     $                info_svd)
+         IF (info_svd /= 0) THEN
+            CALL program_stop("sing_get_f_det: zgesvd failed")
+         ENDIF
+         lwork_svd = INT(REAL(workq(1), r8))
+         ALLOCATE(work_svd(lwork_svd))
+
+c        Actual SVD (singular values only)
+         a_svd = f
+         CALL zgesvd('N','N', m, n, a_svd, m, s,
+     $               a_svd, 1, a_svd, 1, work_svd, lwork_svd, rwork_svd,
+     $                info_svd)
+         IF (info_svd /= 0) THEN
+            WRITE(message,'(a,i0)') 
+     $       "sing_get_f_det: zgesvd failed, info=",info_svd
+            CALL program_stop(message)
+         ENDIF
+
+c        s is sorted descending: s(1)=sigma_max, s(m)=sigma_min
+         IF (s(1) <= 0.0_r8) THEN
+            det = CMPLX(0.0_r8, 0.0_r8, kind=r8)
+         ELSE
+            det = CMPLX( s(m) , 0.0_r8, kind=r8 )
+         ENDIF
+
+         DEALLOCATE(work_svd, rwork_svd, a_svd, s)
+      ENDIF
       DEALLOCATE (lumat,fpiv)
 
       END FUNCTION sing_get_f_det
@@ -1627,7 +1673,7 @@ c-----------------------------------------------------------------------
       INTEGER,INTENT(INOUT) :: i_recur,i_depth,i_record
       REAL(r8),INTENT(IN) :: x0,x1,tol
       REAL(r8),DIMENSION(m_singpos),INTENT(INOUT) :: singpos
-      REAL(r8),PARAMETER :: grid_tol =1e-6
+      REAL(r8),PARAMETER :: grid_tol =1e-7
       COMPLEX(r8),INTENT(IN) :: det0,det1
       COMPLEX(r8),INTENT(INOUT) :: sing_det
       COMPLEX(r8),INTENT(INOUT), DIMENSION(2,*) :: record
