@@ -1,275 +1,434 @@
-c-----------------------------------------------------------------------
+c=======================================================================
 c     file slayer_netcdf.f
-c     writes slayer information to a netcdf file
+c     Writes SLAYER solver results to a NetCDF output file.
+c
+c     The per-surface scalar inputs (Lundquist number, Q-normalisation,
+c     Prandtl numbers, …) and the solver outputs (growth rates, Delta
+c     values) are stored in a single NetCDF-3/64-bit-offset file named
+c     slayer_output_n<n>.nc.
+c
+c     Ragged AMR scan data (variable number of evaluation points per
+c     surface) are zero-padded into rectangular arrays before writing.
+c
+c     BUG FLAG 1 -- Several NetCDF variable definitions that depend on
+c       `qsing_dim`, `i_dim`, and `nAMR_dim` sit OUTSIDE the
+c       `IF (msing > 0)` guard that creates those dimensions.  If the
+c       subroutine is ever called with msing == 0, those dimension IDs
+c       will be uninitialised and the nf90_def_var calls will fail or
+c       produce undefined behaviour.
+c       Suggested fix: move all remaining nf90_def_var calls inside
+c       the `IF (msing > 0)` block, or add an early RETURN when
+c       msing == 0.
+c
+c     BUG FLAG 2 -- `fill_val` is declared (-9.99E33) but never
+c       used; the rectangular buffers are initialised to 0.0 instead.
+c       Plotters that rely on a standard _FillValue attribute will
+c       not distinguish padding from real zeros.
+c       Suggested fix: initialise buffers with `fill_val` instead
+c       of 0.0, and add an nf90_put_att call to set the _FillValue
+c       attribute on the Q_AMR and Deltas_AMR variables.
+c
+c     BUG FLAG 3 -- `Q_id` is created by nf90_def_var("Q", …) but
+c       the corresponding nf90_put_var is commented out, so the
+c       variable exists in the file but contains only fill values.
+c       Suggested fix: either remove the nf90_def_var or write the
+c       appropriate Q array.
+c
+c     BUG FLAG 4 -- `c_b_id` (c_beta variable ID) is declared but
+c       never used in any nf90_def_var or nf90_put_var call; i.e.
+c       c_beta_arr is not written to the output file.
+c       Suggested fix: if c_beta is needed in the output, add the
+c       definition and write calls; otherwise remove c_b_id.
+c
+c     BUG FLAG 5 -- `run`, `run_dimid`, `point_dimid`, `varids(4)`,
+c       `i`, `r_id`, and `r_dim` are declared but never referenced.
+c       Suggested fix: remove them.
+c
+c     BUG FLAG 6 -- The `version` string is hardcoded to a specific
+c       git hash ('v1.0.0-99-gc873bd6').  For a public release this
+c       should be generated at build time (e.g. from `git describe`
+c       via a preprocessor macro).
+c
+c     BUG FLAG 7 -- The subroutine writes to the module-level global
+c       `sn` (from sglobal_mod) as a side-effect of building the
+c       output filename.  This is fragile — a local CHARACTER
+c       variable should be used instead to avoid polluting global
+c       state.
+c=======================================================================
 c-----------------------------------------------------------------------
-c     code organization.
+c     code organisation.
 c-----------------------------------------------------------------------
-c     0. slayer_netcdf_mod
-c     1. check
-c     2. stride_netcdf_out
+c     0. slayer_netcdf_mod   -- module declarations
+c     1. sl_check            -- NetCDF status checker
+c     2. slayer_netcdf_out   -- main output routine
 c-----------------------------------------------------------------------
-c     subprogram 0. slayer_netcdf_mod
-c     module declarations.
+c
 c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     declarations.
+c     subprogram 0. slayer_netcdf_mod.
+c     Module wrapper — imports sglobal_mod (shared types and globals)
+c     and the NetCDF Fortran-90 API.
 c-----------------------------------------------------------------------
       MODULE slayer_netcdf_mod
+
       USE sglobal_mod
       USE netcdf
+
       IMPLICIT NONE
+
       CONTAINS
-c -----------------------------------------------------------------------
+c
 c-----------------------------------------------------------------------
-c     subprogram 1. check.
-c     Check status of netcdf file.
+c     subprogram 1. sl_check.
+c     Assert that a NetCDF operation succeeded; abort with a message
+c     if it did not.
 c-----------------------------------------------------------------------
       SUBROUTINE sl_check(stat)
 c-----------------------------------------------------------------------
-c     declaration.
+c     declarations.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT (IN) :: stat
+      INTEGER, INTENT(IN) :: stat    ! return code from any nf90_* call
 c-----------------------------------------------------------------------
-c     stop if it is an error.
+c     check status and abort on error.
 c-----------------------------------------------------------------------
-      IF(stat /= nf90_noerr) THEN
+      IF (stat /= nf90_noerr) THEN
          PRINT *, TRIM(nf90_strerror(stat))
          STOP "ERROR: failed to write/read netcdf file"
       ENDIF
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
+
       RETURN
       END SUBROUTINE sl_check
-c -----------------------------------------------------------------------
-c      subprogram 2. slayer_netcdf_out.
-c      Replicate stride.out information in netcdf format.
-c -----------------------------------------------------------------------
-c -----------------------------------------------------------------------
-c      declarations.
-c -----------------------------------------------------------------------
-      SUBROUTINE slayer_netcdf_out(msing,m_AMR,est_gamma_flag,
-     $         sl_in,sl_out,all_deltas_out)
+c
+c-----------------------------------------------------------------------
+c     subprogram 2. slayer_netcdf_out.
+c     Write per-surface SLAYER inputs and solver outputs to the
+c     NetCDF file  slayer_output_n<n>.nc .
+c
+c     Arguments:
+c       msing           -- number of rational surfaces
+c       m_AMR           -- number of AMR-scanned surfaces
+c       est_gamma_flag  -- .TRUE. to include estimated growth rates
+c       sl_in           -- slayer_inputs_type  (per-surface inputs)
+c       sl_out          -- slayer_outputs_type (solver results)
+c       all_deltas_out  -- array(m_AMR) of deltas_outputs_type (AMR
+c                          scan results, potentially ragged)
+c-----------------------------------------------------------------------
+      SUBROUTINE slayer_netcdf_out(msing, m_AMR, est_gamma_flag,
+     $                             sl_in, sl_out, all_deltas_out)
+c-----------------------------------------------------------------------
+c     declarations -- subroutine arguments.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: msing          ! number of rational surfaces
+      INTEGER, INTENT(IN) :: m_AMR          ! number of AMR surfaces
+      LOGICAL, INTENT(IN) :: est_gamma_flag ! include estimated gammas?
 
-      INTEGER, INTENT(IN) :: msing,m_AMR
-      LOGICAL, INTENT(IN) :: est_gamma_flag
-      TYPE(slayer_inputs_type), INTENT(IN) :: sl_in
+      TYPE(slayer_inputs_type),  INTENT(IN) :: sl_in
       TYPE(slayer_outputs_type), INTENT(IN) :: sl_out
       TYPE(deltas_outputs_type), INTENT(IN) :: all_deltas_out(m_AMR)
 
-      INTEGER :: i,ncid,r_id,qsing_dim,i_dim,r_dim,qr_id,omegas_id,
-     $    Q_id,Q_e_id,Q_i_id,d_b_id,c_b_id,Dnorm_id,p_perp_id,S_id,
-     $    pr_id,dpp_id,dc_id,dels_db_id,gs_id,ge_id,nAMR_dim,
-     $    qsing_id,qc_id,p_tor_id
+c-----------------------------------------------------------------------
+c     declarations -- NetCDF file and dimension IDs.
+c-----------------------------------------------------------------------
+      INTEGER :: ncid              ! NetCDF file ID
+      INTEGER :: qsing_dim        ! dim: rational surfaces  (msing)
+      INTEGER :: nAMR_dim         ! dim: AMR surfaces       (m_AMR)
+      INTEGER :: i_dim            ! dim: Re/Im component    (2)
+      INTEGER :: dim_pts_id       ! dim: max AMR eval points
 
-      INTEGER :: run, run_dimid, point_dimid, varids(4)
+c-----------------------------------------------------------------------
+c     declarations -- NetCDF variable IDs.
+c     Each *_id holds the handle returned by nf90_def_var and is
+c     later passed to the matching nf90_put_var call.
+c-----------------------------------------------------------------------
+      INTEGER :: qsing_id         ! "r"                  — surface index
+      INTEGER :: qr_id            ! "q_rational"         — safety factor
+      INTEGER :: omegas_id        ! "omegas"             — rotation freq
+      INTEGER :: qc_id            ! "tau_k"              — Q-conversion
+      INTEGER :: Q_id             ! "Q"                  (BUG FLAG 3)
+      INTEGER :: Q_e_id           ! "Q_e"                — norm Q_e
+      INTEGER :: Q_i_id           ! "Q_i"                — norm Q_i
+      INTEGER :: S_id             ! "S"                  — Lundquist
+      INTEGER :: pr_id            ! "psi_n_rational"     — norm psi
+      INTEGER :: p_perp_id        ! "P_perp"
+      INTEGER :: p_tor_id         ! "P_tor"
+      INTEGER :: Dnorm_id         ! "D"                  — normalised D
+      INTEGER :: dpp_id           ! "Delta_prime_rational" (complex)
+      INTEGER :: dc_id            ! "Delta_crit_rational"
+      INTEGER :: dels_db_id       ! "delta_s_d_b"        (complex)
+      INTEGER :: d_b_id           ! "d_beta"
+      INTEGER :: gs_id            ! "growth rate"        (complex)
+      INTEGER :: ge_id            ! "est. growth rate"   (complex)
+      INTEGER :: c_b_id           ! c_beta — (BUG FLAG 4: unused)
 
-      ! AMR declarations
-      INTEGER :: max_pts_all, s, n_curr
-      INTEGER :: dim_pts_id
-      INTEGER :: var_q_id, var_d_id, var_npts_id
-      REAL(r8), ALLOCATABLE :: buffer_q(:,:,:), buffer_d(:,:,:)
-      INTEGER, ALLOCATABLE :: n_pts_arr(:)
-      REAL(r8) :: fill_val = -9.99E33 ! Standard NetCDF Fill Value
-      ! AMR declarations
+c     AMR variable IDs
+      INTEGER :: var_q_id         ! "Q_AMR"    — scan Q-points
+      INTEGER :: var_d_id         ! "Deltas_AMR" — scan Delta values
+      INTEGER :: var_npts_id      ! "n_amr_pts"  — points per surface
 
-      CHARACTER(64) :: ncfile
-      LOGICAL, PARAMETER :: debug_flag = .FALSE.
-      CHARACTER(len=*), PARAMETER :: version ='v1.0.0-99-gc873bd6'
-c -----------------------------------------------------------------------
-c      set variables
-c -----------------------------------------------------------------------
-      IF(debug_flag) PRINT *,"Called slayer_netcdf_out"
-      IF (nn<10) THEN
-         WRITE(UNIT=sn,FMT='(I1)')nn
-         sn=ADJUSTL(sn)
+c-----------------------------------------------------------------------
+c     declarations -- AMR rectangular-buffer workspace.
+c     The ragged per-surface scan data are padded into fixed-size
+c     rectangular arrays before writing to NetCDF.
+c-----------------------------------------------------------------------
+      INTEGER :: max_pts_all             ! max points across surfaces
+      INTEGER :: s                       ! surface loop index
+      INTEGER :: n_curr                  ! points on current surface
+      REAL(r8), ALLOCATABLE :: buffer_q(:,:,:)  ! (pts, surf, Re/Im)
+      REAL(r8), ALLOCATABLE :: buffer_d(:,:,:)  ! (pts, surf, Re/Im)
+      INTEGER,  ALLOCATABLE :: n_pts_arr(:)     ! points per surface
+      REAL(r8) :: fill_val = -9.99d33   ! (BUG FLAG 2: declared, unused)
+
+c-----------------------------------------------------------------------
+c     declarations -- miscellaneous locals.
+c-----------------------------------------------------------------------
+      CHARACTER(64) :: ncfile                      ! output file name
+      LOGICAL, PARAMETER :: debug_flag = .FALSE.   ! verbose trace
+      CHARACTER(len=*), PARAMETER ::
+     $     version = 'v1.0.0-99-gc873bd6'         ! (BUG FLAG 6)
+
+c-----------------------------------------------------------------------
+c     build the output filename from the toroidal mode number.
+c     Note: writes to the module-level global `sn` (BUG FLAG 7).
+c-----------------------------------------------------------------------
+      IF (debug_flag) PRINT *, "Called slayer_netcdf_out"
+
+      IF (nn < 10) THEN
+         WRITE(UNIT=sn, FMT='(I1)') nn
+         sn = ADJUSTL(sn)
       ELSE
-         WRITE(UNIT=sn,FMT='(I2)')nn
+         WRITE(UNIT=sn, FMT='(I2)') nn
       ENDIF
       ncfile = "slayer_output_n"//TRIM(sn)//".nc"
-      IF(debug_flag) PRINT *, ncfile
-c -----------------------------------------------------------------------
-c      open files
-c -----------------------------------------------------------------------
-      IF(debug_flag) PRINT *," - Creating netcdf files"
-      CALL sl_check( nf90_create(ncfile,
-     $     cmode=or(NF90_CLOBBER,NF90_64BIT_OFFSET), ncid=ncid) )
-c
-c     reform "ragged" AMR delta ouputs into rectangular array
-c
+      IF (debug_flag) PRINT *, ncfile
 
-      ! 1. Find the Maximum AMR Grid Size across all surfaces
+c-----------------------------------------------------------------------
+c     create the NetCDF file (clobber any existing file).
+c-----------------------------------------------------------------------
+      IF (debug_flag) PRINT *, " - Creating netcdf file"
+      CALL sl_check( nf90_create(ncfile,
+     $     cmode=OR(NF90_CLOBBER, NF90_64BIT_OFFSET), ncid=ncid) )
+
+c-----------------------------------------------------------------------
+c     reform ragged AMR Delta outputs into rectangular arrays.
+c
+c     Each surface may have a different number of AMR scan points.
+c     We find the maximum, allocate rectangular buffers of that size,
+c     and copy in the per-surface data.  Unused trailing slots are
+c     filled with 0.0 (should be fill_val — see BUG FLAG 2).
+c-----------------------------------------------------------------------
+
+c     step 1: find the maximum AMR grid size across all surfaces.
       max_pts_all = 0
       IF (ALLOCATED(all_deltas_out(1)%inQs)) THEN
-      DO s = 1, m_AMR
-          max_pts_all = MAX(max_pts_all,SIZE(all_deltas_out(s)%inQs))
-      END DO
+         DO s = 1, m_AMR
+            max_pts_all = MAX(max_pts_all,
+     $                        SIZE(all_deltas_out(s)%inQs))
+         END DO
       END IF
 
-      ! 2. Allocate Rectangular Buffers (Points, Surfaces, Re/Im)
-      !    Shape: (Max_Points, Number_Surfaces, 2)
+c     step 2: allocate rectangular buffers (pts × surfaces × Re/Im).
       ALLOCATE(buffer_q(max_pts_all, m_AMR, 2))
       ALLOCATE(buffer_d(max_pts_all, m_AMR, 2))
       ALLOCATE(n_pts_arr(m_AMR))
-  
-      ! Initialize with Fill Value (so unused space is ignored by plotters)
-      buffer_q = 0.0
-      buffer_d = 0.0
+
+      buffer_q  = 0.0d0          ! padding value (see BUG FLAG 2)
+      buffer_d  = 0.0d0
       n_pts_arr = 0
-  
-      ! 3. Flatten the Ragged Data into the Buffers
+
+c     step 3: flatten the ragged data into the buffers.
       IF (ALLOCATED(all_deltas_out(1)%inQs)) THEN
-      DO s = 1, m_AMR
-          n_curr = SIZE(all_deltas_out(s)%inQs)
-          n_pts_arr(s) = n_curr
-          
-          ! --- FILL Q (Coordinate) ---
-          ! Real part (inQs) -> Index 1
-          buffer_q(1:n_curr,s,1) = all_deltas_out(s)%inQs(1:n_curr)
-          ! Imag part (iinQs) -> Index 2
-          buffer_q(1:n_curr,s,2) = all_deltas_out(s)%iinQs(1:n_curr)
-          
-          ! --- FILL DELTA (Result) ---
-          ! Real part -> Index 1
-          buffer_d(1:n_curr,s,1)=all_deltas_out(s)%real_deltas(1:n_curr)
-          ! Imag part -> Index 2
-          buffer_d(1:n_curr,s,2)=all_deltas_out(s)%imag_deltas(1:n_curr)
-      END DO
-      END IF
-c -----------------------------------------------------------------------
-c      define global file attributes
-c -----------------------------------------------------------------------
-      IF(debug_flag) PRINT *," - Defining netcdf globals"
-      CALL sl_check( nf90_put_att(ncid,nf90_global,"title",
-     $     "SLAYER outputs"))
-      !CALL sl_check( nf90_put_att(ncid,nf90_global,"shot", INT(shotnum)) )
-      !CALL sl_check( nf90_put_att(ncid,nf90_global,"time",INT(shottime)) )
-      !CALL sl_check( nf90_put_att(ncid,nf90_global,"n", nn))
-      CALL sl_check( nf90_put_att(ncid,nf90_global,"version", version))
-      ! define global attributes
-      ! define dimensions
-      IF(debug_flag) PRINT *," - Defining dimensions in netcdf"
+         DO s = 1, m_AMR
+            n_curr       = SIZE(all_deltas_out(s)%inQs)
+            n_pts_arr(s) = n_curr
 
-      !WRITE(*,*)"netcdf qval=",qval
-      WRITE(*,*)">>> Writing results to NetCDF output file"
+c           Q-coordinate (Re and Im parts)
+            buffer_q(1:n_curr, s, 1) =
+     $           all_deltas_out(s)%inQs(1:n_curr)
+            buffer_q(1:n_curr, s, 2) =
+     $           all_deltas_out(s)%iinQs(1:n_curr)
 
-         !CALL check( nf90_def_dim(ncid,"r",msing,r_dim) )
-         !CALL check( nf90_def_var(ncid,"r",nf90_int,r_dim,r_id))
-      IF(msing>0)THEN
-         CALL sl_check( nf90_def_dim(ncid,"r",msing,qsing_dim) ) !r_dim = q_rational
-         CALL sl_check( nf90_def_dim(ncid,"r_AMR",m_AMR,
-     $                  nAMR_dim) ) !r_dim = q_rational
-         CALL sl_check( nf90_def_dim(ncid, "i", 2, i_dim) )
-         CALL sl_check( nf90_def_var(ncid,"r",nf90_int,
-     $    qsing_dim,qsing_id))
-         CALL sl_check( nf90_def_var(ncid,"q_rational",nf90_int,
-     $    qsing_dim,qr_id))
-         CALL sl_check( nf90_def_var(ncid,"omegas",nf90_double,
-     $    qsing_dim,omegas_id))
-         CALL sl_check( nf90_def_var(ncid,"tau_k",nf90_double,
-     $    qsing_dim,qc_id))
-         CALL sl_check( nf90_def_var(ncid,"Q",nf90_double,
-     $    qsing_dim,Q_id))
-         CALL sl_check( nf90_def_var(ncid,"Q_e",nf90_double,
-     $    qsing_dim,Q_e_id))
-         CALL sl_check( nf90_def_var(ncid,"Q_i",nf90_double,
-     $    qsing_dim,Q_i_id))
-         CALL sl_check( nf90_def_var(ncid,"S",nf90_double,
-     $    qsing_dim,S_id))
-         CALL sl_check( nf90_def_var(ncid,"psi_n_rational",
-     $                            nf90_double,qsing_dim,pr_id) )
-         CALL sl_check( nf90_def_var(ncid,"P_perp",nf90_double,
-     $                            qsing_dim,p_perp_id) )
-         CALL sl_check( nf90_def_var(ncid,"P_tor",nf90_double,
-     $                            qsing_dim,p_tor_id) )
-         !CALL sl_check( nf90_def_var(ncid,"q_rational",nf90_double,
-      !$                            qsing_dim,qr_id) )
+c           Delta result (Re and Im parts)
+            buffer_d(1:n_curr, s, 1) =
+     $           all_deltas_out(s)%real_deltas(1:n_curr)
+            buffer_d(1:n_curr, s, 2) =
+     $           all_deltas_out(s)%imag_deltas(1:n_curr)
+         END DO
       END IF
 
-      CALL sl_check( nf90_def_var(ncid,"D",nf90_double,
-     $      qsing_dim,Dnorm_id) )
-      CALL sl_check( nf90_def_var(ncid,"Delta_prime_rational",
-     $      nf90_double,(/qsing_dim,i_dim/),dpp_id) )
-      CALL sl_check( nf90_def_var(ncid,"Delta_crit_rational",
-     $      nf90_double,qsing_dim,dc_id) )
+c-----------------------------------------------------------------------
+c     define global file attributes.
+c-----------------------------------------------------------------------
+      IF (debug_flag) PRINT *, " - Defining netcdf globals"
+      CALL sl_check( nf90_put_att(ncid, nf90_global,
+     $                            "title", "SLAYER outputs") )
+      CALL sl_check( nf90_put_att(ncid, nf90_global,
+     $                            "version", version) )
+
+c-----------------------------------------------------------------------
+c     define dimensions and per-surface NetCDF variables.
+c
+c     All definitions below require msing > 0 because the "r"
+c     dimension is sized by msing.  (See BUG FLAG 1 for remaining
+c     def_var calls that sit outside this guard.)
+c-----------------------------------------------------------------------
+      IF (debug_flag) PRINT *, " - Defining dimensions in netcdf"
+      WRITE(*,*) ">>> Writing results to NetCDF output file"
+
+      IF (msing > 0) THEN
+
+c        -- core dimensions --
+         CALL sl_check( nf90_def_dim(ncid, "r",     msing, qsing_dim) )
+         CALL sl_check( nf90_def_dim(ncid, "r_AMR", m_AMR, nAMR_dim)  )
+         CALL sl_check( nf90_def_dim(ncid, "i",     2,     i_dim)     )
+
+c        -- scalar per-surface variables --
+         CALL sl_check( nf90_def_var(ncid, "r",         nf90_int,
+     $        qsing_dim, qsing_id)  )
+         CALL sl_check( nf90_def_var(ncid, "q_rational", nf90_int,
+     $        qsing_dim, qr_id)     )
+         CALL sl_check( nf90_def_var(ncid, "omegas",    nf90_double,
+     $        qsing_dim, omegas_id) )
+         CALL sl_check( nf90_def_var(ncid, "tau_k",     nf90_double,
+     $        qsing_dim, qc_id)     )
+         CALL sl_check( nf90_def_var(ncid, "Q",         nf90_double,
+     $        qsing_dim, Q_id)      )  ! BUG FLAG 3: defined but not written
+         CALL sl_check( nf90_def_var(ncid, "Q_e",       nf90_double,
+     $        qsing_dim, Q_e_id)    )
+         CALL sl_check( nf90_def_var(ncid, "Q_i",       nf90_double,
+     $        qsing_dim, Q_i_id)    )
+         CALL sl_check( nf90_def_var(ncid, "S",         nf90_double,
+     $        qsing_dim, S_id)      )
+         CALL sl_check( nf90_def_var(ncid, "psi_n_rational",
+     $        nf90_double, qsing_dim, pr_id)     )
+         CALL sl_check( nf90_def_var(ncid, "P_perp",    nf90_double,
+     $        qsing_dim, p_perp_id) )
+         CALL sl_check( nf90_def_var(ncid, "P_tor",     nf90_double,
+     $        qsing_dim, p_tor_id)  )
+
+      END IF
+
+c-----------------------------------------------------------------------
+c     define additional variables that also depend on qsing_dim / i_dim
+c     (BUG FLAG 1 — these will fail if msing == 0).
+c-----------------------------------------------------------------------
+      CALL sl_check( nf90_def_var(ncid, "D", nf90_double,
+     $     qsing_dim, Dnorm_id) )
+      CALL sl_check( nf90_def_var(ncid, "Delta_prime_rational",
+     $     nf90_double, (/qsing_dim, i_dim/), dpp_id) )
+      CALL sl_check( nf90_def_var(ncid, "Delta_crit_rational",
+     $     nf90_double, qsing_dim, dc_id) )
 
       IF (est_gamma_flag) THEN
-        CALL sl_check( nf90_def_var(ncid,"delta_s_d_b",nf90_double,
-     $      (/qsing_dim,i_dim/),dels_db_id) )
-        CALL sl_check( nf90_def_var(ncid,"d_beta",nf90_double,
-     $      qsing_dim,d_b_id) )
-        CALL sl_check( nf90_def_var(ncid,"est. growth rate",
-     $      nf90_double,(/qsing_dim,i_dim/),ge_id) )
+         CALL sl_check( nf90_def_var(ncid, "delta_s_d_b",
+     $        nf90_double, (/qsing_dim, i_dim/), dels_db_id) )
+         CALL sl_check( nf90_def_var(ncid, "d_beta", nf90_double,
+     $        qsing_dim, d_b_id) )
+         CALL sl_check( nf90_def_var(ncid, "est. growth rate",
+     $        nf90_double, (/qsing_dim, i_dim/), ge_id) )
       END IF
 
-      CALL sl_check( nf90_def_var(ncid,"growth rate",
-     $      nf90_double,(/qsing_dim,i_dim/),gs_id) )
+      CALL sl_check( nf90_def_var(ncid, "growth rate",
+     $     nf90_double, (/qsing_dim, i_dim/), gs_id) )
 
-      !!! AMR
-      CALL sl_check(nf90_def_dim(ncid, 'amr_pts', max_pts_all, 
-     $               dim_pts_id))
-      !    Define Variables
-      CALL sl_check(nf90_def_var(ncid, 'n_amr_pts', NF90_INT, 
-     $             (/qsing_dim/), var_npts_id))
-      !    Note: Dimensions order is (pts, surf, cplx)
-      CALL sl_check(nf90_def_var(ncid, 'Q_AMR', NF90_DOUBLE,
-     $      (/dim_pts_id, nAMR_dim, i_dim/), var_q_id))      
-      CALL sl_check(nf90_def_var(ncid, 'Deltas_AMR', NF90_DOUBLE,
-     $      (/dim_pts_id, nAMR_dim, i_dim/), var_d_id))
+c-----------------------------------------------------------------------
+c     define AMR scan dimensions and variables.
+c     (BUG FLAG 1 — also uses qsing_dim, nAMR_dim, i_dim.)
+c-----------------------------------------------------------------------
+      CALL sl_check( nf90_def_dim(ncid, "amr_pts",
+     $     max_pts_all, dim_pts_id) )
+      CALL sl_check( nf90_def_var(ncid, "n_amr_pts", NF90_INT,
+     $     (/qsing_dim/), var_npts_id) )
+      CALL sl_check( nf90_def_var(ncid, "Q_AMR", NF90_DOUBLE,
+     $     (/dim_pts_id, nAMR_dim, i_dim/), var_q_id) )
+      CALL sl_check( nf90_def_var(ncid, "Deltas_AMR", NF90_DOUBLE,
+     $     (/dim_pts_id, nAMR_dim, i_dim/), var_d_id) )
 
-      ! end definitions
+c-----------------------------------------------------------------------
+c     end NetCDF define mode.
+c-----------------------------------------------------------------------
       CALL sl_check( nf90_enddef(ncid) )
-c -----------------------------------------------------------------------
-c      set variables
-c -----------------------------------------------------------------------
-      CALL sl_check( nf90_put_var(ncid,qsing_id, sl_in%qval_arr))
-      CALL sl_check( nf90_put_var(ncid,qr_id, sl_in%qval_arr))
-      CALL sl_check( nf90_put_var(ncid,pr_id, sl_in%psi_n_arr))
-      CALL sl_check( nf90_put_var(ncid,omegas_id, sl_in%omegas_arr))
-      CALL sl_check( nf90_put_var(ncid,S_id, sl_in%lu_arr))
-      CALL sl_check( nf90_put_var(ncid,qc_id, sl_in%Qconv_arr))
-      !CALL sl_check( nf90_put_var(ncid,Q_id, Q_arr))
-      CALL sl_check( nf90_put_var(ncid,Q_e_id, sl_in%Q_e_arr))
-      CALL sl_check( nf90_put_var(ncid,Q_i_id, sl_in%Q_i_arr))
-      CALL sl_check( nf90_put_var(ncid,p_perp_id, sl_in%P_perp_arr))
-      CALL sl_check( nf90_put_var(ncid,p_tor_id, sl_in%P_tor_arr))
-      CALL sl_check( nf90_put_var(ncid,Dnorm_id, sl_in%D_norm_arr))
 
-      CALL sl_check( nf90_put_var(ncid,dpp_id, 
-     $      RESHAPE((/sl_in%Re_dp_arr,sl_in%Im_dp_arr/),
-     $      (/msing,2/))))
-      CALL sl_check( nf90_put_var(ncid,dc_id,sl_in%d_crit_arr))
+c-----------------------------------------------------------------------
+c     write per-surface scalar variables.
+c-----------------------------------------------------------------------
+      CALL sl_check( nf90_put_var(ncid, qsing_id,
+     $     sl_in%qval_arr)  )
+      CALL sl_check( nf90_put_var(ncid, qr_id,
+     $     sl_in%qval_arr)  )
+      CALL sl_check( nf90_put_var(ncid, pr_id,
+     $     sl_in%psi_n_arr) )
+      CALL sl_check( nf90_put_var(ncid, omegas_id,
+     $     sl_in%omegas_arr))
+      CALL sl_check( nf90_put_var(ncid, S_id,
+     $     sl_in%lu_arr)    )
+      CALL sl_check( nf90_put_var(ncid, qc_id,
+     $     sl_in%Qconv_arr) )
+      CALL sl_check( nf90_put_var(ncid, Q_e_id,
+     $     sl_in%Q_e_arr)   )
+      CALL sl_check( nf90_put_var(ncid, Q_i_id,
+     $     sl_in%Q_i_arr)   )
+      CALL sl_check( nf90_put_var(ncid, p_perp_id,
+     $     sl_in%P_perp_arr))
+      CALL sl_check( nf90_put_var(ncid, p_tor_id,
+     $     sl_in%P_tor_arr) )
+      CALL sl_check( nf90_put_var(ncid, Dnorm_id,
+     $     sl_in%D_norm_arr))
 
+c-----------------------------------------------------------------------
+c     write complex Delta' as a RESHAPE'd (msing, 2) real array.
+c-----------------------------------------------------------------------
+      CALL sl_check( nf90_put_var(ncid, dpp_id,
+     $     RESHAPE( (/sl_in%Re_dp_arr, sl_in%Im_dp_arr/),
+     $              (/msing, 2/) )) )
+      CALL sl_check( nf90_put_var(ncid, dc_id,
+     $     sl_in%d_crit_arr) )
+
+c-----------------------------------------------------------------------
+c     write estimated growth-rate outputs (only when requested).
+c-----------------------------------------------------------------------
       IF (est_gamma_flag) THEN
-        CALL sl_check( nf90_put_var(ncid,dels_db_id, 
-     $      RESHAPE((/REAL(sl_out%dels_db_arr),
-     $      AIMAG(sl_out%dels_db_arr)/),(/msing,2/))))
+         CALL sl_check( nf90_put_var(ncid, dels_db_id,
+     $        RESHAPE( (/REAL(sl_out%dels_db_arr),
+     $                    AIMAG(sl_out%dels_db_arr)/),
+     $                 (/msing, 2/) )) )
 
-        CALL sl_check( nf90_put_var(ncid,d_b_id,sl_in%d_beta_arr))
-        CALL sl_check( nf90_put_var(ncid,ge_id, 
-     $      RESHAPE((/REAL(sl_out%gamma_est_arr),
-     $      AIMAG(sl_out%gamma_est_arr)/),(/msing,2/))))
+         CALL sl_check( nf90_put_var(ncid, d_b_id,
+     $        sl_in%d_beta_arr) )
+
+         CALL sl_check( nf90_put_var(ncid, ge_id,
+     $        RESHAPE( (/REAL(sl_out%gamma_est_arr),
+     $                    AIMAG(sl_out%gamma_est_arr)/),
+     $                 (/msing, 2/) )) )
       END IF
 
-      CALL sl_check( nf90_put_var(ncid,gs_id, 
-     $      RESHAPE((/REAL(sl_out%gamma_sol_arr),
-     $      AIMAG(sl_out%gamma_sol_arr)/),(/msing,2/))))
+c-----------------------------------------------------------------------
+c     write solved growth rate (always present).
+c-----------------------------------------------------------------------
+      CALL sl_check( nf90_put_var(ncid, gs_id,
+     $     RESHAPE( (/REAL(sl_out%gamma_sol_arr),
+     $                 AIMAG(sl_out%gamma_sol_arr)/),
+     $              (/msing, 2/) )) )
 
-      CALL sl_check(nf90_put_var(ncid, var_npts_id, n_pts_arr))
-      CALL sl_check(nf90_put_var(ncid, var_q_id, buffer_q))
-      CALL sl_check(nf90_put_var(ncid, var_d_id, buffer_d))
+c-----------------------------------------------------------------------
+c     write AMR scan arrays.
+c-----------------------------------------------------------------------
+      CALL sl_check( nf90_put_var(ncid, var_npts_id, n_pts_arr) )
+      CALL sl_check( nf90_put_var(ncid, var_q_id,    buffer_q)  )
+      CALL sl_check( nf90_put_var(ncid, var_d_id,    buffer_d)  )
 
-      ! 6. Clean Up
+c-----------------------------------------------------------------------
+c     deallocate AMR rectangular buffers.
+c-----------------------------------------------------------------------
       DEALLOCATE(buffer_q, buffer_d, n_pts_arr)
 
-c -----------------------------------------------------------------------
-c      close file
-c -----------------------------------------------------------------------
-      IF(debug_flag) PRINT *," - Closing netcdf file"
+c-----------------------------------------------------------------------
+c     close the NetCDF file.
+c-----------------------------------------------------------------------
+      IF (debug_flag) PRINT *, " - Closing netcdf file"
       CALL sl_check( nf90_close(ncid) )
-c -----------------------------------------------------------------------
-c      terminate.
-c -----------------------------------------------------------------------
+
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE slayer_netcdf_out
       END MODULE slayer_netcdf_mod

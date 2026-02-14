@@ -1,11 +1,10 @@
 c-----------------------------------------------------------------------
-c     Slab LAYER based on linear drift MHD
-c     SLAYER: main program
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     code organization.
-c-----------------------------------------------------------------------
-c     slayer.
+c     SLAYER: Slab LAYER linear drift-MHD code.
+c     Main driver program.
+c
+c     Computes tearing-mode layer quantities (inner layer Delta, 
+c     growth rates, torque balance, field thresholds) from 
+c     slab-geometry drift-MHD matching via a Riccati integration method.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
@@ -13,59 +12,185 @@ c-----------------------------------------------------------------------
       PROGRAM slayer
 
       USE sglobal_mod
-      USE delta_mod, ONLY: riccati,riccati_del_s,riccati_out,
-     $                     parflow_flag,PeOhmOnly_flag
+      USE delta_mod, ONLY: riccati,riccati_f,riccati_del_s,
+     $                     riccati_out,parflow_flag,PeOhmOnly_flag
       USE gslayer_mod
       USE layerinputs_mod
 
       IMPLICIT NONE
-
-      CHARACTER(512) :: infile,ncfile
-      INTEGER :: i,j,k,inum,jnum,knum,inn,count,
-     $           Q_num,msing_max,n_k
-      INTEGER, DIMENSION(1) :: index
-
-      LOGICAL :: params_flag,QPscan_flag,QPescan_flag,QPscan2_flag,
-     $     QDscan2_flag,Qbscan_flag,Qscan_flag,
-     $     onscan_flag,otscan_flag,ntscan_flag,nbtscan_flag,
-     $     Pe_flag,verbose,ascii_flag,bin_flag,netcdf_flag,
-     $     bal_flag,stability_flag,riccatiscan_flag,input_flag,
-     $     params_check,stabscan_flag,coupled_stabscan_flag,amr_flag,
-     $     read_eq,est_gamma_flag,
-     $     match_gamma_flag,fitz_flag,coupling_flag,br_th_flag
-      REAL(r8) :: n_e,t_e,t_i,omega,omega0,scan_width,l_n,
-     $     l_t,qval,sval,bt,rs,R0,mu_i,zeff,dr_val,dgeo_val
-      REAL(r8) :: inQ,inQ_e,inQ_i,inpr,inpe,inc_beta,inds,intau,inlu
-      REAL(r8) :: psi0,jxb,Q0,Q_sol,br_th,d_b,Residual
-      COMPLEX(r8) :: delta,delta_n_p,dels_db,del_s,lar_gamma,
-     $               tmp_gamma,ingamma,delta_prime,det_val
-
-      REAL(r8) :: inQ_min,inQ_max,j_min,j_max,jpower,k_min,k_max,
-     $     kpower,ing_step,ing_coarse,iing_coarse,delta_real,
-     $     delta_imag,Qratio
-      REAL(r8) :: chis(3)
-
-      INTEGER, DIMENSION(:), ALLOCATABLE :: mms,nns
-
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: jxbl,bal,
-     $        prs,n_es,t_es,t_is,omegas,l_ns,l_ts,svals,qvals,
-     $        bts,rss,R0s,mu_is,zeffs,Q_soll,br_thl,pes
-      REAL(r8), DIMENSION(8) :: chi_p_prof, chi_t_prof, kappa_prof
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs
-      REAL(r8), DIMENSION(:,:), ALLOCATABLE ::
-     $     js,ks,psis,jxbs,Q_sols,br_ths
-      REAL(r8) :: spot, slayer_inpr
+c-----------------------------------------------------------------------
+c     local scalars — loop indices and counters.
+c-----------------------------------------------------------------------
+      INTEGER :: i,j,k              ! general loop indices
+      INTEGER :: inn                 ! number of input-file surfaces
+      INTEGER :: count               ! generic counter
+c-----------------------------------------------------------------------
+c     local scalars — numerical resolution.
+c-----------------------------------------------------------------------
+      INTEGER :: inum                ! resolution for 1-D scans
+      INTEGER :: jnum                ! resolution for 2-D scan axis 1
+      INTEGER :: knum                ! resolution for 2-D scan axis 2
+      INTEGER :: Q_num               ! resolution for stab. scan Re(Q)
+      INTEGER :: msing_max           ! max number of singular surfaces
+      INTEGER :: n_k                 ! number of rational surfaces
+c-----------------------------------------------------------------------
+c     local scalars — intrinsic-name collision (see BUG FLAG 1).
+c-----------------------------------------------------------------------
+      INTEGER, DIMENSION(1) :: index ! result of MAXLOC  [BUG FLAG 1]
+c-----------------------------------------------------------------------
+c     control flags — workflow.
+c-----------------------------------------------------------------------
+      LOGICAL :: params_flag         ! compute params from kinetic data
+      LOGICAL :: input_flag          ! read multi-surface input file
+      LOGICAL :: read_eq             ! read equilibrium files
+      LOGICAL :: verbose             ! enable progress messages
+      LOGICAL :: params_check        ! print diagnostic output in params
+c-----------------------------------------------------------------------
+c     control flags — physics modes.
+c-----------------------------------------------------------------------
+      LOGICAL :: est_gamma_flag      ! estimate growth rate
+      LOGICAL :: match_gamma_flag    ! asymptotically matched gamma
+      LOGICAL :: fitz_flag           ! use Fitzpatrick layer model
+      LOGICAL :: coupling_flag       ! coupled rational surfaces
+      LOGICAL :: br_th_flag          ! Br threshold test scan
+      LOGICAL :: bal_flag            ! torque balance scan
+      LOGICAL :: stability_flag      ! complex-Q delta scan
+      LOGICAL :: Pe_flag             ! include electron pressure
+c-----------------------------------------------------------------------
+c     control flags — parameter-space scans.
+c-----------------------------------------------------------------------
+      LOGICAL :: QPscan_flag         ! (Q,P) scan
+      LOGICAL :: QPescan_flag        ! (Q,Pe) scan
+      LOGICAL :: QPscan2_flag        ! (Q,P) scan variant 2
+      LOGICAL :: QDscan2_flag        ! (Q,D) scan variant 2
+      LOGICAL :: Qbscan_flag         ! (Q,beta) scan
+      LOGICAL :: Qscan_flag          ! 1-D Q scan
+      LOGICAL :: onscan_flag         ! (omega,n) scan
+      LOGICAL :: otscan_flag         ! (omega,T) scan
+      LOGICAL :: ntscan_flag         ! (n,T) scan
+      LOGICAL :: nbtscan_flag        ! (n,Bt) scan
+      LOGICAL :: riccatiscan_flag    ! Riccati-variable scan
+      LOGICAL :: stabscan_flag       ! stability scan (single surface)
+      LOGICAL :: coupled_stabscan_flag ! stability scan (coupled)
+      LOGICAL :: amr_flag            ! adaptive mesh refinement scan
+c-----------------------------------------------------------------------
+c     control flags — output format.
+c-----------------------------------------------------------------------
+      LOGICAL :: ascii_flag          ! write ASCII output files
+      LOGICAL :: bin_flag            ! write binary output files
+      LOGICAL :: netcdf_flag         ! write NetCDF output files
+c-----------------------------------------------------------------------
+c     local scalars — physical input quantities.
+c-----------------------------------------------------------------------
+      REAL(r8) :: n_e                ! electron density [m^-3]
+      REAL(r8) :: t_e                ! electron temperature [eV]
+      REAL(r8) :: t_i                ! ion temperature [eV]
+      REAL(r8) :: omega              ! toroidal rotation [rad/s]
+      REAL(r8) :: omega0             ! (unused, see BUG FLAG 2)
+      REAL(r8) :: l_n                ! density gradient scale length
+      REAL(r8) :: l_t                ! temperature gradient scale length
+      REAL(r8) :: qval               ! safety factor at surface
+      REAL(r8) :: sval               ! magnetic shear at surface
+      REAL(r8) :: bt                 ! toroidal field [T]
+      REAL(r8) :: rs                 ! minor radius of surface [m]
+      REAL(r8) :: R0                 ! major radius [m]
+      REAL(r8) :: mu_i               ! ion mass number
+      REAL(r8) :: zeff               ! effective charge
+      REAL(r8) :: dr_val             ! radial derivative parameter
+      REAL(r8) :: dgeo_val           ! geometric factor parameter
+      REAL(r8) :: scan_width         ! half-width of complex-Q scan
+c-----------------------------------------------------------------------
+c     local scalars — normalized layer parameters (namelist overrides).
+c-----------------------------------------------------------------------
+      REAL(r8) :: inQ                ! normalized ExB rotation freq.
+      REAL(r8) :: inQ_e              ! normalized electron diamagnetic
+      REAL(r8) :: inQ_i              ! normalized ion diamagnetic
+      REAL(r8) :: inpr               ! normalized pressure gradient
+      REAL(r8) :: inpe               ! normalized electron pressure
+      REAL(r8) :: inc_beta           ! normalized beta
+      REAL(r8) :: inds               ! normalized D (magnetic diffusion)
+      REAL(r8) :: intau              ! normalized tau = T_i/T_e
+      REAL(r8) :: inlu               ! normalized Lundquist number
+c-----------------------------------------------------------------------
+c     local scalars — derived / scratch quantities.
+c-----------------------------------------------------------------------
+      REAL(r8) :: psi0               ! reconnected flux (a.u.)
+      REAL(r8) :: jxb                ! j x B torque (a.u.)
+      REAL(r8) :: Q0                 ! unperturbed rotation frequency
+      REAL(r8) :: Q_sol              ! solved rotation frequency
+      REAL(r8) :: br_th              ! radial field threshold
+      REAL(r8) :: d_b                ! (unused, see BUG FLAG 2)
+      REAL(r8) :: Residual           ! (unused, see BUG FLAG 2)
+      REAL(r8) :: Qratio             ! Q_e/Q ratio for scan2 variants
+      REAL(r8) :: spot               ! (unused, see BUG FLAG 2)
+      REAL(r8) :: slayer_inpr        ! (unused, see BUG FLAG 2)
+c-----------------------------------------------------------------------
+c     local scalars — scan grid helpers.
+c-----------------------------------------------------------------------
+      REAL(r8) :: inQ_min,inQ_max    ! rotation scan bounds
+      REAL(r8) :: j_min,j_max,jpower ! 2-D scan axis 1
+      REAL(r8) :: k_min,k_max,kpower ! 2-D scan axis 2
+      REAL(r8) :: ing_step           ! growth-rate grid step
+      REAL(r8) :: ing_coarse         ! Re(gamma) grid value
+      REAL(r8) :: iing_coarse        ! Im(gamma) grid value
+      REAL(r8) :: delta_real         ! (unused, see BUG FLAG 2)
+      REAL(r8) :: delta_imag         ! (unused, see BUG FLAG 2)
+c-----------------------------------------------------------------------
+c     local scalars — complex quantities.
+c-----------------------------------------------------------------------
+      COMPLEX(r8) :: delta           ! layer Delta (tearing index)
+      COMPLEX(r8) :: delta_n_p       ! Deltaprime scale factor
+      COMPLEX(r8) :: dels_db         ! delta_s / d_beta
+      COMPLEX(r8) :: del_s           ! delta_s
+      COMPLEX(r8) :: lar_gamma       ! (unused, see BUG FLAG 2)
+      COMPLEX(r8) :: tmp_gamma       ! (unused, see BUG FLAG 2)
+      COMPLEX(r8) :: ingamma         ! initial gamma guess (namelist)
+      COMPLEX(r8) :: delta_prime     ! external Deltaprime (namelist)
+      COMPLEX(r8) :: det_val         ! (unused, see BUG FLAG 2)
+c-----------------------------------------------------------------------
+c     local arrays — transport profile coefficients.
+c-----------------------------------------------------------------------
+      REAL(r8) :: chis(3)            ! chi_perp, chi_tor, kappa
+      REAL(r8), DIMENSION(8) :: chi_p_prof   ! chi_perp radial profile
+      REAL(r8), DIMENSION(8) :: chi_t_prof   ! chi_tor  radial profile
+      REAL(r8), DIMENSION(8) :: kappa_prof   ! kappa    radial profile
+c-----------------------------------------------------------------------
+c     local arrays — multi-surface input-file storage.
+c-----------------------------------------------------------------------
+      INTEGER,  DIMENSION(:), ALLOCATABLE :: mms,nns
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: prs,n_es,t_es,t_is,
+     $     omegas,l_ns,l_ts,svals,qvals,bts,rss,R0s,mu_is,zeffs,
+     $     Q_soll,br_thl,pes
+c-----------------------------------------------------------------------
+c     local arrays — scan workspace.
+c-----------------------------------------------------------------------
+      REAL(r8), DIMENSION(:),   ALLOCATABLE :: inQs,iinQs
+      REAL(r8), DIMENSION(:),   ALLOCATABLE :: jxbl,bal
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: js,ks,psis,jxbs,
+     $     Q_sols,br_ths
       REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: Q_solss,br_thss
-      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: deltal,outer_deltas
+      COMPLEX(r8), DIMENSION(:),   ALLOCATABLE :: deltal,outer_deltas
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: deltas
-
-      ! AMR DECLARATIONS
-      INTEGER :: AMR_passes, m_AMR     ! Number of refinement levels
-
-      TYPE(slayer_inputs_type) :: sl_in
+c-----------------------------------------------------------------------
+c     AMR (adaptive mesh refinement) growth-rate scan.
+c-----------------------------------------------------------------------
+      INTEGER :: AMR_passes          ! number of AMR refinement levels
+      INTEGER :: m_AMR               ! effective number of surfaces
+c-----------------------------------------------------------------------
+c     structured input/output types (defined in sglobal_mod).
+c-----------------------------------------------------------------------
+      TYPE(slayer_inputs_type)  :: sl_in
       TYPE(slayer_outputs_type) :: sl_out
       TYPE(deltas_outputs_type), ALLOCATABLE :: all_deltas_out(:)
+c-----------------------------------------------------------------------
+c     file-path strings.
+c-----------------------------------------------------------------------
+      CHARACTER(512) :: infile       ! multi-surface input file path
+      CHARACTER(512) :: ncfile       ! NetCDF equilibrium file path
 
+c-----------------------------------------------------------------------
+c     namelist groups.
+c-----------------------------------------------------------------------
       NAMELIST/slayer_input/input_flag,infile,
      $    ncfile,params_flag,mm,nn,n_e,t_e,t_i,sval,bt,rs,R0,omega,
      $    l_t,l_n,qval,mu_i,zeff,dr_val,dgeo_val,chi_p_prof,
@@ -84,95 +209,127 @@ c-----------------------------------------------------------------------
      $    params_check
 c-----------------------------------------------------------------------
 c     set initial values.
+c     defaults are overridden by namelist reads below.
 c-----------------------------------------------------------------------
-      mm=0.0
-      nn=0.0
-      mr = 0.0!real(mm,4)
-      nr = 0.0!real(nn,4)
-      n_e=0.0
-      t_e=0.0
-      t_i=0.0
-      omega=0.0
-      l_n=0.0
-      l_t=0.0
-      qval=0.0
-      sval=0.0
-      bt=0.0
-      rs=0.0
-      R0=0.0
-      mu_i=0.0
-      zeff=0.0
-      dr_val=0.0
-      dgeo_val=0.0
-      inQ=0.0
-      inQ_e=0.0
-      inQ_i=0.0
-      inpr=0.0
-      chi_p_prof=0.0
-      chi_t_prof=0.0
-      kappa_prof=0.0
-      inpe=0.0
-      inc_beta=0.0
-      inds=0.0
-      intau=0.0
-      inlu=0.0
-      Q0=0.0
-      chis=0.0
-      gamma_fac=0.0
-      dc_type=""
-      delta_prime=(0.0,0.0)
-      delta_n_p=(0.0,0.0)
-      ingamma=(0.0,0.0)
-      inum=400 ! resolution to find error field thresholds.
-      jnum=500 ! resolution for 2d scan along with Q,omega.
-      knum=100 ! resolution for 2d scan alont with the other.
-      Q_num=100 ! resolution for stab. scan along Re(Q) axis
-      scan_width = 2.0
-      AMR_passes = 4
-      msing_max = 2
-      in_unit=1
-      out_unit=2
-      out2_unit=3
-      out3_unit=4
-      bin_unit=5
-      bin_2d_unit=6
-      input_unit=7
-      read_eq=.FALSE.
-      est_gamma_flag=.FALSE.
-      match_gamma_flag=.FALSE.
-      fitz_flag=.FALSE.
-      coupling_flag=.FALSE.
-      QPscan_flag=.FALSE. ! scan (Q,P) space for delta and torque.
-      QPescan_flag=.FALSE. ! scan (Q,Pe) space for delta and torque.
-      Qbscan_flag=.FALSE. ! scan (Q,beta) space for delta and torque.
-      onscan_flag=.FALSE. ! scan (omega,n) space for error fields.
-      otscan_flag=.FALSE. ! scan (omega,t) space for error fields.
-      ntscan_flag=.FALSE. ! scan (n,te) space for error fields.
-      nbtscan_flag=.FALSE. ! scan (n,bt) space for error fields.
-      layfac=0.02
-      Qratio=0.5
-      parflow_flag=.FALSE.
-      PeOhmOnly_flag=.TRUE.
-      Pe_flag=.FALSE.
-      params_flag=.TRUE.
-      input_flag=.FALSE.
-      infile=""
-      ncfile=""
-      verbose=.TRUE.
-      ascii_flag=.TRUE.
-      bin_flag=.TRUE.
-      netcdf_flag=.FALSE.
-      riccati_out=.FALSE.
-      riccatiscan_flag=.FALSE.
-      params_check=.FALSE.
-      bal_flag=.FALSE.
-      stability_flag=.FALSE.
-      stabscan_flag=.FALSE.
-      coupled_stabscan_flag=.FALSE.
-      amr_flag=.FALSE.
-      br_th_flag=.FALSE.
+
+      ! mode numbers (sglobal_mod: INTEGER mm,nn; REAL mr,nr)
+      mm   = 0
+      nn   = 0
+      mr   = 0.0
+      nr   = 0.0
+
+      ! kinetic / equilibrium inputs
+      n_e     = 0.0
+      t_e     = 0.0
+      t_i     = 0.0
+      omega   = 0.0
+      l_n     = 0.0
+      l_t     = 0.0
+      qval    = 0.0
+      sval    = 0.0
+      bt      = 0.0
+      rs      = 0.0
+      R0      = 0.0
+      mu_i    = 0.0
+      zeff    = 0.0
+      dr_val  = 0.0
+      dgeo_val= 0.0
+
+      ! normalized layer-parameter overrides
+      inQ      = 0.0
+      inQ_e    = 0.0
+      inQ_i    = 0.0
+      inpr     = 0.0
+      inpe     = 0.0
+      inc_beta = 0.0
+      inds     = 0.0
+      intau    = 0.0
+      inlu     = 0.0
+      Q0       = 0.0
+
+      ! transport profile coefficients
+      chi_p_prof = 0.0
+      chi_t_prof = 0.0
+      kappa_prof = 0.0
+      chis       = 0.0
+
+      ! complex namelist inputs
+      delta_prime = (0.0,0.0)
+      delta_n_p   = (0.0,0.0)
+      ingamma     = (0.0,0.0)
+
+      ! global module scalars (sglobal_mod)
+      gamma_fac = 0.0
+      dc_type   = ""
+
+      ! scan resolution defaults
+      inum       = 400   ! 1-D resolution (error-field threshold scans)
+      jnum       = 500   ! 2-D scan axis-1 resolution
+      knum       = 100   ! 2-D scan axis-2 resolution
+      Q_num      = 100   ! stability scan Re(Q) resolution
+      scan_width = 2.0   ! half-width for complex-Q scans
+      AMR_passes = 4     ! AMR refinement levels
+      msing_max  = 2     ! max singular surfaces to process
+
+      ! I/O unit numbers (sglobal_mod)
+      in_unit    = 1
+      out_unit   = 2
+      out2_unit  = 3
+      out3_unit  = 4
+      bin_unit   = 5
+      bin_2d_unit= 6
+      input_unit = 7
+
+      ! workflow flags
+      read_eq              = .FALSE.
+      est_gamma_flag       = .FALSE.
+      match_gamma_flag     = .FALSE.
+      fitz_flag            = .FALSE.
+      coupling_flag        = .FALSE.
+      params_flag          = .TRUE.
+      input_flag           = .FALSE.
+
+      ! parameter-space scan flags
+      QPscan_flag          = .FALSE.
+      QPescan_flag         = .FALSE.
+      Qbscan_flag          = .FALSE.
+      onscan_flag          = .FALSE.
+      otscan_flag          = .FALSE.
+      ntscan_flag          = .FALSE.
+      nbtscan_flag         = .FALSE.
+
+      ! physics / model flags
+      layfac               = 0.02
+      Qratio               = 0.5
+      parflow_flag         = .FALSE.
+      PeOhmOnly_flag       = .TRUE.
+      Pe_flag              = .FALSE.
+
+      ! file paths
+      infile               = ""
+      ncfile               = ""
+
+      ! output control
+      verbose              = .TRUE.
+      ascii_flag           = .TRUE.
+      bin_flag             = .TRUE.
+      netcdf_flag          = .FALSE.
+
+      ! diagnostic flags
+      riccati_out          = .FALSE.
+      riccatiscan_flag     = .FALSE.
+      params_check         = .FALSE.
+
+      ! remaining physics-mode flags
+      bal_flag             = .FALSE.
+      stability_flag       = .FALSE.
+      stabscan_flag        = .FALSE.
+      coupled_stabscan_flag= .FALSE.
+      amr_flag             = .FALSE.
+      br_th_flag           = .FALSE.
 c-----------------------------------------------------------------------
 c     read slayer.in.
+c     four namelist groups: input, control, output, diagnose.
 c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,*)""
       IF(verbose) WRITE(*,*)"SLAYER START"
@@ -184,6 +341,7 @@ c-----------------------------------------------------------------------
       READ(in_unit,NML=slayer_diagnose)
       CLOSE(UNIT=in_unit)
 
+      ! Build toroidal-mode-number string for output filenames.
       IF (nn<10) THEN
          WRITE(UNIT=sn,FMT='(I1)') nn
          sn=ADJUSTL(sn)
@@ -191,11 +349,15 @@ c-----------------------------------------------------------------------
          WRITE(UNIT=sn,FMT='(I2)') nn
       ENDIF
 c-----------------------------------------------------------------------
-c     calculate parameters as needed.
+c     compute normalized layer parameters from kinetic inputs.
+c     params() (params_mod) converts dimensional plasma profiles into
+c     the normalized quantities (Q, Q_e, Q_i, c_beta, ds, tau, lu)
+c     used by the Riccati solver.
 c-----------------------------------------------------------------------
       IF (params_flag) THEN
          CALL params(n_e,t_e,t_i,omega,chis,dr_val,dgeo_val,
      $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
+         ! Copy module-level results into local working variables.
          inQ=Q
          inQ_e=Q_e
          inQ_i=Q_i
@@ -204,21 +366,28 @@ c-----------------------------------------------------------------------
          intau=tau
          Q0=Q
       ELSE
-         lu=inlu
+         lu=inlu   ! manual Lundquist number when params not computed
       ENDIF
 c-----------------------------------------------------------------------
-c     calculate basic delta, torque, balance, error fields.
+c     baseline single-surface delta, reconnected flux, & torque.
+c     skipped when the matched-gamma path is active (it computes
+c     its own delta internally).
 c-----------------------------------------------------------------------
       IF (.NOT. (match_gamma_flag)) THEN
-      delta=riccati(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe)
-      psi0=1.0/ABS(delta+delta_n_p) ! a.u.
-      jxb=-AIMAG(1.0/(delta+delta_n_p)) ! a.u.
-      WRITE(*,*)"delta=",delta
-      WRITE(*,*)"psi0=",psi0
-      WRITE(*,*)"jxb=",jxb
+         delta=riccati(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe)
+         psi0=1.0/ABS(delta+delta_n_p)     ! reconnected flux  [a.u.]
+         jxb=-AIMAG(1.0/(delta+delta_n_p)) ! j x B torque      [a.u.]
+         IF (verbose) THEN
+            WRITE(*,*)"delta=",delta
+            WRITE(*,*)"psi0=",psi0
+            WRITE(*,*)"jxb=",jxb
+         ENDIF
       ENDIF
 c-----------------------------------------------------------------------
-c     calculate parameters as needed.
+c     multi-surface input-file mode.
+c     reads an external file of (m,n) surfaces with per-surface kinetic
+c     profiles, computes delta and the error-field threshold for each.
+c     [BUG FLAG 3] arrays are allocated 1:inn but loops run 0:inn-1.
 c-----------------------------------------------------------------------
       IF (input_flag) THEN
          OPEN(UNIT=input_unit,FILE=infile,STATUS="old")
@@ -238,7 +407,7 @@ c-----------------------------------------------------------------------
          CLOSE(input_unit)
          
          DO k=0,inn-1
-            WRITE(*,*)k
+            WRITE(*,*)k    ! surface index
             mr=REAL(mms(k))
             nr=REAL(nns(k))
             inpr=prs(k)
@@ -277,12 +446,13 @@ c-----------------------------------------------------------------------
                bal(i)=2.0*inpr*(Q0-inQs(i))/jxbl(i)
             ENDDO
         
+            ! [BUG FLAG 3] Q_soll/br_thl indexed 0:inn-1 but allocated 1:inn
             index=MAXLOC(bal)
             Q_soll(k)=inQs(index(1))
             br_thl(k)=sqrt(MAXVAL(bal)/lu*(svals(k)**2.0/2.0))*1e4
 
-            WRITE(*,*)"Q_sol=",Q_soll(k)
-            WRITE(*,*)"br_th=",br_thl(k)
+            IF (verbose) WRITE(*,*)"Q_sol=",Q_soll(k)
+            IF (verbose) WRITE(*,*)"br_th=",br_thl(k)
             DEALLOCATE(inQs,deltal,jxbl,bal)         
          ENDDO
          OPEN(UNIT=out_unit,FILE="slayer_input_bal_n"//
@@ -298,23 +468,23 @@ c-----------------------------------------------------------------------
      $        bts,rss,R0s,mu_is,zeffs,Q_soll,br_thl,mms,nns)
       ENDIF
 c-----------------------------------------------------------------------
-c     LAR (cylindrical) growthrates via restive layer thickness
+c     estimate growth rate via resistive-layer thickness.
+c     Uses riccati_del_s to get delta_s/d_beta, then scales by
+c     d_beta to obtain the layer thickness delta_s and the estimated 
+c     gamma. Inputs may come from equilibrium files (read_eq) or 
+c     namelist.Subroutines: build_inputs, allocate_inputs, 
+c     allocate_outputsare defined in gslayer_mod / layerinputs_mod.
 c-----------------------------------------------------------------------
       IF (est_gamma_flag) THEN
       WRITE(*,*)"------------------------------------------"
       WRITE(*,*)">>> Estimating growth rate"
 
          IF (read_eq) THEN
-            WRITE(*,*)"$^$ entered read_eq"
-
+            ! Read equilibrium files for multi-surface inputs.
+            ! build_inputs (layerinputs_mod) reads STRIDE NetCDF data.
             sl_in%chi_p_arr = chi_p_prof
             sl_in%chi_t_arr = chi_t_prof
             sl_in%kappa_arr = kappa_prof
-
-            WRITE(*,*)"$^$ entering build_inputs"
-
-            WRITE(*,*)"$^$ infile: ",infile
-            WRITE(*,*)"$^$ ncfile: ",ncfile
 
             CALL build_inputs(infile,ncfile,sl_in)
 
@@ -322,6 +492,7 @@ c-----------------------------------------------------------------------
             CALL allocate_outputs(n_k,sl_out)
 
          ELSE
+            ! Single-surface mode: build inputs from namelist.
             n_k = 1
             mr = mm
             nr = nn
@@ -333,6 +504,7 @@ c-----------------------------------------------------------------------
             CALL params(n_e,t_e,t_i,omega,chis,dr_val,dgeo_val,
      $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
 
+            ! Override computed parameters with nonzero namelist values.
             IF (ABS(inQ) > 0.0) THEN
                Q = inQ ! NAMELIST
             END IF
@@ -352,10 +524,8 @@ c-----------------------------------------------------------------------
                D_norm = inds ! NAMELIST
             END IF
 
-            WRITE(*,*)"$^$ entering allocate_inputs"
-            CALL allocate_inputs(n_k,sl_in)
-            WRITE(*,*)"$^$ entering allocate_outputs"
-            CALL allocate_outputs(n_k,sl_out)
+            CALL allocate_inputs(n_k,sl_in)  ! gslayer_mod
+            CALL allocate_outputs(n_k,sl_out) ! gslayer_mod
 
             sl_in%qval_arr = (/ qval /)
             sl_in%omegas_arr = (/ omega /)
@@ -377,31 +547,22 @@ c-----------------------------------------------------------------------
             sl_in%Qconv_arr = (/ tauk /)
          END IF 
 
+         ! Loop over rational surfaces to estimate growth rates.
          DO k=1,n_k
             WRITE(*,*)
             WRITE(*,'(A,I0,A)') 'Calculating growth rate '//
      $             'estimate on q = ',
      $       sl_in%qval_arr(k),' rational surface'
 
-            WRITE(*,*)"sl_in%Q_e_arr(k): ",sl_in%Q_e_arr(k)
-            WRITE(*,*)"sl_in%Q_e_arr(k): ",sl_in%Q_e_arr(k)
-            WRITE(*,*)"sl_in%Q_i_arr(k): ",sl_in%Q_i_arr(k)
-            WRITE(*,*)"sl_in%P_perp_arr(k): ",sl_in%P_perp_arr(k)
-            WRITE(*,*)"sl_in%P_tor_arr(k): ",sl_in%P_tor_arr(k)
-            WRITE(*,*)"sl_in%c_beta_arr(k): ",sl_in%c_beta_arr(k)
-            WRITE(*,*)"sl_in%D_norm_arr(k): ",sl_in%D_norm_arr(k)
-            WRITE(*,*)"sl_in%tau_arr(k): ",sl_in%tau_arr(k)
-            WRITE(*,*)"sl_in%gammafac_arr(k): ",sl_in%gammafac_arr(k)
-            WRITE(*,*)"sl_in%d_beta_arr(k): ",sl_in%d_beta_arr(k)
-
-            dels_db=riccati_del_s(sl_in%Q_e_arr(k),sl_in%Q_e_arr(k), ! NOT using Q_arr
+            ! [BUG FLAG 4] first argument to riccati_del_s is Q_e_arr,
+            ! not Q_arr.  Comment "NOT using Q_arr" is original.
+            ! Verify this is intentional (Q_e used as ExB frequency).
+            dels_db=riccati_del_s(sl_in%Q_e_arr(k),sl_in%Q_e_arr(k),
      $                   sl_in%Q_i_arr(k),sl_in%P_perp_arr(k),
      $                   sl_in%c_beta_arr(k),sl_in%D_norm_arr(k),
      $                   sl_in%tau_arr(k),5.0*sl_in%D_norm_arr(k))
 
             del_s = dels_db * sl_in%d_beta_arr(k)
-
-            WRITE(*,*)"del_s: ",del_s
 
             sl_out%gamma_est_arr(k) = sl_in%gammafac_arr(k)/del_s
             sl_out%dels_db_arr(k) = dels_db
@@ -418,7 +579,12 @@ c-----------------------------------------------------------------------
          END IF
       ENDIF
 c-----------------------------------------------------------------------
-c     LAR (cylindrical) growthrates via restive layer thickness
+c     asymptotically matched growth rate.
+c     Matches the inner-layer Delta to the outer-region Delta' to
+c     find the self-consistent complex growth rate.  Supports both
+c     single-surface and coupled multi-surface (AMR) modes.
+c     Subroutines: dispersion_AMR_v2, dispersion_det (gslayer_mod),
+c                  riccati_f (delta_mod).
 c-----------------------------------------------------------------------
       IF (match_gamma_flag) THEN
          WRITE(*,*)"------------------------------------------"
@@ -496,6 +662,9 @@ c-----------------------------------------------------------------------
             END IF
          END IF 
 
+c-----------------------------------------------------------------------
+c     allocate output arrays for AMR delta storage.
+c-----------------------------------------------------------------------
          IF (AMR_flag .AND. .NOT. coupling_flag) THEN
             ALLOCATE(all_deltas_out(n_k))
          ELSEIF (AMR_flag .AND. coupling_flag) THEN
@@ -509,10 +678,15 @@ c-----------------------------------------------------------------------
          END IF
 
          WRITE(*,*),"Rational q domain: ",sl_in%qval_arr
+c-----------------------------------------------------------------------
+c     loop over rational surfaces to find matched growth rates.
+c-----------------------------------------------------------------------
          DO k=1,MIN(n_k,msing_max)
             WRITE(*,*)
             WRITE(*,'(A,I0,A)') 'Calculating growth rate on q = ',
      $       sl_in%qval_arr(k),' rational surface:'
+
+            ! Load per-surface parameters into module-level scalars.
             Q_e = sl_in%Q_e_arr(k)
             Q_i = sl_in%Q_i_arr(k)
             P_perp = sl_in%P_perp_arr(k)
@@ -534,15 +708,18 @@ c-----------------------------------------------------------------------
             WRITE(*,*)"Delta_prime: ",sl_in%Re_dp_arr(k)
             WRITE(*,*)"Delta_crit: ",sl_in%d_crit_arr(k)
 
-            ! Calculate (Deltaprime - d_crit)/S^1/3
+            ! Calculate (Deltaprime - D_crit)/S^1/3
             delta_eff = (sl_in%Re_dp_arr(k) - 
      $          sl_in%d_crit_arr(k))/(sl_in%lu_arr(k)**(1.0/3.0))
-c            delta_eff = Re_deltaprime_arr(k)
             pe = 0.0
 
-c           ! Fill gamma_sol_arr with 0's, will by used by python root finding
+            ! Placeholder: gamma_sol_arr filled for external root-finder.
             sl_out%gamma_sol_arr(k) = 0.0
 
+c-----------------------------------------------------------------------
+c     uncoupled AMR scan (one surface at a time).
+c     dispersion_AMR_v2 (gslayer_mod) populates Q_store, D_store.
+c-----------------------------------------------------------------------
             IF (AMR_flag .AND. .NOT. coupling_flag) THEN
 
                WRITE(*,'(A,I0,A)') 'Calling uncoupled AMR scan on q = ',
@@ -550,6 +727,7 @@ c           ! Fill gamma_sol_arr with 0's, will by used by python root finding
                CALL dispersion_AMR_v2(n_k,sl_in,msing_max,scan_width,
      $                  Q_num,AMR_passes,coupling_flag)
 
+               ! Re-allocate output arrays for this surface.
                IF (ALLOCATED(all_deltas_out(k)%inQs)) 
      $             DEALLOCATE(all_deltas_out(k)%inQs)
                IF (ALLOCATED(all_deltas_out(k)%iinQs)) 
@@ -559,41 +737,39 @@ c           ! Fill gamma_sol_arr with 0's, will by used by python root finding
                IF (ALLOCATED(all_deltas_out(k)%imag_deltas)) 
      $             DEALLOCATE(all_deltas_out(k)%imag_deltas)
 
-               ! Flatten the unique points store into 1D arrays
                ALLOCATE(all_deltas_out(k)%inQs(n_pts),
      $                  all_deltas_out(k)%iinQs(n_pts))
-               ! Assumes you also have real_deltas/imag_deltas declared as 1D
                ALLOCATE(all_deltas_out(k)%real_deltas(n_pts), 
      $         all_deltas_out(k)%imag_deltas(n_pts)) 
-               
-               WRITE(*,*)"Allocated all_deltas_out"
 
+               ! Flatten unique AMR points into 1-D output arrays.
                DO i = 1, n_pts
                   all_deltas_out(k)%inQs(i) = REAL(Q_store(i))
-                  IF (fitz_flag) THEN
-                     all_deltas_out(k)%iinQs(i) = -AIMAG(Q_store(i))
-                  ELSE
-                     all_deltas_out(k)%iinQs(i) = -AIMAG(Q_store(i))
-                  END IF
+                  ! [BUG FLAG 5] IF/ELSE branches are identical.
+
+                  all_deltas_out(k)%iinQs(i) = -AIMAG(Q_store(i))
+
                   all_deltas_out(k)%real_deltas(i) = REAL(D_store(i))
                   all_deltas_out(k)%imag_deltas(i) = AIMAG(D_store(i))
                END DO
-
-               WRITE(*,*)"all_deltas_out(1)%real_deltas(10): ",
-     $          all_deltas_out(1)%real_deltas(10)
          
-               ! Clean up temporary AMR memory
-               DEALLOCATE(Q_store, D_store)!, hash_head, hash_next)
+               ! Clean up temporary AMR memory.
+               DEALLOCATE(Q_store, D_store)
 
             END IF
 
-            IF ((stabscan_flag)) THEN ! was .AND. (k == 2)
+c-----------------------------------------------------------------------
+c     single-surface stability scan on [Re(Q), Im(Q)] grid.
+c     Uses riccati_f() (new Fitzpatrick TJ-like formalism) or 
+c.    riccati() (orig. SLAYER/Waelbroeck).
+c-----------------------------------------------------------------------
+            IF ((stabscan_flag)) THEN
                WRITE(*,*)"------------------------------------------"
                WRITE(*,'(A,F0.1)')' >>> Running [Re(Q),'//
      $            'Im(Q)] scan with Q width = ',
      $                scan_width
 
-               ing_step = (2.0*scan_width) / (Q_num - 1) ! was (2.0 * scan_width) / (Q_num - 1)
+               ing_step = (2.0*scan_width) / (Q_num - 1)
                count = 0
          
                ALLOCATE(inQs(1:(Q_num+1)),iinQs(1:Q_num))
@@ -652,15 +828,16 @@ c           ! Fill gamma_sol_arr with 0's, will by used by python root finding
             sl_out%dels_db_arr = (/ 0. /)
          END IF
 
+c-----------------------------------------------------------------------
+c     coupled AMR scan (all surfaces simultaneously).
+c     dispersion_AMR_v2 (gslayer_mod) with coupling_flag = .TRUE.
+c-----------------------------------------------------------------------
          IF (AMR_flag .AND. coupling_flag) THEN
-
-            WRITE(*,*)"Calling coupled AMR scan"
 
             CALL dispersion_AMR_v2(n_k,sl_in,msing_max,scan_width,
      $                  Q_num,AMR_passes,coupling_flag)
 
-            WRITE(*,*)"Successfully exited coupled AMR scan"
-
+            ! Re-allocate output arrays.
             IF (ALLOCATED(all_deltas_out(1)%inQs)) 
      $             DEALLOCATE(all_deltas_out(1)%inQs)
             IF (ALLOCATED(all_deltas_out(1)%iinQs)) 
@@ -670,32 +847,31 @@ c           ! Fill gamma_sol_arr with 0's, will by used by python root finding
             IF (ALLOCATED(all_deltas_out(1)%imag_deltas)) 
      $             DEALLOCATE(all_deltas_out(1)%imag_deltas)
 
-            WRITE(*,*)"Successfully checked array allocation"
-
             ALLOCATE(all_deltas_out(1)%inQs(n_pts),
      $                  all_deltas_out(1)%iinQs(n_pts))
             ALLOCATE(all_deltas_out(1)%real_deltas(n_pts), 
      $         all_deltas_out(1)%imag_deltas(n_pts)) 
-            
-            WRITE(*,*)"Successfully allocated all_deltas_out subarrays"
 
+            ! Flatten unique AMR points into 1-D output arrays.
             DO i = 1, n_pts
                all_deltas_out(1)%inQs(i) = REAL(Q_store(i))
-               IF (fitz_flag) THEN
-                  all_deltas_out(1)%iinQs(i) = -AIMAG(Q_store(i))
-               ELSE
-                  all_deltas_out(1)%iinQs(i) = -AIMAG(Q_store(i))
-               END IF
+               
+               all_deltas_out(1)%iinQs(i) = -AIMAG(Q_store(i)) ! verify this sign convention
+
                all_deltas_out(1)%real_deltas(i) = REAL(D_store(i))
                all_deltas_out(1)%imag_deltas(i) = AIMAG(D_store(i))
             END DO
       
-            ! Clean up temporary AMR memory
-            DEALLOCATE(Q_store, D_store)!, hash_head, hash_next)
-            WRITE(*,*)"Successfully deallocated Q_store and D_store"
+            ! Clean up temporary AMR memory.
+            DEALLOCATE(Q_store, D_store)
 
          END IF
 
+c-----------------------------------------------------------------------
+c     coupled-surface stability scan on [Re(Q), Im(Q)] grid.
+c     Uses dispersion_det (gslayer_mod) for the full dispersion
+c     determinant including inter-surface coupling.
+c-----------------------------------------------------------------------
          IF (coupled_stabscan_flag) THEN
             WRITE(*,*)"------------------------------------------"
             WRITE(*,'(A,F0.1)')' >>> Running [Re(Q),'//
@@ -744,13 +920,13 @@ c           ! Fill gamma_sol_arr with 0's, will by used by python root finding
          CALL output_gamma(est_gamma_flag,m_AMR,sl_in,sl_out,
      $                     all_deltas_out)
          stop
-      ENDIF
+      ENDIF  ! match_gamma_flag
 c-----------------------------------------------------------------------
-c     TEST ANALYTIC SCAN IN GSLAYER.F, FOR TESTING ONLY
+c     Br threshold test scan (analytic).
+c     For testing & verification only.  Scans rotation to find the
+c     critical radial-field threshold from a simple torque balance.
 c-----------------------------------------------------------------------
       IF (br_th_flag) THEN
-
-         WRITE(*,*)"running br_th scan"
 
          CALL params(n_e,t_e,t_i,omega,chis,dr_val,dgeo_val,
      $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
@@ -762,14 +938,13 @@ c-----------------------------------------------------------------------
          intau=tau
          Q0=Q
 c-----------------------------------------------------------------------
-c     calculate basic delta, torque, balance, error fields.
+c     compute baseline delta, reconnected flux, and torque.
 c-----------------------------------------------------------------------
-         WRITE(*,*)"basic delta successful"
-         delta_n_p=1e-2
+         delta_n_p=1e-2   ! [BUG FLAG 7] hardcoded; should use namelist
          delta=riccati(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,
      $                   inpe)
-         psi0=1.0/ABS(delta+delta_n_p)     ! a.u.
-         jxb=-AIMAG(1.0/(delta+delta_n_p)) ! a.u.
+         psi0=1.0/ABS(delta+delta_n_p)     ! reconnected flux  [a.u.]
+         jxb=-AIMAG(1.0/(delta+delta_n_p)) ! j x B torque      [a.u.]
 c-----------------------------------------------------------------------
 c     find solutions based on simple torque balance.
 c-----------------------------------------------------------------------
@@ -784,8 +959,13 @@ c-----------------------------------------------------------------------
                  inQ_min=1.5*MINVAL((/Q0,inQ_i/))
              ENDIF
          ENDIF
-         WRITE(*,*)"rotation scan"
-         ! Scan of rotation
+c-----------------------------------------------------------------------
+c     rotation scan to locate torque-balance threshold.
+c     [BUG FLAG 8] the IF/ELSE block above that sets inQ_min/inQ_max
+c     is immediately overridden by the hardcoded values below.
+c     The conditional block is dead code.
+c-----------------------------------------------------------------------
+         ! Override with fixed diagnostic range.
          inQ_max=10.0
          inQ_min=-10.0
          inum=200
@@ -799,26 +979,19 @@ c-----------------------------------------------------------------------
             bal(i)=2.0*inpr*(Q0-inQs(i))/jxbl(i)
          ENDDO
 
-         ! Identify the threshold from the maximum of the balance parameter
-         index=MAXLOC(bal)
+         ! Identify the threshold from the maximum of the balance parameter.
+         index=MAXLOC(bal)              ! [BUG FLAG 1] shadows intrinsic
          Q_sol=inQs(index(1))
-         !omega_sol=inQs(index(1))/Qconv
          br_th=sqrt(MAXVAL(bal)/lu*(sval**2.0/2.0))
          DEALLOCATE(inQs,deltal,jxbl,bal)
-
-         WRITE(*,*)"allocating"
+c-----------------------------------------------------------------------
+c     populate sl_in structure for output.
+c-----------------------------------------------------------------------
          sl_in%qval_arr = (/ 3 /)
-         inQs = (/ 1.0 /)
-         inQs = (/ 1.0 /)
 
          n_k = SIZE(sl_in%qval_arr)
 
-         sl_in%qval_arr = (/ 3 /)
-         inQs = (/ 1.0 /)
-         inQs = (/ 1.0 /)
-
          sl_in%omegas_arr = (/ 0.0 /)
-         !sl_in%Q_arr = (/ inQ /)
          sl_in%Q_e_arr = (/ inQ_e /)
          sl_in%Q_i_arr = (/ inQ_i /)
          sl_in%psi_n_arr = (/ 0.0 /)
@@ -826,12 +999,10 @@ c-----------------------------------------------------------------------
          sl_in%Im_dp_arr = (/ 0.0 /)
          sl_in%P_perp_arr = (/ inpr /)
 
-         WRITE(*,*)"allocations successful"
-
 c         CALL slayer_netcdf_out(n_k,lar_gamma_eq_flag,lar_gamma_flag,
 c     $                     stabscan_eq_flag,stabscan_flag,br_th_flag)
          stop
-      ENDIF
+      ENDIF  ! br_th_flag
 c-----------------------------------------------------------------------
 c     find solutions based on simple torque balance.
 c-----------------------------------------------------------------------
