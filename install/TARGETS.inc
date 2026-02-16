@@ -133,18 +133,14 @@ vacuum: v neededdeps $(VACUUM_OBJS) equil lsode
 	ar -r $(LIBDIR)/libvac.a $(VACUUM_OBJS)
 
 # PENTRC code
-ifeq ($(wildcard ../pentrc/version.inc),)
-pentrcversion: v force
-	@echo ">>> Creating version file"
-	@echo "      CHARACTER(len=*), PARAMETER :: version ='"`git describe --tags`"'" | tee ../pentrc/version.inc
-else ifeq ($(shell grep -F "'"`git describe --tags`"'" ../pentrc/version.inc),)
-pentrcversion: v force
-	@echo ">>> Updating version file"
-	@echo "      CHARACTER(len=*), PARAMETER :: version ='"`git describe --tags`"'" | tee ../pentrc/version.inc
-else
-pentrcversion: v
-	@echo ">>> Git version unchanged!"
-endif
+../pentrc/version.inc:
+	@ver="`git describe --tags`"; \
+	if [ ! -f $@ ] || ! grep -F "'$$ver'" $@ >/dev/null 2>&1; then \
+		echo ">>> Updating version file"; \
+		echo "      CHARACTER(len=*), PARAMETER :: version ='$$ver'" | tee $@; \
+	else \
+		echo ">>> Git version unchanged!"; \
+	fi
 PENTRC_LIBS = \
 	-llsode \
 	-lequil \
@@ -189,18 +185,14 @@ dcon: v neededdeps $(DCON_OBJS) equil lsode vacuum pentrc harvest
 	cp ../dcon/dcon $(BINDIR)
 
 # RDCON code
-ifeq ($(wildcard ../rdcon/version.inc),)
-rdconversion: v force
-	@echo ">>> Creating version file"
-	@echo "      CHARACTER(len=*), PARAMETER :: version ='"`git describe --tags`"'" | tee ../rdcon/version.inc
-else ifeq ($(shell grep -F "'"`git describe --tags`"'" ../rdcon/version.inc),)
-rdconversion: v force
-	@echo ">>> Updating version file"
-	@echo "      CHARACTER(len=*), PARAMETER :: version ='"`git describe --tags`"'" | tee ../rdcon/version.inc
-else
-rdconversion: v force
-	@echo ">>> Git version unchanged!"
-endif
+../rdcon/version.inc:
+	@ver="`git describe --tags`"; \
+	if [ ! -f $@ ] || ! grep -F "'$$ver'" $@ >/dev/null 2>&1; then \
+		echo ">>> Updating version file"; \
+		echo "      CHARACTER(len=*), PARAMETER :: version ='$$ver'" | tee $@; \
+	else \
+		echo ">>> Git version unchanged!"; \
+	fi
 RDCON_LIBS = \
 	-lpthread \
 	-llsode \
@@ -222,18 +214,14 @@ rdcon: v neededdeps $(RDCON_OBJS) equil lsode vacuum
 	cp ../rdcon/rdcon $(BINDIR)
 
 # STRIDE code
-ifeq ($(wildcard ../stride/version.inc),)
-strideversion: v force
-	@echo ">>> Creating version file"
-	@echo "      CHARACTER(len=*), PARAMETER :: version ='"`git describe --tags`"'" | tee ../stride/version.inc
-else ifeq ($(shell grep -F "'"`git describe --tags`"'" ../stride/version.inc),)
-strideversion: v force
-	@echo ">>> Updating version file"
-	@echo "      CHARACTER(len=*), PARAMETER :: version ='"`git describe --tags`"'" | tee ../stride/version.inc
-else
-strideversion: v force
-	@echo ">>> Git version unchanged!"
-endif
+../stride/version.inc:
+	@ver="`git describe --tags`"; \
+	if [ ! -f $@ ] || ! grep -F "'$$ver'" $@ >/dev/null 2>&1; then \
+		echo ">>> Updating version file"; \
+		echo "      CHARACTER(len=*), PARAMETER :: version ='$$ver'" | tee $@; \
+	else \
+		echo ">>> Git version unchanged!"; \
+	fi
 STRIDE_LIBS = \
 	-lzvode \
 	-lzlange \
@@ -331,18 +319,14 @@ sum: v neededdeps $(SUM_OBJS) equil
 	cp ../sum/sum $(BINDIR)
 
 # Coil library
-ifeq ($(wildcard ../coil/version.inc),)
-coilversion: v force
-	@echo ">>> Creating version file"
-	@echo "      CHARACTER(len=*), PARAMETER :: version ='"`git describe --tags`"'" | tee ../coil/version.inc
-else ifeq ($(shell grep -F "'"`git describe --tags`"'" ../coil/version.inc),)
-coilversion: v force
-	@echo ">>> Updating version file"
-	@echo "      CHARACTER(len=*), PARAMETER :: version ='"`git describe --tags`"'" | tee ../coil/version.inc
-else
-coilversion: v force
-	@echo ">>> Git version unchanged!"
-endif
+../coil/version.inc:
+	@ver="`git describe --tags`"; \
+	if [ ! -f $@ ] || ! grep -F "'$$ver'" $@ >/dev/null 2>&1; then \
+		echo ">>> Updating version file"; \
+		echo "      CHARACTER(len=*), PARAMETER :: version ='$$ver'" | tee $@; \
+	else \
+		echo ">>> Git version unchanged!"; \
+	fi
 coil: v neededdeps $(COIL_OBJS)
 	mkdir -p $(LIBDIR)
 	ar -r $(LIBDIR)/libcoil.a $(COIL_OBJS)
@@ -351,18 +335,14 @@ coil: v neededdeps $(COIL_OBJS)
 # decide if we need to update the version
 # note gpec keeps track of its own version, which can differ from the synced dcon, pentrc, and stride ones
 # this enables faster compiling during development
-ifeq ($(wildcard ../gpec/version.inc),)
-gpecversion: v force
-	@echo ">>> Creating version file"
-	@echo "      CHARACTER(len=*), PARAMETER :: version ='"`git describe --tags`"'" | tee ../gpec/version.inc
-else ifeq ($(shell grep -F "'"`git describe --tags`"'" ../gpec/version.inc),)
-gpecversion: v force
-	@echo ">>> Updating version file"
-	@echo "      CHARACTER(len=*), PARAMETER :: version ='"`git describe --tags`"'" | tee ../gpec/version.inc
-else
-gpecversion: v force
-	@echo ">>> Git version unchanged!"
-endif
+../gpec/version.inc:
+	@ver="`git describe --tags`"; \
+	if [ ! -f $@ ] || ! grep -F "'$$ver'" $@ >/dev/null 2>&1; then \
+		echo ">>> Updating version file"; \
+		echo "      CHARACTER(len=*), PARAMETER :: version ='$$ver'" | tee $@; \
+	else \
+		echo ">>> Git version unchanged!"; \
+	fi
 GPEC_LIBS = \
 	-lpentrc \
 	-llsode \

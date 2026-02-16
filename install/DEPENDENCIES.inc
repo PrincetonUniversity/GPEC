@@ -91,7 +91,7 @@
 # PENTRC
 ../pentrc/lsode1.o: ../equil/local.o ../lsode/lsode.o
 ../pentrc/lsode2.o: ../equil/local.o ../lsode/lsode.o
-../pentrc/params.o: ../equil/local.o pentrcversion
+../pentrc/params.o: ../equil/local.o ../pentrc/version.inc
 ../pentrc/utilities.o: ../equil/local.o ../pentrc/params.o
 ../pentrc/special.o: ../equil/local.o ../pentrc/params.o ../pentrc/utilities.o
 ../pentrc/dcon_interface.o: ../equil/local.o ../pentrc/params.o ../pentrc/utilities.o ../equil/spline.o ../equil/fspline.o ../equil/cspline.o ../equil/bicube.o
@@ -125,7 +125,7 @@
 
 # RDCON
 ../rdcon/dcon_mod.o: ../equil/spline.o ../equil/global.o \
-	../equil/equil.o ../equil/equil_out.o rdconversion
+	../equil/equil.o ../equil/equil_out.o ../rdcon/version.inc
 ../rdcon/toolbox.o: ../rdcon/dcon_mod.o
 ../rdcon/mercier.o: ../rdcon/dcon_mod.o
 ../rdcon/bal.o: ../rdcon/dcon_mod.o
@@ -144,7 +144,7 @@
 
 # STRIDE
 ../stride/dcon_mod.o: ../equil/spline.o ../equil/global.o \
-	../equil/equil.o ../equil/equil_out.o strideversion
+	../equil/equil.o ../equil/equil_out.o ../stride/version.inc
 ../stride/mercier.o: ../stride/dcon_mod.o
 ../stride/bal.o: ../stride/dcon_mod.o
 ../stride/fourfit.o: ../equil/fspline.o ../stride/dcon_mod.o
@@ -198,7 +198,7 @@
 ../slayer/slayer.o : ../slayer/sglobal.o ../slayer/params.o ../slayer/delta.o
 
 # COIL
-../coil/coil.o: ../equil/local.o ../equil/bicube.o coilversion
+../coil/coil.o: ../equil/local.o ../equil/bicube.o ../coil/version.inc
 ../coil/field.o: ../coil/coil.o
 
 # GPEC
@@ -211,14 +211,14 @@
 ../gpec/gpvacuum.o : ../gpec/gpeq.o
 ../gpec/gpdiag.o: ../gpec/gpresp.o ../gpec/gpvacuum.o
 ../gpec/gpout.o: ../gpec/gpdiag.o ../gpec/gpresp.o ../gpec/gpvacuum.o ../coil/field.o ../coil/coil.o \
-    ../equil/equil.o ../equil/equil_out.o \
-    ../pentrc/pentrc_interface.o ../pentrc/inputs.o \
-    ../slayer/gslayer.o \
-	gpecversion 
+	../equil/equil.o ../equil/equil_out.o \
+	../pentrc/pentrc_interface.o ../pentrc/inputs.o \
+	../slayer/gslayer.o \
+	../gpec/version.inc
 ../gpec/gpec.o: ../gpec/gpdiag.o ../gpec/gpout.o ../gpec/rdcon.o
 
 # XDraw
 # no dependencies
 
 # Full project dependencies
-$(ALL_OBJS): v neededdeps
+$(ALL_OBJS): | v neededdeps
