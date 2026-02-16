@@ -286,6 +286,9 @@ c-----------------------------------------------------------------------
          CALL spline_eval(sq,psilim,0)
          qlim = sq%f(4)
       ENDIF
+      IF (galsol%gal_flag) THEN
+         psilim = psilim - res_psilim_diff ! ensure that psilim is slightly inside the control surface
+      ENDIF
       rhofac=SQRT(psifac)
 c-----------------------------------------------------------------------
 c     normalize plasma/vacuum eigenvalues and eigenfunctions.
