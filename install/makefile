@@ -39,10 +39,12 @@ include RULES.inc
 # Top-level target
 all: v neededdeps xdraw equil lsode zlange zvode orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum slayer coil gpec stride
+	@printf '%bSUCCESS:%b All modules compiled successfully\n' '$(SUCCESS_COLOR)' '$(SUCCESS_RESET)'
 
 # Fortran only
 allf: v neededdeps xdraw equil lsode zlange zvode orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum slayer coil gpec stride
+	@printf '%bSUCCESS:%b All Fortran modules compiled successfully\n' '$(SUCCESS_COLOR)' '$(SUCCESS_RESET)'
 
 # Print verbose info
 .PHONY: v
