@@ -6,6 +6,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE debug(a,l,m,n,name,iunit)
+      USE local_mod, ONLY: r8
       IMPLICIT NONE
 
       CHARACTER(*) :: name
