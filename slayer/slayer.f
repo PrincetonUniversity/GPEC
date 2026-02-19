@@ -667,9 +667,11 @@ c-----------------------------------------------------------------------
          END IF
 
          IF (AMR_flag) THEN
-            m_AMR = 1
-         ELSE
-            m_AMR = MIN(n_k,msing_max)
+            IF (coupling_flag) THEN
+               m_AMR = 1
+            ELSE
+               m_AMR = MIN(n_k,msing_max)
+            END IF
          END IF
 
          WRITE(*,*),"Rational q domain: ",sl_in%qval_arr
