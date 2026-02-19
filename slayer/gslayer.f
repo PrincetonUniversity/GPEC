@@ -16,9 +16,9 @@ c       9. dispersion_AMR        - AMR scan v1 (hash-based dedup)
 c      10. dispersion_AMR_v2     - AMR scan v2 (cell-based storage)
 c
 c     Helper subroutines (v1): get_or_compute
-c     Helper subroutines (v2): compute_delta_sub,
-c       check_cell_crossing_sub, subdivide_cell_sub,
-c       flatten_cells_to_points_sub
+c     Helper subroutines (v2): get_or_compute_v2,
+c       compute_delta_sub, check_cell_crossing_sub,
+c       subdivide_cell_sub, flatten_cells_to_points_sub
 c-----------------------------------------------------------------------
 
       USE omp_lib
@@ -731,6 +731,73 @@ c --- 4. insert into hash chain (prepend)
       hash_head(h) = idx_out
 
       END SUBROUTINE get_or_compute
+
+c-----------------------------------------------------------------------
+c     get_or_compute_v2: hash-cached dispersion evaluation for AMR v2.
+c     Identical to get_or_compute but applies the ifac (imaginary-unit)
+c     Wick rotation that compute_delta_sub uses:  g_tmp = q_in * ifac.
+c-----------------------------------------------------------------------
+      SUBROUTINE get_or_compute_v2(q_in, idx_out, n_k, sl_in,
+     $                              msing_max, coupling_flag)
+
+      IMPLICIT NONE
+
+c --- arguments
+      COMPLEX(r8), INTENT(IN)  :: q_in
+      INTEGER, INTENT(OUT)     :: idx_out
+      INTEGER, INTENT(IN)      :: n_k, msing_max
+      TYPE(slayer_inputs_type), INTENT(IN) :: sl_in
+      LOGICAL, INTENT(IN)      :: coupling_flag
+
+c --- locals
+      INTEGER     :: h, curr
+      COMPLEX(r8) :: delta_val
+      INTEGER(8)  :: ix8, iy8, h8
+
+c --- 1. compute hash bucket
+      ix8 = NINT(REAL(q_in) * HASH_SCALE, KIND=8)
+      iy8 = NINT(AIMAG(q_in) * HASH_SCALE, KIND=8)
+      h8  = MOD(ABS(ix8 * 73856093_8 + iy8 * 19349663_8),
+     $          INT(HASH_SZ, 8)) + 1_8
+      h   = INT(h8)
+
+c --- 2. search hash chain for existing point
+      curr = hash_head(h)
+      DO WHILE (curr /= 0)
+          IF (ABS(Q_store(curr) - q_in) < 1.0d-8) THEN
+              idx_out = curr
+              RETURN
+          END IF
+          curr = hash_next(curr)
+      END DO
+
+c --- 3. not found: evaluate with ifac rotation and store
+      n_pts = n_pts + 1
+      IF (n_pts > MAX_PTS) THEN
+          WRITE(*,*) 'ERROR: AMR v2 cache exceeded MAX_PTS'
+          STOP 'get_or_compute_v2: MAX_PTS exceeded'
+      END IF
+
+      idx_out = n_pts
+      Q_store(idx_out) = q_in
+
+      IF (coupling_flag) THEN
+          g_tmp = q_in * ifac
+          delta_val = dispersion_det(g_tmp, n_k, sl_in,
+     $                               msing_max)
+      ELSE
+          g_tmp = q_in * ifac
+          delta_val = riccati_f(g_tmp)
+          delta_val = delta_val - delta_eff
+      END IF
+      D_store(idx_out) = delta_val
+
+c --- 4. insert into hash chain (prepend)
+      hash_next(idx_out) = hash_head(h)
+      hash_head(h) = idx_out
+
+      END SUBROUTINE get_or_compute_v2
+
 c-----------------------------------------------------------------------
 c     dispersion_AMR_v2: cell-based adaptive mesh refinement scanner.
 c     Unlike v1 (hash-based point deduplication), v2 stores complete
@@ -739,8 +806,11 @@ c     values.  Refinement subdivides cells that contain a zero in
 c     Re(D) or Im(D) and re-evaluates the dispersion relation at the
 c     5 new midpoints.
 c
-c     After refinement, flatten_cells_to_points_sub extracts unique
-c     (Q, D) points into Q_store / D_store for output.
+c     All dispersion evaluations go through get_or_compute_v2, which
+c     caches results in Q_store / D_store via a hash table.  This
+c     eliminates redundant evaluations for shared corners (initial grid)
+c     and shared edge-midpoints (refinement).  At completion, Q_store
+c     and D_store are trimmed to n_pts unique output points.
 c
 c     BUG FLAG 9 – several bare stop statements should carry messages.
 c-----------------------------------------------------------------------
@@ -764,21 +834,32 @@ c --- locals
       INTEGER     :: i, j, c, corner, pass   ! loop counters
       REAL(r8)    :: step                     ! grid spacing
       REAL(r8)    :: x, y                     ! real / imag grid coords
-      COMPLEX(r8) :: delta_val                ! (unused – computed inside helper)
       LOGICAL     :: cross_real, cross_imag   ! zero-crossing flags
       INTEGER     :: n_new_cells              ! count during refinement
       INTEGER     :: cells_to_refine          ! cells flagged per pass
       INTEGER     :: cells_kept               ! cells kept per pass
+      INTEGER     :: idx_tmp                  ! hash-cache index
+      COMPLEX(r8), ALLOCATABLE :: temp_Q(:)  ! for trimming output
+      COMPLEX(r8), ALLOCATABLE :: temp_D(:)  ! for trimming output
       
-c --- 1. initialise cell storage
+c --- 1. initialise cell storage and hash cache
 
       IF (ALLOCATED(amr_cells)) DEALLOCATE(amr_cells)
       IF (ALLOCATED(Q_store))   DEALLOCATE(Q_store)
       IF (ALLOCATED(D_store))   DEALLOCATE(D_store)
+      IF (ALLOCATED(hash_head)) DEALLOCATE(hash_head)
+      IF (ALLOCATED(hash_next)) DEALLOCATE(hash_next)
 
       ALLOCATE(amr_cells(MAX_CELLS))
       ALLOCATE(new_cells(MAX_CELLS))
+      ALLOCATE(Q_store(MAX_PTS))
+      ALLOCATE(D_store(MAX_PTS))
+      ALLOCATE(hash_head(HASH_SZ))
+      ALLOCATE(hash_next(MAX_PTS))
 
+      hash_head = 0
+      hash_next = 0
+      n_pts     = 0
       n_amr_cells = 0
       step = (2.0d0 * scan_width) / DBLE(Q_num - 1)
       
@@ -803,12 +884,14 @@ c             corner order: BL=1, BR=2, TL=3, TR=4
               amr_cells(n_amr_cells)%Q(4) = CMPLX(x+step, y+step,
      $                                            KIND=r8)
 
-c             evaluate dispersion at each corner
+c             evaluate dispersion at each corner (hash-cached)
               DO corner = 1, 4
-                  CALL compute_delta_sub(
+                  CALL get_or_compute_v2(
      $                amr_cells(n_amr_cells)%Q(corner),
-     $                n_k, sl_in, msing_max, coupling_flag,
-     $                amr_cells(n_amr_cells)%D(corner))
+     $                idx_tmp, n_k, sl_in, msing_max,
+     $                coupling_flag)
+                  amr_cells(n_amr_cells)%D(corner) =
+     $                D_store(idx_tmp)
               END DO
 
               amr_cells(n_amr_cells)%needs_refine = .FALSE.
@@ -859,9 +942,18 @@ c         swap arrays for next pass (pointer swap, no element copy)
 
       END DO
 
-c --- 4. flatten cells to unique (Q, D) output arrays
-      CALL flatten_cells_to_points_sub(n_amr_cells)
+c --- 4. output: Q_store/D_store already populated by hash cache.
+c     Trim to exact size n_pts and deallocate hash infrastructure.
 
+      ALLOCATE(temp_Q(n_pts))
+      ALLOCATE(temp_D(n_pts))
+      temp_Q(1:n_pts) = Q_store(1:n_pts)
+      temp_D(1:n_pts) = D_store(1:n_pts)
+      CALL MOVE_ALLOC(temp_Q, Q_store)
+      CALL MOVE_ALLOC(temp_D, D_store)
+
+      IF (ALLOCATED(hash_head)) DEALLOCATE(hash_head)
+      IF (ALLOCATED(hash_next)) DEALLOCATE(hash_next)
       DEALLOCATE(new_cells)
 c     keep amr_cells allocated for potential post-run inspection
 
@@ -959,9 +1051,10 @@ c --- arguments
 c --- corner coordinates and D-values from parent
       COMPLEX(r8) :: q_bl, q_br, q_tl, q_tr
       COMPLEX(r8) :: d_bl, d_br, d_tl, d_tr
-c --- midpoint coordinates and D-values (5 new evaluations)
+c --- midpoint coordinates and D-values (cached via hash)
       COMPLEX(r8) :: q_bm, q_tm, q_lm, q_rm, q_mm
       COMPLEX(r8) :: d_bm, d_tm, d_lm, d_rm, d_mm
+      INTEGER     :: idx_tmp                  ! hash-cache index
       
 c --- extract parent corners (BL=1, BR=2, TL=3, TR=4)
       q_bl = parent%Q(1)
@@ -981,17 +1074,22 @@ c --- compute 5 midpoint coordinates
       q_rm = 0.5d0 * (q_br + q_tr)
       q_mm = 0.25d0 * (q_bl + q_br + q_tl + q_tr)
 
-c --- evaluate dispersion at new midpoints (5 calls)
-      CALL compute_delta_sub(q_bm, n_k, sl_in, msing_max,
-     $                       coupling_flag, d_bm)
-      CALL compute_delta_sub(q_tm, n_k, sl_in, msing_max,
-     $                       coupling_flag, d_tm)
-      CALL compute_delta_sub(q_lm, n_k, sl_in, msing_max,
-     $                       coupling_flag, d_lm)
-      CALL compute_delta_sub(q_rm, n_k, sl_in, msing_max,
-     $                       coupling_flag, d_rm)
-      CALL compute_delta_sub(q_mm, n_k, sl_in, msing_max,
-     $                       coupling_flag, d_mm)
+c --- evaluate dispersion at new midpoints (hash-cached)
+      CALL get_or_compute_v2(q_bm, idx_tmp,
+     $     n_k, sl_in, msing_max, coupling_flag)
+      d_bm = D_store(idx_tmp)
+      CALL get_or_compute_v2(q_tm, idx_tmp,
+     $     n_k, sl_in, msing_max, coupling_flag)
+      d_tm = D_store(idx_tmp)
+      CALL get_or_compute_v2(q_lm, idx_tmp,
+     $     n_k, sl_in, msing_max, coupling_flag)
+      d_lm = D_store(idx_tmp)
+      CALL get_or_compute_v2(q_rm, idx_tmp,
+     $     n_k, sl_in, msing_max, coupling_flag)
+      d_rm = D_store(idx_tmp)
+      CALL get_or_compute_v2(q_mm, idx_tmp,
+     $     n_k, sl_in, msing_max, coupling_flag)
+      d_mm = D_store(idx_tmp)
 
 c --- check space for 4 new cells
       IF (n_new + 4 > max_cells) THEN
