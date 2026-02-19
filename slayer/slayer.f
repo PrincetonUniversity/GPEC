@@ -602,6 +602,10 @@ c-----------------------------------------------------------------------
             chis(2) = chi_t_prof(1) ! chi_tor
             chis(3) = kappa_prof(1) ! kappa (thermal cond.)
 
+            WRITE(*,*)"chis(1) (chi_perp): ",chis(1)
+            WRITE(*,*)"chis(2) (chi_tor): ",chis(2)
+            WRITE(*,*)"chis(3) (kappa): ",chis(3)
+
             ! Use namelist kinetic inputs instead of equilibrium files
             CALL params(n_e,t_e,t_i,omega,chis,dr_val,dgeo_val,
      $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)

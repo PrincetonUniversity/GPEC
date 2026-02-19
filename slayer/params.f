@@ -159,25 +159,19 @@ c     normalised ion Larmor radius (critical stability parameter)
 
 c-----------------------------------------------------------------------
 c     Plasma beta and Prandtl-number-like transport ratios.
-c
-c     BUG FLAG 3 -- The K_val/Csq block (kappa-based P_perp) is
-c       immediately overridden by the tau_perp definition below it,
-c       so K_val and the IF(ABS(Csq)>0) branch are dead code.
-c       Either remove the dead block or delete the override.
 c-----------------------------------------------------------------------
       lbeta  = (5.0/3.0)*mu0*n_e*chag*(t_e+t_i) / bt**2.0
       c_beta = (lbeta / (1.0+lbeta))**0.5
 
-c     --- dead code begin (BUG FLAG 3) ---
-      K_val = chis(3) / eta
-      Csq   = c_beta**2.0 + (1.0 - c_beta**2.0)*K_val
+c      kappa-based P_perp (JKP's definition, to implement later if desired)
+c      K_val = chis(3) / eta
+c      Csq   = c_beta**2.0 + (1.0 - c_beta**2.0)*K_val
 
-      IF (ABS(Csq) > 0.0) THEN
-        P_perp = Csq
-      ELSE
-        tau_perp = (rs**2.0) / chis(1)
-      END IF
-c     --- dead code end (BUG FLAG 3) ---
+c      IF (ABS(Csq) > 0.0) THEN
+c        P_perp = Csq
+c      ELSE
+c        tau_perp = (rs**2.0) / chis(1)
+c      END IF
 
 c     effective perpendicular and toroidal Prandtl numbers
       P_perp   = tau_r / tau_perp           ! perp magnetic Prandtl number
