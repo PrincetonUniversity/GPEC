@@ -760,6 +760,7 @@ c --- arguments
       LOGICAL, INTENT(IN)  :: coupling_flag ! coupled dispersion_det?
 c --- locals
       TYPE(amr_cell_type), ALLOCATABLE :: new_cells(:)
+      TYPE(amr_cell_type), ALLOCATABLE :: swap_tmp(:)  ! for pointer swap
       INTEGER     :: i, j, c, corner, pass   ! loop counters
       REAL(r8)    :: step                     ! grid spacing
       REAL(r8)    :: x, y                     ! real / imag grid coords
@@ -777,15 +778,6 @@ c --- 1. initialise cell storage
 
       ALLOCATE(amr_cells(MAX_CELLS))
       ALLOCATE(new_cells(MAX_CELLS))
-
-      DO i = 1, MAX_CELLS
-          amr_cells(i)%Q = (0.0d0, 0.0d0)
-          amr_cells(i)%D = (0.0d0, 0.0d0)
-          amr_cells(i)%needs_refine = .FALSE.
-          new_cells(i)%Q = (0.0d0, 0.0d0)
-          new_cells(i)%D = (0.0d0, 0.0d0)
-          new_cells(i)%needs_refine = .FALSE.
-      END DO
 
       n_amr_cells = 0
       step = (2.0d0 * scan_width) / DBLE(Q_num - 1)
@@ -859,11 +851,11 @@ c         build new cell list: subdivide flagged, keep the rest
               END IF
           END DO
 
-c         swap arrays for next pass
+c         swap arrays for next pass (pointer swap, no element copy)
+          CALL MOVE_ALLOC(new_cells, swap_tmp)
+          CALL MOVE_ALLOC(amr_cells, new_cells)   ! old amr_cells becomes new_cells
+          CALL MOVE_ALLOC(swap_tmp, amr_cells)     ! filled array becomes amr_cells
           n_amr_cells = n_new_cells
-          DO c = 1, n_amr_cells
-              amr_cells(c) = new_cells(c)
-          END DO
 
       END DO
 
@@ -1076,11 +1068,11 @@ c-----------------------------------------------------------------------
 c --- arguments
       INTEGER, INTENT(IN) :: num_cells       ! number of cells to flatten
 c --- locals
-      INTEGER :: c, corner, i, j, idx
+      INTEGER :: c, corner, i, idx
       INTEGER :: n_total_corners              ! = num_cells * 4
       COMPLEX(r8), ALLOCATABLE :: temp_Q(:)  ! all corner Q-values
       COMPLEX(r8), ALLOCATABLE :: temp_D(:)  ! all corner D-values
-      LOGICAL, ALLOCATABLE :: is_unique(:)   ! dedup mask
+      INTEGER, ALLOCATABLE :: sort_idx(:)    ! sort permutation
       REAL(r8) :: tol                        ! duplicate tolerance
 
       tol = 1.0d-10
@@ -1095,11 +1087,7 @@ c --- locals
 c --- gather all corners from cells
       ALLOCATE(temp_Q(n_total_corners))
       ALLOCATE(temp_D(n_total_corners))
-      ALLOCATE(is_unique(n_total_corners))
-
-      temp_Q = (0.0d0, 0.0d0)
-      temp_D = (0.0d0, 0.0d0)
-      is_unique = .TRUE.
+      ALLOCATE(sort_idx(n_total_corners))
 
       idx = 0
       DO c = 1, num_cells
@@ -1107,32 +1095,21 @@ c --- gather all corners from cells
               idx = idx + 1
               temp_Q(idx) = amr_cells(c)%Q(corner)
               temp_D(idx) = amr_cells(c)%D(corner)
+              sort_idx(idx) = idx
           END DO
       END DO
 
-c --- mark duplicates (O(n^2) pairwise comparison)
-      DO i = 1, n_total_corners
-          IF (.NOT. is_unique(i)) CYCLE
-          DO j = i + 1, n_total_corners
-              IF (is_unique(j)) THEN
-                  IF (ABS(temp_Q(j) - temp_Q(i)) < tol) THEN
-                      is_unique(j) = .FALSE.
-                  END IF
-              END IF
-          END DO
-      END DO
+c --- sort by (Re(Q), Im(Q)) via quicksort on the index array
+      CALL qsort_complex_idx(temp_Q, sort_idx, 1, n_total_corners)
 
-c --- count unique points
-      n_pts = 0
-      DO i = 1, n_total_corners
-          IF (is_unique(i)) n_pts = n_pts + 1
+c --- linear scan to count unique points (sorted order)
+      n_pts = 1
+      DO i = 2, n_total_corners
+          IF (ABS(temp_Q(sort_idx(i)) - temp_Q(sort_idx(i-1)))
+     $        >= tol) THEN
+              n_pts = n_pts + 1
+          END IF
       END DO
-
-      IF (n_pts <= 0) THEN
-          WRITE(*,*) 'ERROR: No unique points found'
-          DEALLOCATE(temp_Q, temp_D, is_unique)
-          RETURN
-      END IF
 
 c --- copy unique points to module-level output arrays
       IF (ALLOCATED(Q_store)) DEALLOCATE(Q_store)
@@ -1140,17 +1117,81 @@ c --- copy unique points to module-level output arrays
       ALLOCATE(Q_store(n_pts))
       ALLOCATE(D_store(n_pts))
 
-      idx = 0
-      DO i = 1, n_total_corners
-          IF (is_unique(i)) THEN
+      idx = 1
+      Q_store(1) = temp_Q(sort_idx(1))
+      D_store(1) = temp_D(sort_idx(1))
+      DO i = 2, n_total_corners
+          IF (ABS(temp_Q(sort_idx(i)) - temp_Q(sort_idx(i-1)))
+     $        >= tol) THEN
               idx = idx + 1
-              Q_store(idx) = temp_Q(i)
-              D_store(idx) = temp_D(i)
+              Q_store(idx) = temp_Q(sort_idx(i))
+              D_store(idx) = temp_D(sort_idx(i))
           END IF
       END DO
 
-      DEALLOCATE(temp_Q, temp_D, is_unique)
+      DEALLOCATE(temp_Q, temp_D, sort_idx)
 
       RETURN
       END SUBROUTINE flatten_cells_to_points_sub
+
+c-----------------------------------------------------------------------
+c     qsort_complex_idx: in-place quicksort of an index array by
+c     the complex keys (Re then Im).  Operates on sort_idx so the
+c     Q/D data arrays remain untouched.
+c-----------------------------------------------------------------------
+      RECURSIVE SUBROUTINE qsort_complex_idx(keys, idx, lo, hi)
+
+      IMPLICIT NONE
+
+      COMPLEX(r8), INTENT(IN)    :: keys(:)
+      INTEGER,     INTENT(INOUT) :: idx(:)
+      INTEGER,     INTENT(IN)    :: lo, hi
+
+      INTEGER :: i, j, pivot_idx, tmp
+      REAL(r8) :: p_re, p_im, k_re, k_im
+
+      IF (lo >= hi) RETURN
+
+c     median-of-three pivot selection
+      pivot_idx = idx((lo + hi) / 2)
+      p_re = REAL(keys(pivot_idx), KIND=r8)
+      p_im = AIMAG(keys(pivot_idx))
+
+      i = lo
+      j = hi
+      DO WHILE (i <= j)
+c         advance i while keys(idx(i)) < pivot
+          k_re = REAL(keys(idx(i)), KIND=r8)
+          k_im = AIMAG(keys(idx(i)))
+          DO WHILE (k_re < p_re .OR.
+     $             (k_re == p_re .AND. k_im < p_im))
+              i = i + 1
+              k_re = REAL(keys(idx(i)), KIND=r8)
+              k_im = AIMAG(keys(idx(i)))
+          END DO
+c         retreat j while keys(idx(j)) > pivot
+          k_re = REAL(keys(idx(j)), KIND=r8)
+          k_im = AIMAG(keys(idx(j)))
+          DO WHILE (k_re > p_re .OR.
+     $             (k_re == p_re .AND. k_im > p_im))
+              j = j - 1
+              k_re = REAL(keys(idx(j)), KIND=r8)
+              k_im = AIMAG(keys(idx(j)))
+          END DO
+c         swap if pointers haven't crossed
+          IF (i <= j) THEN
+              tmp    = idx(i)
+              idx(i) = idx(j)
+              idx(j) = tmp
+              i = i + 1
+              j = j - 1
+          END IF
+      END DO
+
+c     recurse on partitions
+      IF (lo < j) CALL qsort_complex_idx(keys, idx, lo, j)
+      IF (i < hi) CALL qsort_complex_idx(keys, idx, i, hi)
+
+      RETURN
+      END SUBROUTINE qsort_complex_idx
       END MODULE gslayer_mod
