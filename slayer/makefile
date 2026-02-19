@@ -54,7 +54,8 @@ slayer: $(OBJS)
 sglobal.o: ../equil/local_mod.mod
 params.o : sglobal.o
 delta.o : sglobal.o
-gslayer.o : sglobal.o delta.o
+layerinputs.o : sglobal.o params.o slayer_netcdf.o
+gslayer.o : sglobal.o params.o delta.o layerinputs.o slayer_netcdf.o
 slayer.o : sglobal.o params.o delta.o ../equil/spline_mod.mod
 slayer_netcdf.o : sglobal.o
 
