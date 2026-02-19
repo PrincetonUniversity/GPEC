@@ -753,6 +753,13 @@ c-----------------------------------------------------------------------
                ! Clean up temporary AMR memory.
                DEALLOCATE(Q_store, D_store)
 
+               WRITE(*,'(A,I2,A,I7,A,2ES14.6)')
+     $          '   Surface', k, ': n_pts=', 
+     $          SIZE(all_deltas_out(k)%real_deltas),
+     $          ' out_chksum=',
+     $          SUM(all_deltas_out(k)%real_deltas),
+     $          SUM(all_deltas_out(k)%imag_deltas)
+
             END IF
 
 c-----------------------------------------------------------------------

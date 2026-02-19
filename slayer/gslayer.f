@@ -958,6 +958,11 @@ c     Trim to exact size n_pts and deallocate hash infrastructure.
 c     keep amr_cells allocated for potential post-run inspection
 
       WRITE(*,*) 'AMR v2 Complete. Unique output points:', n_pts
+      WRITE(*,'(A,2ES14.6)') '   D_store checksum (Re,Im):',
+     $   SUM(REAL(D_store(1:n_pts))),
+     $   SUM(AIMAG(D_store(1:n_pts)))
+      WRITE(*,'(A,2ES14.6)') '   D_store(1) sample:',
+     $   REAL(D_store(1)), AIMAG(D_store(1))
 
       RETURN
       END SUBROUTINE dispersion_AMR_v2
