@@ -86,7 +86,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: t_e                ! electron temperature [eV]
       REAL(r8) :: t_i                ! ion temperature [eV]
       REAL(r8) :: omega              ! toroidal rotation [rad/s]
-      REAL(r8) :: omega0             ! (unused, see BUG FLAG 2)
+      REAL(r8) :: omega0             ! unused
       REAL(r8) :: l_n                ! density gradient scale length
       REAL(r8) :: l_t                ! temperature gradient scale length
       REAL(r8) :: qval               ! safety factor at surface
@@ -119,11 +119,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: Q0                 ! unperturbed rotation frequency
       REAL(r8) :: Q_sol              ! solved rotation frequency
       REAL(r8) :: br_th              ! radial field threshold
-      REAL(r8) :: d_b                ! (unused, see BUG FLAG 2)
-      REAL(r8) :: Residual           ! (unused, see BUG FLAG 2)
       REAL(r8) :: Qratio             ! Q_e/Q ratio for scan2 variants
-      REAL(r8) :: spot               ! (unused, see BUG FLAG 2)
-      REAL(r8) :: slayer_inpr        ! (unused, see BUG FLAG 2)
 c-----------------------------------------------------------------------
 c     local scalars — scan grid helpers.
 c-----------------------------------------------------------------------
@@ -133,8 +129,6 @@ c-----------------------------------------------------------------------
       REAL(r8) :: ing_step           ! growth-rate grid step
       REAL(r8) :: ing_coarse         ! Re(gamma) grid value
       REAL(r8) :: iing_coarse        ! Im(gamma) grid value
-      REAL(r8) :: delta_real         ! (unused, see BUG FLAG 2)
-      REAL(r8) :: delta_imag         ! (unused, see BUG FLAG 2)
 c-----------------------------------------------------------------------
 c     local scalars — complex quantities.
 c-----------------------------------------------------------------------
@@ -142,11 +136,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8) :: delta_n_p       ! Deltaprime scale factor
       COMPLEX(r8) :: dels_db         ! delta_s / d_beta
       COMPLEX(r8) :: del_s           ! delta_s
-      COMPLEX(r8) :: lar_gamma       ! (unused, see BUG FLAG 2)
-      COMPLEX(r8) :: tmp_gamma       ! (unused, see BUG FLAG 2)
       COMPLEX(r8) :: ingamma         ! initial gamma guess (namelist)
       COMPLEX(r8) :: delta_prime     ! external Deltaprime (namelist)
-      COMPLEX(r8) :: det_val         ! (unused, see BUG FLAG 2)
 c-----------------------------------------------------------------------
 c     local arrays — transport profile coefficients.
 c-----------------------------------------------------------------------
@@ -554,13 +545,13 @@ c-----------------------------------------------------------------------
      $             'estimate on q = ',
      $       sl_in%qval_arr(k),' rational surface'
 
+            D_norm = sl_in%D_norm_arr(k)
             ! [BUG FLAG 4] first argument to riccati_del_s is Q_e_arr,
             ! not Q_arr.  Comment "NOT using Q_arr" is original.
             ! Verify this is intentional (Q_e used as ExB frequency).
-            dels_db=riccati_del_s(sl_in%Q_e_arr(k),sl_in%Q_e_arr(k),
+            dels_db=riccati_del_s(sl_in%Q_e_arr(k),
      $                   sl_in%Q_i_arr(k),sl_in%P_perp_arr(k),
-     $                   sl_in%c_beta_arr(k),sl_in%D_norm_arr(k),
-     $                   sl_in%tau_arr(k),5.0*sl_in%D_norm_arr(k))
+     $                   5.0*sl_in%D_norm_arr(k))
 
             del_s = dels_db * sl_in%d_beta_arr(k)
 

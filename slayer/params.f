@@ -180,7 +180,6 @@ c     --- dead code begin (BUG FLAG 3) ---
 c     --- dead code end (BUG FLAG 3) ---
 
 c     effective perpendicular and toroidal Prandtl numbers
-      tau_perp = (rs**2.0) / chis(1)
       P_perp   = tau_r / tau_perp           ! perp magnetic Prandtl number
 
       tau_tor = (rs**2.0) / chis(2)

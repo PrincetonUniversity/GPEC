@@ -82,7 +82,7 @@ c --- Lundquist and Prandtl numbers
 c --- normalised layer parameters
       REAL(r8) :: ds               ! normalised ion Larmor radius
       REAL(r8) :: c_beta           ! compressional beta parameter
-      REAL(r8) :: D_norm           ! normalised beta-related width
+      REAL(r8) :: D_norm           ! normalised beta-weighted ion scale
       REAL(r8) :: delta_n          ! Delta normalisation factor
       REAL(r8) :: Qconv            ! frequency normalisation (Cole)
 c --- diamagnetic and rotation frequencies

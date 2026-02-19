@@ -172,22 +172,17 @@ c       unused arguments if the caller sets them beforehand.
 c     BUG FLAG 4: variables y, dy, xfac, xintv, ml, mu, nrpd are
 c       declared but never used -- remove them.
 c-----------------------------------------------------------------------
-      FUNCTION riccati_del_s(inQ,inQ_e,inQ_i,inpr,inc_beta,ind_beta,
-     $     intau,inx,iny)
+      FUNCTION riccati_del_s(inQ_e,inQ_i,inpr,inx,iny)
 
 c --- input arguments
-      REAL(r8),INTENT(IN) :: inQ       ! (UNUSED -- see BUG FLAG 3)
       REAL(r8),INTENT(IN) :: inQ_e     ! electron diamagnetic freq
       REAL(r8),INTENT(IN) :: inQ_i     ! ion diamagnetic freq
       REAL(r8),INTENT(IN) :: inpr      ! mapped to P_perp (see below)
-      REAL(r8),INTENT(IN) :: inc_beta  ! (UNUSED -- see BUG FLAG 3)
-      REAL(r8),INTENT(IN) :: ind_beta  ! (UNUSED -- see BUG FLAG 3)
-      REAL(r8),INTENT(IN) :: intau     ! (UNUSED -- see BUG FLAG 3)
 c --- optional arguments
 c     BUG FLAG 5: inx is declared OPTIONAL but my_q=inx is accessed
 c       unconditionally.  If inx is ever absent, this will crash.
 c       Either make inx required or add IF(present(inx)) guard.
-      REAL(r8),INTENT(IN),OPTIONAL :: inx  ! starting q for integration
+      REAL(r8),INTENT(IN) :: inx  ! starting q for integration
       COMPLEX(r8),INTENT(IN),OPTIONAL :: iny ! override starting W
 c --- function result
       COMPLEX(r8) :: riccati_del_s
