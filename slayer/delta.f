@@ -350,7 +350,7 @@ c --- lsode solver control
       INTEGER :: itol,itask      ! lsode tolerance/task flags
       INTEGER :: istate,iopt,mf  ! lsode state/option/method flags
       INTEGER, PARAMETER :: liw = 42       ! 20*2 + neq
-      INTEGER, PARAMETER :: lrw = 36       ! 22 + 9*neq + neq**2
+      INTEGER, PARAMETER :: lrw = 44       ! 22 + 9*neq + neq**2
       REAL(r8) :: xout           ! target integration endpoint
       REAL(r8) :: xmin           ! inner integration bound
       REAL(r8) :: rtol           ! relative tolerance
