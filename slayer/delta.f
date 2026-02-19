@@ -346,10 +346,11 @@ c --- function result
 
 c --- lsode solver control
       INTEGER :: istep           ! integration step counter
-      INTEGER :: neq             ! number of equations (=2)
+      INTEGER, PARAMETER :: neq = 2  ! number of equations
       INTEGER :: itol,itask      ! lsode tolerance/task flags
       INTEGER :: istate,iopt,mf  ! lsode state/option/method flags
-      INTEGER :: liw,lrw         ! lsode work array sizes
+      INTEGER, PARAMETER :: liw = 42       ! 20*2 + neq
+      INTEGER, PARAMETER :: lrw = 36       ! 22 + 9*neq + neq**2
       REAL(r8) :: xout           ! target integration endpoint
       REAL(r8) :: xmin           ! inner integration bound
       REAL(r8) :: rtol           ! relative tolerance
@@ -361,29 +362,25 @@ c --- boundary-condition intermediates
       COMPLEX(r8) :: ck          ! asymptotic coefficient c_k
       COMPLEX(r8) :: xk          ! asymptotic coefficient x_k
       COMPLEX(r8) :: W_bound     ! boundary value for W(p_start)
-c --- work arrays
-      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: W,dWdp    ! W and dW/dp
-      INTEGER, DIMENSION(:), ALLOCATABLE :: iwork          ! lsode int work
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: atol,rwork    ! lsode real work
+c --- work arrays (fixed-size, stack-allocated to avoid heap overhead)
+      COMPLEX(r8) :: W(1), dWdp(1)         ! W and dW/dp
+      REAL(r8) :: atol(neq)                 ! absolute tolerance
+      INTEGER  :: iwork(liw)                ! lsode int work
+      REAL(r8) :: rwork(lrw)                ! lsode real work
 
 c --- configure lsode: stiff BDF method with user Jacobian (mf=21)
-      neq = 2
-      itol = 2
-      rtol = 1e-10
-      ALLOCATE(atol(neq),W(1),dWdp(1))
-      atol(:) = 1e-10
-      itask = 2
-      istate = 1
-      iopt = 1              ! enable optional inputs (iwork(6))
-      mf = 21               ! stiff, user-supplied Jacobian (jac_f)
-      liw = 20*2
-      lrw = 22+9*neq+neq**2 ! stiff work array size
-      ALLOCATE(iwork(liw+neq),rwork(lrw))
+      itol     = 2
+      rtol     = 1.0d-10
+      atol(:)  = 1.0d-10
+      itask    = 2
+      istate   = 1
+      iopt     = 1           ! enable optional inputs (iwork(6))
+      mf       = 21          ! stiff, user-supplied Jacobian (jac_f)
 
-c --- set maximum internal steps
-      iwork=0
-      iwork(6)=50000         ! MXSTEP: max internal steps per call
-      rwork=0
+c --- set maximum internal steps (only iwork(5:6) matter for lsode)
+      iwork(:) = 0
+      iwork(6) = 50000       ! MXSTEP: max internal steps per call
+      rwork(:) = 0.0d0
 
       xmin=1e-6
       xout=xmin
@@ -392,36 +389,33 @@ c --- compute starting p and W boundary condition
 c     Branch on asymptotic regime: D_norm^2 vs iota_e*P_perp/P_tor^(2/3)
 c --- branch 1: D_norm^2 > iota_e * P_perp / P_tor^(2/3)
 c     large-D_norm regime: p scales with (P_tor*D_norm^2/(iota_e*...))
-      IF ((D_norm**2.0) > ((iota_e*P_perp)/(P_tor**(2.0/3.0)))) THEN
-          my_p = ( (P_tor*D_norm**2)/(iota_e*P_tor*P_perp) )**0.25
-          IF (my_p < 6.0) THEN
-            my_p = 6.0
-          END IF
+      IF (D_norm**2 > iota_e*P_perp / P_tor**(2.0d0/3.0d0)) THEN
+          my_p = ( (P_tor*D_norm**2)/(iota_e*P_tor*P_perp) )**0.25d0
+          my_p = MAX(my_p, 6.0d0)
 
           ak = -(g_tmp + ifac*Q_e)
-          bk = (iota_e*P_perp*P_tor)/(P_tor*(D_norm**2.0))
+          bk = (iota_e*P_perp*P_tor)/(P_tor*D_norm**2)
 
-          ck = bk*(1+(g_tmp+ifac*Q_i)*((P_tor+P_perp)/(P_tor*P_perp))-
-     $       (P_perp+(g_tmp + 
-     $       ifac*Q_i)*(D_norm**2.0) )*(iota_e/(P_tor*(D_norm**2.0))))
+          ck = bk*(1 + (g_tmp+ifac*Q_i)
+     $       *((P_tor+P_perp)/(P_tor*P_perp))
+     $       - (P_perp + (g_tmp+ifac*Q_i)*D_norm**2)
+     $       *(iota_e/(P_tor*D_norm**2)))
 
-          xk = (ck - SQRT(bk)*(1 - SQRT(bk)*ak)) / (2.0*SQRT(bk))
+          xk = (ck - SQRT(bk)*(1 - SQRT(bk)*ak)) / (2.0d0*SQRT(bk))
 
           W_bound = xk - SQRT(bk)*my_p
       ELSE
 c --- branch 2: D_norm^2 <= iota_e * P_perp / P_tor^(2/3)
 c     small-D_norm regime: p scales with 1/P_tor^(1/6)
-          my_p = 1.0/(P_tor**(1.0/6.0))
-          IF (my_p < 6.0) THEN
-            my_p = 6.0
-          END IF
+          my_p = 1.0d0 / P_tor**(1.0d0/6.0d0)
+          my_p = MAX(my_p, 6.0d0)
 
           ak = -(g_tmp + ifac*Q_e)
           bk = P_tor
           ck = -ifac*(Q_e - Q_i)*(P_tor/P_perp) + (g_tmp + ifac*Q_i)
-          xk = (ak*bk - ck)/(2.0*SQRT(bk))
+          xk = (ak*bk - ck)/(2.0d0*SQRT(bk))
 
-          W_bound = -1 + xk*my_p - SQRT(bk)*(my_p**3.0)
+          W_bound = -1.0d0 + xk*my_p - SQRT(bk)*my_p**3
       END IF
 
       W(1) = W_bound
@@ -459,7 +453,6 @@ c        single-shot integration to p_min
 c --- extract Delta from final W derivative at p_min
       CALL w_der_f(neq,my_p,W,dWdp)
       riccati_f = pi / dWdp(1)
-      DEALLOCATE(atol,W,dWdp,iwork,rwork)
 
       END FUNCTION riccati_f
 c-----------------------------------------------------------------------
@@ -468,14 +461,16 @@ c-----------------------------------------------------------------------
       SUBROUTINE jac_f(neq, my_p, W, ml, mu, pd, nrpd)
             INTEGER, INTENT(IN) :: neq, ml, mu, nrpd
             REAL(r8), INTENT(IN) :: my_p
-            COMPLEX(r8) :: fA_p
+            COMPLEX(r8) :: fA_p, denom
+            REAL(r8) :: p2
             COMPLEX(r8), DIMENSION(neq), INTENT(IN) :: W
             COMPLEX(r8), DIMENSION(nrpd,neq), INTENT(INOUT) :: pd
 
-            fA_p = (g_tmp + ifac*Q_e - (my_p**2)) / (g_tmp + 
-     $          ifac*Q_e + (my_p**2.0))
+            p2 = my_p * my_p
+            denom = g_tmp + ifac*Q_e + p2
+            fA_p  = (denom - 2.0d0*p2) / denom
 
-            pd(1,1) = (-fA_p/my_p) - (2.0*W(1))/my_p
+            pd(1,1) = (-fA_p/my_p) - (2.0d0*W(1))/my_p
       END SUBROUTINE jac_f
 c-----------------------------------------------------------------------
 c     w_der_f: ODE right-hand side dW/dp for riccati_f.
@@ -489,20 +484,30 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(neq), INTENT(IN) :: W
       COMPLEX(r8), DIMENSION(neq), INTENT(OUT) :: dWdp
       COMPLEX(r8) :: fA, fA_prime, fB, fC
-      
-      ! Evaluate coefficients at the current p
-      fA = (my_p**2)/(g_tmp + ifac*Q_e + (my_p**2.0))
-      fA_prime = (g_tmp + ifac*Q_e - (my_p**2)) / (g_tmp + 
-     $          ifac*Q_e + (my_p**2.0))
-      fB = g_tmp*(g_tmp + ifac*Q_i) + (g_tmp + 
-     $    ifac*Q_i)*(P_perp+P_tor)*(my_p**2.0) + 
-     $    (P_perp*P_tor)*(my_p**4.0)
-      fC = g_tmp + ifac*Q_e + ( P_perp + (g_tmp + 
-     $    ifac*Q_i)*(D_norm**2.0))*(my_p**2.0) + 
-     $    (1.0/iota_e)*P_tor*(D_norm**2.0)*(my_p**4.0)
+      COMPLEX(r8) :: denom          ! cached g_tmp + i*Q_e + p^2
+      REAL(r8)    :: p2, p4         ! cached p^2, p^4
+      REAL(r8)    :: D2             ! cached D_norm^2
 
-      dWdp(1) = -(fA_prime/my_p)*W(1) - (W(1)**2.0)/my_p + 
-     $          (fB/(fA*fC))*(my_p**3.0)
+c     cache powers and shared denominator
+      p2    = my_p * my_p
+      p4    = p2 * p2
+      D2    = D_norm * D_norm
+      denom = g_tmp + ifac*Q_e + p2
+
+c     evaluate coefficients at the current p
+      fA       = p2 / denom
+      fA_prime = (denom - 2.0d0*p2) / denom   ! (g+iQe - p^2)/(g+iQe + p^2)
+
+      fB = g_tmp*(g_tmp + ifac*Q_i)
+     $   + (g_tmp + ifac*Q_i)*(P_perp + P_tor)*p2
+     $   + (P_perp*P_tor)*p4
+
+      fC = g_tmp + ifac*Q_e
+     $   + (P_perp + (g_tmp + ifac*Q_i)*D2)*p2
+     $   + (1.0d0/iota_e)*P_tor*D2*p4
+
+      dWdp(1) = -(fA_prime/my_p)*W(1) - W(1)*W(1)/my_p
+     $        + (fB/(fA*fC))*(p2*my_p)
 
       RETURN
       END SUBROUTINE w_der_f
