@@ -78,9 +78,7 @@ c --- locals
       INTEGER(kind=nf90_int) :: r_dim_id, r_dim        ! dimension id / length (unused)
       INTEGER(kind=nf90_int) :: dp_id, qr_id, pr_id    ! variable ids
       INTEGER(kind=nf90_int) :: dgeo_id, shear_id      ! variable ids
-      INTEGER(kind=nf90_int) :: ro_id, bt0_id, psio_id ! attribute ids (see BUG FLAG 1)
-      INTEGER(kind=nf90_int) :: mpsi_id, msing_id      ! attribute ids
-      INTEGER(kind=nf90_int) :: nn_id, resm_id, drr_id ! variable / attribute ids
+      INTEGER(kind=nf90_int) :: resm_id, drr_id         ! variable ids
       INTEGER(kind=nf90_int), DIMENSION(1) :: start, count  ! NetCDF hyperslab
       INTEGER :: i                                      ! loop index
       INTEGER :: bt0_len, ro_len, psio_len              ! attribute lengths
@@ -95,11 +93,11 @@ c-----------------------------------------------------------------------
       CALL sl_check(stat)
 
 c --- read msing (number of singular surfaces) from global attribute
-      stat = nf90_inquire_attribute(ncid, msing_id, 'msing',
+      stat = nf90_inquire_attribute(ncid, NF90_GLOBAL, 'msing',
      $        len = msing_len)
       CALL sl_check(stat)
       ALLOCATE(msing_arr(msing_len))
-      stat = nf90_get_att(ncid, msing_id, 'msing', msing_arr)
+      stat = nf90_get_att(ncid, NF90_GLOBAL, 'msing', msing_arr)
       CALL sl_check(stat)
       msing = INT(msing_arr(1))
 
@@ -110,15 +108,20 @@ c --- allocate output arrays sized by msing
       ALLOCATE(dp_mat(msing, msing, 2))
 
 c --- read lengths of scalar / small-array global attributes
-      stat = nf90_inquire_attribute(ncid, ro_id,   'ro',   len=ro_len)
+      stat = nf90_inquire_attribute(ncid, NF90_GLOBAL, 'ro',
+     $        len=ro_len)
       CALL sl_check(stat)
-      stat = nf90_inquire_attribute(ncid, bt0_id,  'bt0',  len=bt0_len)
+      stat = nf90_inquire_attribute(ncid, NF90_GLOBAL, 'bt0',
+     $        len=bt0_len)
       CALL sl_check(stat)
-      stat = nf90_inquire_attribute(ncid, psio_id, 'psio', len=psio_len)
+      stat = nf90_inquire_attribute(ncid, NF90_GLOBAL, 'psio',
+     $        len=psio_len)
       CALL sl_check(stat)
-      stat = nf90_inquire_attribute(ncid, mpsi_id, 'mpsi', len=mpsi_len)
+      stat = nf90_inquire_attribute(ncid, NF90_GLOBAL, 'mpsi',
+     $        len=mpsi_len)
       CALL sl_check(stat)
-      stat = nf90_inquire_attribute(ncid, nn_id,   'n',    len=nn_len)
+      stat = nf90_inquire_attribute(ncid, NF90_GLOBAL, 'n',
+     $        len=nn_len)
       CALL sl_check(stat)
 
       ALLOCATE(my_bt0(INT(bt0_len)), r_o(INT(ro_len)),
@@ -142,15 +145,15 @@ c --- obtain NetCDF variable IDs
       CALL sl_check(stat)
 
 c --- read global attributes (equilibrium scalars)
-      stat = nf90_get_att(ncid, ro_id,   'ro',   r_o)
+      stat = nf90_get_att(ncid, NF90_GLOBAL, 'ro',   r_o)
       CALL sl_check(stat)
-      stat = nf90_get_att(ncid, bt0_id,  'bt0',  my_bt0)
+      stat = nf90_get_att(ncid, NF90_GLOBAL, 'bt0',  my_bt0)
       CALL sl_check(stat)
-      stat = nf90_get_att(ncid, psio_id, 'psio', my_psio)
+      stat = nf90_get_att(ncid, NF90_GLOBAL, 'psio', my_psio)
       CALL sl_check(stat)
-      stat = nf90_get_att(ncid, mpsi_id, 'mpsi', mpsi)
+      stat = nf90_get_att(ncid, NF90_GLOBAL, 'mpsi', mpsi)
       CALL sl_check(stat)
-      stat = nf90_get_att(ncid, nn_id,   'n',    nn)
+      stat = nf90_get_att(ncid, NF90_GLOBAL, 'n',    nn)
       CALL sl_check(stat)
 
 c --- read variable data: Deltaprime matrix and 1-D surface arrays

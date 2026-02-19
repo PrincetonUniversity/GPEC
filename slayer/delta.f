@@ -179,9 +179,6 @@ c --- input arguments
       REAL(r8),INTENT(IN) :: inQ_i     ! ion diamagnetic freq
       REAL(r8),INTENT(IN) :: inpr      ! mapped to P_perp (see below)
 c --- optional arguments
-c     BUG FLAG 5: inx is declared OPTIONAL but my_q=inx is accessed
-c       unconditionally.  If inx is ever absent, this will crash.
-c       Either make inx required or add IF(present(inx)) guard.
       REAL(r8),INTENT(IN) :: inx  ! starting q for integration
       COMPLEX(r8),INTENT(IN),OPTIONAL :: iny ! override starting W
 c --- function result
@@ -228,7 +225,7 @@ c --- set maximum internal steps
 c --- set starting integration point
       my_q=inx               ! start backwards integration at large q
       xmin=1e-5
-      IF(present(inx)) x=inx
+      x=inx
       xout=xmin
 
 c --- copy input arguments to module-level globals for w_der_del_s
