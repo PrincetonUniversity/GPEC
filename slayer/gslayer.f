@@ -458,7 +458,7 @@ c           evaluate riccati_f at rescaled growth rate, de-normalise
 
 c        compute det(dp_matrix - delta_Q)
          result_matrix = sl_in%dp_matrix - delta_Q
-         CALL calc_determinant(result_matrix, n_k, det_val)
+         CALL calc_determinant(result_matrix, msing_max, det_val)
          dispersion_det = det_val
       ELSE
          WRITE(*,*) "Error: no support for msing > 3"
