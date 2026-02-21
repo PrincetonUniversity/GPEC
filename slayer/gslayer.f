@@ -415,7 +415,7 @@ c --- function result and locals
       INTEGER :: k                          ! surface loop index
 
 c --- single-surface branch
-      IF (n_k < 2) THEN
+      IF (msing_max < 2) THEN
 c        set module-level variables for riccati_f
          Q_e = sl_in%Q_e_arr(1)
          Q_i = sl_in%Q_i_arr(1)
@@ -435,8 +435,8 @@ c        return Deltaprime - delta(Q)
          dispersion_det = sl_in%Re_dp_arr(1) - det_val
 
 c --- coupled-surface branch (2 or 3 surfaces)
-      ELSEIF ((n_k == 2) .OR. (n_k == 3)) THEN
-         ALLOCATE(delta_Q(n_k,n_k))
+      ELSEIF ((msing_max == 2) .OR. (msing_max == 3)) THEN
+         ALLOCATE(delta_Q(msing_max,msing_max))
          delta_Q=(0.0,0.0)
          DO k=1,msing_max
 c           set module-level variables for this surface
