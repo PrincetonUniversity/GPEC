@@ -120,6 +120,7 @@ c-----------------------------------------------------------------------
       INTEGER :: d_b_id           ! "d_beta"
       INTEGER :: gs_id            ! "growth rate"        (complex)
       INTEGER :: ge_id            ! "est. growth rate"   (complex)
+      INTEGER :: br_th_id         ! "br_th"              — Br threshold
 
 c     AMR variable IDs
       INTEGER :: var_q_id         ! "Q_AMR"    — scan Q-points
@@ -287,6 +288,11 @@ c-----------------------------------------------------------------------
       CALL sl_check( nf90_def_var(ncid, "growth rate",
      $     nf90_double, (/qsing_dim, i_dim/), gs_id) )
 
+      IF (ALLOCATED(sl_out%br_th_arr)) THEN
+         CALL sl_check( nf90_def_var(ncid, "br_th",
+     $        nf90_double, qsing_dim, br_th_id) )
+      END IF
+
 c-----------------------------------------------------------------------
 c     define AMR scan dimensions and variables.
 c-----------------------------------------------------------------------
@@ -370,6 +376,11 @@ c-----------------------------------------------------------------------
      $     RESHAPE( (/REAL(sl_out%gamma_sol_arr),
      $                 AIMAG(sl_out%gamma_sol_arr)/),
      $              (/msing, 2/) )) )
+
+      IF (ALLOCATED(sl_out%br_th_arr)) THEN
+         CALL sl_check( nf90_put_var(ncid, br_th_id,
+     $        sl_out%br_th_arr) )
+      END IF
 
 c-----------------------------------------------------------------------
 c     write AMR scan arrays.

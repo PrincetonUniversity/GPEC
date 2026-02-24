@@ -314,7 +314,7 @@ c-----------------------------------------------------------------------
       TYPE(slayer_outputs_type), INTENT(INOUT) :: sl_out
 
       ALLOCATE(sl_out%dels_db_arr(n_k),sl_out%gamma_sol_arr(n_k),
-     $         sl_out%gamma_est_arr(n_k)  )
+     $         sl_out%gamma_est_arr(n_k),sl_out%br_th_arr(n_k)  )
       RETURN
       END SUBROUTINE allocate_outputs
 c-----------------------------------------------------------------------

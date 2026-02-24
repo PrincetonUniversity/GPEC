@@ -179,6 +179,7 @@ c     slayer_outputs_type -- per-surface solver results
           COMPLEX(r8), ALLOCATABLE :: dels_db_arr(:)   ! Delta from d_beta
           COMPLEX(r8), ALLOCATABLE :: gamma_sol_arr(:) ! solved growth rate
           COMPLEX(r8), ALLOCATABLE :: gamma_est_arr(:) ! estimated growth rate
+          REAL(r8), ALLOCATABLE :: br_th_arr(:)        ! Br threshold
       END TYPE slayer_outputs_type
 
 c     deltas_outputs_type -- scan output (Q vs Delta)

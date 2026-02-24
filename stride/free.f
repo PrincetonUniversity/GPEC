@@ -87,7 +87,7 @@ c     print timer.
 c-----------------------------------------------------------------------
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
-         print*,"*** wp-calc time=",REAL(fTime-sTime,8)/REAL(cr,8)
+         print*,"*** wp-calc time=",REAL(fTime-sTime,r8)/REAL(cr,r8)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -142,7 +142,7 @@ c     print timer.
 c-----------------------------------------------------------------------
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
-         print*,"*** wv-calc time=",REAL(fTime-sTime,8)/REAL(cr,8)
+         print*,"*** wv-calc time=",REAL(fTime-sTime,r8)/REAL(cr,r8)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -173,17 +173,15 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wt,wpt,wvt
       COMPLEX(r8), DIMENSION(mpert,mpert) :: nmat,smat
       CHARACTER(24), DIMENSION(mpert) :: message
-      !!!!!!!!!!!!!!!
       INTEGER :: ipsi,itheta
       REAL(r8), DIMENSION(sq%mx+1) :: ln_q
       REAL(r8), DIMENSION(msing) :: dgeo,shr
       TYPE(spline_type) :: psi_t,avg_dpsi_spl,avg_bsq_spl,v_spl,
      $                     shr_spl
       REAL(r8) :: bsq,chi1,dpsisq,myeta,jac,psifac,q,q1,respsi,
-     $     rfac,v1,v2,v21,v22,v23,v33,al,Lam,mytheta,myr
+     $     rfac,v1,v21,v22,v23,v33,al,Lam,mytheta,myr
       REAL(r8), DIMENSION(:), POINTER :: avg
       TYPE(spline_type), TARGET :: fspl
-      !!!!!!!!!!!!!!
 c-----------------------------------------------------------------------
 c     write formats.
 c-----------------------------------------------------------------------
@@ -302,7 +300,6 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,80)
       WRITE(out_unit,90)(isol,ep(isol),ev(isol),isol=1,mpert)
       WRITE(out_unit,80)
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 c-----------------------------------------------------------------------
 c     compute toroidal Delta_crit
 c-----------------------------------------------------------------------
@@ -324,8 +321,8 @@ c-----------------------------------------------------------------------
       CALL spline_alloc(shr_spl,SIZE(sq%xs(:))-1,1)
       shr_spl%xs=sq%xs(:)
       ln_q=LOG(sq%fs(:,4))
-      !ln_q(SIZE(ln_q)) = ln_q(SIZE(ln_q)-1)
-      shr_spl%fs(:,1)=ln_q ! log(q)
+      shr_spl%fs(:,1)=ln_q
+
       CALL spline_fit(shr_spl,"extrap")
 
       CALL spline_alloc(fspl,mtheta,3)
@@ -334,7 +331,6 @@ c-----------------------------------------------------------------------
       DO ipsi=0,mpsi
          psifac=sq%xs(ipsi)
          v1=sq%fs(ipsi,3)
-         v2=sq%fs1(ipsi,3)
          q=sq%fs(ipsi,4)
          q1=sq%fs1(ipsi,4)
          chi1=twopi*psio
@@ -381,14 +377,8 @@ c-----------------------------------------------------------------------
       CALL spline_fit(avg_bsq_spl,"extrap")
       CALL spline_fit(v_spl,"extrap")
 
-      WRITE(*,*)'shr_spl%fs(:,1)=',shr_spl%fs(:,1)
-      WRITE(*,*)'avg_dpsi_spl%fs(:,1)=',avg_dpsi_spl%fs(:,1)
-      WRITE(*,*)'avg_bsq_spl%fs(:,1)=',avg_bsq_spl%fs(:,1)
-      WRITE(*,*)'v_spl%fs(:,1)=',v_spl%fs(:,1)
-
       DO ising=1,msing
          respsi=sing(ising)%psifac
-         WRITE(*,*)"respsi=",respsi
 
          ! Evaluate splines on rational surface
          CALL spline_eval(sq,respsi,1)
@@ -401,15 +391,11 @@ c-----------------------------------------------------------------------
          al = twopi*nn*sq%f(3)*(1.0/chi1)
          Lam = (psi_t%f1(1)/sq%f(3))*
      $         (-1.0/(sq%f(4)**2.0))*(sq%f1(4)/sq%f(3))
-         WRITE(*,*)'shr_spl%f(1)=',shr_spl%f(1)
 
          shr(ising) = shr_spl%f(1)
          dgeo(ising) = v_spl%f(1)*( (((al**2.0)*(Lam**2.0))/
      $               (avg_bsq_spl%f(1)*avg_dpsi_spl%f(1)))**0.25 )
       ENDDO
-      WRITE(*,*)'new shear=',shr
-      WRITE(*,*)'dgeo=',dgeo
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 c-----------------------------------------------------------------------
 c     optionally write netcdf file.
 c-----------------------------------------------------------------------

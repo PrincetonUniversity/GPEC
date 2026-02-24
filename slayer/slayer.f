@@ -929,81 +929,106 @@ c     For testing & verification only.  Scans rotation to find the
 c     critical radial-field threshold from a simple torque balance.
 c-----------------------------------------------------------------------
       IF (br_th_flag) THEN
+         WRITE(*,*)"------------------------------------------"
+         WRITE(*,*)">>> Computing Br threshold"
 
-         CALL params(n_e,t_e,t_i,omega,chis,dr_val,dgeo_val,
-     $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
-         inQ=Q
-         inQ_e=Q_e
-         inQ_i=Q_i
-         inc_beta=c_beta
-         inds=ds
-         intau=tau
-         Q0=Q
-c-----------------------------------------------------------------------
-c     compute baseline delta, reconnected flux, and torque.
-c-----------------------------------------------------------------------
-         delta_n_p=1e-2   ! [TODO] hardcoded; should use namelist
-         delta=riccati(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,
-     $                   inpe)
-         psi0=1.0/ABS(delta+delta_n_p)     ! reconnected flux  [a.u.]
-         jxb=-AIMAG(1.0/(delta+delta_n_p)) ! j x B torque      [a.u.]
-c-----------------------------------------------------------------------
-c     find solutions based on simple torque balance.
-c-----------------------------------------------------------------------
-         IF (Q0>inQ_e) THEN
-             inQ_max=2.0*Q0
-             inQ_min=1.05*inQ_e
+         IF (read_eq) THEN
+            sl_in%chi_p_arr = chi_p_prof
+            sl_in%chi_t_arr = chi_t_prof
+            sl_in%kappa_arr = kappa_prof
+            CALL build_inputs(infile,ncfile,sl_in)
+            n_k = SIZE(sl_in%qval_arr)
+            CALL allocate_outputs(n_k,sl_out)
          ELSE
-             inQ_max=0.95*inQ_e
-             IF (Q0>0) THEN
-                 inQ_min=0.8*inQ_i
-             ELSE
-                 inQ_min=1.5*MINVAL((/Q0,inQ_i/))
-             ENDIF
-         ENDIF
+            n_k = 1
+
+            chis(1) = chi_p_prof(1)
+            chis(2) = chi_t_prof(1)
+            chis(3) = kappa_prof(1)
+
+            CALL params(n_e,t_e,t_i,omega,chis,dr_val,dgeo_val,
+     $           l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
+
+            inQ=Q
+            inQ_e=Q_e
+            inQ_i=Q_i
+            inc_beta=c_beta
+            inds=ds
+            intau=tau
+
+            CALL allocate_inputs(n_k,sl_in)
+            CALL allocate_outputs(n_k,sl_out)
+
+            sl_in%qval_arr    = (/ qval /)
+            sl_in%omegas_arr  = (/ omega /)
+            sl_in%Q_e_arr     = (/ Q_e /)
+            sl_in%Q_i_arr     = (/ Q_i /)
+            sl_in%psi_n_arr   = (/ 0.0 /)
+            sl_in%Re_dp_arr   = (/ 0.0 /)
+            sl_in%Im_dp_arr   = (/ 0.0 /)
+            sl_in%d_crit_arr  = (/ 0.0 /)
+            sl_in%P_perp_arr  = (/ P_perp /)
+            sl_in%P_tor_arr   = (/ P_tor /)
+            sl_in%tau_arr     = (/ tau /)
+            sl_in%D_norm_arr  = (/ D_norm /)
+            sl_in%d_beta_arr  = (/ d_beta /)
+            sl_in%gammafac_arr = (/ gamma_fac /)
+            sl_in%c_beta_arr  = (/ c_beta /)
+            sl_in%lu_arr      = (/ lu /)
+            sl_in%Qconv_arr   = (/ tauk /)
+         END IF
 c-----------------------------------------------------------------------
-c     rotation scan to locate torque-balance threshold.
-c     [TODO] the IF/ELSE block above that sets inQ_min/inQ_max
-c     is immediately overridden by the hardcoded values below.
-c     The conditional block is dead code.
+c     loop over rational surfaces to compute Br threshold.
 c-----------------------------------------------------------------------
-         ! Override with fixed diagnostic range.
-         inQ_max=10.0
-         inQ_min=-10.0
-         inum=200
-         ALLOCATE(inQs(0:inum),deltal(0:inum),jxbl(0:inum),
-     $                bal(0:inum))
-         DO i=0,inum
-            inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
-            deltal(i)=riccati(inQs(i),inQ_e,inQ_i,
-     $                   inpr,inc_beta,inds,intau,inpe)
-            jxbl(i)=-AIMAG(1.0/(deltal(i)+delta_n_p))
-            bal(i)=2.0*inpr*(Q0-inQs(i))/jxbl(i)
+         delta_n_p = 1e-2
+         inum = 200
+         inQ_max = 10.0
+         inQ_min = -10.0
+
+         DO k=1,n_k
+            WRITE(*,*)
+            WRITE(*,'(A,I0,A)') 'Computing Br threshold on q = ',
+     $         sl_in%qval_arr(k),' rational surface'
+
+            Q_e   = sl_in%Q_e_arr(k)
+            Q_i   = sl_in%Q_i_arr(k)
+            inQ_e = Q_e
+            inQ_i = Q_i
+            inpr  = sl_in%P_perp_arr(k)
+            inc_beta = sl_in%c_beta_arr(k)
+            inds  = sl_in%D_norm_arr(k)
+            intau = sl_in%tau_arr(k)
+            Q0    = sl_in%Q_e_arr(k)
+
+            ALLOCATE(inQs(0:inum),deltal(0:inum),
+     $               jxbl(0:inum),bal(0:inum))
+            DO i=0,inum
+               inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
+               deltal(i)=riccati(inQs(i),inQ_e,inQ_i,
+     $                      inpr,inc_beta,inds,intau,inpe)
+               jxbl(i)=-AIMAG(1.0/(deltal(i)+delta_n_p))
+               bal(i)=2.0*inpr*(Q0-inQs(i))/jxbl(i)
+            ENDDO
+
+            iloc=MAXLOC(bal)
+            Q_sol=inQs(iloc(1))
+            br_th=SQRT(MAXVAL(bal)/sl_in%lu_arr(k)
+     $           *(sval**2.0/2.0))
+
+            sl_out%br_th_arr(k) = br_th
+            sl_out%gamma_sol_arr(k) = 0.0
+            sl_out%gamma_est_arr(k) = 0.0
+            sl_out%dels_db_arr(k)   = 0.0
+
+            WRITE(*,'(A,ES12.4)') '  br_th = ', br_th
+            DEALLOCATE(inQs,deltal,jxbl,bal)
          ENDDO
-
-         ! Identify the threshold from the maximum of the balance parameter.
-         iloc=MAXLOC(bal)
-         Q_sol=inQs(iloc(1))
-         br_th=sqrt(MAXVAL(bal)/lu*(sval**2.0/2.0))
-         DEALLOCATE(inQs,deltal,jxbl,bal)
 c-----------------------------------------------------------------------
-c     populate sl_in structure for output.
+c     write output.
 c-----------------------------------------------------------------------
-         sl_in%qval_arr = (/ 3 /)
-
-         n_k = SIZE(sl_in%qval_arr)
-
-         sl_in%omegas_arr = (/ 0.0 /)
-         sl_in%Q_e_arr = (/ inQ_e /)
-         sl_in%Q_i_arr = (/ inQ_i /)
-         sl_in%psi_n_arr = (/ 0.0 /)
-         sl_in%Re_dp_arr = (/ 0.0 /)
-         sl_in%Im_dp_arr = (/ 0.0 /)
-         sl_in%P_perp_arr = (/ inpr /)
-
-c         CALL slayer_netcdf_out(n_k,lar_gamma_eq_flag,lar_gamma_flag,
-c     $                     stabscan_eq_flag,stabscan_flag,br_th_flag)
-         stop
+         CALL output_gamma(est_gamma_flag,m_AMR,sl_in,sl_out,
+     $                     all_deltas_out)
+         STOP
       ENDIF  ! br_th_flag
 c-----------------------------------------------------------------------
 c     find solutions based on simple torque balance.
