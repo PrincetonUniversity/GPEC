@@ -25,16 +25,12 @@ c     Results are written to module-level variables in sglobal_mod
 c     (tau, tau_r, tauk, lu, Q, Q_e, Q_i, ds, c_beta, d_beta,
 c     D_norm, P_perp, P_tor, delta_n, dc_tmp, eta, visc, rho_s, ...).
 c
-c     BUG FLAG 1 -- `pr` (magnetic Prandtl number) and `pe` are read
+c     TODO: `pr` (magnetic Prandtl number) and `pe` are read
 c       from sglobal_mod but never set within this routine.  They must
 c       be initialised elsewhere before calling params(), otherwise
 c       `tau_v = tau_r / pr` will divide by zero or garbage.
 c       Suggested fix: add pr/pe as INTENT(IN) arguments, or
 c       document the required initialisation order.
-c
-c     BUG FLAG 2 -- Several debug WRITE statements print to stdout
-c       unconditionally on every call.  For a public release these
-c       should either be removed or guarded behind `params_check`.
 c-----------------------------------------------------------------------
       SUBROUTINE params(n_e,t_e,t_i,omega,chis,dr_val,dgeo_val,
      $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
@@ -86,6 +82,7 @@ c --- local variables: delta_crit iteration
       REAL(r8) :: chi_par_lmfp     ! chi_par in long  mfp limit
       REAL(r8) :: chi_par          ! effective parallel thermal cond.
       REAL(r8) :: Wd               ! magnetic island width proxy
+      REAL(r8) :: Wd_new            ! updated Wd for convergence check
       INTEGER  :: wit              ! iteration counter
 c --- local variables: unused intermediates
       REAL(r8) :: Qconv            ! (shadowed by module-level Qconv)
@@ -131,7 +128,7 @@ c-----------------------------------------------------------------------
 
       tau_h = R0*(mu0*rho)**0.5 / (nn*sval*bt)     ! Alfvén time [s]
       tau_r = mu0*(rs**2.0)*sigma_par               ! resistive time [s] (Fitzpatrick)
-      tau_v = tau_r / pr                            ! viscous time [s] (BUG FLAG 1)
+      tau_v = tau_r / pr                            ! viscous time [s] (TODO: pr init)
 
 c     back-compute anomalous viscosity from tau_v
       visc = rho*rs**2.0 / tau_v
@@ -192,16 +189,13 @@ c     d_beta uses Fitzpatrick's definition (tau' form)
 
 c-----------------------------------------------------------------------
 c     Critical Deltaprime (dc_tmp) via iterative chi_parallel calculation.
-c     The island-width Wd is iterated 10 times to converge the
+c     The island-width Wd is iterated to converge the
 c     short-mfp / long-mfp interpolation for chi_parallel.
 c     dc_type (from sglobal_mod) selects the formula:
 c       'lar'      -- cylindrical (Lutjens)
 c       'rfitzp'   -- R. Fitzpatrick
 c       'toroidal' -- toroidal geometry using dgeo_val
 c       default    -- dc_tmp = 0
-c
-c     BUG FLAG 4 -- iteration count 10 is hardcoded with no
-c       convergence check.  Consider adding a tolerance test.
 c-----------------------------------------------------------------------
       IF (ABS(dr_val) > 0.0) THEN
 
@@ -210,14 +204,24 @@ c-----------------------------------------------------------------------
      $                   / (1.0 + 0.2535*Zeff)
 
           Wd = 0.1              ! initial guess
-          DO wit = 1, 10
+          DO wit = 1, 100
               chi_par_lmfp = (2.0*R0*vte)
      $                       / (SQRT(pi)*nr*sval*Wd)
               chi_par = (chi_par_smfp*chi_par_lmfp)
      $                  / (chi_par_smfp + chi_par_lmfp)
-              Wd = SQRT(8.0)*((chis(1)/chi_par)**0.25)
+              Wd_new = SQRT(8.0)*((chis(1)/chi_par)**0.25)
      $           * (1.0/SQRT((rs/R0)*sval*nr))
+              IF (ABS(Wd_new - Wd) / MAX(ABS(Wd), 1.0e-30_r8)
+     $            < 1.0e-10_r8) THEN
+                  Wd = Wd_new
+                  EXIT
+              END IF
+              Wd = Wd_new
           END DO
+          IF (wit > 100) THEN
+              WRITE(*,*) 'params: Wd iteration failed to converge'
+              STOP 'params: Wd iteration did not converge'
+          END IF
 
           SELECT CASE(dc_type)
               CASE('lar')

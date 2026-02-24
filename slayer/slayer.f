@@ -34,9 +34,9 @@ c-----------------------------------------------------------------------
       INTEGER :: msing_max           ! max number of singular surfaces
       INTEGER :: n_k                 ! number of rational surfaces
 c-----------------------------------------------------------------------
-c     local scalars — intrinsic-name collision (see BUG FLAG 1).
+c     local scalars — MAXLOC result holder.
 c-----------------------------------------------------------------------
-      INTEGER, DIMENSION(1) :: index ! result of MAXLOC  [BUG FLAG 1]
+      INTEGER, DIMENSION(1) :: iloc  ! result of MAXLOC
 c-----------------------------------------------------------------------
 c     control flags — workflow.
 c-----------------------------------------------------------------------
@@ -334,10 +334,10 @@ c-----------------------------------------------------------------------
 
       ! Build toroidal-mode-number string for output filenames.
       IF (nn<10) THEN
-         WRITE(UNIT=sn,FMT='(I1)') nn
-         sn=ADJUSTL(sn)
+         WRITE(UNIT=sn_str,FMT='(I1)') nn
+         sn_str=ADJUSTL(sn_str)
       ELSE
-         WRITE(UNIT=sn,FMT='(I2)') nn
+         WRITE(UNIT=sn_str,FMT='(I2)') nn
       ENDIF
 c-----------------------------------------------------------------------
 c     compute normalized layer parameters from kinetic inputs.
@@ -378,16 +378,18 @@ c-----------------------------------------------------------------------
 c     multi-surface input-file mode.
 c     reads an external file of (m,n) surfaces with per-surface kinetic
 c     profiles, computes delta and the error-field threshold for each.
-c     [BUG FLAG 3] arrays are allocated 1:inn but loops run 0:inn-1.
 c-----------------------------------------------------------------------
       IF (input_flag) THEN
          OPEN(UNIT=input_unit,FILE=infile,STATUS="old")
          READ(input_unit,*)inn
-         ALLOCATE(mms(inn),nns(inn),prs(inn),
-     $        n_es(inn),t_es(inn),t_is(inn),omegas(inn),
-     $        l_ns(inn),l_ts(inn),qvals(inn),svals(inn),
-     $        bts(inn),rss(inn),R0s(inn),mu_is(inn),zeffs(inn),
-     $        Q_soll(inn),br_thl(inn))
+         ALLOCATE(mms(0:inn-1),nns(0:inn-1),prs(0:inn-1),
+     $        n_es(0:inn-1),t_es(0:inn-1),t_is(0:inn-1),
+     $        omegas(0:inn-1),
+     $        l_ns(0:inn-1),l_ts(0:inn-1),qvals(0:inn-1),
+     $        svals(0:inn-1),
+     $        bts(0:inn-1),rss(0:inn-1),R0s(0:inn-1),
+     $        mu_is(0:inn-1),zeffs(0:inn-1),
+     $        Q_soll(0:inn-1),br_thl(0:inn-1))
          DO k=0,inn-1
             READ(input_unit,'(2(1x,I2),14(1x,e12.4))')
      $           mms(k),nns(k),prs(k),
@@ -437,9 +439,8 @@ c-----------------------------------------------------------------------
                bal(i)=2.0*inpr*(Q0-inQs(i))/jxbl(i)
             ENDDO
         
-            ! [BUG FLAG 3] Q_soll/br_thl indexed 0:inn-1 but allocated 1:inn
-            index=MAXLOC(bal)
-            Q_soll(k)=inQs(index(1))
+            iloc=MAXLOC(bal)
+            Q_soll(k)=inQs(iloc(1))
             br_thl(k)=sqrt(MAXVAL(bal)/lu*(svals(k)**2.0/2.0))*1e4
 
             IF (verbose) WRITE(*,*)"Q_sol=",Q_soll(k)
@@ -447,7 +448,7 @@ c-----------------------------------------------------------------------
             DEALLOCATE(inQs,deltal,jxbl,bal)         
          ENDDO
          OPEN(UNIT=out_unit,FILE="slayer_input_bal_n"//
-     $      TRIM(sn)//".out",STATUS="UNKNOWN")
+     $      TRIM(sn_str)//".out",STATUS="UNKNOWN")
          WRITE(out_unit,'(1x,(2a17))') "Q_sol","br_th"
          
          DO k=0,inn-1
@@ -546,9 +547,8 @@ c-----------------------------------------------------------------------
      $       sl_in%qval_arr(k),' rational surface'
 
             D_norm = sl_in%D_norm_arr(k)
-            ! [BUG FLAG 4] first argument to riccati_del_s is Q_e_arr,
-            ! not Q_arr.  Comment "NOT using Q_arr" is original.
-            ! Verify this is intentional (Q_e used as ExB frequency).
+            ! First arg is Q_e (electron diamagnetic freq), not Q
+            ! (ExB freq).  This is intentional per riccati_del_s API.
             dels_db=riccati_del_s(sl_in%Q_e_arr(k),
      $                   sl_in%Q_i_arr(k),sl_in%P_perp_arr(k),
      $                   5.0*sl_in%D_norm_arr(k))
@@ -742,8 +742,6 @@ c-----------------------------------------------------------------------
                ! Flatten unique AMR points into 1-D output arrays.
                DO i = 1, n_pts
                   all_deltas_out(k)%inQs(i) = REAL(Q_store(i))
-                  ! [BUG FLAG 5] IF/ELSE branches are identical.
-
                   all_deltas_out(k)%iinQs(i) = -AIMAG(Q_store(i))
 
                   all_deltas_out(k)%real_deltas(i) = REAL(D_store(i))
@@ -786,7 +784,7 @@ c-----------------------------------------------------------------------
                      ! Evaluate riccati function
                      g_tmp = CMPLX(ing_coarse,iing_coarse)
                      IF (fitz_flag) THEN
-                        delta=riccati_f(g_tmp)
+                        delta=riccati_f()
                      ELSE
                         delta=riccati(iing_coarse,Q_e,Q_i,P_perp,
      $                             c_beta,D_norm,tau,pe,
@@ -804,14 +802,14 @@ c-----------------------------------------------------------------------
 
 
                IF (k<10) THEN
-                  WRITE(UNIT=sm,FMT='(I1)') sl_in%qval_arr(k)
-                  sm=ADJUSTL(sm)
+                  WRITE(UNIT=sm_str,FMT='(I1)') sl_in%qval_arr(k)
+                  sm_str=ADJUSTL(sm_str)
                ELSE
-                  WRITE(UNIT=sm,FMT='(I2)') sl_in%qval_arr(k)
+                  WRITE(UNIT=sm_str,FMT='(I2)') sl_in%qval_arr(k)
                ENDIF
 
                OPEN(UNIT=out_unit,FILE="slayer_stability_n"//
-     $         TRIM(sn)//"m"//TRIM(sm)//".out", STATUS="UNKNOWN")
+     $         TRIM(sn_str)//"m"//TRIM(sm_str)//".out", STATUS="UNKNOWN")
                WRITE(out_unit,'(1x,4(a17))') "RE(Q)",
      $           "IM(Q)","RE(delta)","IM(delta)"
                DO i=1,Q_num+1
@@ -906,7 +904,7 @@ c-----------------------------------------------------------------------
             ENDDO
 
             OPEN(UNIT=out_unit,FILE="slayer_determinants_n"//
-     $         TRIM(sn)//".out", STATUS="UNKNOWN")
+     $         TRIM(sn_str)//".out", STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,4(a17))') "RE(Q)",
      $           "IM(Q)","RE(det)","IM(det)"
             DO i=1,Q_num+1
@@ -944,7 +942,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute baseline delta, reconnected flux, and torque.
 c-----------------------------------------------------------------------
-         delta_n_p=1e-2   ! [BUG FLAG 7] hardcoded; should use namelist
+         delta_n_p=1e-2   ! [TODO] hardcoded; should use namelist
          delta=riccati(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,
      $                   inpe)
          psi0=1.0/ABS(delta+delta_n_p)     ! reconnected flux  [a.u.]
@@ -965,7 +963,7 @@ c-----------------------------------------------------------------------
          ENDIF
 c-----------------------------------------------------------------------
 c     rotation scan to locate torque-balance threshold.
-c     [BUG FLAG 8] the IF/ELSE block above that sets inQ_min/inQ_max
+c     [TODO] the IF/ELSE block above that sets inQ_min/inQ_max
 c     is immediately overridden by the hardcoded values below.
 c     The conditional block is dead code.
 c-----------------------------------------------------------------------
@@ -984,8 +982,8 @@ c-----------------------------------------------------------------------
          ENDDO
 
          ! Identify the threshold from the maximum of the balance parameter.
-         index=MAXLOC(bal)              ! [BUG FLAG 1] shadows intrinsic
-         Q_sol=inQs(index(1))
+         iloc=MAXLOC(bal)
+         Q_sol=inQs(iloc(1))
          br_th=sqrt(MAXVAL(bal)/lu*(sval**2.0/2.0))
          DEALLOCATE(inQs,deltal,jxbl,bal)
 c-----------------------------------------------------------------------
@@ -1041,7 +1039,7 @@ c-----------------------------------------------------------------------
          ! write components of torque balance
          IF(ascii_flag)THEN
             OPEN(UNIT=out_unit,FILE="slayer_bal_n"//
-     $         TRIM(sn)//".out",STATUS="UNKNOWN")
+     $         TRIM(sn_str)//".out",STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,5(a17))') "inQ","RE(delta)",
      $           "IM(delta)","jxb","bal"
 
@@ -1052,8 +1050,8 @@ c-----------------------------------------------------------------------
             CLOSE(out_unit)
          ENDIF
 
-         index=MAXLOC(bal)
-         Q_sol=inQs(index(1))
+         iloc=MAXLOC(bal)
+         Q_sol=inQs(iloc(1))
          br_th=sqrt(MAXVAL(bal)/lu*(sval**2.0/2.0))*1e4
          WRITE(*,*)"Q_sol=",Q_sol
          WRITE(*,*)"br_th=",br_th
@@ -1080,7 +1078,7 @@ c-----------------------------------------------------------------------
 
          IF (ascii_flag) THEN
             OPEN(UNIT=out_unit,FILE="slayer_stability_n"//
-     $         TRIM(sn)//".out", STATUS="UNKNOWN")
+     $         TRIM(sn_str)//".out", STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,4(a17))') "RE(Q)",
      $           "IM(Q)","RE(delta)","IM(delta)"
             DO i=0,inum
@@ -1117,7 +1115,7 @@ c-----------------------------------------------------------------------
 
          IF (ascii_flag) THEN
             OPEN(UNIT=out_unit,FILE="slayer_riccatiscan_n"//
-     $         TRIM(sn)//".out",STATUS="UNKNOWN")
+     $         TRIM(sn_str)//".out",STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,5(a17))') "x","yphs","yamp",
      $           "RE(delta)","IM(delta)"
             DO j=0,jnum
@@ -1159,7 +1157,7 @@ c-----------------------------------------------------------------------
 
          IF (ascii_flag) THEN
             OPEN(UNIT=out_unit,FILE="slayer_QPescan_n"//
-     $         TRIM(sn)//".out",STATUS="UNKNOWN")
+     $         TRIM(sn_str)//".out",STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,6(a17))') "Q","Pe","RE(delta)",
      $           "IM(delta)","psi","jxb"
             DO j=0,jnum
@@ -1174,7 +1172,7 @@ c-----------------------------------------------------------------------
 
          IF (bin_flag) THEN
             OPEN(UNIT=bin_2d_unit,FILE='slayer_QPescan_n'
-     $         //TRIM(sn)//'.bin',
+     $         //TRIM(sn_str)//'.bin',
      $         STATUS='UNKNOWN',POSITION='REWIND',FORM='UNFORMATTED')
             WRITE(bin_2d_unit)1,0
             WRITE(bin_2d_unit)jnum,knum
@@ -1214,7 +1212,7 @@ c-----------------------------------------------------------------------
 
          IF (ascii_flag) THEN
             OPEN(UNIT=out_unit,FILE="slayer_QPscan"//
-     $         TRIM(sn)//".out",STATUS="UNKNOWN")
+     $         TRIM(sn_str)//".out",STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,6(a17))') "Q","Pr","RE(delta)",
      $           "IM(delta)","psi","jxb"
             DO j=0,jnum
@@ -1229,7 +1227,7 @@ c-----------------------------------------------------------------------
 
          IF (bin_flag) THEN
             OPEN(UNIT=bin_2d_unit,FILE="slayer_QPscan_"
-     $         //TRIM(sn)//".bin",
+     $         //TRIM(sn_str)//".bin",
      $         STATUS='UNKNOWN',POSITION='REWIND',FORM='UNFORMATTED')
             WRITE(bin_2d_unit)1,0
             WRITE(bin_2d_unit)jnum,knum
@@ -1263,7 +1261,7 @@ c-----------------------------------------------------------------------
 
          IF (ascii_flag) THEN
             OPEN(UNIT=out_unit,FILE="slayer_Qscan_n"//
-     $         TRIM(sn)//".out",STATUS="UNKNOWN")
+     $         TRIM(sn_str)//".out",STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,6(a17))') "Q","Pr","RE(delta)",
      $           "IM(delta)","psi","jxb"
             DO j=0,jnum
@@ -1305,7 +1303,7 @@ c-----------------------------------------------------------------------
 
          IF (ascii_flag) THEN
             OPEN(UNIT=out_unit,FILE="slayer_QPscan_n"//
-     $         TRIM(sn)//".out",STATUS="UNKNOWN")
+     $         TRIM(sn_str)//".out",STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,6(a17))') "Q","Pr","RE(delta)",
      $           "IM(delta)","psi","jxb"
             DO j=0,jnum
@@ -1320,7 +1318,7 @@ c-----------------------------------------------------------------------
 
          IF (bin_flag) THEN
             OPEN(UNIT=bin_2d_unit,FILE="slayer_QPscan_n"//
-     $         TRIM(sn)//".bin",
+     $         TRIM(sn_str)//".bin",
      $         STATUS='UNKNOWN',POSITION='REWIND',FORM='UNFORMATTED')
             WRITE(bin_2d_unit)1,0
             WRITE(bin_2d_unit)jnum,knum
@@ -1373,7 +1371,7 @@ c-----------------------------------------------------------------------
 
          IF (bin_flag) THEN
             OPEN(UNIT=bin_2d_unit,FILE='slayer_QDscan_n'//
-     $         TRIM(sn)//'.bin',
+     $         TRIM(sn_str)//'.bin',
      $         STATUS='UNKNOWN',POSITION='REWIND',FORM='UNFORMATTED')
             WRITE(bin_2d_unit)1,0
             WRITE(bin_2d_unit)jnum,knum
@@ -1437,8 +1435,8 @@ c-----------------------------------------------------------------------
                   jxb=-AIMAG(1.0/(delta+delta_n_p))
                   bal(i)=2.0*inpr*(Q0-inQs(i))/jxb
                ENDDO
-               index=MAXLOC(bal)
-               Q_sols(j,k)=inQs(index(1))
+               iloc=MAXLOC(bal)
+               Q_sols(j,k)=inQs(iloc(1))
                br_ths(j,k)=sqrt(MAXVAL(bal)/lu)*1e4
                WRITE(*,*)"br_ths=",br_ths(j,k)               
             ENDDO
@@ -1446,7 +1444,7 @@ c-----------------------------------------------------------------------
 
          IF (ascii_flag) THEN
             OPEN(UNIT=out_unit,FILE="slayer_onscan_n"//
-     $         TRIM(sn)//".out",STATUS="UNKNOWN")
+     $         TRIM(sn_str)//".out",STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,6(a17))') "Omega","Density",
      $           "Omega_i","Omega_e","Omega_sol","Field_Threshold"
             DO j=0,jnum
@@ -1463,7 +1461,7 @@ c-----------------------------------------------------------------------
 
          IF (bin_flag) THEN
             OPEN(UNIT=bin_2d_unit,FILE='slayer_onscan_n'//
-     $         TRIM(sn)//'.bin',
+     $         TRIM(sn_str)//'.bin',
      $         STATUS='UNKNOWN',POSITION='REWIND',FORM='UNFORMATTED')
             WRITE(bin_2d_unit)1,0
             WRITE(bin_2d_unit)jnum,knum
@@ -1523,8 +1521,8 @@ c-----------------------------------------------------------------------
                   jxb=-AIMAG(1.0/(delta+delta_n_p))
                   bal(i)=2.0*inpr*(Q0-inQs(i))/jxb
                ENDDO
-               index=MAXLOC(bal)
-               Q_sols(j,k)=inQs(index(1))
+               iloc=MAXLOC(bal)
+               Q_sols(j,k)=inQs(iloc(1))
                br_ths(j,k)=sqrt(MAXVAL(bal)/lu)*1e4
                WRITE(*,*)"t_e=",t_e*ks(j,k),"br_ths=",br_ths(j,k)
             ENDDO
@@ -1532,7 +1530,7 @@ c-----------------------------------------------------------------------
 
          IF (ascii_flag) THEN
             OPEN(UNIT=out_unit,FILE="slayer_otscan_n"//
-     $         TRIM(sn)//".out",STATUS="UNKNOWN")
+     $         TRIM(sn_str)//".out",STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,6(a17))') "Omega","Temperature",
      $           "Omega_i","Omega_e","Omega_sol","Field_Threshold"
             DO j=0,jnum
@@ -1549,7 +1547,7 @@ c-----------------------------------------------------------------------
 
          IF (bin_flag) THEN
             OPEN(UNIT=bin_2d_unit,FILE='slayer_otscan_n'//
-     $         TRIM(sn)//'.bin',
+     $         TRIM(sn_str)//'.bin',
      $         STATUS='UNKNOWN',POSITION='REWIND',FORM='UNFORMATTED')
             WRITE(bin_2d_unit)1,0
             WRITE(bin_2d_unit)jnum,knum
@@ -1609,8 +1607,8 @@ c-----------------------------------------------------------------------
                   jxb=-AIMAG(1.0/(delta+delta_n_p))
                   bal(i)=2.0*inpr*(Q0-inQs(i))/jxb
                ENDDO
-               index=MAXLOC(bal)
-               Q_sols(j,k)=inQs(index(1))
+               iloc=MAXLOC(bal)
+               Q_sols(j,k)=inQs(iloc(1))
                br_ths(j,k)=sqrt(MAXVAL(bal)/lu)*1e4
                WRITE(*,*)"br_ths=",br_ths(j,k)               
             ENDDO
@@ -1618,7 +1616,7 @@ c-----------------------------------------------------------------------
 
          IF (ascii_flag) THEN
             OPEN(UNIT=out_unit,FILE="slayer_ntscan_n"//
-     $         TRIM(sn)//".out",STATUS="UNKNOWN")
+     $         TRIM(sn_str)//".out",STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,6(a17))') "Temperature","Density",
      $           "Omega_i","Omega_e","Omega_sol","Field_Threshold"
             DO j=0,jnum
@@ -1634,7 +1632,7 @@ c-----------------------------------------------------------------------
 
          IF (bin_flag) THEN
             OPEN(UNIT=bin_2d_unit,FILE='slayer_ntscan_n'//
-     $         TRIM(sn)//'.bin',
+     $         TRIM(sn_str)//'.bin',
      $         STATUS='UNKNOWN',POSITION='REWIND',FORM='UNFORMATTED')
             WRITE(bin_2d_unit)1,0
             WRITE(bin_2d_unit)jnum,knum
@@ -1696,8 +1694,8 @@ c-----------------------------------------------------------------------
                   jxb=-AIMAG(1.0/(delta+delta_n_p))
                   bal(i)=2.0*inpr*(Q0-inQs(i))/jxb
                ENDDO
-               index=MAXLOC(bal)
-               Q_sols(j,k)=inQs(index(1))
+               iloc=MAXLOC(bal)
+               Q_sols(j,k)=inQs(iloc(1))
                br_ths(j,k)=sqrt(MAXVAL(bal)/lu)*1e4
                WRITE(*,*)"br_ths=",br_ths(j,k)               
             ENDDO
@@ -1705,7 +1703,7 @@ c-----------------------------------------------------------------------
 
          IF (ascii_flag) THEN
             OPEN(UNIT=out_unit,FILE="slayer_nbtscan_n"//
-     $         TRIM(sn)//".out",STATUS="UNKNOWN")
+     $         TRIM(sn_str)//".out",STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,4(a17))') "Bt","Density",
      $           "Omega_sol","Field_Threshold"
             DO j=0,jnum
@@ -1721,7 +1719,7 @@ c-----------------------------------------------------------------------
 
          IF (bin_flag) THEN
             OPEN(UNIT=bin_2d_unit,FILE='slayer_nbtscan_n'//
-     $         TRIM(sn)//'.bin',
+     $         TRIM(sn_str)//'.bin',
      $         STATUS='UNKNOWN',POSITION='REWIND',FORM='UNFORMATTED')
             WRITE(bin_2d_unit)1,0
             WRITE(bin_2d_unit)jnum,knum

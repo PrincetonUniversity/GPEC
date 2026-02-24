@@ -10,50 +10,13 @@ c
 c     Ragged AMR scan data (variable number of evaluation points per
 c     surface) are zero-padded into rectangular arrays before writing.
 c
-c     BUG FLAG 1 -- Several NetCDF variable definitions that depend on
-c       `qsing_dim`, `i_dim`, and `nAMR_dim` sit OUTSIDE the
-c       `IF (msing > 0)` guard that creates those dimensions.  If the
-c       subroutine is ever called with msing == 0, those dimension IDs
-c       will be uninitialised and the nf90_def_var calls will fail or
-c       produce undefined behaviour.
-c       Suggested fix: move all remaining nf90_def_var calls inside
-c       the `IF (msing > 0)` block, or add an early RETURN when
-c       msing == 0.
-c
-c     BUG FLAG 2 -- `fill_val` is declared (-9.99E33) but never
-c       used; the rectangular buffers are initialised to 0.0 instead.
-c       Plotters that rely on a standard _FillValue attribute will
-c       not distinguish padding from real zeros.
-c       Suggested fix: initialise buffers with `fill_val` instead
-c       of 0.0, and add an nf90_put_att call to set the _FillValue
-c       attribute on the Q_AMR and Deltas_AMR variables.
-c
-c     BUG FLAG 3 -- `Q_id` is created by nf90_def_var("Q", …) but
-c       the corresponding nf90_put_var is commented out, so the
-c       variable exists in the file but contains only fill values.
-c       Suggested fix: either remove the nf90_def_var or write the
-c       appropriate Q array.
-c
-c     BUG FLAG 4 -- `c_b_id` (c_beta variable ID) is declared but
-c       never used in any nf90_def_var or nf90_put_var call; i.e.
-c       c_beta_arr is not written to the output file.
-c       Suggested fix: if c_beta is needed in the output, add the
-c       definition and write calls; otherwise remove c_b_id.
-c
-c     BUG FLAG 5 -- `run`, `run_dimid`, `point_dimid`, `varids(4)`,
-c       `i`, `r_id`, and `r_dim` are declared but never referenced.
-c       Suggested fix: remove them.
-c
-c     BUG FLAG 6 -- The `version` string is hardcoded to a specific
-c       git hash ('v1.0.0-99-gc873bd6').  For a public release this
-c       should be generated at build time (e.g. from `git describe`
-c       via a preprocessor macro).
-c
-c     BUG FLAG 7 -- The subroutine writes to the module-level global
-c       `sn` (from sglobal_mod) as a side-effect of building the
-c       output filename.  This is fragile — a local CHARACTER
-c       variable should be used instead to avoid polluting global
-c       state.
+c     (Resolved: FLAG 1 -- early RETURN for msing == 0.
+c      FLAG 2 -- buffers now use fill_val; _FillValue attributes added.
+c      FLAG 3 -- Q_id removed (unused).
+c      FLAG 4 -- c_b_id removed (unused).
+c      FLAG 5 -- stale unused-variable comment removed.
+c      FLAG 6 -- version from INCLUDE "version.inc".
+c      FLAG 7 -- local sn_local replaces global sn_str.)
 c=======================================================================
 c-----------------------------------------------------------------------
 c     code organisation.
@@ -72,6 +35,7 @@ c-----------------------------------------------------------------------
 
       USE sglobal_mod
       USE netcdf
+      USE ieee_arithmetic, ONLY: ieee_value, ieee_quiet_nan
 
       IMPLICIT NONE
 
@@ -143,7 +107,6 @@ c-----------------------------------------------------------------------
       INTEGER :: qr_id            ! "q_rational"         — safety factor
       INTEGER :: omegas_id        ! "omegas"             — rotation freq
       INTEGER :: qc_id            ! "tau_k"              — Q-conversion
-      INTEGER :: Q_id             ! "Q"                  (BUG FLAG 3)
       INTEGER :: Q_e_id           ! "Q_e"                — norm Q_e
       INTEGER :: Q_i_id           ! "Q_i"                — norm Q_i
       INTEGER :: S_id             ! "S"                  — Lundquist
@@ -157,7 +120,6 @@ c-----------------------------------------------------------------------
       INTEGER :: d_b_id           ! "d_beta"
       INTEGER :: gs_id            ! "growth rate"        (complex)
       INTEGER :: ge_id            ! "est. growth rate"   (complex)
-      INTEGER :: c_b_id           ! c_beta — (BUG FLAG 4: unused)
 
 c     AMR variable IDs
       INTEGER :: var_q_id         ! "Q_AMR"    — scan Q-points
@@ -175,29 +137,28 @@ c-----------------------------------------------------------------------
       REAL(r8), ALLOCATABLE :: buffer_q(:,:,:)  ! (pts, surf, Re/Im)
       REAL(r8), ALLOCATABLE :: buffer_d(:,:,:)  ! (pts, surf, Re/Im)
       INTEGER,  ALLOCATABLE :: n_pts_arr(:)     ! points per surface
-      REAL(r8) :: fill_val = -9.99d33   ! (BUG FLAG 2: declared, unused)
+      REAL(r8) :: fill_val               ! NaN padding for ragged arrays
 
 c-----------------------------------------------------------------------
 c     declarations -- miscellaneous locals.
 c-----------------------------------------------------------------------
       CHARACTER(64) :: ncfile                      ! output file name
+      CHARACTER(2)  :: sn_local                     ! local n-string for filename
       LOGICAL, PARAMETER :: debug_flag = .FALSE.   ! verbose trace
-      CHARACTER(len=*), PARAMETER ::
-     $     version = 'v1.0.0-99-gc873bd6'         ! (BUG FLAG 6)
+      INCLUDE "version.inc"
 
 c-----------------------------------------------------------------------
 c     build the output filename from the toroidal mode number.
-c     Note: writes to the module-level global `sn` (BUG FLAG 7).
 c-----------------------------------------------------------------------
       IF (debug_flag) PRINT *, "Called slayer_netcdf_out"
 
       IF (nn < 10) THEN
-         WRITE(UNIT=sn, FMT='(I1)') nn
-         sn = ADJUSTL(sn)
+         WRITE(UNIT=sn_local, FMT='(I1)') nn
+         sn_local = ADJUSTL(sn_local)
       ELSE
-         WRITE(UNIT=sn, FMT='(I2)') nn
+         WRITE(UNIT=sn_local, FMT='(I2)') nn
       ENDIF
-      ncfile = "slayer_output_n"//TRIM(sn)//".nc"
+      ncfile = "slayer_output_n"//TRIM(sn_local)//".nc"
       IF (debug_flag) PRINT *, ncfile
 
 c-----------------------------------------------------------------------
@@ -213,7 +174,7 @@ c
 c     Each surface may have a different number of AMR scan points.
 c     We find the maximum, allocate rectangular buffers of that size,
 c     and copy in the per-surface data.  Unused trailing slots are
-c     filled with 0.0 (should be fill_val — see BUG FLAG 2).
+c     filled with fill_val (-9.99E33).
 c-----------------------------------------------------------------------
 
 c     step 1: find the maximum AMR grid size across all surfaces.
@@ -230,8 +191,9 @@ c     step 2: allocate rectangular buffers (pts × surfaces × Re/Im).
       ALLOCATE(buffer_d(max_pts_all, m_AMR, 2))
       ALLOCATE(n_pts_arr(m_AMR))
 
-      buffer_q  = 0.0d0          ! padding value (see BUG FLAG 2)
-      buffer_d  = 0.0d0
+      fill_val  = ieee_value(1.0d0, ieee_quiet_nan)
+      buffer_q  = fill_val        ! NaN padding for ragged arrays
+      buffer_d  = fill_val
       n_pts_arr = 0
 
 c     step 3: flatten the ragged data into the buffers.
@@ -265,50 +227,46 @@ c-----------------------------------------------------------------------
 
 c-----------------------------------------------------------------------
 c     define dimensions and per-surface NetCDF variables.
-c
-c     All definitions below require msing > 0 because the "r"
-c     dimension is sized by msing.  (See BUG FLAG 1 for remaining
-c     def_var calls that sit outside this guard.)
 c-----------------------------------------------------------------------
       IF (debug_flag) PRINT *, " - Defining dimensions in netcdf"
       WRITE(*,*) ">>> Writing results to NetCDF output file"
 
-      IF (msing > 0) THEN
-
-c        -- core dimensions --
-         CALL sl_check( nf90_def_dim(ncid, "r",     msing, qsing_dim) )
-         CALL sl_check( nf90_def_dim(ncid, "r_AMR", m_AMR, nAMR_dim)  )
-         CALL sl_check( nf90_def_dim(ncid, "i",     2,     i_dim)     )
-
-c        -- scalar per-surface variables --
-         CALL sl_check( nf90_def_var(ncid, "r",         nf90_int,
-     $        qsing_dim, qsing_id)  )
-         CALL sl_check( nf90_def_var(ncid, "q_rational", nf90_int,
-     $        qsing_dim, qr_id)     )
-         CALL sl_check( nf90_def_var(ncid, "omegas",    nf90_double,
-     $        qsing_dim, omegas_id) )
-         CALL sl_check( nf90_def_var(ncid, "tau_k",     nf90_double,
-     $        qsing_dim, qc_id)     )
-         CALL sl_check( nf90_def_var(ncid, "Q",         nf90_double,
-     $        qsing_dim, Q_id)      )  ! BUG FLAG 3: defined but not written
-         CALL sl_check( nf90_def_var(ncid, "Q_e",       nf90_double,
-     $        qsing_dim, Q_e_id)    )
-         CALL sl_check( nf90_def_var(ncid, "Q_i",       nf90_double,
-     $        qsing_dim, Q_i_id)    )
-         CALL sl_check( nf90_def_var(ncid, "S",         nf90_double,
-     $        qsing_dim, S_id)      )
-         CALL sl_check( nf90_def_var(ncid, "psi_n_rational",
-     $        nf90_double, qsing_dim, pr_id)     )
-         CALL sl_check( nf90_def_var(ncid, "P_perp",    nf90_double,
-     $        qsing_dim, p_perp_id) )
-         CALL sl_check( nf90_def_var(ncid, "P_tor",     nf90_double,
-     $        qsing_dim, p_tor_id)  )
-
+      IF (msing == 0) THEN
+         WRITE(*,*) "WARNING: msing == 0, skipping NetCDF output"
+         DEALLOCATE(buffer_q, buffer_d, n_pts_arr)
+         CALL sl_check( nf90_close(ncid) )
+         RETURN
       END IF
 
+c     -- core dimensions --
+      CALL sl_check( nf90_def_dim(ncid, "r",     msing, qsing_dim) )
+      CALL sl_check( nf90_def_dim(ncid, "r_AMR", m_AMR, nAMR_dim)  )
+      CALL sl_check( nf90_def_dim(ncid, "i",     2,     i_dim)     )
+
+c     -- scalar per-surface variables --
+      CALL sl_check( nf90_def_var(ncid, "r",         nf90_int,
+     $     qsing_dim, qsing_id)  )
+      CALL sl_check( nf90_def_var(ncid, "q_rational", nf90_int,
+     $     qsing_dim, qr_id)     )
+      CALL sl_check( nf90_def_var(ncid, "omegas",    nf90_double,
+     $     qsing_dim, omegas_id) )
+      CALL sl_check( nf90_def_var(ncid, "tau_k",     nf90_double,
+     $     qsing_dim, qc_id)     )
+      CALL sl_check( nf90_def_var(ncid, "Q_e",       nf90_double,
+     $     qsing_dim, Q_e_id)    )
+      CALL sl_check( nf90_def_var(ncid, "Q_i",       nf90_double,
+     $     qsing_dim, Q_i_id)    )
+      CALL sl_check( nf90_def_var(ncid, "S",         nf90_double,
+     $     qsing_dim, S_id)      )
+      CALL sl_check( nf90_def_var(ncid, "psi_n_rational",
+     $     nf90_double, qsing_dim, pr_id)     )
+      CALL sl_check( nf90_def_var(ncid, "P_perp",    nf90_double,
+     $     qsing_dim, p_perp_id) )
+      CALL sl_check( nf90_def_var(ncid, "P_tor",     nf90_double,
+     $     qsing_dim, p_tor_id)  )
+
 c-----------------------------------------------------------------------
-c     define additional variables that also depend on qsing_dim / i_dim
-c     (BUG FLAG 1 — these will fail if msing == 0).
+c     define additional variables (D, Delta', growth rates).
 c-----------------------------------------------------------------------
       CALL sl_check( nf90_def_var(ncid, "D", nf90_double,
      $     qsing_dim, Dnorm_id) )
@@ -331,7 +289,6 @@ c-----------------------------------------------------------------------
 
 c-----------------------------------------------------------------------
 c     define AMR scan dimensions and variables.
-c     (BUG FLAG 1 — also uses qsing_dim, nAMR_dim, i_dim.)
 c-----------------------------------------------------------------------
       CALL sl_check( nf90_def_dim(ncid, "amr_pts",
      $     max_pts_all, dim_pts_id) )
@@ -341,6 +298,12 @@ c-----------------------------------------------------------------------
      $     (/dim_pts_id, nAMR_dim, i_dim/), var_q_id) )
       CALL sl_check( nf90_def_var(ncid, "Deltas_AMR", NF90_DOUBLE,
      $     (/dim_pts_id, nAMR_dim, i_dim/), var_d_id) )
+
+c     set _FillValue attribute on AMR arrays for proper padding.
+      CALL sl_check( nf90_put_att(ncid, var_q_id,
+     $     "_FillValue", fill_val) )
+      CALL sl_check( nf90_put_att(ncid, var_d_id,
+     $     "_FillValue", fill_val) )
 
 c-----------------------------------------------------------------------
 c     end NetCDF define mode.

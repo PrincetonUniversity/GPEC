@@ -33,17 +33,8 @@ c     subprogram 1. read_stride_netcdf_diagonal.
 c     Read the STRIDE NetCDF file and extract the Deltaprime matrix,
 c     rational-surface geometry (q, psi_n, shear, dgeo, dr), and
 c     equilibrium scalars (R0, B_t0, psi0, m_psi, n, resm).
-c
-c     BUG FLAG 1 -- NetCDF variable IDs (dp_id, qr_id, ...) are
-c       declared but never initialised via nf90_inq_varid before
-c       being passed to nf90_inquire_attribute.  The attribute
-c       reads for ro, bt0, psio, mpsi, n use *_id variables that
-c       are still zero at that point; the calls appear to succeed
-c       only because the NetCDF library treats the id argument as
-c       a global-attribute flag when it is NF90_GLOBAL (=0).
-c       Suggested fix: either replace the id arguments with
-c       NF90_GLOBAL explicitly, or move the nf90_inq_varid calls
-c       above the nf90_inquire_attribute calls.
+c     All global-attribute reads use NF90_GLOBAL explicitly;
+c     variable IDs are obtained via nf90_inq_varid before use.
 c-----------------------------------------------------------------------
       SUBROUTINE read_stride_netcdf_diagonal(ncfile,msing,dp_mat,
      $   Re_dp_diagonal,Im_dp_diagonal,q_rational,psi_n_rational,dgeo,
@@ -197,15 +188,7 @@ c
 c     Geometry is cached via first/fsave/psave to avoid recomputing
 c     Jacobians when the same surface is queried repeatedly.
 c
-c     BUG FLAG 2 -- `first = .FALSE.` is commented out (line after
-c       `fsave = fs`).  The caching logic therefore never sets
-c       first=.FALSE., so geometry is recomputed on every call
-c       even when psi and fs are unchanged.  Uncomment the line
-c       or remove the caching branch entirely.
-c
-c     BUG FLAG 3 -- `z` (toroidal-Z coordinate) is computed inside
-c       the geometry loop but never used outside it.  Remove or
-c       document its intended purpose.
+
 c-----------------------------------------------------------------------
       FUNCTION issurfint(func,fs,inpsi,wegt,ave,
      $     fsave,psave,jacs,delpsi,inr,ina,first)
@@ -219,7 +202,7 @@ c --- arguments
       REAL(r8), INTENT(IN)   :: inpsi   ! normalised psi of surface
       REAL(r8), DIMENSION(0:fs), INTENT(IN) :: func  ! integrand array
 
-      LOGICAL, INTENT(INOUT) :: first   ! .TRUE. on first call (see BUG FLAG 2)
+      LOGICAL, INTENT(INOUT) :: first   ! .TRUE. on first call for caching
       INTEGER, INTENT(INOUT) :: fsave   ! cached fs
       REAL(r8), INTENT(INOUT) :: psave  ! cached psi
       REAL(r8), DIMENSION(0:), INTENT(INOUT) :: jacs   ! Jacobian cache
@@ -233,7 +216,6 @@ c --- locals
       INTEGER  :: ix, iy                            ! bicube grid hints
       REAL(r8) :: rfac, ineta, injac, inarea        ! geometry intermediates
       REAL(r8), DIMENSION(1,2)  :: w                ! gradient components
-      REAL(r8), DIMENSION(0:fs) :: z                ! Z coords (UNUSED -- BUG FLAG 3)
       REAL(r8), DIMENSION(0:fs) :: thetas           ! normalised theta grid
       REAL(r8), DIMENSION(4) :: rzphi_f, rzphi_fx, rzphi_fy
                                                      ! bicube_eval_external outputs
@@ -249,7 +231,7 @@ c-----------------------------------------------------------------------
       IF (first .OR. inpsi /= psave .OR. fs /= fsave) THEN
          psave = inpsi
          fsave = fs
-         !first = .FALSE.                ! BUG FLAG 2: should be uncommented
+         first = .FALSE.
          DO itheta = 0, fs
             thetas(itheta) = REAL(itheta, r8) / REAL(fs, r8)
          ENDDO
@@ -260,7 +242,6 @@ c-----------------------------------------------------------------------
             ineta = twopi * (thetas(itheta) + rzphi_f(2))
             ina(itheta) = rfac
             inr(itheta) = ro + rfac * COS(ineta)
-            z(itheta)   = zo + rfac * SIN(ineta)
             injac = rzphi_f(4)
             jacs(itheta) = injac
 c           gradient magnitude: |grad psi| from metric components
@@ -321,32 +302,7 @@ c     profiles from the input file, reads the equilibrium, and then
 c     loops over every singular surface to compute derived layer
 c     parameters via params() and populate slayer_inputs_type.
 c
-c     BUG FLAG 4 -- many local scalars declared here (lpsi, rpsi,
-c       hdist, sbnosurf, spl, sr, my_inpe, tau_i, b_l, v_a, tau_h,
-c       rho, tau_v, Qconv, lbeta, qintb, tau_ee_num..chi_par,
-c       psitor, rhotor, my_rhotor, my_psitor, rfac, jac, wit)
-c       are never used.  They appear to be left over from an earlier
-c       version.  Remove to reduce confusion.
-c
-c     BUG FLAG 5 -- `ising` is declared REAL(r8) but is used as a
-c       DO-loop index (integer context).  This works in Fortran but
-c       is non-standard in F90+ and may fail with strict compilers.
-c       Declare as INTEGER.
-c
-c     BUG FLAG 6 -- `zeff = 2.0` is hardcoded on every surface
-c       (the kin%f(9) alternative is commented out).  If the
-c       kinetic file provides Z_eff, this should use it.
-c
-c     BUG FLAG 7 -- `mrs` and `nrs` are assigned
-c       `real(mms,4)` / `real(nns,4)` (single precision) but are
-c       declared INTEGER, so the float is silently truncated.
-c       They are also never used afterwards.  Remove or fix.
-c
-c     BUG FLAG 8 -- the local arrays ne_arr, te_arr, ... mu_i_arr,
-c       nns_arr, dr_arr, omegas_e_arr, omegas_i_arr are populated
-c       inside the loop but never used outside it (the old
-c       slayer_netcdf_inputs call is commented out).  Remove or
-c       gate behind a diagnostic flag.
+
 c-----------------------------------------------------------------------
       SUBROUTINE build_inputs(infile,ncfile,sl_in)
 c-----------------------------------------------------------------------
@@ -359,51 +315,33 @@ c --- arguments
 c --- surface-loop control
       LOGICAL  :: firstsurf                 ! first-call flag for issurfint
       REAL(r8) :: respsi                    ! normalised psi at current surface
-      REAL(r8) :: ising                     ! loop index (BUG FLAG 5: should be INTEGER)
-c --- unused scalars (BUG FLAG 4 -- remove)
-      REAL(r8) :: lpsi, rpsi, hdist, sbnosurf
+      INTEGER  :: ising                     ! loop index over singular surfaces
 c --- kinetic profile parameters (for read_kin)
       INTEGER  :: zi, zimp, mi, mimp        ! charge/mass species ids
       REAL(r8) :: nfac, tfac, wefac, wpfac  ! profile scale factors
       REAL(r8) :: e                         ! elementary charge [C]
-c --- unused spline temporaries (BUG FLAG 4)
-      TYPE(spline_type) :: spl
-      TYPE(spline_type) :: sr
 c --- mode number workspace
       INTEGER  :: mms, nns                  ! poloidal / toroidal mode nums
-      INTEGER  :: mrs, nrs                  ! UNUSED, wrongly typed (BUG FLAG 7)
       INTEGER  :: mpsi                      ! poloidal-flux index from attr
 c --- local plasma quantities at current surface
       REAL(r8) :: n_e, t_e, n_i, t_i       ! densities [m^-3], temperatures [eV]
       REAL(r8) :: omega, omega_e, omega_i   ! toroidal & diamagnetic freqs [rad/s]
       REAL(r8) :: my_qval, my_sval          ! safety factor, magnetic shear
       REAL(r8) :: my_bt, my_rs, R_0         ! toroidal field, minor radius, major radius
-      REAL(r8) :: my_inpe                   ! UNUSED (BUG FLAG 4)
-      REAL(r8) :: zeff                      ! effective charge (hardcoded -- BUG FLAG 6)
+      REAL(r8) :: zeff                      ! effective charge from kin%f(9)
       REAL(r8) :: dgeo_val                  ! geometric delta (Shafranov)
       REAL(r8) :: mu_i                      ! ion mass ratio to proton
       REAL(r8) :: dr_val                    ! radial width dr at surface
       REAL(r8) :: l_n, l_t                  ! density / temperature gradient lengths
       REAL(r8) :: gammafac                  ! growth-rate conversion factor
       REAL(r8), DIMENSION(3) :: chi_s       ! chi_perp, chi_tor, kappa
-c --- unused derived quantities (BUG FLAG 4 -- left over from params duplication)
-      REAL(r8) :: tau_i, b_l, v_a, tau_h, rho, tau_v
-      REAL(r8) :: Qconv, lbeta, qintb
-      REAL(r8) :: tau_ee_num, tau_ee_denom, tau_ee
-      REAL(r8) :: sigma_par_1, sigma_par_2, sigma_par
-      REAL(r8) :: tau_perp, Wd, vte
-      REAL(r8) :: chi_par_smfp, chi_par_lmfp, chi_par
-      INTEGER  :: wit
-c --- unused flux-coordinate arrays (BUG FLAG 4)
-      REAL(r8), DIMENSION(0:128) :: psitor, rhotor
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: my_rhotor, my_psitor
 c --- STRIDE data (from read_stride_netcdf_diagonal)
       REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: dp_mat
       REAL(r8), DIMENSION(:), ALLOCATABLE :: Re_dp_diagonal,
      $           Im_dp_diagonal, q_rational, psi_n_rational,
      $           shear, dgeo, r_o, my_bt0, my_psio, mpsi_arr,
      $           dr_vals, dr_arr
-c --- local per-surface kinetic arrays (UNUSED outside loop -- BUG FLAG 8)
+c --- local per-surface kinetic arrays (for future NetCDF diagnostic output)
       REAL(r8), DIMENSION(:), ALLOCATABLE :: ne_arr, te_arr,
      $    ni_arr, ti_arr, zeff_arr, bt_arr, rs_arr, R0_arr,
      $    mu_i_arr, omegas_e_arr, omegas_i_arr
@@ -414,7 +352,7 @@ c --- surface-integral workspace
       INTEGER  :: fsave                     ! cached fs for issurfint
       REAL(r8) :: psave                     ! cached psi for issurfint
       REAL(r8), DIMENSION(:), ALLOCATABLE :: jacs, delpsi, rsurf, asurf
-      REAL(r8) :: rfac, jac, a_surf         ! rfac/jac UNUSED (BUG FLAG 4)
+      REAL(r8) :: a_surf                     ! flux-surface-averaged minor radius
 c-----------------------------------------------------------------------
 c     read STRIDE NetCDF: Deltaprime matrix, geometry, equilibrium scalars.
 c-----------------------------------------------------------------------
@@ -440,7 +378,7 @@ c --- allocate slayer_inputs_type arrays (one entry per surface)
      $  sl_in%c_beta_arr(msing),       sl_in%lu_arr(msing),
      $  sl_in%Qconv_arr(msing))
 
-c --- allocate local kinetic arrays (diagnostic, BUG FLAG 8)
+c --- allocate local kinetic arrays (for future NetCDF diagnostic output)
       ALLOCATE(ne_arr(msing), te_arr(msing), ni_arr(msing),
      $    ti_arr(msing), zeff_arr(msing), bt_arr(msing),
      $    rs_arr(msing), R0_arr(msing), mu_i_arr(msing),
@@ -511,7 +449,7 @@ c        extract local plasma quantities from spline
          n_i = kin%f(1)
          t_i = kin%f(3) / e
 
-         zeff = 2.0                   ! hardcoded (BUG FLAG 6)
+         zeff = kin%f(9)               ! Z_eff from kinetic spline
 
          omega    = kin%f(5)
          my_qval  = q_rational(ising)
@@ -528,7 +466,7 @@ c        transport coefficients from caller-provided arrays
          chi_s(2) = sl_in%chi_t_arr(ising) ! chi_tor
          chi_s(3) = sl_in%kappa_arr(ising) ! kappa (thermal cond.)
 
-c        store local kinetic arrays (BUG FLAG 8: unused)
+c        store local kinetic arrays (for future NetCDF diagnostic output)
          ne_arr(ising)   = n_e
          te_arr(ising)   = t_e
          ni_arr(ising)   = n_i
@@ -541,8 +479,6 @@ c        store local kinetic arrays (BUG FLAG 8: unused)
 
          mms = resm(ising)
          nns = nn(1)
-         mrs = real(mms, 4)           ! BUG FLAG 7: float -> integer truncation
-         nrs = real(nns, 4)
          nns_arr(ising) = nn(1)
          nr = nn(1)                   ! module-level toroidal mode number
 

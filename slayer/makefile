@@ -57,7 +57,23 @@ delta.o : sglobal.o
 layerinputs.o : sglobal.o params.o slayer_netcdf.o
 gslayer.o : sglobal.o params.o delta.o layerinputs.o slayer_netcdf.o
 slayer.o : sglobal.o params.o delta.o ../equil/spline_mod.mod
-slayer_netcdf.o : sglobal.o
+slayer_netcdf.o : sglobal.o version.inc
+
+# version.inc generation (from git describe)
+ifeq ($(wildcard version.inc),)
+version.inc: force
+	@echo ">>> Creating version file"
+	@echo "      CHARACTER(len=*), PARAMETER :: version ='"`git describe --tags`"'" | tee version.inc
+else ifeq ($(shell grep -F "'"`git describe --tags`"'" version.inc),)
+version.inc: force
+	@echo ">>> Updating version file"
+	@echo "      CHARACTER(len=*), PARAMETER :: version ='"`git describe --tags`"'" | tee version.inc
+else
+version.inc:
+	@echo ">>> Git version unchanged!"
+endif
+
+force:
 
 clean:
-	rm -f *.o *.mod *.out *.bin slayer *.original
+	rm -f *.o *.mod *.out *.bin slayer *.original version.inc

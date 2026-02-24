@@ -10,23 +10,13 @@ c       - AMR scanner storage (hash-based v1, cell-based v2)
 c       - derived types: slayer_inputs_type, slayer_outputs_type,
 c         deltas_outputs_type, result_type, amr_cell_type
 c
-c     BUG FLAG 1 -- `pr` and `pe` (magnetic Prandtl number and its
+c     TODO: `pr` and `pe` (magnetic Prandtl number and its
 c       electron analogue) are declared but never explicitly set
 c       within this module or in params().  They must be initialised
 c       before params() is called (tau_v = tau_r / pr).  Consider
 c       adding a dedicated init routine or making them INTENT(IN)
 c       arguments of params().
 c
-c     BUG FLAG 2 -- `iota_e`, `layfac`, `deltaprim`, `d_crit`,
-c       `gamma_fac`, `g_r`, `g_i`, `delta_det` are declared but
-c       do not appear to be used in the current SLAYER code path.
-c       Verify whether they are needed; if not, remove.
-c
-c     BUG FLAG 3 -- `sn` and `sm` (CHARACTER(2) string copies of
-c       the toroidal/poloidal mode numbers for file names) shadow
-c       the *meaning* of the REAL(r8) variables `nr` and `mr`,
-c       which can cause confusion.  Consider renaming the strings
-c       to `sn_str` / `sm_str`.
 c=======================================================================
       MODULE sglobal_mod
 
@@ -53,8 +43,8 @@ c-----------------------------------------------------------------------
       INTEGER  :: nn               ! toroidal mode number (integer)
       REAL(r8) :: mr               ! poloidal mode number (real copy)
       REAL(r8) :: nr               ! toroidal mode number (real copy)
-      CHARACTER(2) :: sn           ! toroidal n as string (BUG FLAG 3)
-      CHARACTER(2) :: sm           ! poloidal m as string (BUG FLAG 3)
+      CHARACTER(2) :: sn_str       ! toroidal n as string
+      CHARACTER(2) :: sm_str       ! poloidal m as string
 
 c-----------------------------------------------------------------------
 c     Layer-physics scalars (set by params(), read by solvers).
@@ -75,8 +65,8 @@ c --- timescales
       REAL(r8) :: tauk             ! Q-conversion factor (= Qconv)
 c --- Lundquist and Prandtl numbers
       REAL(r8) :: lu               ! Lundquist number S = tau_r / tau_h
-      REAL(r8) :: pr               ! magnetic Prandtl number (BUG FLAG 1)
-      REAL(r8) :: pe               ! electron Prandtl number (BUG FLAG 1)
+      REAL(r8) :: pr               ! magnetic Prandtl number (TODO: see header)
+      REAL(r8) :: pe               ! electron Prandtl number (TODO: see header)
       REAL(r8) :: P_perp           ! perpendicular magnetic Prandtl number
       REAL(r8) :: P_tor            ! toroidal magnetic Prandtl number
 c --- normalised layer parameters
@@ -92,20 +82,15 @@ c --- diamagnetic and rotation frequencies
       REAL(r8) :: Q_e              ! normalised electron diamagnetic Q
       REAL(r8) :: Q_i              ! normalised ion diamagnetic Q
 c --- stability / Delta_crit
-      REAL(r8) :: deltaprim        ! Deltaprime value (BUG FLAG 2: may be unused)
       REAL(r8) :: dc_tmp           ! computed Delta_crit
-      REAL(r8) :: d_crit           ! stored Delta_crit (BUG FLAG 2)
       REAL(r8) :: delta_eff        ! effective Deltaprime shift
       CHARACTER(20) :: dc_type     ! dc formula selector ('lar','rfitzp','toroidal')
 c --- solver workspace / results
-      REAL(r8) :: g_r              ! real part of growth rate (BUG FLAG 2)
-      REAL(r8) :: g_i              ! imag part of growth rate (BUG FLAG 2)
       COMPLEX(r8) :: g_tmp         ! temporary complex growth rate
-      COMPLEX(r8) :: delta_det     ! dispersion determinant (BUG FLAG 2)
-      REAL(r8) :: gamma_fac        ! growth-rate conversion factor (BUG FLAG 2)
+      REAL(r8) :: gamma_fac        ! growth-rate conversion factor
 c --- miscellaneous
-      REAL(r8) :: iota_e           ! (BUG FLAG 2: may be unused)
-      REAL(r8) :: layfac           ! (BUG FLAG 2: may be unused)
+      REAL(r8) :: iota_e           ! electron iota
+      REAL(r8) :: layfac           ! layer singularity guard factor
 
 c-----------------------------------------------------------------------
 c     Physical and mathematical constants.

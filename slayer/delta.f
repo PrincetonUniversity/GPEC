@@ -38,10 +38,8 @@ c     (non-stiff, mf=10).  Optionally applies the layfac singularity
 c     guard when Q is near Q_e.  Returns Delta = pi / W'(x_min).
 c
 c     If riccati_out = .TRUE., writes the W(x) profile to
-c     slayer_riccati_profile_n<sn>.{bin,out}.
+c     slayer_riccati_profile_n<sn_str>.{bin,out}.
 c
-c     BUG FLAG 1: xintv and xfac are declared but never used.
-c       Remove them.
 c-----------------------------------------------------------------------
       FUNCTION riccati(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe,
      $     iinQ,inx,iny)
@@ -113,11 +111,11 @@ c --- set maximum internal steps
       rwork=0
 
 c --- boundary condition: asymptotic W at large x
-c     BUG FLAG 2: inline comment said "To be updated" -- verify formula.
       x=20.0
       xmin=1e-3
       IF(present(inx)) x=inx
       xout=xmin
+c     DECISION NEEDED (Flag 2): verify this large-|x| asymptotic BC.
       y(1)=-c_beta/sqrt((1+tau))/ds*x**2.0
       IF(present(iny)) y(1)=iny
 
@@ -128,11 +126,11 @@ c        profile output: step-by-step integration with file writes
          istep = 1
          itask = 2
          OPEN(UNIT=bin_unit,FILE='slayer_riccati_profile_n'//
-     $      TRIM(sn)//'.bin',STATUS='UNKNOWN',
+     $      TRIM(sn_str)//'.bin',STATUS='UNKNOWN',
      $      POSITION='REWIND',FORM='UNFORMATTED')
 
          OPEN(UNIT=out2_unit,FILE='slayer_riccati_profile_n'//
-     $      TRIM(sn)//'.out',STATUS='UNKNOWN')
+     $      TRIM(sn_str)//'.out',STATUS='UNKNOWN')
          WRITE(out2_unit,'(1x,3(a17))') "x","RE(y)","IM(y)"
          DO WHILE (x>xout)
             istep=istep+1
@@ -165,12 +163,12 @@ c     Uses a stiff solver (lsode mf=21) with user-supplied Jacobian
 c     (jac_del_s).  Integrates W(q) from large q inward to q_min.
 c     Returns Delta = -(pi / sqrt(1+1/tau)) * W'(q_min).
 c
-c     BUG FLAG 3: arguments inQ, inc_beta, ind_beta, intau are never
-c       used to set their module-level counterparts (Q, c_beta, d_beta,
-c       tau).  Either add assignments (e.g. tau=intau) or remove the
-c       unused arguments if the caller sets them beforehand.
-c     BUG FLAG 4: variables y, dy, xfac, xintv, ml, mu, nrpd are
-c       declared but never used -- remove them.
+c     Module-level variables tau, D_norm, and P_tor must be valid
+c     before entry; callers are responsible for setting them.
+c     Q_e, Q_i, and P_perp are set from arguments inside this
+c     function.  Q, c_beta, and d_beta are not referenced here.
+c     Note: slayer.f passes Q_e_arr (not Q_arr) as the first
+c     argument -- this is intentional.
 c-----------------------------------------------------------------------
       FUNCTION riccati_del_s(inQ_e,inQ_i,inpr,inx,iny)
 
@@ -233,8 +231,6 @@ c --- copy input arguments to module-level globals for w_der_del_s
       Q_i = inQ_i
       P_perp = inpr
 
-c --- BUG FLAG 6: P_hat was computed BEFORE P_perp=inpr, so it used
-c       the stale module-level P_perp.  Now moved after assignment.
       P_hat = P_perp / D_norm**6.0
 
 c --- asymptotic boundary condition at large q
@@ -248,11 +244,11 @@ c        profile output: step-by-step integration with file writes
          istep = 1
          itask = 2
          OPEN(UNIT=bin_unit,FILE='slayer_riccati_profile_n'//
-     $      TRIM(sn)//'.bin',STATUS='UNKNOWN',
+     $      TRIM(sn_str)//'.bin',STATUS='UNKNOWN',
      $      POSITION='REWIND',FORM='UNFORMATTED')
 
          OPEN(UNIT=out2_unit,FILE='slayer_riccati_profile_n'//
-     $      TRIM(sn)//'.out',STATUS='UNKNOWN')
+     $      TRIM(sn_str)//'.out',STATUS='UNKNOWN')
          WRITE(out2_unit,'(1x,3(a17))'),"x","RE(y)","IM(y)"
          DO WHILE (my_q>xout)
             istep=istep+1
@@ -304,10 +300,7 @@ c-----------------------------------------------------------------------
 c --- normalise physical quantities
       Q_hat = (Q_e*(1+tau)/tau) / D_norm**4.0
       P_perp_hat = P_perp / D_norm**6.0
-c     BUG FLAG 7: P_tor_hat is assigned from P_perp, not P_tor.
-c       Benchmark values differ (P_perp_hat=0.377, P_tor_hat=1.15),
-c       suggesting this should be: P_tor_hat = P_tor / D_norm**6.0
-      P_tor_hat = P_perp / D_norm**6.0
+      P_tor_hat = P_tor / D_norm**6.0
 c --- build the E and F dispersion coefficients
       E = (-(Q_hat**2)/(1+1/tau)) - ifac*Q_hat*(P_perp_hat+
      $  P_tor_hat)*(my_q**2) + P_perp_hat*P_tor_hat*(my_q**4)
@@ -326,21 +319,9 @@ c     (jac_f).  Boundary conditions are set analytically from the
 c     large-p asymptotic behaviour; the branch depends on whether
 c     D_norm^2 exceeds iota_e * P_perp / P_tor^(2/3).
 c
-c     BUG FLAG 8: argument tmp_g (COMPLEX) is never used in the
-c       function body.  All references use the module-level variable
-c       g_tmp instead.  The caller (slayer.f:785) passes g_tmp as
-c       tmp_g, so in practice the values match -- but tmp_g is
-c       redundant.  Likely needs: g_tmp = tmp_g  at the top, or
-c       remove the argument and rely on the module variable.
-c     BUG FLAG 9: variables xintv, xfac, y, dy, ck_1, ck_2, ml, mu,
-c       nrpd, alpha are declared but never used -- remove them.
-c       Optional argument inx is also never referenced in the body.
 c-----------------------------------------------------------------------
-      FUNCTION riccati_f(tmp_g,inx)
+      FUNCTION riccati_f()
 
-c --- input arguments
-      COMPLEX(r8),INTENT(IN) :: tmp_g   ! growth rate (UNUSED -- BUG FLAG 8)
-      REAL(r8),INTENT(IN),OPTIONAL :: inx ! (UNUSED -- BUG FLAG 9)
 c --- function result
       COMPLEX(r8) :: riccati_f
 
@@ -426,11 +407,11 @@ c        profile output: step-by-step integration with file writes
          istep = 1
          itask = 2
          OPEN(UNIT=bin_unit,FILE='slayer_riccati_profile_n'//
-     $      TRIM(sn)//'.bin',STATUS='UNKNOWN',
+     $      TRIM(sn_str)//'.bin',STATUS='UNKNOWN',
      $      POSITION='REWIND',FORM='UNFORMATTED')
 
          OPEN(UNIT=out2_unit,FILE='slayer_riccati_profile_n'//
-     $      TRIM(sn)//'.out',STATUS='UNKNOWN')
+     $      TRIM(sn_str)//'.out',STATUS='UNKNOWN')
          WRITE(out2_unit,'(1x,3(a17))'),"x","RE(y)","IM(y)"
          DO WHILE (my_p>xout)
             istep=istep+1

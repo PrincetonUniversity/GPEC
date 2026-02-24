@@ -36,8 +36,8 @@ c-----------------------------------------------------------------------
      $   MAX_CELLS,                                    ! v2 limit
      $   slayer_inputs_type,slayer_outputs_type,
      $   deltas_outputs_type,
-     $   tau_r,d_crit,delta_det,dc_tmp,dc_type,
-     $   sn,sm
+     $   tau_r,dc_tmp,dc_type,
+     $   sn_str,sm_str
       USE delta_mod, ONLY: riccati,riccati_f,riccati_out,
      $   parflow_flag,PeOhmOnly_flag
       USE params_mod
@@ -45,6 +45,10 @@ c-----------------------------------------------------------------------
       USE slayer_netcdf_mod
 
       IMPLICIT NONE
+
+c --- reconnection regulariser used in psi0 / JxB expressions;
+c     expose via namelist to make user-configurable.
+      REAL(r8), PARAMETER :: DELTA_N_PERT = 1.0e-2_r8
 
       CONTAINS
 
@@ -60,11 +64,10 @@ c       2. Compute baseline Delta via riccati().
 c       3. Scan over a range of Q (rotation) to build a torque
 c          balance curve, then identify the critical threshold br_th.
 c
-c     BUG FLAG 1: `index` variable shadows the Fortran intrinsic
-c       INDEX(). Rename to e.g. `max_idx`.
-c     BUG FLAG 2: `iinQs` is declared but never used. Remove it.
-c     BUG FLAG 3: `zeff`, `qval`, `v_a`, `inlu` are declared /
-c       passed in but never used. Remove or document intent.
+c     TODO: `zeff` and `qval` are INTENT(IN)
+c       arguments accepted in the interface but never referenced in
+c       the subroutine body.  Remove from signature (breaking API
+c       change) or add a comment documenting their reserved intent.
 c-----------------------------------------------------------------------
       SUBROUTINE gpec_slayer(n_e,t_e,n_i,t_i,zeff,omega,omega_e,
      $   omega_i,qval,sval,bt,rs,R0,mu_i,inpr,mms,nns,ascii_flag,
@@ -75,11 +78,11 @@ c --- input arguments: dimensional plasma profiles for this surface
       REAL(r8),INTENT(IN) :: t_e       ! electron temperature [eV]
       REAL(r8),INTENT(IN) :: n_i       ! ion density [m^-3]
       REAL(r8),INTENT(IN) :: t_i       ! ion temperature [eV]
-      REAL(r8),INTENT(IN) :: zeff      ! (UNUSED -- BUG FLAG 3)
+      REAL(r8),INTENT(IN) :: zeff      ! (TODO: unused; see header)
       REAL(r8),INTENT(IN) :: omega     ! plasma rotation frequency
       REAL(r8),INTENT(IN) :: omega_e   ! electron diamagnetic freq
       REAL(r8),INTENT(IN) :: omega_i   ! ion diamagnetic freq
-      REAL(r8),INTENT(IN) :: qval      ! (UNUSED -- BUG FLAG 3)
+      REAL(r8),INTENT(IN) :: qval      ! (TODO: unused; see header)
       REAL(r8),INTENT(IN) :: sval      ! magnetic shear
       REAL(r8),INTENT(IN) :: bt        ! toroidal field [T]
       REAL(r8),INTENT(IN) :: rs        ! minor radius of surface [m]
@@ -197,10 +200,10 @@ c --- copy normalised values into local variables for riccati() call
       Q0=Q
 c-----------------------------------------------------------------------
 c     compute baseline Delta, reconnected flux, and JxB torque.
-c     BUG FLAG 4: delta_n_p = 1e-2 is hardcoded; should this come
-c       from the namelist or caller?
+c     delta_n_p uses the module-level DELTA_N_PERT constant; promote
+c     that constant to a namelist input to make it user-configurable.
 c-----------------------------------------------------------------------
-      delta_n_p=1e-2
+      delta_n_p = DELTA_N_PERT
       delta=riccati(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe)
       psi0=1.0/ABS(delta+delta_n_p)     ! reconnected flux (a.u.)
       jxb=-AIMAG(1.0/(delta+delta_n_p)) ! JxB torque (a.u.)
@@ -209,9 +212,11 @@ c     torque-balance scan: sweep Q over [inQ_min, inQ_max] and
 c     compute delta(Q), JxB(Q), and the balance parameter.
 c     The threshold br_th is sqrt(max(bal)/lu * s^2/2).
 c
-c     BUG FLAG 5: scan bounds from Q0/Q_e physics (lines above) are
-c       immediately overridden by hardcoded inQ_max=10, inQ_min=-10.
-c       Either remove the dead code above or use the physics bounds.
+c     TODO: physics bounds from Q0/Q_e (computed
+c       in the IF/ELSE above) are immediately overridden by the two
+c       fixed assignments below.  To use physics bounds, remove the
+c       inQ_max=10 / inQ_min=-10 lines.  To keep fixed bounds, remove
+c       the dead IF/ELSE block above.
 c-----------------------------------------------------------------------
       IF (Q0>inQ_e) THEN
          inQ_max=2.0*Q0
@@ -225,7 +230,7 @@ c-----------------------------------------------------------------------
          ENDIF
       ENDIF
 
-      inQ_max=10.0              ! hardcoded override (see BUG FLAG 5)
+      inQ_max=10.0              ! TODO: fixed bound; see header
       inQ_min=-10.0
       inum=200
       ALLOCATE(inQs(0:inum),deltal(0:inum),jxbl(0:inum),bal(0:inum))
@@ -347,11 +352,9 @@ c-----------------------------------------------------------------------
 c     subprogram 7. calc_determinant.
 c     Compute the determinant of a 2x2 or 3x3 complex matrix.
 c     Returns (0,0) and sets status=-1 for unsupported sizes.
-c
-c     BUG FLAG 6: variable `status` is computed but never returned
-c       to the caller. Either add an INTENT(OUT) argument or remove.
+c     status=0 on success, -1 when nk is neither 2 nor 3.
 c-----------------------------------------------------------------------
-      SUBROUTINE calc_determinant(matk, nk, detk)
+      SUBROUTINE calc_determinant(matk, nk, detk, status)
 
       IMPLICIT NONE
 
@@ -359,8 +362,7 @@ c --- arguments
       INTEGER, INTENT(IN) :: nk                            ! matrix rank (2 or 3)
       COMPLEX(r8), DIMENSION(nk,nk), INTENT(IN) :: matk    ! input matrix
       COMPLEX(r8), INTENT(OUT) :: detk                     ! determinant result
-c --- local
-      INTEGER :: status                     ! error status (unused externally)
+      INTEGER, INTENT(OUT) :: status        ! 0=success, -1=unsupported rank
                         
       status = 0  ! Initialize status as success
             
@@ -389,20 +391,18 @@ c     subprogram 8. dispersion_det.
 c     Compute the coupled dispersion determinant for n_k surfaces.
 c
 c     For n_k = 1 (single surface):
-c       Evaluate riccati_f(g_tmp), de-normalise by lu^(1/3), and
+c       Evaluate riccati_f() (uses module g_tmp), de-normalise by lu^(1/3), and
 c       return Deltaprime - delta(Q).
 c
 c     For n_k = 2 or 3 (coupled surfaces):
 c       Build the diagonal delta(Q) matrix, subtract from dp_matrix,
 c       and return det(dp_matrix - delta_Q).
 c
-c     BUG FLAG 7: bare `stop` on n_k > 3 -- use STOP with message
-c       consistently, or return a NaN sentinel.
 c-----------------------------------------------------------------------
-      FUNCTION dispersion_det(g_tmp,n_k,sl_in,msing_max)
+      FUNCTION dispersion_det(g_in,n_k,sl_in,msing_max)
 
 c --- arguments
-      COMPLEX(r8), INTENT(IN) :: g_tmp      ! complex growth rate
+      COMPLEX(r8), INTENT(IN) :: g_in       ! complex growth rate
       INTEGER, INTENT(IN) :: n_k            ! number of surfaces
       INTEGER, INTENT(IN) :: msing_max      ! max surfaces to include
       TYPE(slayer_inputs_type), INTENT(IN) :: sl_in
@@ -413,6 +413,7 @@ c --- function result and locals
       COMPLEX(r8), ALLOCATABLE :: delta_Q(:,:)      ! diagonal delta matrix
       COMPLEX(r8), ALLOCATABLE :: result_matrix(:,:) ! dp - delta_Q
       INTEGER :: k                          ! surface loop index
+      INTEGER :: det_status                 ! calc_determinant error status
 
 c --- single-surface branch
       IF (msing_max < 2) THEN
@@ -427,7 +428,8 @@ c        set module-level variables for riccati_f
          tauk = sl_in%Qconv_arr(1)
          iota_e = Q_e / (Q_e - Q_i)
 
-         tmp_delta=riccati_f(g_tmp)
+         g_tmp = g_in
+         tmp_delta=riccati_f()
 c        de-normalise delta by lu^(1/3)
          det_val=tmp_delta*(sl_in%lu_arr(1)**(1.0/3.0))
 
@@ -451,14 +453,20 @@ c           set module-level variables for this surface
             iota_e = Q_e / (Q_e - Q_i)
 
 c           evaluate riccati_f at rescaled growth rate, de-normalise
-            delta_Q(k,k)=riccati_f(((g_tmp*sl_in%Qconv_arr(1))
-     $           /tauk))
+            g_tmp = (g_in*sl_in%Qconv_arr(1))/tauk ! sets module-level g_tmp to SCALED value
+            delta_Q(k,k)=riccati_f()
             delta_Q(k,k)=delta_Q(k,k)*sl_in%lu_arr(k)**(1.0/3.0)
          END DO
 
 c        compute det(dp_matrix - delta_Q)
          result_matrix = sl_in%dp_matrix - delta_Q
-         CALL calc_determinant(result_matrix, msing_max, det_val)
+         CALL calc_determinant(result_matrix, msing_max, det_val,
+     $        det_status)
+         IF (det_status /= 0) THEN
+            WRITE(*,*) 'ERROR: calc_determinant unsupported rank=',
+     $           msing_max
+            STOP 'dispersion_det: calc_determinant failed'
+         END IF
          dispersion_det = det_val
       ELSE
          WRITE(*,*) "Error: no support for msing > 3"
@@ -467,7 +475,8 @@ c        compute det(dp_matrix - delta_Q)
       END FUNCTION dispersion_det
 
 c-----------------------------------------------------------------------
-c     dispersion_AMR: hash-based adaptive mesh refinement scanner.\nc     Scans a 2D complex-Q grid for zeros of the dispersion relation
+c     dispersion_AMR: hash-based adaptive mesh refinement scanner.\nc     
+c     Scans a 2D complex-Q grid for zeros of the dispersion relation
 c     D(Q) using adaptive refinement.  A coarse grid is evaluated
 c     first (two-pass: nodes then cells), then cells that span a zero
 c     crossing in Re(D) or Im(D) are subdivided.
@@ -475,9 +484,6 @@ c
 c     Point deduplication uses a spatial hash table (HASH_SZ buckets,
 c     chained) so that midpoints shared between neighbouring cells
 c     are evaluated only once.
-c
-c     BUG FLAG 8 \u2013 h_idx, pt_idx are declared but never referenced.
-c                   Remove them.
 c-----------------------------------------------------------------------
       SUBROUTINE dispersion_AMR(n_k,sl_in,msing_max,
      $                          scan_width,Q_num,AMR_passes,
@@ -496,7 +502,7 @@ c --- cell storage
       INTEGER, ALLOCATABLE :: new_cells(:,:)   ! scratch for next level
 c --- loop / index variables
       INTEGER :: n_cells, n_new_cells, i, j
-      INTEGER :: h_idx, pt_idx, c_idx, pass    ! h_idx, pt_idx UNUSED (BUG FLAG 8)
+      INTEGER :: c_idx, pass
       INTEGER :: idx_TL, idx_TR, idx_BL, idx_BR   ! corner indices
       INTEGER :: idx_TM, idx_BM, idx_LM, idx_RM, idx_MM  ! midpoint indices
 c --- scan workspace
@@ -721,7 +727,7 @@ c --- 3. point not found: evaluate dispersion relation and store
            delta_val = dispersion_det(g_tmp, n_k, sl_in, msing_max)
       ELSE
            g_tmp = q_in
-           delta_val = riccati_f(g_tmp)
+           delta_val = riccati_f()
            delta_val = delta_val - delta_eff
       END IF
       D_store(idx_out) = delta_val
@@ -787,7 +793,7 @@ c --- 3. not found: evaluate with ifac rotation and store
      $                               msing_max)
       ELSE
           g_tmp = q_in * ifac
-          delta_val = riccati_f(g_tmp)
+          delta_val = riccati_f()
           delta_val = delta_val - delta_eff
       END IF
       D_store(idx_out) = delta_val
@@ -812,7 +818,6 @@ c     eliminates redundant evaluations for shared corners (initial grid)
 c     and shared edge-midpoints (refinement).  At completion, Q_store
 c     and D_store are trimmed to n_pts unique output points.
 c
-c     BUG FLAG 9 – several bare stop statements should carry messages.
 c-----------------------------------------------------------------------
       SUBROUTINE dispersion_AMR_v2(n_k, sl_in, msing_max,
      $                             scan_width, Q_num, AMR_passes,
@@ -991,7 +996,7 @@ c --- arguments
           delta_out = dispersion_det(g_tmp, n_k, sl_in, msing_max)
       ELSE
           g_tmp = q_in*ifac
-          delta_out = riccati_f(g_tmp)
+          delta_out = riccati_f()
           delta_out = delta_out - delta_eff
       END IF
 
@@ -1161,8 +1166,7 @@ c     Uses a brute-force O(n^2) duplicate check which is acceptable
 c     for moderate cell counts; could be replaced by a hash set for
 c     very large scans.
 c
-c     BUG FLAG 10 – n_total_corners could exceed MAX_PTS for large
-c     grids.  No guard is present.
+c     n_total_corners = num_cells*4; guarded against MAX_PTS overflow.
 c-----------------------------------------------------------------------
       SUBROUTINE flatten_cells_to_points_sub(num_cells)
 
@@ -1180,6 +1184,12 @@ c --- locals
 
       tol = 1.0d-10
       n_total_corners = num_cells * 4
+
+      IF (n_total_corners > MAX_PTS) THEN
+          WRITE(*,*) 'ERROR: n_total_corners=', n_total_corners,
+     $               ' exceeds MAX_PTS=', MAX_PTS
+          STOP 'flatten_cells_to_points_sub: MAX_PTS exceeded'
+      END IF
 
       IF (num_cells <= 0) THEN
           WRITE(*,*) 'ERROR: No cells to flatten'
