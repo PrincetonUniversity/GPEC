@@ -13,7 +13,7 @@ program pentrc
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
-    ! EMAIL: nlogan@pppl.gov
+    ! EMAIL: nikolas.logan@columbia.edu
     !-----------------------------------------------------------------------
     use pentrc_interface
     use utilities, only: append_1d, append_2d, progressbar

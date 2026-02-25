@@ -145,7 +145,7 @@ c-----------------------------------------------------------------------
          CALL SYSTEM_CLOCK(COUNT=fTime)
          IF (verbose_performance_output) THEN
             print *,"*** asymp time #",ising,"=",
-     $           REAL(fTime-sTime,8)/REAL(cr,8)
+     $           REAL(fTime-sTime,r8)/REAL(cr,r8)
          ENDIF
       ENDDO
 !$OMP END DO
@@ -168,7 +168,7 @@ c     timer.
 c-----------------------------------------------------------------------
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
-         print *,"*** asymp time=",REAL(fTime-sTime,8)/REAL(cr,8)
+         print *,"*** asymp time=",REAL(fTime-sTime,r8)/REAL(cr,r8)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1217,8 +1217,8 @@ c-----------------------------------------------------------------------
       END SUBROUTINE sing_derL
 c-----------------------------------------------------------------------
 c     subprogram 13. sing_min.
-c     evaluates the differential equations of DCON: U'=LU
-c     using FM of Sol'ns. Gives output L, (not L*x as in x'=Lx).
+c     checks for lower truncation point in equilibrium based on qlow.
+c     if found, changes psilow to match qlow.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.

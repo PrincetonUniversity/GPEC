@@ -109,7 +109,7 @@ Fixes
 - DCON - Properly spaces the vacuum matrices used when finding the peak dW with psiedge < psilim
 
 Changes
-------
+--------
 - DCON - dW_edge in the netcdf output now includes the imaginary component of the least stable eigenvalue
 
 
@@ -121,7 +121,7 @@ Fixes
 - PENTRC - Respects the namelist verbose setting throughout the program
 
 Changes
-------
+--------
 - COIL - Updates ASDEX Upgrade coil geometry to have more accurate, rounded cornering
 
 
@@ -222,7 +222,7 @@ Changes
 --------
 - INSTALL - Updates instructions for new AUG cluster
 - GPEC - Moves overlap outputs to control netcdf, consistent with correct dimensions (mode, not psi_rational)
-- GPEC - Renames netcdf dimensions *_rat to *_rational for clarity
+- GPEC - Renames netcdf dimensions \*_rat to \*_rational for clarity
 
 Fixes
 ------

@@ -83,6 +83,6 @@
    verbose=t                ! Print run log to terminal
 /
 &GPEC_DIAGNOSE
-   timeit=f                 ! Print timer splits for major subroutines
+   timeit=t                 ! Print timer splits for major subroutines
    radvar_flag=f            ! Map various radial variables (rho,psi_tor) on psi_n grid
 /

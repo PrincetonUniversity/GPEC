@@ -83,6 +83,7 @@ c-----------------------------------------------------------------------
      $     coil_threads
       NAMELIST/coil_output/gpec_interface, coil_out
 
+      LOGICAL :: do_tilt, do_shift
       INTEGER :: ci,cj,ck,cl,cm,ci1,ci2,ci3,ci4,nsec
       REAL(r8) :: cr1,cr2
       REAL(r8) :: x0, y0, z0, x, y, z, r, r_nom, length
@@ -215,20 +216,25 @@ c-----------------------------------------------------------------------
 
             ! inform user of any coil modifications
             IF(ABS(coil_shiftx(ci, cj)) + ABS(coil_shifty(ci, cj))
-     $         +ABS(coil_shiftz(ci, cj)) > 0) WRITE(*,'(1x,a,i2)')
-     $         "  > Shifting "//TRIM(coil_name(ci))//" coil ",cj
+     $         +ABS(coil_shiftz(ci, cj)) > 0) THEN
+               do_shift = .TRUE.
+               WRITE(*,'(1x,a,i2)')
+     $            "  > Shifting "//TRIM(coil_name(ci))//" coil ",cj
+            ENDIF
             IF(ABS(coil_tiltx(ci, cj)) + ABS(coil_tilty(ci, cj))
      $         +ABS(coil_tiltz(ci, cj)) > 0) THEN
-                 IF(cnpert /= 0)THEN
-                    WRITE(*,'(1x,a,i2)')
-     $         "  > Tilting "//TRIM(coil_name(ci))//" coil",cj
-                 ELSE
-                    coil_tiltx = 0
-                    coil_tilty = 0
-                    coil_tiltz = 0
-                    WRITE(*,'(1x,a)') "  >>> Ignoring tilt requests, "//
-     $         "which have no n=0 component"
-                 ENDIF
+               IF(cnpert /= 0)THEN
+                  do_tilt = .TRUE.
+                  WRITE(*,'(1x,a,i2)')
+     $               "  > Tilting "//TRIM(coil_name(ci))//" coil",cj
+               ELSE
+                  do_tilt = .FALSE.
+                  coil_tiltx = 0
+                  coil_tilty = 0
+                  coil_tiltz = 0
+                  WRITE(*,'(1x,a)') "  >>> Ignoring tilt requests, "//
+     $               "which have no n=0 component"
+               ENDIF
             ENDIF
 
             ! center of mass is default coil center if user enters super large numbers
@@ -286,39 +292,46 @@ c-----------------------------------------------------------------------
                      ! ytilt (rotating around the y axis)
                      IF(tilty /= 0)THEN
                         r = sqrt( x ** 2 + z ** 2)
-                        angle = ATAN2(x, z) + tilty*cos((cnpert-1)*phi)
-                        dz = dz + (r * cos(angle) - z)
-                        dx = dx + (r * sin(angle) - x)
+                        angle = ATAN2(z, x) + tilty*cos((cnpert-1)*phi)
+                        dz = dz + (r * sin(angle) - z)
+                        dx = dx + (r * cos(angle) - x)
                      ENDIF
                      ! xtilt (rotating around the x axis)
                      IF(tiltx /= 0)THEN
                         r = sqrt( z ** 2 + y ** 2)
-                        angle = ATAN2(z, y) + tiltx*cos((cnpert-1)*phi)
+                        IF(cnpert == 1)THEN  ! want constant tilt angle like tilty case
+                           angle = ATAN2(z, y) + tiltx
+                        ELSE 
+                           ! makes peak tilt angle at y axis where r is maximum, for consistent max vertical displacement
+                           ! however, this becomes redundent with tiltx for n=5 which is no good
+    !                        angle = ATAN2(z, y) + tiltx*cos((cnpert-1)*(phi-pi/2))
+                           ! use sin component of the tilt, resulting in varied maximum dz
+                           angle = ATAN2(z,y)+tiltx*sin((cnpert-1)*phi)
+                        ENDIF
                         dy = dy + (r * cos(angle) - y)
                         dz = dz + (r * sin(angle) - z)
                      ENDIF
+
+                     ! petal-like distortions of the shape
+                     ! n=0 manually set to rigid shift
+                     ! n=1 creates a beaning (one-petal, NOT rigid shift)
+                     ! n=2 creates a peanut shaping (two petal, NOT elliptic), etc. 
+                     IF(cnpert==0)THEN ! only shift, keep coil same
+                        dx = dx + coil_shiftx(ci,cj)
+                        dy = dy + coil_shifty(ci,cj)
+                     ELSE
+                        dr = coil_shiftx(ci,cj) * cos(cnpert * phi)
+     $                      +coil_shifty(ci,cj) * sin(cnpert * phi)
+                        dx = dx + dr * cos(phi)
+                        dy = dy + dr * sin(phi)
+                     ENDIF
+                     dz = dz + coil_shiftz(ci,cj)
+
+                     ! apply perturbations to coil
                      coil(ci)%x(cj, ck, cl) = x + dx
                      coil(ci)%y(cj, ck, cl) = y + dy
                      coil(ci)%z(cj, ck, cl) = z + dz
-
-                     ! apply shifts (elongations, etc.)
-                     IF(cnpert==0)THEN ! only shift, keep coil same
-                        coil(ci)%x(cj, ck, cl) = coil(ci)%x(cj, ck, cl)
-     $                                           +coil_shiftx(ci,cj)
-                        coil(ci)%y(cj, ck, cl) = coil(ci)%y(cj, ck, cl)
-     $                                           +coil_shifty(ci,cj)
-                     ELSE                        
-                        x = coil(ci)%x(cj, ck, cl) - x0
-                        y = coil(ci)%y(cj, ck, cl) - y0
-                        r = sqrt( y ** 2 + x ** 2)
-                        dr = coil_shiftx(ci,cj) * cos(cnpert * phi)
-     $                      +coil_shifty(ci,cj) * sin(cnpert * phi)
-                        coil(ci)%x(cj, ck, cl) = x0 + (r + dr) *cos(phi)
-                        coil(ci)%y(cj, ck, cl) = y0 + (r + dr) *sin(phi)
-                     ENDIF
-                     coil(ci)%z(cj, ck, cl) = coil(ci)%z(cj, ck, cl)
-     $                                       +coil_shiftz(ci,cj)
-                  ENDDO
+                 ENDDO
                ENDIF
                ! record the subsystem's nominal center and modifications
                coil(ci)%x0(cj, ck) = x0

@@ -862,7 +862,7 @@ c-----------------------------------------------------------------------
       ENDDO
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_timer_output) THEN
-         print *,"vac loop time=",REAL(fTime-sTime,8)/REAL(cr,8)
+         print *,"vac loop time=",REAL(fTime-sTime,r8)/REAL(cr,r8)
       ENDIF
 c-----------------------------------------------------------------------
 c     termination.
@@ -2439,9 +2439,9 @@ c-----------------------------------------------------------------------
       lmx = lmax(1)
       lgivup = 1
       nadres = 1
-      call zwr(iovac,real(lmn,8),1,nadres,lgivup,999)
+      call zwr(iovac,real(lmn,r8),1,nadres,lgivup,999)
       nadres = nadres + 1
-      call zwr(iovac,real(lmx,8),1,nadres,lgivup,999)
+      call zwr(iovac,real(lmx,r8),1,nadres,lgivup,999)
       nadres = nadres + 1
       call trans ( xwal_,mth, xjdtxj,mthin )
       call zwr(iovac,xjdtxj(1),mthin2,nadres,lgivup,999)

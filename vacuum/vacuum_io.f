@@ -66,11 +66,11 @@ c-----------------------------------------------------------------------
       data under / "--------" /
       namelist / modes  / mfel,m,mth,n,mdiv,lsymz,lfunin,xiin,
      .     leqarcw, lpest1, lnova, ladj, ldcon, lgato, lrgato, lspark,
-     $     ismth, lzio, mp0,mp1
+     $     ismth, lzio, mp0, mp1
       namelist / debugs / checkd, checke, check1, check2, checks,
      $     wall, lkplt, verbose_timer_output
       namelist / vacdat / ishape,aw,bw,cw,dw,tw,nsing,epsq,noutv,delg,
-     .     idgt, idot, delfac, idsk, cn0
+     .     idgt, idot, delfac, idsk, cn0, use_legacy_greens_function
       namelist / diagns / lkdis, ieig, iloop,
      $     nloop,nloopr,
      .     lpsub, nphil, nphse, mx, mz, nph, xofsl,
@@ -321,7 +321,7 @@ c-----------------------------------------------------------------------
          r=0
          lgivup=1
          nadres = 1
-         call zrd(iomode,real(ntitle(1),8),43,nadres,lgivup,999)
+         call zrd(iomode,real(ntitle(1),r8),43,nadres,lgivup,999)
          write ( outmod, 9000 )   ntitle,dat
          lj = 0
          zma = 0.0

@@ -36,7 +36,11 @@
 
     sas_flag=t           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
     dmlim=0.2            ! See sas_flag
+    qlow=1.02            ! Calculation bounded by q determined by minimum of qlow and q0 from equil.          Does NOT require reform_eq_with_psilim=t to operate.
+    qhigh=1e3            ! Calculation bounded by q limit determined by minimum of qhigh and qa from equil.   Requires reform_eq_with_psilim=t to operate.
     sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
+    reform_eq_with_psilim=t ! Reforms equilibrium splines between psilow, determined by qlow, and psilim determined by psihigh/sas_flag/qhigh
+
 
     nn=1                 ! Toroidal mode number
     delta_mlow=8         ! Expands lower bound of Fourier harmonics

@@ -40,7 +40,7 @@ but this should be used with the understanding that many of it's features are in
 Personal
 --------
 
-Personal copies of GPEC should be cloned from the `Github repository <https://github.com/PrincetonUniversity/GPEC>`_, as the make process uses git commands assuming the installation is a git repository. The repository remains private for now, so only those with access will be able to install/update the package. Contact nlogan@pppl.gov for access.
+Personal copies of GPEC should be cloned from the `Github repository <https://github.com/PrincetonUniversity/GPEC>`_, as the make process uses git commands assuming the installation is a git repository. The repository remains private for now, so only those with access will be able to install/update the package. Contact nikolas.logan@columbia.edu for access.
 
 The global makefile can be found in the install directory. This essentially enters and makes each individual subdirectory. Each subdirectory's makefile references the DEFAULTS.inc file, also in install.
 Compiled using this install makefile, the executables will then be available in their individual subdirectories as well as collected in the bin directory.

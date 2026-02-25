@@ -401,7 +401,7 @@ c     optionally write netcdf file.
 c-----------------------------------------------------------------------
       IF(present(op_netcdf_out))THEN
          IF(op_netcdf_out) CALL stride_netcdf_out(wp,wv,wt,ep,ev,et,
-     $          delta_prime_mat,shr,dgeo)
+     $          delta_prime_mat,plasma1,vacuum1,total1,shr,dgeo)
       ENDIF
 c-----------------------------------------------------------------------
 c     deallocate
