@@ -188,10 +188,10 @@ c-----------------------------------------------------------------------
      $    chi_t_prof,kappa_prof,inpr,inpe,inQ,inQ_e,inQ_i,inc_beta,
      $    inds,intau,Q0,delta_prime,delta_n_p,ingamma
       NAMELIST/slayer_control/inum,jnum,knum,Q_num,scan_width,
-     $    AMR_passes,msing_max,dc_type,read_eq,Pperp_Ptor_flag,coupling_flag,
-     $    QPscan_flag,Qscan_flag,QPescan_flag,Qbscan_flag,onscan_flag,
-     $    otscan_flag,ntscan_flag,nbtscan_flag,parflow_flag,
-     $    peohmonly_flag,Pe_flag,layfac
+     $    AMR_passes,msing_max,dc_type,read_eq,Pperp_Ptor_flag,
+     $    coupling_flag,QPscan_flag,Qscan_flag,QPescan_flag,
+     $    Qbscan_flag,onscan_flag,otscan_flag,ntscan_flag,
+     $    nbtscan_flag,parflow_flag,peohmonly_flag,Pe_flag,layfac
       NAMELIST/slayer_output/verbose,ascii_flag,bin_flag,netcdf_flag,
      $    est_gamma_flag,match_gamma_flag,stability_flag,
      $    stabscan_flag,coupled_stabscan_flag,amr_flag,br_th_flag,
