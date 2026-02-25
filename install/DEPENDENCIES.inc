@@ -194,7 +194,7 @@
 ../slayer/sglobal.o: ../equil/local.o
 ../slayer/params.o : ../slayer/sglobal.o
 ../slayer/delta.o : ../slayer/sglobal.o
-../slayer/slayer_netcdf.o : ../slayer/sglobal.o
+../slayer/slayer_netcdf.o : ../slayer/sglobal.o ../slayer/version.inc
 ../slayer/layerinputs.o : ../slayer/sglobal.o ../slayer/params.o ../slayer/slayer_netcdf.o
 ../slayer/gslayer.o : ../slayer/sglobal.o ../slayer/params.o ../slayer/delta.o ../slayer/layerinputs.o ../slayer/slayer_netcdf.o
 ../slayer/slayer.o : ../slayer/sglobal.o ../slayer/params.o ../slayer/delta.o

@@ -307,6 +307,16 @@ rmatch: v neededdeps $(RMATCH_OBJS) equil lsode
 	$(call print_success,rmatch -> $(BINDIR)/rmatch)
 
 # SLAYER
+../slayer/version.inc:
+	@ver="`git describe --tags`"; \
+	if [ ! -f $@ ] || ! grep -F "'$$ver'" $@ >/dev/null 2>&1; then \
+		echo ">>> Updating version file"; \
+		echo "      CHARACTER(len=*), PARAMETER :: version ='$$ver'" | tee $@; \
+	else \
+		echo ">>> Git version unchanged!"; \
+	fi
+	$(call print_success,version file updated: $@)
+
 SLAYER_LIBS = \
 	-llsode \
 	-lequil \
