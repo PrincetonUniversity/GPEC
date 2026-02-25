@@ -205,6 +205,19 @@ c-----------------------------------------------------------------------
             identityMat(i,i) = 1.0_r8
          ENDDO
 c-----------------------------------------------------------------------
+c     DEBUG: verify identityMat before parallel region.
+c-----------------------------------------------------------------------
+         WRITE(*,'(1x,a,i4,a,es12.5,a,es12.5)')
+     $      'DEBUG identityMat: size=',2*mpert,
+     $      ' max=',MAXVAL(ABS(identityMat)),
+     $      ' min=',MINVAL(ABS(identityMat))
+         IF(ANY(identityMat /= identityMat)) THEN
+            WRITE(*,*) 'DEBUG: *** NaN in identityMat!'
+         ENDIF
+         IF(ABS(MAXVAL(ABS(identityMat))-1.0_r8) > 1e-10) THEN
+            WRITE(*,*) 'DEBUG: *** identityMat max is NOT 1.0!'
+         ENDIF
+c-----------------------------------------------------------------------
 c     proceed to integration.
 c-----------------------------------------------------------------------
 #ifdef _OPENMP
@@ -353,6 +366,28 @@ c-----------------------------------------------------------------------
                !Initialize the state transition matrix as the Identity,
                !then modify it where necessary.
                uFM = identityMat
+c-----------------------------------------------------------------------
+c     DEBUG: verify uFM right after identityMat assignment.
+c-----------------------------------------------------------------------
+!$OMP CRITICAL
+               IF(psiInters(iInterval,1)/=2 .AND.
+     $            psiInters(iInterval,3)==0 .AND.
+     $            iInterval <= 5) THEN
+                  WRITE(*,'(1x,a,i3,a,es12.5,a,es12.5)')
+     $              'DEBUG post-assign: iInterval=',iInterval,
+     $              ' uFM max=',MAXVAL(ABS(uFM)),
+     $              ' uFM min=',MINVAL(ABS(uFM))
+                  WRITE(*,'(1x,a,es12.5,a,es12.5)')
+     $              '  idMat max=',MAXVAL(ABS(identityMat)),
+     $              ' idMat min=',MINVAL(ABS(identityMat))
+                  IF(ANY(uFM /= uFM)) THEN
+                     WRITE(*,*) 'DEBUG: *** NaN in uFM after assign!'
+                  ENDIF
+                  IF(ANY(identityMat /= identityMat)) THEN
+                     WRITE(*,*) 'DEBUG: *** NaN in identityMat!'
+                  ENDIF
+               ENDIF
+!$OMP END CRITICAL
                IF (psiInters(iInterval,1) == 2) THEN
 c-----------------------------------------------------------------------
 c     the inner layer itself (crossing singularity): initialize.
