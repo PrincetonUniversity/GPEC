@@ -148,6 +148,19 @@ c     set global integration interval parameters.
 c-----------------------------------------------------------------------
          axisPsi = sq%xs(0)
          outerPsi = psilim*(1-eps)
+c-----------------------------------------------------------------------
+c     DEBUG: print ODE initialization parameters.
+c-----------------------------------------------------------------------
+         WRITE(*,'(1x,a,es12.5,a,es12.5)')
+     $      'DEBUG ode_run: axisPsi=',axisPsi,' outerPsi=',outerPsi
+         WRITE(*,'(1x,a,es12.5,a,es12.5,a,i4)')
+     $      '  tol_nr=',tol_nr,' psilim=',psilim,' msing=',msing
+         WRITE(*,'(1x,a,i4,a,i4,a,i4)')
+     $      '  mpert=',mpert,' mband=',mband,' neq=',neq
+         WRITE(*,'(1x,a,i4,a,i4,a,i4)')
+     $      '  nIntervalsTot=',nIntervalsTot,
+     $      ' nn=',nn,' mlow=',mlow
+         IF(tol_nr /= tol_nr) WRITE(*,*) '  *** NaN in tol_nr!'
          DO iS = 1,msing
             scalc(iS)%singEdgesLR(1) = sing(iS)%psifac - singfac_min/
      $           ABS(nn*sing(iS)%q1)
@@ -381,6 +394,22 @@ c-----------------------------------------------------------------------
                         uFM(i+mpert,:) = ua(i,:,2)
                      ENDDO
 
+c-----------------------------------------------------------------------
+c     DEBUG: check uFM after asymptotic expansion for NaN/Inf.
+c-----------------------------------------------------------------------
+!$OMP CRITICAL
+                     WRITE(*,'(1x,a,i3,a,i3,a,es12.5)')
+     $                 'DEBUG asymp: iInterval=',iInterval,
+     $                 ' ising=',ising,' t0=',t0
+                     WRITE(*,'(1x,a,es12.5,a,es12.5)')
+     $                 '  uFM max=',MAXVAL(ABS(uFM)),
+     $                 '  uFM min=',MINVAL(ABS(uFM))
+                     IF(ANY(uFM /= uFM)) THEN
+                        WRITE(*,*) 'DEBUG: *** NaN detected in uFM',
+     $                    ' after sing_get_ua! ising=',ising
+                     ENDIF
+!$OMP END CRITICAL
+
                      !Invert the init. fund. matrix (/=Id), to save it.
                      uFMInv = uFM
                      CALL ZGETRF(2*mpert,2*mpert,uFMInv,2*mpert,ipiv,
@@ -418,6 +447,30 @@ c-----------------------------------------------------------------------
                   rwork(5)=axisPsi*1e-3*psiDirs(iInterval)
                   rwork(11)=rwork(5)
                   CALL SYSTEM_CLOCK(COUNT=sTime)
+c-----------------------------------------------------------------------
+c     DEBUG: print pre-integration diagnostics.
+c-----------------------------------------------------------------------
+!$OMP CRITICAL
+                  WRITE(*,'(1x,a,i3,a,es12.5,a,es12.5)')
+     $              'DEBUG pre-ZVODE: iInterval=',iInterval,
+     $              ' startPsi=',startPsi,' endPsi=',endPsi
+                  WRITE(*,'(1x,a,es12.5,a,es12.5,a,es12.5)')
+     $              '  tol_nr=',tol_nr,
+     $              ' axisPsi=',axisPsi,
+     $              ' rwork5=',rwork(5)
+                  WRITE(*,'(1x,a,es12.5,a,es12.5)')
+     $              '  uFM maxval=',MAXVAL(ABS(uFM)),
+     $              '  uFM minval=',MINVAL(ABS(uFM))
+                  IF(ANY(uFM /= uFM)) THEN
+                     WRITE(*,*) 'DEBUG: *** NaN in uFM before ZVODE!',
+     $                  ' iInterval=',iInterval
+                  ENDIF
+                  WRITE(*,'(1x,a,i2,a,i2,a,i2,a,i3)')
+     $              '  psiInters=',psiInters(iInterval,1),',',
+     $              psiInters(iInterval,2),',',
+     $              psiInters(iInterval,3),
+     $              ' dir=',psiDirs(iInterval)
+!$OMP END CRITICAL
                   DO WHILE(psiDirs(iInterval)*startPsi
      $                 < psiDirs(iInterval)*endPsi)
                      rtol(1) = tol_nr
@@ -431,10 +484,43 @@ c-----------------------------------------------------------------------
                      WHERE(atol == 0)
                         atol=maxatol !CMPLX(maxatol,maxatol)
                      ENDWHERE
+c-----------------------------------------------------------------------
+c     DEBUG: print ZVODE inputs on each iteration.
+c-----------------------------------------------------------------------
+!$OMP CRITICAL
+                     WRITE(*,'(1x,a,i3,a,es12.5,a,es12.5,a,i2)')
+     $                 'DEBUG ZVODE in: iInterval=',iInterval,
+     $                 ' rtol=',rtol(1),
+     $                 ' maxatol=',maxatol,' istate=',istate
+                     IF(ANY(atol /= atol)) THEN
+                        WRITE(*,*) 'DEBUG: *** NaN in atol!',
+     $                     ' iInterval=',iInterval
+                     ENDIF
+!$OMP END CRITICAL
 
                      CALL ZVODE1(sing_derFM,neq,uFM,startPsi,endPsi,
      $                    itol,rtol,atol,itask,istate,iopt,zwork,lzw,
      $                    rwork,lrw,iwork,liw,ode_nojac,mf,rpar,ipar)
+c-----------------------------------------------------------------------
+c     DEBUG: print ZVODE output state.
+c-----------------------------------------------------------------------
+!$OMP CRITICAL
+                     WRITE(*,'(1x,a,i3,a,i3,a,es12.5)')
+     $                 'DEBUG ZVODE out: iInterval=',iInterval,
+     $                 ' istate=',istate,' startPsi=',startPsi
+                     IF(istate < 0) THEN
+                        WRITE(*,*) 'DEBUG: ZVODE FAILED! istate=',
+     $                     istate,' iInterval=',iInterval
+                        WRITE(*,'(1x,a,es12.5,a,es12.5)')
+     $                    '  uFM max=',MAXVAL(ABS(uFM)),
+     $                    '  uFM min=',MINVAL(ABS(uFM))
+                        IF(ANY(uFM /= uFM)) THEN
+                           WRITE(*,*) 'DEBUG: *** NaN in uFM after',
+     $                        ' failed ZVODE!'
+                        ENDIF
+                     ENDIF
+!$OMP END CRITICAL
+                     IF(istate < 0) EXIT  ! Break to prevent infinite loop
                   ENDDO
                   IF ( grid_packing == "naive" ) THEN
                      CALL SYSTEM_CLOCK(COUNT=fTime)

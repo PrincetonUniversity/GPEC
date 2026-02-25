@@ -1002,6 +1002,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,mpert) :: fmatb,gmatb
       COMPLEX(r8), DIMENSION(2*mband+1,mpert) :: kmatb
       COMPLEX(r8), DIMENSION(mpert,mpert) :: duTemp
+      LOGICAL, SAVE :: first_call = .TRUE.
 c-----------------------------------------------------------------------
 c     cubic spline evaluation.
 c-----------------------------------------------------------------------
@@ -1017,6 +1018,30 @@ c     define local scalars.
 c-----------------------------------------------------------------------
       q=sq_s_f(4)
       singfac=mlow-nn*q+(/(ipert,ipert=0,mpert-1)/)
+c-----------------------------------------------------------------------
+c     DEBUG: check for NaN in spline data and zero singfac.
+c-----------------------------------------------------------------------
+      IF(first_call .OR. q /= q) THEN
+!$OMP CRITICAL
+         WRITE(*,'(1x,a,es12.5,a,es12.5)')
+     $      'DEBUG sing_derFM: psi=',startPsi,' q=',q
+         WRITE(*,'(1x,a,i4,a,i4)')
+     $      '  mlow=',mlow,' nn=',nn
+         WRITE(*,'(1x,a,es12.5,a,es12.5)')
+     $      '  singfac min=',MINVAL(ABS(singfac)),
+     $      ' singfac max=',MAXVAL(ABS(singfac))
+         IF(q /= q) WRITE(*,*) '  *** NaN in q!'
+         IF(ANY(sq_s_f /= sq_s_f))
+     $      WRITE(*,*) '  *** NaN in sq_s_f!'
+         IF(ANY(fmats_s_f /= fmats_s_f))
+     $      WRITE(*,*) '  *** NaN in fmats_s_f!'
+         IF(ANY(gmats_s_f /= gmats_s_f))
+     $      WRITE(*,*) '  *** NaN in gmats_s_f!'
+         IF(ANY(kmats_s_f /= kmats_s_f))
+     $      WRITE(*,*) '  *** NaN in kmats_s_f!'
+         first_call = .FALSE.
+!$OMP END CRITICAL
+      ENDIF
       singfac=1/singfac
 c-----------------------------------------------------------------------
 c     copy Hermitian banded matrices F and G.
