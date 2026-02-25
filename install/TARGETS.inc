@@ -318,8 +318,10 @@ rmatch: v neededdeps $(RMATCH_OBJS) equil lsode
 	$(call print_success,version file updated: $@)
 
 SLAYER_LIBS = \
+	-lpentrc \
 	-llsode \
 	-lequil \
+	-lharvest \
 	$(MATHLIBS) \
 	$(NETCDFLIBS) \
 	$(NETCDF_EXTRA_LIBS)
@@ -327,7 +329,7 @@ SLAYER_LIBDIRS = \
 	-L$(LIBDIR) \
 	-L$(MATHDIR) \
 	-L$(NETCDFDIR)
-slayer: v neededdeps $(SLAYER_OBJS) lsode equil
+slayer: v neededdeps $(SLAYER_OBJS) lsode equil pentrc harvest
 	mkdir -p $(BINDIR)
 	rm -f ../slayer/slayer
 	$(FCSLAYER) -o ../slayer/slayer $(SLAYER_OBJS) $(SLAYER_LIBDIRS) $(SLAYER_LIBS) $(LDFLAGS)
