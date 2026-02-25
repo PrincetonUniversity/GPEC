@@ -113,7 +113,7 @@ c-----------------------------------------------------------------------
          INTEGER, DIMENSION(2*mpert) :: ipiv
          COMPLEX(r8), DIMENSION(2*mpert,2*mpert) :: uFMInv
          COMPLEX(r8), DIMENSION(2*mpert) :: uwork
-         COMPLEX(r8), DIMENSION(2*mpert,2*mpert) :: identityMat
+         COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: identityMat
 
 !NOTE #1: INTEGER, DIMENSION(:), POINTER, PRIVATE :: iwork
 !         REAL(r8), DIMENSION(:), POINTER, PRIVATE :: rwork
@@ -200,10 +200,16 @@ c-----------------------------------------------------------------------
          ALLOCATE(rwork(lrw), zwork(lzw), iwork(liw),
      $        atol(2*mpert,2*mpert))
 
+         ALLOCATE(identityMat(2*mpert,2*mpert))
          identityMat = 0.0_r8
+         WRITE(*,*) 'DEBUG idMat post-zero: (1,1)=',
+     $      identityMat(1,1),' max=',MAXVAL(ABS(identityMat))
          DO i = 1,2*mpert
             identityMat(i,i) = 1.0_r8
          ENDDO
+         WRITE(*,*) 'DEBUG idMat post-loop: (1,1)=',
+     $      identityMat(1,1),' (2,2)=',identityMat(2,2),
+     $      ' (1,2)=',identityMat(1,2)
 c-----------------------------------------------------------------------
 c     DEBUG: verify identityMat before parallel region.
 c-----------------------------------------------------------------------
@@ -583,6 +589,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
+      DEALLOCATE(identityMat)
       RETURN
       END SUBROUTINE ode_run
 c-----------------------------------------------------------------------
