@@ -56,7 +56,7 @@
     bin_flag=t           ! writes results to binary files
     netcdf_flag=f        ! writes results to netcdf files
     stability_flag=f     ! calculate delta dependence on complex Q
-    growthrates_flag=t   ! Calculate growthrates on each rational surface
+    est_gamma_flag=t     ! Calculate estimated growth rates on each rational surface
     !bal_flag=f           ! calculate the resonant field penetration threshold from torque balance
 /
 &SLAYER_DIAGNOSE
