@@ -25,12 +25,9 @@ c     Results are written to module-level variables in sglobal_mod
 c     (tau, tau_r, tauk, lu, Q, Q_e, Q_i, ds, c_beta, d_beta,
 c     D_norm, P_perp, P_tor, delta_n, dc_tmp, eta, visc, rho_s, ...).
 c
-c     TODO: `pr` (magnetic Prandtl number) and `pe` are read
-c       from sglobal_mod but never set within this routine.  They must
-c       be initialised elsewhere before calling params(), otherwise
-c       `tau_v = tau_r / pr` will divide by zero or garbage.
-c       Suggested fix: add pr/pe as INTENT(IN) arguments, or
-c       document the required initialisation order.
+c     Note: `pr` (magnetic Prandtl number) is read from sglobal_mod
+c     and must be set by the caller (e.g. pr = inpr from namelist).
+c     If pr == 0, tau_v and visc are set to zero (no viscosity).
 c-----------------------------------------------------------------------
       SUBROUTINE params(n_e,t_e,t_i,omega,chis,dr_val,dgeo_val,
      $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
@@ -85,7 +82,6 @@ c --- local variables: delta_crit iteration
       REAL(r8) :: Wd_new            ! updated Wd for convergence check
       INTEGER  :: wit              ! iteration counter
 c --- local variables: unused intermediates
-      REAL(r8) :: Qconv            ! (shadowed by module-level Qconv)
       REAL(r8) :: K_val, Csq       ! kappa/eta and composite quantity
 
 c-----------------------------------------------------------------------
@@ -128,10 +124,13 @@ c-----------------------------------------------------------------------
 
       tau_h = R0*(mu0*rho)**0.5 / (nn*sval*bt)     ! Alfvén time [s]
       tau_r = mu0*(rs**2.0)*sigma_par               ! resistive time [s] (Fitzpatrick)
-      tau_v = tau_r / pr                            ! viscous time [s] (TODO: pr init)
-
-c     back-compute anomalous viscosity from tau_v
-      visc = rho*rs**2.0 / tau_v
+      IF (pr > 0.0_r8) THEN
+         tau_v = tau_r / pr                         ! viscous time [s]
+         visc  = rho*rs**2.0_r8 / tau_v
+      ELSE
+         tau_v = 0.0_r8
+         visc  = 0.0_r8
+      END IF
 
 c     Lundquist number
       lu = tau_r / tau_h

@@ -247,8 +247,8 @@ c     -- core dimensions --
 c     -- scalar per-surface variables --
       CALL sl_check( nf90_def_var(ncid, "r",         nf90_int,
      $     qsing_dim, qsing_id)  )
-      CALL sl_check( nf90_def_var(ncid, "q_rational", nf90_int,
-     $     qsing_dim, qr_id)     )
+      CALL sl_check( nf90_def_var(ncid, "q_rational",
+     $     nf90_double, qsing_dim, qr_id)     )
       CALL sl_check( nf90_def_var(ncid, "omegas",    nf90_double,
      $     qsing_dim, omegas_id) )
       CALL sl_check( nf90_def_var(ncid, "tau_k",     nf90_double,
@@ -299,7 +299,7 @@ c-----------------------------------------------------------------------
       CALL sl_check( nf90_def_dim(ncid, "amr_pts",
      $     max_pts_all, dim_pts_id) )
       CALL sl_check( nf90_def_var(ncid, "n_amr_pts", NF90_INT,
-     $     (/qsing_dim/), var_npts_id) )
+     $     (/nAMR_dim/), var_npts_id) )
       CALL sl_check( nf90_def_var(ncid, "Q_AMR", NF90_DOUBLE,
      $     (/dim_pts_id, nAMR_dim, i_dim/), var_q_id) )
       CALL sl_check( nf90_def_var(ncid, "Deltas_AMR", NF90_DOUBLE,

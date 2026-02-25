@@ -488,6 +488,9 @@ c-----------------------------------------------------------------------
       SUBROUTINE dispersion_AMR(n_k,sl_in,msing_max,
      $                          scan_width,Q_num,AMR_passes,
      $                          coupling_flag)
+c     DEPRECATED: use dispersion_AMR_v2 instead.
+c     This v1 hash-based scanner is retained for
+c     backwards compatibility only.
 
 c --- arguments
       INTEGER, INTENT(IN)  :: n_k           ! number of rational surfaces

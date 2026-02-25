@@ -392,7 +392,7 @@ c-----------------------------------------------------------------------
          Lam = (psi_t%f1(1)/sq%f(3))*
      $         (-1.0/(sq%f(4)**2.0))*(sq%f1(4)/sq%f(3))
 
-         shr(ising) = shr_spl%f(1)
+         shr(ising) = respsi * shr_spl%f1(1)
          dgeo(ising) = v_spl%f(1)*( (((al**2.0)*(Lam**2.0))/
      $               (avg_bsq_spl%f(1)*avg_dpsi_spl%f(1)))**0.25 )
       ENDDO
@@ -406,6 +406,11 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     deallocate
 c-----------------------------------------------------------------------
+      CALL spline_dealloc(psi_t)
+      CALL spline_dealloc(avg_dpsi_spl)
+      CALL spline_dealloc(avg_bsq_spl)
+      CALL spline_dealloc(v_spl)
+      CALL spline_dealloc(shr_spl)
       CALL stride_dealloc
 c-----------------------------------------------------------------------
 c     terminate.

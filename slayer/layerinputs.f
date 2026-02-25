@@ -78,9 +78,8 @@ c --- locals
 c-----------------------------------------------------------------------
 c     open the STRIDE NetCDF file and read dimension / attribute data.
 c-----------------------------------------------------------------------
-      WRITE(*,*) '$^$ opening netcdf file', ncfile
-
-      stat = nf90_open(path=ncfile, mode=NF90_WRITE, ncid=ncid)
+      stat = nf90_open(path=ncfile, mode=NF90_NOWRITE,
+     $                  ncid=ncid)
       CALL sl_check(stat)
 
 c --- read msing (number of singular surfaces) from global attribute
@@ -461,10 +460,15 @@ c        extract local plasma quantities from spline
          mu_i     = 2.0               ! deuterium
          dr_val   = dr_vals(ising)
 
-c        transport coefficients from caller-provided arrays
-         chi_s(1) = sl_in%chi_p_arr(ising) ! chi_perp
-         chi_s(2) = sl_in%chi_t_arr(ising) ! chi_tor
-         chi_s(3) = sl_in%kappa_arr(ising) ! kappa (thermal cond.)
+c        transport coefficients from caller-provided arrays.
+c        guard: arrays may be smaller than msing (e.g. from
+c        fixed-size namelist); reuse last element if exceeded.
+         i = MIN(ising, SIZE(sl_in%chi_p_arr))
+         chi_s(1) = sl_in%chi_p_arr(i)
+         i = MIN(ising, SIZE(sl_in%chi_t_arr))
+         chi_s(2) = sl_in%chi_t_arr(i)
+         i = MIN(ising, SIZE(sl_in%kappa_arr))
+         chi_s(3) = sl_in%kappa_arr(i)
 
 c        store local kinetic arrays (for future NetCDF diagnostic output)
          ne_arr(ising)   = n_e
