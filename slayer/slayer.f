@@ -809,7 +809,8 @@ c-----------------------------------------------------------------------
                ENDIF
 
                OPEN(UNIT=out_unit,FILE="slayer_stability_n"//
-     $         TRIM(sn_str)//"m"//TRIM(sm_str)//".out", STATUS="UNKNOWN")
+     $         TRIM(sn_str)//"m"//TRIM(sm_str)//".out", 
+     $         STATUS="UNKNOWN")
                WRITE(out_unit,'(1x,4(a17))') "RE(Q)",
      $           "IM(Q)","RE(delta)","IM(delta)"
                DO i=1,Q_num+1
