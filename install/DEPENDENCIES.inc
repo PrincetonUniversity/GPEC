@@ -194,7 +194,9 @@
 ../slayer/sglobal.o: ../equil/local.o
 ../slayer/params.o : ../slayer/sglobal.o
 ../slayer/delta.o : ../slayer/sglobal.o
-../slayer/gslayer.o : ../slayer/sglobal.o ../slayer/delta.o
+../slayer/slayer_netcdf.o : ../slayer/sglobal.o
+../slayer/layerinputs.o : ../slayer/sglobal.o ../slayer/params.o ../slayer/slayer_netcdf.o
+../slayer/gslayer.o : ../slayer/sglobal.o ../slayer/params.o ../slayer/delta.o ../slayer/layerinputs.o ../slayer/slayer_netcdf.o
 ../slayer/slayer.o : ../slayer/sglobal.o ../slayer/params.o ../slayer/delta.o
 
 # COIL
