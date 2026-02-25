@@ -53,7 +53,7 @@
     msing_max=2          ! number of surfaces to include in coupled tearing growth rate calculation
     dc_type="toroidal"   ! Delta_crit type, options are "toroidal", "lar", and "rfitzp"
     read_eq=f            ! read in equilibrium quantities from STRIDE and kinetic file. Set all normalized params to 0.0
-    fitz_flag=t          ! Use R. Fitzpatrick formalism (inc. anomalous diffusion) for growth rate calculation
+    Pperp_Ptor_flag=t    ! Use R. Fitzpatrick formalism (inc. anomalous diffusion) for growth rate calculation
     coupling_flag=t      ! Solve determinant problem and output 2D scan 
     QPscan_flag=f        ! scan (Q,P) space for delta and torque.
     Qscan_flag=f         ! scan Q space

@@ -50,7 +50,7 @@ c     control flags — physics modes.
 c-----------------------------------------------------------------------
       LOGICAL :: est_gamma_flag      ! estimate growth rate
       LOGICAL :: match_gamma_flag    ! asymptotically matched gamma
-      LOGICAL :: fitz_flag           ! use Fitzpatrick layer model
+      LOGICAL :: Pperp_Ptor_flag     ! use Fitzpatrick layer model
       LOGICAL :: coupling_flag       ! coupled rational surfaces
       LOGICAL :: br_th_flag          ! Br threshold test scan
       LOGICAL :: bal_flag            ! torque balance scan
@@ -188,7 +188,7 @@ c-----------------------------------------------------------------------
      $    chi_t_prof,kappa_prof,inpr,inpe,inQ,inQ_e,inQ_i,inc_beta,
      $    inds,intau,Q0,delta_prime,delta_n_p,ingamma
       NAMELIST/slayer_control/inum,jnum,knum,Q_num,scan_width,
-     $    AMR_passes,msing_max,dc_type,read_eq,fitz_flag,coupling_flag,
+     $    AMR_passes,msing_max,dc_type,read_eq,Pperp_Ptor_flag,coupling_flag,
      $    QPscan_flag,Qscan_flag,QPescan_flag,Qbscan_flag,onscan_flag,
      $    otscan_flag,ntscan_flag,nbtscan_flag,parflow_flag,
      $    peohmonly_flag,Pe_flag,layfac
@@ -275,7 +275,7 @@ c-----------------------------------------------------------------------
       read_eq              = .FALSE.
       est_gamma_flag       = .FALSE.
       match_gamma_flag     = .FALSE.
-      fitz_flag            = .FALSE.
+      Pperp_Ptor_flag      = .FALSE.
       coupling_flag        = .FALSE.
       params_flag          = .TRUE.
       input_flag           = .FALSE.
@@ -783,7 +783,7 @@ c-----------------------------------------------------------------------
                      iing_coarse = -scan_width + (j - 1) * ing_step
                      ! Evaluate riccati function
                      g_tmp = CMPLX(ing_coarse,iing_coarse)
-                     IF (fitz_flag) THEN
+                     IF (Pperp_Ptor_flag) THEN
                         delta=riccati_f()
                      ELSE
                         delta=riccati(iing_coarse,Q_e,Q_i,P_perp,
@@ -791,7 +791,7 @@ c-----------------------------------------------------------------------
      $                             iinQ=ing_coarse)
                      END IF
                      inQs(i) = ing_coarse
-                     IF (fitz_flag) THEN
+                     IF (Pperp_Ptor_flag) THEN
                         iinQs(j) = iing_coarse
                      ELSE
                         iinQs(j) = -iing_coarse
