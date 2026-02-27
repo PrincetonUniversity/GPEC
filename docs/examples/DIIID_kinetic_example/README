@@ -1,0 +1,33 @@
+GPEC DIII-D Kinetic Example
+============================
+
+This example demonstrates the kinetic extension to the ideal MHD workflow using the same artificial DIII-D-like equilibrium as the ideal example. Here DCON is run with the kinetic Euler-Lagrange equation enabled (``kin_flag=t``), which adds finite-Larmor-radius and wave-particle resonance contributions to the MHD potential energy. The resulting kinetically-modified eigenfunctions are then used by GPEC to compute self-consistent energy and torque profiles, and by PENTRC for the full neoclassical torque calculation.
+
+Note that the pentrc input namelist uses a relative path to the package's pre-formed ``fkmnl.dat`` data file. If you would like to run the example in a different location, you must update the ``data_dir`` path in ``pentrc.in`` appropriately.
+
+Following a typical workflow we first ``cd`` to the example's directory, then run DCON with the kinetic flag enabled::
+
+  dcon
+
+  DCON START => ...
+  DCON STOP => Normal termination.
+
+With ``kin_flag=t`` and ``con_flag=t`` in ``dcon.in``, the Euler-Lagrange equation incorporates kinetic corrections from the profiles in ``TkMkr_D3Dlike_inexp=1.0.gpeckf``. The ``con_flag=t`` setting allows the integration to continue through singular (rational) surfaces, which is required for the kinetic calculation. The resulting ``euler.bin`` contains kinetically-modified eigenfunctions. Checking ``dcon.out`` or the output NetCDF file is recommended to confirm the solution looks reasonable.
+
+Satisfied with the DCON result, we run GPEC. With ``dw_flag=t`` in ``gpec.in``, GPEC outputs self-consistent kinetic energy and torque profiles in addition to the standard perturbed field quantities::
+
+  gpec
+
+  GPEC START => ...
+  GPEC STOP => Normal termination.
+
+The kinetic energy and torque profiles are written to ``gpec_dw_profile_n1.out``. The Clebsch coordinate displacements in ``gpec_xclebsch_n1.out`` carry the kinetically-modified field structure needed by PENTRC. Resonant surface field amplitudes are in ``gpec_singfld_n1.out``.
+
+Finally, we run PENTRC for the full neoclassical torque calculation::
+
+  pentrc
+
+  PENTRC START => ...
+  PENTRC STOP => Normal termination.
+
+The full general-aspect-ratio (``fgar``) and trapped-only (``tgar``) torque results can be compared to assess the trapped-particle dominance. The ``data_dir`` in ``pentrc.in`` points to the precomputed special function matrix used by the reduced large-aspect-ratio (``rlar``) method, which serves as a cross-check.
