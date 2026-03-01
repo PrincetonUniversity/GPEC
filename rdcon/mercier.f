@@ -42,7 +42,7 @@ c-----------------------------------------------------------------------
 c     prepare spline types.
 c-----------------------------------------------------------------------
       IF(MRE_flag)THEN
-         CALL spline_alloc(ff,mtheta,21)
+         CALL spline_alloc(ff,mtheta,22)
       ELSE
          CALL spline_alloc(ff,mtheta,5)
       ENDIF
@@ -132,6 +132,7 @@ c-----------------------------------------------------------------------
                ff%fs(itheta,19)=SQRT(dpsisq)/r
                ff%fs(itheta,20)=r**2*v1/jac !overbar{R^2}     (Hegna 1999)
                ff%fs(itheta,21)=r**2        !avg{R^2} ~ [m^2] (Hegna 1999)
+               ff%fs(itheta,22)=SQRT(dpsisq)
             ENDIF
             ff%fs(itheta,:)=ff%fs(itheta,:)*jac/v1
          ENDDO
@@ -237,7 +238,7 @@ c-----------------------------------------------------------------------
             mreterms%fs(ipsi,3)=taur_prefac
             mreterms%fs(ipsi,4)=ftr
             mreterms%fs(ipsi,5)=mufrac
-            mreterms%fs(ipsi,6)=avg_Jboot_dot_B !broken formula
+            mreterms%fs(ipsi,6)=avg(22) ! <|nabla psi|>
             mreterms%fs(ipsi,7)=Dnc
             mreterms%fs(ipsi,8)=Wc_prefac
             mreterms%fs(ipsi,9)=Jpara
