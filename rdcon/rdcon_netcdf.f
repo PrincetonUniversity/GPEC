@@ -281,6 +281,8 @@ c-----------------------------------------------------------------------
      $     "avg_18", nf90_double, p_dim, a18_id))
             CALL check( nf90_def_var(ncid,
      $     "avg_19", nf90_double, p_dim, a19_id))
+            CALL check( nf90_def_var(ncid,
+     $     "avg_nabla_psi", nf90_double, p_dim, npsi_id))
          ENDIF
       ENDIF
       IF(ode_flag .AND. vac_flag)THEN !shift to .OR.
@@ -412,6 +414,7 @@ c-----------------------------------------------------------------------
             CALL check( nf90_put_var(ncid,a17_id, mreterms%fs(:,28)))
             CALL check( nf90_put_var(ncid,a18_id, mreterms%fs(:,29)))
             CALL check( nf90_put_var(ncid,a19_id, mreterms%fs(:,30)))
+            CALL check( nf90_put_var(ncid,npsi_id, mreterms%fs(:,6)))
          ENDIF
       ENDIF
 
