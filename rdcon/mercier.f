@@ -32,7 +32,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: bsq,chi1,di,dpsisq,eta,h,jac,p1,psifac,q,q1,r,z,
      $     rfac,term,theta,twopif,v1,v2,v21,v22,v23,v33,
      $     bt,f1,Dnc,Dnc_prefac,Wc_prefac,eps_loc,Jpara,ftr,M,Jtor,
-     $     Hbs_prefac,avg_Jboot_dot_B,mufrac,taua_prefac,taur_prefac,
+     $     Hbs_prefac,mufrac,taua_prefac,taur_prefac,
      $     rmean_loc,amean_loc,deltatop_loc,deltabot_loc,delta_loc,
      $     eps_eff
       REAL(r8), DIMENSION(:), POINTER :: avg
@@ -196,8 +196,6 @@ c-----------------------------------------------------------------------
             ! ^ Taking banana limit of eq. B17 (& B14) in Callen 
             mufrac=ftr*(1.d0+0.533d0/Zeff)/
      $                            ((1.d0-ftr)+ftr*(1.d0+0.533d0/Zeff))
-            avg_Jboot_dot_B=-mufrac*(twopif/chi1)*p1 !mu0 included in p1
-            ! ^Broken, not printing the above out in netcdf
 c-----------------------------------------------------------------------
 c     evaluate geometric prefactors of MRE stability terms from 
 c     Hegna 1999 https://doi.org/10.1063/1.873661
