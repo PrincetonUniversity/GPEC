@@ -177,7 +177,8 @@ c-----------------------------------------------------------------------
             deltatop_loc=(rmean_loc-zmax_loc(1))/amean_loc
             deltabot_loc=(rmean_loc-zmin_loc(1))/amean_loc
             delta_loc=0.5d0*(deltatop_loc+deltabot_loc)
-            eps_eff=MAX(0.d0, 0.67d0*(1.d0-1.4d0*delta_loc*ABS(delta_loc))*eps_loc)
+            eps_eff=MAX(0.d0, 
+     $             0.67d0*(1.d0-1.4d0*delta_loc*ABS(delta_loc))*eps_loc)
 c-----------------------------------------------------------------------
 c     simple estimates of trapped fraction from Sauter 2002:
 c     <https://infoscience.epfl.ch/server/api/core/bitstreams/c42baba0-9
