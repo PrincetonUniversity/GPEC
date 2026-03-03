@@ -15,6 +15,7 @@ c-----------------------------------------------------------------------
       USE delta_mod, ONLY: riccati,riccati_f,riccati_del_s,
      $                     riccati_out,parflow_flag,PeOhmOnly_flag
       USE gslayer_mod
+      USE growthrates_mod
       USE layerinputs_mod
 
       IMPLICIT NONE
@@ -464,8 +465,8 @@ c     estimate growth rate via resistive-layer thickness.
 c     Uses riccati_del_s to get delta_s/d_beta, then scales by
 c     d_beta to obtain the layer thickness delta_s and the estimated 
 c     gamma. Inputs may come from equilibrium files (read_eq) or 
-c     namelist.Subroutines: build_inputs, allocate_inputs, 
-c     allocate_outputsare defined in gslayer_mod / layerinputs_mod.
+c     namelist.  Subroutines: build_inputs (layerinputs_mod),
+c     allocate_inputs, allocate_outputs (growthrates_mod).
 c-----------------------------------------------------------------------
       IF (est_gamma_flag) THEN
       WRITE(*,*)"------------------------------------------"
@@ -516,8 +517,8 @@ c-----------------------------------------------------------------------
                D_norm = inds ! NAMELIST
             END IF
 
-            CALL allocate_inputs(n_k,sl_in)  ! gslayer_mod
-            CALL allocate_outputs(n_k,sl_out) ! gslayer_mod
+            CALL allocate_inputs(n_k,sl_in)  ! growthrates_mod
+            CALL allocate_outputs(n_k,sl_out) ! growthrates_mod
 
             sl_in%qval_arr = (/ qval /)
             sl_in%omegas_arr = (/ omega /)
@@ -574,7 +575,7 @@ c     asymptotically matched growth rate.
 c     Matches the inner-layer Delta to the outer-region Delta' to
 c     find the self-consistent complex growth rate.  Supports both
 c     single-surface and coupled multi-surface (AMR) modes.
-c     Subroutines: dispersion_AMR_v2, dispersion_det (gslayer_mod),
+c     Subroutines: dispersion_AMR_v2, dispersion_det (growthrates_mod),
 c                  riccati_f (delta_mod).
 c-----------------------------------------------------------------------
       IF (match_gamma_flag) THEN
@@ -715,7 +716,7 @@ c-----------------------------------------------------------------------
 
 c-----------------------------------------------------------------------
 c     uncoupled AMR scan (one surface at a time).
-c     dispersion_AMR_v2 (gslayer_mod) populates Q_store, D_store.
+c     dispersion_AMR_v2 (growthrates_mod) populates Q_store, D_store.
 c-----------------------------------------------------------------------
             IF (AMR_flag .AND. .NOT. coupling_flag) THEN
 
@@ -833,7 +834,7 @@ c-----------------------------------------------------------------------
 
 c-----------------------------------------------------------------------
 c     coupled AMR scan (all surfaces simultaneously).
-c     dispersion_AMR_v2 (gslayer_mod) with coupling_flag = .TRUE.
+c     dispersion_AMR_v2 (growthrates_mod) with coupling_flag = .TRUE.
 c-----------------------------------------------------------------------
          IF (AMR_flag .AND. coupling_flag) THEN
 
@@ -872,7 +873,7 @@ c-----------------------------------------------------------------------
 
 c-----------------------------------------------------------------------
 c     coupled-surface stability scan on [Re(Q), Im(Q)] grid.
-c     Uses dispersion_det (gslayer_mod) for the full dispersion
+c     Uses dispersion_det (growthrates_mod) for the full dispersion
 c     determinant including inter-surface coupling.
 c-----------------------------------------------------------------------
          IF (coupled_stabscan_flag) THEN

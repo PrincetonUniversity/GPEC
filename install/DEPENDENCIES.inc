@@ -197,7 +197,8 @@
 ../slayer/slayer_netcdf.o : ../slayer/sglobal.o ../slayer/version.inc
 ../slayer/layerinputs.o : ../slayer/sglobal.o ../slayer/params.o ../slayer/slayer_netcdf.o ../pentrc/inputs.o ../equil/equil.o ../equil/spline.o ../equil/bicube.o
 ../slayer/gslayer.o : ../slayer/sglobal.o ../slayer/params.o ../slayer/delta.o ../slayer/layerinputs.o ../slayer/slayer_netcdf.o
-../slayer/slayer.o : ../slayer/sglobal.o ../slayer/params.o ../slayer/delta.o ../slayer/gslayer.o ../slayer/layerinputs.o
+../slayer/growthrates.o : ../slayer/sglobal.o ../slayer/params.o ../slayer/delta.o ../slayer/layerinputs.o ../slayer/slayer_netcdf.o
+../slayer/slayer.o : ../slayer/sglobal.o ../slayer/params.o ../slayer/delta.o ../slayer/gslayer.o ../slayer/growthrates.o ../slayer/layerinputs.o
 
 # COIL
 ../coil/coil.o: ../equil/local.o ../equil/bicube.o ../coil/version.inc
