@@ -518,8 +518,9 @@ c --- 3. point not found: evaluate dispersion relation and store
       Q_store(idx_out) = q_in
 
       IF (coupling_flag) THEN
-           g_tmp = q_in
-           delta_val = dispersion_det(g_tmp, n_k, sl_in, msing_max)
+c          dispersion_det sets g_tmp per-surface internally;
+c          pass q_in directly as g_in argument.
+           delta_val = dispersion_det(q_in, n_k, sl_in, msing_max)
       ELSE
            g_tmp = q_in
            delta_val = riccati_f()
@@ -583,8 +584,9 @@ c --- 3. not found: evaluate with ifac rotation and store
       Q_store(idx_out) = q_in
 
       IF (coupling_flag) THEN
-          g_tmp = q_in * ifac
-          delta_val = dispersion_det(g_tmp, n_k, sl_in,
+c          dispersion_det sets g_tmp per-surface internally;
+c          pass q_in*ifac directly as g_in argument.
+          delta_val = dispersion_det(q_in * ifac, n_k, sl_in,
      $                               msing_max)
       ELSE
           g_tmp = q_in * ifac
