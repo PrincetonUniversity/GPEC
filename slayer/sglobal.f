@@ -107,8 +107,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     AMR scanner storage -- hash-based deduplication (v1).
 c-----------------------------------------------------------------------
-      INTEGER, PARAMETER  :: MAX_PTS    = 500000  ! max unique eval points
-      INTEGER, PARAMETER  :: HASH_SZ    = 500009  ! hash table size (prime)
+      INTEGER, PARAMETER  :: MAX_PTS    = 1000000  ! max unique eval points
+      INTEGER, PARAMETER  :: HASH_SZ    = 1000003  ! hash table size (prime)
       REAL(r8), PARAMETER :: HASH_SCALE = 1.0d5   ! Re/Im quantisation scale
       INTEGER, ALLOCATABLE :: hash_head(:)         ! bucket heads  (HASH_SZ)
       INTEGER, ALLOCATABLE :: hash_next(:)         ! chain pointers (MAX_PTS)
@@ -116,7 +116,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     AMR scanner storage -- cell-based refinement (v2).
 c-----------------------------------------------------------------------
-      INTEGER, PARAMETER :: MAX_CELLS = 500000    ! max AMR cells
+      INTEGER, PARAMETER :: MAX_CELLS = 1000000    ! max AMR cells
 
       TYPE :: amr_cell_type
           COMPLEX(r8) :: Q(4)          ! corner Q-values (BL, BR, TL, TR)
