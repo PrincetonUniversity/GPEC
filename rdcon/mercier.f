@@ -179,11 +179,20 @@ c-----------------------------------------------------------------------
             rmean_loc=0.5d0*(rmax_loc(1)+rmin_loc(1))
             amean_loc=0.5d0*(rmax_loc(1)-rmin_loc(1))
             eps_loc=amean_loc/rmean_loc
-            deltatop_loc=(rmean_loc-zmax_loc(1))/amean_loc
-            deltabot_loc=(rmean_loc-zmin_loc(1))/amean_loc
-            delta_loc=0.5d0*(deltatop_loc+deltabot_loc)
-            eps_eff=MAX(0.d0, 
-     $             0.67d0*(1.d0-1.4d0*delta_loc*ABS(delta_loc))*eps_loc)
+c     at the magnetic axis amean_loc=0: triangularity is undefined
+c     (->inf) and eps_loc=0 so eps_eff=0 and ftr=0 regardless of delta
+            IF(amean_loc > 0.0_r8)THEN
+               deltatop_loc=(rmean_loc-zmax_loc(1))/amean_loc
+               deltabot_loc=(rmean_loc-zmin_loc(1))/amean_loc
+               delta_loc=0.5d0*(deltatop_loc+deltabot_loc)
+               eps_eff=MAX(0.d0,
+     $            0.67d0*(1.d0-1.4d0*delta_loc*ABS(delta_loc))*eps_loc)
+            ELSE
+               deltatop_loc=HUGE(1.0_r8)
+               deltabot_loc=HUGE(1.0_r8)
+               delta_loc=HUGE(1.0_r8)
+               eps_eff=0.0_r8
+            ENDIF
 c-----------------------------------------------------------------------
 c     simple estimates of trapped fraction from Sauter 2002:
 c     <https://infoscience.epfl.ch/server/api/core/bitstreams/c42baba0-9
