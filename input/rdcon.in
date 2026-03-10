@@ -2,6 +2,7 @@
     nx=256               ! The number of elements in each interval between two singular surfaces
     pfac=0.001           ! Packing ratio near the singular surface
     gal_tol=1e-10        ! Tolerance of lsode integration
+    gnstep=5000          ! Maximum number of steps of lsode integrator
     dx1dx2_flag=t        ! Flag to include the special dx1 and dx2 treatments for resonant and extension element
     dx0=5e-4             ! The distance to the singular surface to truncate the lsode integration in resonant element
     dx1=1.e-3            ! The size of resonant element
