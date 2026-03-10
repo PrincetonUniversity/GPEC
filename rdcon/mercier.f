@@ -61,12 +61,14 @@ c-----------------------------------------------------------------------
          q1=sq%fs1(ipsi,4)
          chi1=twopi*psio      ! d(poloidal flux)/dpsi, chi=poloidal flux
 c-----------------------------------------------------------------------
-c     initialise extremum surface locations.
+c     initialise extremum surface locations (MRE terms only).
 c-----------------------------------------------------------------------
-         rmax_loc=-HUGE(1.0_r8)
-         rmin_loc=HUGE(1.0_r8)
-         zmax_loc=-HUGE(1.0_r8)
-         zmin_loc=HUGE(1.0_r8)
+         IF(MRE_flag)THEN
+            rmax_loc=-HUGE(1.0_r8)
+            rmin_loc=HUGE(1.0_r8)
+            zmax_loc=-HUGE(1.0_r8)
+            zmin_loc=HUGE(1.0_r8)
+         ENDIF
 c-----------------------------------------------------------------------
 c     evaluate coordinates and jacobian.
 c-----------------------------------------------------------------------
@@ -80,23 +82,25 @@ c-----------------------------------------------------------------------
             jac=rzphi%f(4)               ! jacobian of mag. coordinates
             bt=twopif/(twopi*r)          ! toroidal B field
 c-----------------------------------------------------------------------
-c     update extremum surface locations.
+c     update extremum surface locations (MRE terms only).
 c-----------------------------------------------------------------------
-            IF(r>rmax_loc(1))THEN
-               rmax_loc(1)=r
-               rmax_loc(2)=z
-            ENDIF
-            IF(r<rmin_loc(1))THEN
-               rmin_loc(1)=r
-               rmin_loc(2)=z
-            ENDIF
-            IF(z>zmax_loc(2))THEN
-               zmax_loc(1)=r
-               zmax_loc(2)=z
-            ENDIF
-            IF(z<zmin_loc(2))THEN
-               zmin_loc(1)=r
-               zmin_loc(2)=z
+            IF(MRE_flag)THEN
+               IF(r>rmax_loc(1))THEN
+                  rmax_loc(1)=r
+                  rmax_loc(2)=z
+               ENDIF
+               IF(r<rmin_loc(1))THEN
+                  rmin_loc(1)=r
+                  rmin_loc(2)=z
+               ENDIF
+               IF(z>zmax_loc(2))THEN
+                  zmax_loc(1)=r
+                  zmax_loc(2)=z
+               ENDIF
+               IF(z<zmin_loc(2))THEN
+                  zmin_loc(1)=r
+                  zmin_loc(2)=z
+               ENDIF
             ENDIF
 c-----------------------------------------------------------------------
 c     evaluate other local quantities.
