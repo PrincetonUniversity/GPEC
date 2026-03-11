@@ -73,6 +73,10 @@ c-----------------------------------------------------------------------
       ENDIF
       IF(ALLOCATED(delta)) DEALLOCATE(delta)
       IF(ode_flag.AND.ASSOCIATED(u)) DEALLOCATE(u,du,u_save)
+      IF(ALLOCATED(cellinfos%icell)) THEN
+            DEALLOCATE(cellinfos%icell,cellinfos%iintvl,
+     $  cellinfos%etypes,cellinfos%etypes_int,cellinfos%x1,cellinfos%x2)
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

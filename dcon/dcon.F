@@ -412,10 +412,6 @@ c-----------------------------------------------------------------------
          ENDDO
          DEALLOCATE(sing)
       ENDIF
-      IF(ALLOCATED(cellinfos%icell)) THEN
-            DEALLOCATE(cellinfos%icell,cellinfos%iintvl,
-     $  cellinfos%etypes,cellinfos%etypes_int,cellinfos%x1,cellinfos%x2)
-      ENDIF
 
       IF(ode_flag)DEALLOCATE(u,du,u_save)
 c-----------------------------------------------------------------------
