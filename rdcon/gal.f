@@ -215,6 +215,8 @@ c-----------------------------------------------------------------------
       ENDDO
       DEALLOCATE(gal%rhs,gal%sol,gal%mat,gal%ipiv,gal%intvl)
       CALL jacobi_dealloc(gal%quad)
+      DEALLOCATE(cellinfos%icell,cellinfos%iintvl,cellinfos%etypes,
+     $     cellinfos%etypes_int,cellinfos%x1,cellinfos%x2)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
