@@ -22,7 +22,6 @@ c-----------------------------------------------------------------------
       USE ode_mod
       USE free_mod
       USE resist_mod
-      USE bernstein_mod
       USE pentrc_interface,         ! rename overlapping names
      $    pentrc_verbose=>verbose,  ! should get a more fundamental fix
      $    pentrc_mpert=>mpert,
@@ -67,7 +66,7 @@ c-----------------------------------------------------------------------
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
      $     out_fl,bin_fl,out_evals,bin_evals,bin_euler,euler_stride,
      $     bin_vac,ahb_flag,mthsurf0,msol_ahb,netcdf_out,out_fund,
-     $     out_ahg2msc,bernstien_flag
+     $     out_ahg2msc
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -137,9 +136,6 @@ c     record the equilibrium properties
 c-----------------------------------------------------------------------
       CALL equil_out_diagnose(.FALSE.,out_unit)
       CALL equil_out_write_2d
-      IF (bernstien_flag) THEN
-          CALL bernstein_calculation
-      END IF
       IF(dump_flag .AND. eq_type /= "dump")CALL equil_out_dump
       IF(direct_flag)CALL bicube_dealloc(psi_in)
 c-----------------------------------------------------------------------
