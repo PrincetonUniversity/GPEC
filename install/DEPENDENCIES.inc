@@ -204,11 +204,11 @@
 # GPEC
 ../gpec/gpglobal.o: ../equil/fspline.o ../equil/bicube.o
 ../gpec/ismath.o: ../gpec/gpglobal.o  ../equil/local.o
-../gpec/idcon.o: ../gpec/gpglobal.o ../gpec/ismath.o
+../gpec/idcon.o: ../gpec/gpglobal.o ../gpec/ismath.o ../vacuum/vacuum_ma.o ../equil/equil.o
 ../gpec/rdcon.o: ../gpec/gpglobal.o ../gpec/ismath.o ../gpec/idcon.o
 ../gpec/gpeq.o: ../gpec/idcon.o ../gpec/ismath.o
 ../gpec/gpresp.o: ../gpec/gpeq.o
-../gpec/gpvacuum.o : ../gpec/gpeq.o
+../gpec/gpvacuum.o : ../gpec/gpeq.o ../vacuum/vacuum_ma.o
 ../gpec/gpdiag.o: ../gpec/gpresp.o ../gpec/gpvacuum.o
 ../gpec/gpout.o: ../gpec/gpdiag.o ../gpec/gpresp.o ../gpec/gpvacuum.o ../coil/field.o ../coil/coil.o \
 	../equil/equil.o ../equil/equil_out.o \
