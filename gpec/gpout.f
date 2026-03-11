@@ -3778,7 +3778,7 @@ c-----------------------------------------------------------------------
 c     deallocation cleans memory in heap
 c-----------------------------------------------------------------------
       DEALLOCATE(rvecs,zvecs,rs,zs,psis,rss,zss,xnofuns,bnofuns)
-      DEALLOCATE(xmns,ymns,xnomns,bnomns,bwpmns)
+      DEALLOCATE(xmns,ymns,xnomns,bnomns,bwpmns,bwpmns_rmatch)
       IF (msing>0) DEALLOCATE(intbwpmns)
 c-----------------------------------------------------------------------
 c     terminate.
