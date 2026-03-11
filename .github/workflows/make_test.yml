@@ -152,10 +152,13 @@ jobs:
 
       - name: Rewrite .gitmodules to use HTTPS
         run: |
-          git config --file .gitmodules submodule.harvest.url https://github.com/gafusion/harvest_client.git
+          git config --file .gitmodules submodule."deps/src/harvest".url https://github.com/gafusion/harvest_client.git
+          git config --file .gitmodules submodule."deps/src/netcdf-c".url https://github.com/Unidata/netcdf-c.git
+          git config --file .gitmodules submodule."deps/src/netcdf-fortran".url https://github.com/Unidata/netcdf-fortran.git
+          git config --file .gitmodules submodule."deps/src/hdf5".url https://github.com/HDFGroup/hdf5.git
+          git config --file .gitmodules submodule."deps/src/OpenBLAS".url https://github.com/OpenMathLib/OpenBLAS.git
           git submodule sync
-          git submodule update --init --recursive
-
+          git submodule update --init --recursive "deps/src/harvest"
       - name: Install Dependencies
         run: |
           sudo apt update
@@ -170,7 +173,7 @@ jobs:
           export FC=/usr/bin/gfortran
           export CC=/usr/bin/gcc
           export FFLAGS='-fallow-argument-mismatch -O0 -Wall -Wextra -fcheck=all,no-array-temps -fbacktrace -finit-real=snan -finit-integer=-9999 -fstack-protector-all -fsanitize=bounds -Wno-array-temporaries -Wno-unused-variable -Wno-unused-dummy-argument -Wno-compare-reals -Wno-unused-parameter -Wno-unused-label -fno-omit-frame-pointer -frecord-marker=4 -gdwarf-4 -ffloat-store -fbounds-check'
-          make
+          make -j$(nproc)
 
       - name: Run Soloviev ideal example
         run: |
@@ -229,9 +232,12 @@ jobs:
 
       - name: Rewrite .gitmodules to use HTTPS
         run: |
-          git config --file .gitmodules submodule.harvest.url https://github.com/gafusion/harvest_client.git
-          git submodule sync
-          git submodule update --init --recursive
+          git config --file .gitmodules submodule."deps/src/harvest".url https://github.com/gafusion/harvest_client.git
+          git config --file .gitmodules submodule."deps/src/netcdf-c".url https://github.com/Unidata/netcdf-c.git
+          git config --file .gitmodules submodule."deps/src/netcdf-fortran".url https://github.com/Unidata/netcdf-fortran.git
+          git config --file .gitmodules submodule."deps/src/hdf5".url https://github.com/HDFGroup/hdf5.git
+          git config --file .gitmodules submodule."deps/src/OpenBLAS".url https://github.com/OpenMathLib/OpenBLAS.git
+          git submodule update --init --recursive "deps/src/harvest"
 
       - name: Compile
         run: |
@@ -243,7 +249,7 @@ jobs:
           export FC=/opt/intel/oneapi/compiler/2022.2.1/linux/bin/intel64/ifort
           export CC=/usr/bin/gcc
           export FFLAGS='-O0 -warn all -check all -check noarg_temp_created -traceback -fpe3 -fstack-protector -fopenmp'
-          make
+          make -j$(nproc)
 
       - name: Run Soloviev ideal example
         run: |

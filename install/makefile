@@ -1,107 +1,56 @@
+#---------------------------------------------------------------------------
+# GPEC Build System - Top-level Makefile
+#
+# This Makefile coordinates the build of all major GPEC modules.
+# Included files:
+#   DEFAULTS.inc     -- System/compiler defaults and library paths
+#   SOURCES.inc      -- Source file auto-discovery
+#   RULES.inc        -- Compilation rules for each module
+#   TARGETS.inc      -- How to build libraries and executables
+#   DEPENDENCIES.inc -- Inter-module dependencies
+#
+# Usage:
+#   make [target]
+#   Common targets:
+#       all          -- Build all main executables and libraries
+#       allf         -- Build all Fortran-only modules
+#       clean        -- Remove built files and modules
+#       clear        -- Remove example outputs (docs/examples)
+#       realclean    -- Deep clean (libs, bins, modules)
+#       v            -- Print build configuration
+#       <module>     -- Build a specific module (e.g., pentrc, gpec)
+#       print-VAR    -- Print the value of a Makefile variable (for debugging)
+#
+#
+# See README_BUILD.md for more details.
+#---------------------------------------------------------------------------
+
 
 include DEFAULTS.inc
+include SOURCES.inc
 
-# extend these variables to sub-makes (?= sets a default if user doesn't specify options)
-FFLAGS ?= -g
-CFLAGS ?= -g
+FFLAGS ?= -O3
+CFLAGS ?= -O3
 
-export FFLAGS
-export CFLAGS
-export OMPFLAG
-export LDFLAGS
+include RULES.inc
 
-# compile package
+# Targets
 
-all: v harvest equil lsode zlange zvode orbit vacuum pentrc dcon match rdcon rmatch \
-	multi sum xdraw slayer coil gpec stride mkbin
+# Top-level target
+all: v neededdeps xdraw equil lsode zlange zvode orbit vacuum pentrc dcon match rdcon rmatch \
+	multi sum slayer coil gpec stride
+	@printf '%bSUCCESS:%b All modules compiled successfully\n' '$(SUCCESS_COLOR)' '$(SUCCESS_RESET)'
 
-# fortran only
-allf: v harvest equil lsode zlange zvode orbit vacuum pentrc dcon match rdcon rmatch \
-	multi sum slayer coil gpec stride mkbin
+# Fortran only
+allf: v neededdeps xdraw equil lsode zlange zvode orbit vacuum pentrc dcon match rdcon rmatch \
+	multi sum slayer coil gpec stride
+	@printf '%bSUCCESS:%b All Fortran modules compiled successfully\n' '$(SUCCESS_COLOR)' '$(SUCCESS_RESET)'
 
-
-# executables:
-
-harvest:
-	cd ../; git submodule init; git submodule update
-	cd ../harvest; make FC='$(FC)' CC='$(CC)' GACODE_ROOT= -f Makefile libharvest.a
-	mkdir -p ../lib
-	cp -f ../harvest/libharvest.a ../lib/
-
-xdraw:
-	cd ../xdraw;  make
-
-lsode:
-	cd ../lsode;  make liblsode
-
-zlange:
-	cd ../zlange;  make libzlange
-
-zvode:
-	cd ../zvode;  make libzvode
-
-equil:
-	cd ../equil;  make libequil
-
-vacuum:
-	cd ../vacuum; make libvac
-
-orbit:
-	cd ../orbit;  make orbit
-
-dcon:
-	cd ../dcon;   make dcon
-
-match:
-	cd ../match;  make match
-
-rdcon:
-	cd ../rdcon;   make rdcon
-
-rmatch:
-	cd ../rmatch;  make rmatch
-
-multi:
-	cd ../multi;  make multi
-
-sum:
-	cd ../sum;    make sum
-
-slayer:
-	cd ../slayer; make slayer
-
-coil:
-	cd ../coil;   make libcoil
-
-gpec:
-	cd ../gpec;   make gpec
-
-pentrc:
-	cd ../pentrc; make pentrc
-
-stride:
-	cd ../stride; make stride
-
-mkbin:
-	mkdir -p ../bin
-	cp -f ../orbit/orbit ../bin
-	cp -f ../dcon/dcon ../bin
-	cp -f ../match/match ../bin
-	cp -f ../rdcon/rdcon ../bin
-	cp -f ../rmatch/rmatch ../bin
-	cp -f ../xdraw/xdraw ../bin
-	cp -f ../multi/multi ../bin
-	cp -f ../sum/sum ../bin
-	cp -f ../slayer/slayer ../bin
-	cp -f ../gpec/gpec ../bin
-	cp -f ../pentrc/pentrc ../bin
-	cp -f ../stride/stride ../bin
-
-# print verbose info
-
+# Print verbose info
+.PHONY: v
 v:
 	@echo "------------------------------------------------------------"
-	@echo "Defaults tailored for $(PLATFORM)"
+	@echo "Defaults tailored for platform $(if $(PLATFORM),$(PLATFORM),NULL) on host $(if $(HOST),$(HOST),NULL)"
 	@echo "Compiling with FC = $(FC)"
 	@echo "   using math libraries $(MATHLIBS)"
 	@echo "   from $(MATHDIR)"
@@ -113,36 +62,34 @@ v:
 	@echo "   from $(FCDIR)"
 	@echo "   including $(FCINC)"
 	@echo "   and using OMPFLAG $(OMPFLAG)"
+	@echo "   Compiling supporting modules $(NEEDED_DEPS)"
 	@echo
 	@echo "Set environment FC,LAPACKHOME,NETCDFHOME to change these"
-ifeq ("$(PLATFORM)","portal")
-	@echo "   example: module load gcc4 lapack netcdf"
-endif
 	@echo "------------------------------------------------------------"
 
-# cleaning
-
+# Cleaning
 clean:
-	cd ../harvest; make clean
-	cd ../zlange;  make clean
-	cd ../zvode;  make clean
-	cd ../xdraw;  make clean
-	cd ../lsode;  make clean
-	cd ../equil;  make clean
-	cd ../orbit;  make clean
-	cd ../vacuum; make clean
-	cd ../dcon;   make clean
-	cd ../match;  make clean
-	cd ../rdcon;  make clean
-	cd ../rmatch; make clean
-	cd ../multi;  make clean
-	cd ../sum;    make clean
-	cd ../slayer; make clean
-	cd ../coil;   make clean
-	cd ../gpec;   make clean
-	cd ../pentrc; make clean
-	cd ../stride; make clean
+	cd ../equil; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff
+	cd ../lsode; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff
+	cd ../zlange; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff
+	cd ../zvode; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff
+	cd ../orbit; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff orbit
+	cd ../vacuum; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff
+	cd ../pentrc; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff pentrc
+	cd ../dcon; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff dcon
+	cd ../match; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff match
+	cd ../rdcon; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff rdcon
+	cd ../rmatch; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff rmatch
+	cd ../xdraw; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff xdraw
+	cd ../sum; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff sum
+	cd ../slayer; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff slayer
+	cd ../coil; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff
+	cd ../gpec; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff gpec
+	cd ../stride; rm -f *.o *.mod *.a *.i *.original *.out *.bin sum.dat *.diff stride
+	rm -rf ../bin/*
 
+
+# Remove example outputs
 clear:
 	cd ../docs/examples/run_ideal_example; rm -f *.out *.bin *.nc
 	cd ../docs/examples/run_kinetic_example; rm -f *.out *.bin *.nc
@@ -156,8 +103,20 @@ clear:
 	cd ../docs/examples/solovev_kinetic_example; rm -f *.out *.bin *.nc
 	cd ../docs/examples/solovev_resistive_example; rm -f *.out *.bin *.nc *.dat
 
-realclean: clean
-	clear
-	rm -rf ../lib ../bin
+# Revert to clean state
+realclean: clean clear
+	rm -rf ../deps/lib/* ../deps/hdf5 ../deps/include/* ../deps/bin/* ../deps/share ../bin
+	if [ -f ../deps/src/harvest/Makefile ]; then cd ../deps/src/harvest && make clean; fi
+	if [ -f ../deps/src/OpenBLAS/Makefile ]; then cd ../deps/src/OpenBLAS && make clean; fi
+	if [ -f ../deps/src/hdf5/Makefile ]; then cd ../deps/src/hdf5 && make clean; fi
+	if [ -f ../deps/src/netcdf-c/Makefile ]; then cd ../deps/src/netcdf-c && make clean; fi
+	if [ -f ../deps/src/netcdf-fortran/Makefile ]; then cd ../deps/src/netcdf-fortran && make clean; fi
 
+# Debug
 print-% : ; $(info $* is a $(flavor $*) variable set to [$($*)]) @true
+
+# Lower level targets
+include TARGETS.inc
+
+# Dependencies
+include DEPENDENCIES.inc
