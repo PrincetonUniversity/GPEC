@@ -1915,7 +1915,6 @@ c-----------------------------------------------------------------------
      $        "Resonant fields, singular currents, and islands"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a13,a8,1x,a12,I2)')
          WRITE(out_unit,'(1x,a12,1x,I4)')"msing =",msing
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,a6,17(1x,a16))')"q","psi","spot",
@@ -1927,7 +1926,6 @@ c-----------------------------------------------------------------------
      $        "half_w_isl_v_crit","singflx_crit",
      $        "half_w_sat","half_w_min"
          DO ising=1,msing
-            WRITE(out_unit,'(1x,f6.3,17(es17.8e3))')
             WRITE(out_unit,'(1x,f6.3,17(es17.8e3))')
      $           singtype(ising)%q,singtype(ising)%psifac,
      $           spots(ising),
