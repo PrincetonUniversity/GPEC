@@ -71,17 +71,21 @@ c-----------------------------------------------------------------------
       LOGICAL :: ahb_flag=.FALSE.
       LOGICAL :: out_ahg2msc=.TRUE.
       LOGICAL :: vac_memory=.FALSE.
+      LOGICAL :: MRE_flag=.FALSE.
+      LOGICAL :: geom_flag=.FALSE.
+      LOGICAL :: reform_eq_with_psilim=.FALSE.
 
       INTEGER, PARAMETER :: sol_base=50
       INTEGER :: mlow,mhigh,mpert,mband,nn,nstep=HUGE(0),bin_sol_min,
      $     bin_sol_max,euler_stride=1,mthvac=480,ksing=-1,delta_mlow=0,
      $     delta_mhigh=0,delta_mband=0,out_sol_min,out_sol_max,
-     $     sing_start=0
+     $     sing_start=0,nzero=0
       REAL(r8) :: thmax0=1,ucrit=1e4,tol_r=1e-5,tol_nr=1e-5,
-     $     crossover=1e-2,mthsurf0=1,prefac=1.0
+     $     crossover=1e-2,mthsurf0=1,prefac=1.0,
+     $     plasma1=0.0,vacuum1=0.0,total1=0.0,Zeff=1.52
 
       REAL(r8) :: dpsi_intvl=0.1,dpsi1_intvl=0.1
-      TYPE(spline_type) :: locstab
+      TYPE(spline_type) :: locstab, mreterms
 
       TYPE :: resist_type
       REAL(r8) :: e,f,h,m,g,k,eta,rho,taua,taur,v1
@@ -113,7 +117,8 @@ c-----------------------------------------------------------------------
 
       LOGICAL :: sas_flag=.FALSE.,lim_flag
       EQUIVALENCE (sas_flag,lim_flag)
-      REAL(r8) :: psilim,qlim,q1lim,dmlim=.5_r8
+      REAL(r8) :: psilim,qlim,q1lim,dmlim=.5_r8,qhigh=1e3,qlow=0
+      REAL(r8) :: psilow_tmp, psilim_tmp
 
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: delta
 

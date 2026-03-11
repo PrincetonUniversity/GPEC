@@ -377,9 +377,9 @@ c-----------------------------------------------------------------------
       ierr=set_harvest_payload_dbl(hlog,'crnt'//nul,crnt)
       ierr=set_harvest_payload_dbl(hlog,'q95'//nul,q95)
       ierr=set_harvest_payload_dbl(hlog,'betan'//nul,betan)
-      ierr=set_harvest_payload_dbl(hlog,'plasma1'//nul,plasma1)
-      ierr=set_harvest_payload_dbl(hlog,'vacuum1'//nul,vacuum1)
-      ierr=set_harvest_payload_dbl(hlog,'total1'//nul,total1)
+      ierr=set_harvest_payload_dbl(hlog,'plasma1'//nul,REAL(plasma1))
+      ierr=set_harvest_payload_dbl(hlog,'vacuum1'//nul,REAL(vacuum1))
+      ierr=set_harvest_payload_dbl(hlog,'total1'//nul,REAL(total1))
       ierr=harvest_send(hlog)
 c-----------------------------------------------------------------------
 c     terminate.

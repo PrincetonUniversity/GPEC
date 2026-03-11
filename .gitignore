@@ -9,6 +9,7 @@
 *.mod
 *.pyc
 *~
+*.i
 *.out
 *.bin
 *.nc
@@ -17,16 +18,25 @@
 */penmpi
 */version.inc
 */*.original
+*/make.log
 modovmc
 
 .cproject
 .idea/
+.vscode/
 .project
+.DS_Store
 bin/
 docs/_build/
 docs/examples/*/gal_solution.dat
 docs/examples/*/delta_gw.dat
 docs/examples/*/gal_solution_cut.dat
+
+deps/bin/*
+deps/hdf5
+deps/include/*
+deps/lib/*
+deps/share/*
 
 *version.inc
 
