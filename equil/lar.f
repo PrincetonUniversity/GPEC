@@ -100,7 +100,7 @@ c-----------------------------------------------------------------------
       IF(.NOT. sq_in%allocated)THEN
          CALL spline_alloc(sq_in,ma,4)
       ELSE
-         CALL spline_dealloc(sq)
+         CALL spline_dealloc(sq_in)
          CALL spline_alloc(sq_in,ma,4)
       ENDIF
       IF(.NOT. rz_in%allocated)THEN

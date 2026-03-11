@@ -38,7 +38,7 @@ c-----------------------------------------------------------------------
       NAMELIST/equil_control/eq_filename,eq_type,grid_type,mpsi,mtheta,
      $     newq0,psihigh,psilow,input_only,jac_type,power_bp,power_r,
      $     power_b,jac_method,convert_type,power_flag,ns1,
-     $     sp_pfac,sp_nx,sp_dx1,sp_dx2,use_galgrid,etol,
+     $     sp_pfac,sp_nx,sp_dx1,sp_dx2,use_galgrid,etol,enstep,
      $     use_classic_splines
       NAMELIST/equil_output/bin_2d,bin_eq_1d,bin_eq_2d,out_2d,out_eq_1d,
      $     out_eq_2d,bin_fl,out_fl,interp,gse_flag,dump_flag,verbose,
@@ -46,14 +46,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read input data.
 c-----------------------------------------------------------------------
-      IF (out_ahg2msc) THEN
-         WRITE(*,*) "WARNING: ahg2msc.out is deprecated and will be " //
-     $          "removed in a future version. Set out_ahg2msc = .FALSE."
-         WRITE(*,*) "         to disable this warning."
-         vac_memory=.FALSE.
-      ELSE
-         vac_memory=.TRUE.
-      ENDIF
       INQUIRE(FILE="equil.in",EXIST=file_stat)
       IF(.NOT.file_stat)CALL program_stop
      $     ("Can't open input file equil.in")
@@ -63,6 +55,14 @@ c-----------------------------------------------------------------------
          READ(UNIT=in_unit,NML=equil_output)
       ENDIF
       CALL ascii_close(in_unit)
+      IF (out_ahg2msc) THEN
+         WRITE(*,*) "WARNING: ahg2msc.out is deprecated and will be " //
+     $          "removed in a future version. Set out_ahg2msc = .FALSE."
+         WRITE(*,*) "         to disable this warning."
+         vac_memory=.FALSE.
+      ELSE
+         vac_memory=.TRUE.
+      ENDIF
 c-----------------------------------------------------------------------
 c     read input data.
 c-----------------------------------------------------------------------
