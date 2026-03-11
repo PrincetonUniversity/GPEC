@@ -46,14 +46,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read input data.
 c-----------------------------------------------------------------------
-      IF (out_ahg2msc) THEN
-         WRITE(*,*) "WARNING: ahg2msc.out is deprecated and will be " //
-     $          "removed in a future version. Set out_ahg2msc = .FALSE."
-         WRITE(*,*) "         to disable this warning."
-         vac_memory=.FALSE.
-      ELSE
-         vac_memory=.TRUE.
-      ENDIF
       INQUIRE(FILE="equil.in",EXIST=file_stat)
       IF(.NOT.file_stat)CALL program_stop
      $     ("Can't open input file equil.in")
@@ -63,6 +55,14 @@ c-----------------------------------------------------------------------
          READ(UNIT=in_unit,NML=equil_output)
       ENDIF
       CALL ascii_close(in_unit)
+      IF (out_ahg2msc) THEN
+         WRITE(*,*) "WARNING: ahg2msc.out is deprecated and will be " //
+     $          "removed in a future version. Set out_ahg2msc = .FALSE."
+         WRITE(*,*) "         to disable this warning."
+         vac_memory=.FALSE.
+      ELSE
+         vac_memory=.TRUE.
+      ENDIF
 c-----------------------------------------------------------------------
 c     read input data.
 c-----------------------------------------------------------------------
