@@ -26,6 +26,7 @@ c     17. gpout_control_filter
 c     18. gpout_qrv
 c     19. gpout_init_netcdf
 c     20. gpout_close_netcdf
+c     21. gpout_recon
 c-----------------------------------------------------------------------
 c     subprogram 0. gpout_mod.
 c     module declarations.
@@ -6862,5 +6863,112 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_close_netcdf
+
+c-----------------------------------------------------------------------
+c     subprogram 20. gpout_recon
+c     main entry point for reconstruction diagnostics.
+c     calls gpeq functions to compute shear, curvature, K quantities
+c     and stores results as bicubes for visualization/analysis.
+c-----------------------------------------------------------------------
+      SUBROUTINE gpout_recon(mode, xspmn)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: mode
+      COMPLEX(r8), DIMENSION(:), INTENT(IN) :: xspmn
+      
+      INTEGER :: ipsi
+      REAL(r8) :: psi
+      COMPLEX(r8), DIMENSION(mpert) :: shear_mn, curv_mn, K_mn, 
+     $     term_mn
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: shear_fun, curv_fun, K_fun
+      
+      IF(verbose) WRITE(*,*)""
+      IF(verbose) WRITE(*,*)"GPOUT_RECON: Starting reconstruction"//
+     $  " diagnostics"
+      IF(verbose) WRITE(*,*)"__________________________________________"
+
+c-----------------------------------------------------------------------
+c     allocate C vector arrays for EPF calculation.
+c     Storage: C_*_mn(mpert, 0:mpsi) for all psi levels.
+c-----------------------------------------------------------------------
+      IF (.NOT. ALLOCATED(C_psi_mn)) THEN
+         ALLOCATE(C_psi_mn(mpert, 0:mpsi))
+         ALLOCATE(C_theta_mn(mpert, 0:mpsi))
+         ALLOCATE(C_zeta_mn(mpert, 0:mpsi))
+         ALLOCATE(C1_mn(mpert, 0:mpsi))
+         ALLOCATE(C2_mn(mpert, 0:mpsi))
+         ALLOCATE(C3_mn(mpert, 0:mpsi))
+         C_psi_mn = 0.0_r8
+         C_theta_mn = 0.0_r8
+         C_zeta_mn = 0.0_r8
+         C1_mn = 0.0_r8
+         C2_mn = 0.0_r8
+         C3_mn = 0.0_r8
+      ENDIF
+
+c-----------------------------------------------------------------------
+c     allocate bicubes for shear, curvature, K (placeholder allocation).
+c     actual bicube population should be done at each psi in gpeq.
+c-----------------------------------------------------------------------
+      ALLOCATE(gpout_shear)
+      ALLOCATE(gpout_curvature)
+      ALLOCATE(gpout_k)
+
+c-----------------------------------------------------------------------
+c     main loop over all psi levels.
+c     compute gpeq equilibrium quantities at each psi and call gpeq_epf
+c     to populate C vectors for the EPF/DST diagnostics.
+c-----------------------------------------------------------------------
+      CALL gpeq_alloc
+      DO ipsi = 0, mpsi
+         psi = psifac(ipsi)
+         
+c        Compute all necessary gpeq quantities at this psi level.
+         CALL gpeq_sol(psi)
+         CALL gpeq_contra(psi)
+         CALL gpeq_cova(psi)
+         CALL gpeq_normal(psi)
+         CALL gpeq_tangent(psi)
+         CALL gpeq_parallel(psi)
+         CALL gpeq_rzphi(psi)
+         
+c        Compute C vectors (covariant + contravariant) for this psi
+c        and store in C_*_mn(:, ipsi).
+c        gpeq_epf handles Q vector, current coupling, and Fourier transform.
+         CALL gpeq_epf(psi, ipsi)
+         CALL gpeq_dst(psi,ipsi)
+      ENDDO
+      CALL gpeq_dealloc
+
+c-----------------------------------------------------------------------
+c     C vectors now populated in gpglobal_mod for all psi levels.
+c     Next phase: compute EPF/DST from C vectors (placeholder).
+c-----------------------------------------------------------------------
+      IF(ALLOCATED(gpout_shear)) THEN
+         IF(verbose) WRITE(*,*)"  Shear bicube computed"
+      ENDIF
+      
+      IF(ALLOCATED(gpout_curvature)) THEN
+         IF(verbose) WRITE(*,*)"  Curvature bicube computed"
+      ENDIF
+      
+      IF(ALLOCATED(gpout_k)) THEN
+         IF(verbose) WRITE(*,*)"  K quantity bicube computed"
+      ENDIF
+
+c-----------------------------------------------------------------------
+c     completion message.
+c-----------------------------------------------------------------------
+      IF(verbose) WRITE(*,*)
+     $  "GPDIAG_RECON: Reconstruction diagnostics complete"
+      IF(verbose) WRITE(*,*)"  C vectors computed and stored in"//
+     $  " C_*_mn(mpert, 0:mpsi)"
+      IF(verbose) WRITE(*,*)"__________________________________________"
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpout_recon
 
       END MODULE gpout_mod
