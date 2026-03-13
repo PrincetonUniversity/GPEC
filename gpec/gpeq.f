@@ -14,17 +14,23 @@ c      5. gpeq_tangent
 c      6. gpeq_parallel
 c      7. gpeq_rzphi
 c      8. gpeq_surface
-c      9. gpeq_fcoords
-c     10. gpeq_fcoordsout
-c     11. gpeq_bcoords
-c     12. gpeq_bcoordsout
-c     13. gpeq_weight
-c     14. gpeq_rzpgrid
-c     15. gpeq_rzpdiv
-c     16. gpeq_alloc
-c     17. gpeq_dealloc
-c     18. gpeq_interp_singsurf
-c     19. gpeq_interp_sol
+c      9. gpeq_epf          (reconstruction: C vector for EPF)
+c     10. gpeq_dst          (reconstruction: C vector for DST)
+c     11. gpeq_shear        (reconstruction: magnetic shear)
+c     12. gpeq_curvature    (reconstruction: curvature)
+c     13. gpeq_K            (reconstruction: Bernstein K quantity)
+c     14. gpeq_terms        (reconstruction: integration terms)
+c     15. gpeq_fcoords
+c     16. gpeq_fcoordsout
+c     17. gpeq_bcoords
+c     18. gpeq_bcoordsout
+c     19. gpeq_weight
+c     20. gpeq_rzpgrid
+c     21. gpeq_rzpdiv
+c     22. gpeq_alloc
+c     23. gpeq_dealloc
+c     24. gpeq_interp_singsurf
+c     25. gpeq_interp_sol
 c-----------------------------------------------------------------------
 c     subprogram 0. gpeq_mod.
 c     module declarations.
@@ -639,7 +645,373 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_surface
 c-----------------------------------------------------------------------
-c     subprogram 9. gpeq_fcoords.
+c     subprogram 9. gpeq_epf.
+c     compute C vector (covariant + contravariant) for EPF calculation.
+c     
+c     Stores mode-space coefficients for all psi levels:
+c       C_psi_mn(mpert, 0:mpsi)   - covariant psi component
+c       C_theta_mn(mpert, 0:mpsi) - covariant theta component
+c       C_zeta_mn(mpert, 0:mpsi)  - covariant zeta component
+c       C1_mn(mpert, 0:mpsi)      - contravariant scalar C_1
+c       C2_mn(mpert, 0:mpsi)      - contravariant scalar C_2
+c       C3_mn(mpert, 0:mpsi)      - contravariant scalar C_3
+c     
+c     INPUT:  psi  (flux coordinate)
+c             ipsi (psi index for storage)
+c     
+c     REFERENCES:
+c     - Q = ξ × (∇ × B) in energy principle
+c     - C = Q + ξ·n̂ (μ₀ j × n̂) where n̂ = ∇ψ/|∇ψ|
+c     - Formulas from main.tex section "Reconstruction v1"
+c-----------------------------------------------------------------------
+      SUBROUTINE gpeq_epf(psi, ipsi)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      REAL(r8), INTENT(IN) :: psi
+      INTEGER, INTENT(IN) :: ipsi
+
+      INTEGER :: itheta, ipert, jpert, m, m1, dm
+      
+      REAL(r8) :: q, q1, f1raw, p1, chi1, jac, delpsi
+      REAL(r8) :: eta, rfac
+      REAL(r8), DIMENSION(0:mthsurf) :: jacs, dphi, r_vec, z_vec
+      
+c     Metric tensor (COMPLEX - see gpeq_cova)
+      COMPLEX(r8), DIMENSION(-mband:mband) :: g11, g12, g22, g23,
+     $     g31, g33
+      
+c     Eigenfunction components in spatial representation
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: xi_psi_fun, xi_s_fun,
+     $     xwp_fun, xmt_fun
+      
+c     C vector components (covariant) in spatial rep
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: C_psi_fun, C_theta_fun,
+     $     C_zeta_fun, C1_fun, C2_fun, C3_fun
+      
+c     Supporting functions
+      REAL(r8), DIMENSION(0:mthsurf) :: delpsi_arr
+      
+      IF(debug_flag) PRINT *, "Entering gpeq_epf at ipsi=", ipsi
+c-----------------------------------------------------------------------
+c     0) Setup: evaluate equilibrium data at this psi.
+c-----------------------------------------------------------------------
+      CALL spline_eval(sq, psi, 1)
+      q = sq%f(4)
+      q1 = sq%f1(4)
+      f1raw = sq%f1(1)
+      p1 = sq%f1(2)
+      chi1 = psio * twopi
+      
+c     Get metric tensor (same as gpeq_cova)
+      CALL cspline_eval(metric%cs, psi, 0)
+      g11(0:-mband:-1) = metric%cs%f(1:mband+1)
+      g22(0:-mband:-1) = metric%cs%f(2*mband+2:3*mband+2)
+      g33(0:-mband:-1) = metric%cs%f(4*mband+6:5*mband+6)
+      g23(0:-mband:-1) = metric%cs%f(3*mband+4:4*mband+4)
+      g31(0:-mband:-1) = metric%cs%f(4*mband+5:5*mband+5)
+      g12(0:-mband:-1) = metric%cs%f(5*mband+6:6*mband+6)
+      
+c     Fill upper half of metric arrays (conjugate symmetry)
+      g11(1:mband) = CONJG(g11(-1:-mband:-1))
+      g22(1:mband) = CONJG(g22(-1:-mband:-1))
+      g33(1:mband) = CONJG(g33(-1:-mband:-1))
+      g23(1:mband) = CONJG(g23(-1:-mband:-1))
+      g31(1:mband) = CONJG(g31(-1:-mband:-1))
+      g12(1:mband) = CONJG(g12(-1:-mband:-1))
+
+c-----------------------------------------------------------------------
+c     1) Compute theta grid: |∇ψ|² and coordinate values.
+c-----------------------------------------------------------------------
+      DO itheta = 0, mthsurf
+         CALL bicube_eval(rzphi, psi, theta(itheta), 1)
+         jac = rzphi%f(4)
+         rfac = SQRT(rzphi%f(1))
+         eta = twopi*(theta(itheta) + rzphi%f(2))
+         r_vec(itheta) = ro + rfac*COS(eta)
+         z_vec(itheta) = zo + rfac*SIN(eta)
+         jacs(itheta) = jac
+         dphi(itheta) = rzphi%f(3)
+         
+c        Compute |∇ψ|² from contravariant metric
+         w(1,1) = (1.0_r8 + rzphi%fy(2))*twopi**2*rfac*r_vec(itheta)
+     $        /jac
+         w(1,2) = -rzphi%fy(1)*pi*r_vec(itheta)/(rfac*jac)
+         delpsi_arr(itheta) = SQRT(w(1,1)**2 + w(1,2)**2)
+      ENDDO
+
+c-----------------------------------------------------------------------
+c     2) Reconstruct eigenfunctions in spatial representation.
+c        Use iscdftb: mode-space coefficients → spatial functions
+c-----------------------------------------------------------------------
+      CALL iscdftb(mfac, mpert, xi_psi_fun, mthsurf, xsp_mn)
+      CALL iscdftb(mfac, mpert, xi_s_fun, mthsurf, xss_mn)
+      CALL iscdftb(mfac, mpert, xwp_fun, mthsurf, xwp_mn)
+      CALL iscdftb(mfac, mpert, xmt_fun, mthsurf, xmt_mn)
+
+c-----------------------------------------------------------------------
+c     3) Construct C vectors in spatial representation.
+c        For now: simplified version using existing eigenfunctions.
+c        Full version would include current coupling terms.
+c-----------------------------------------------------------------------
+      DO itheta = 0, mthsurf
+         C_psi_fun(itheta) = xwp_fun(itheta)
+         C_theta_fun(itheta) = xmt_fun(itheta)
+         C_zeta_fun(itheta) = CMPLX(0.0_r8, 0.0_r8, r8)
+         
+c        Contravariant representation (same as covariant for now)
+         C1_fun(itheta) = C_psi_fun(itheta)
+         C2_fun(itheta) = C_theta_fun(itheta)
+         C3_fun(itheta) = C_zeta_fun(itheta)
+      ENDDO
+
+c-----------------------------------------------------------------------
+c     4) Fourier transform C components to mode-space and store.
+c        Use iscdftf: spatial functions → mode-space coefficients
+c-----------------------------------------------------------------------
+      CALL iscdftf(mfac, mpert, C_psi_fun, mthsurf,
+     $     C_psi_mn(1:mpert, ipsi))
+      CALL iscdftf(mfac, mpert, C_theta_fun, mthsurf,
+     $     C_theta_mn(1:mpert, ipsi))
+      CALL iscdftf(mfac, mpert, C_zeta_fun, mthsurf,
+     $     C_zeta_mn(1:mpert, ipsi))
+      CALL iscdftf(mfac, mpert, C1_fun, mthsurf,
+     $     C1_mn(1:mpert, ipsi))
+      CALL iscdftf(mfac, mpert, C2_fun, mthsurf,
+     $     C2_mn(1:mpert, ipsi))
+      CALL iscdftf(mfac, mpert, C3_fun, mthsurf,
+     $     C3_mn(1:mpert, ipsi))
+      
+      IF(debug_flag) PRINT *, "->Leaving gpeq_epf at ipsi=", ipsi
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpeq_epf
+c-----------------------------------------------------------------------
+c     subprogram 10. gpeq_dst.
+c     compute DST mode coefficients and spatial functions.
+c-----------------------------------------------------------------------
+      SUBROUTINE gpeq_dst(psi, ipsi)
+      REAL(r8), INTENT(IN) :: psi
+      INTEGER, INTENT(IN) :: ipsi
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpeq_dst
+c-----------------------------------------------------------------------
+c     subprogram 11. gpeq_shear.
+c     compute magnetic shear mode coefficients and spatial functions.
+c-----------------------------------------------------------------------
+      SUBROUTINE gpeq_shear(psi, shear_mn, shear_fun)
+      REAL(r8), INTENT(IN) :: psi
+      COMPLEX(r8), DIMENSION(mpert), INTENT(OUT) :: shear_mn
+      COMPLEX(r8), DIMENSION(0:mthsurf), OPTIONAL, INTENT(OUT) 
+     $     :: shear_fun
+
+      INTEGER :: itheta, ipert, jpert, dm, m1
+      REAL(r8) :: q, q1, eta, r, rfac
+      REAL(r8), DIMENSION(0:mthsurf) :: theta_vals
+      COMPLEX(r8), DIMENSION(-mband:mband) :: jmat, jmat1
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: shear_theta_fun
+      
+      CALL spline_eval(sq, psi, 1)
+      q = sq%f(4)
+      q1 = sq%f1(4)
+      CALL cspline_eval(metric%cs, psi, 0)
+      
+      jmat(0:-mband:-1) = metric%cs%f(6*mband+7:7*mband+7)
+      jmat1(0:-mband:-1) = metric%cs%f(7*mband+8:8*mband+8)
+      jmat(1:mband) = CONJG(jmat(-1:-mband:-1))
+      jmat1(1:mband) = CONJG(jmat1(-1:-mband:-1))
+      
+c-----------------------------------------------------------------------
+c     compute shear in mode space from metric tensors and solutions.
+c-----------------------------------------------------------------------
+      ipert = 0
+      shear_mn = 0.0_r8
+      DO m1 = mlow, mhigh
+         ipert = ipert + 1
+         DO dm = MAX(1-ipert, -mband), MIN(mpert-ipert, mband)
+            jpert = ipert + dm
+            shear_mn(ipert) = shear_mn(ipert)
+     $           + (twopi**2/jac) * (q1 
+     $           + (jmat(dm)*xwp_mn(jpert) - q*jmat1(dm)*xwp_mn(jpert))/
+     $           q)
+         ENDDO
+      ENDDO
+      
+c-----------------------------------------------------------------------
+c     convert to spatial functions if requested.
+c-----------------------------------------------------------------------
+      IF (PRESENT(shear_fun)) THEN
+         CALL iscdftb(mfac, mpert, shear_theta_fun, mthsurf, 
+     $        shear_mn)
+         shear_fun = shear_theta_fun
+      ENDIF
+      
+      RETURN
+      END SUBROUTINE gpeq_shear
+c-----------------------------------------------------------------------
+c     subprogram 12. gpeq_curvature.
+c     compute curvature mode coefficients and spatial functions.
+c-----------------------------------------------------------------------
+      SUBROUTINE gpeq_curvature(psi, curv_mn, curv_fun)
+      REAL(r8), INTENT(IN) :: psi
+      COMPLEX(r8), DIMENSION(mpert), INTENT(OUT) :: curv_mn
+      COMPLEX(r8), DIMENSION(0:mthsurf), OPTIONAL, INTENT(OUT)
+     $     :: curv_fun
+
+      INTEGER :: itheta, ipert, jpert, dm, m1
+      REAL(r8) :: q, p1, chi1, eta, r, rfac, bsq_val
+      COMPLEX(r8), DIMENSION(-mband:mband) :: g22, g23, g33
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: curv_theta_fun
+      COMPLEX(r8), DIMENSION(mpert) :: bvt_local, bvz_local
+      
+      chi1 = psio * twopi
+      
+      CALL spline_eval(sq, psi, 1)
+      q = sq%f(4)
+      p1 = sq%f1(2)
+      CALL cspline_eval(metric%cs, psi, 0)
+      
+      g22(0:-mband:-1) = metric%cs%f(2*mband+2:3*mband+2)
+      g23(0:-mband:-1) = metric%cs%f(3*mband+3:4*mband+3)
+      g33(0:-mband:-1) = metric%cs%f(4*mband+4:5*mband+4)
+      g22(1:mband) = CONJG(g22(-1:-mband:-1))
+      g23(1:mband) = CONJG(g23(-1:-mband:-1))
+      g33(1:mband) = CONJG(g33(-1:-mband:-1))
+      
+c-----------------------------------------------------------------------
+c     compute covariant components needed for curvature.
+c-----------------------------------------------------------------------
+      ipert = 0
+      bvt_local = 0.0_r8
+      bvz_local = 0.0_r8
+      curv_mn = 0.0_r8
+      DO m1 = mlow, mhigh
+         ipert = ipert + 1
+         DO dm = MAX(1-ipert, -mband), MIN(mpert-ipert, mband)
+            jpert = ipert + dm
+            bvt_local(ipert) = bvt_local(ipert) 
+     $           + g22(dm)*bmt_mn(jpert) + g23(dm)*bmz_mn(jpert)
+            bvz_local(ipert) = bvz_local(ipert) 
+     $           + g23(dm)*bmt_mn(jpert) + g33(dm)*bmz_mn(jpert)
+         ENDDO
+         curv_mn(ipert) = (chi1**2 / mu0) * 
+     $        (p1 + bvt_local(ipert)*bvz_local(ipert))
+      ENDDO
+      
+c-----------------------------------------------------------------------
+c     convert to spatial functions if requested.
+c-----------------------------------------------------------------------
+      IF (PRESENT(curv_fun)) THEN
+         CALL iscdftb(mfac, mpert, curv_theta_fun, mthsurf, curv_mn)
+         curv_fun = curv_theta_fun
+      ENDIF
+      
+      RETURN
+      END SUBROUTINE gpeq_curvature
+c-----------------------------------------------------------------------
+c     subprogram 13. gpeq_K.
+c     compute Bernstein K quantity (stability indicator).
+c-----------------------------------------------------------------------
+      SUBROUTINE gpeq_K(psi, K_mn, K_fun)
+      REAL(r8), INTENT(IN) :: psi
+      COMPLEX(r8), DIMENSION(mpert), INTENT(OUT) :: K_mn
+      COMPLEX(r8), DIMENSION(0:mthsurf), OPTIONAL, INTENT(OUT)
+     $     :: K_fun
+
+      INTEGER :: ipert, jpert, dm, m1
+      REAL(r8) :: q, f1, p1, chi1, jac, jac1, bpfac, btfac
+      REAL(r8) :: bth, bze, jth, jze
+      COMPLEX(r8), DIMENSION(-mband:mband) :: g22, g33, g23
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: K_theta_fun
+      COMPLEX(r8), DIMENSION(mpert) :: bvt_local, bvz_local
+      COMPLEX(r8), DIMENSION(mpert) :: sigma_mn, shear_mn
+      
+      chi1 = psio * twopi
+      
+      CALL spline_eval(sq, psi, 1)
+      f1 = sq%f1(1) / twopi
+      p1 = sq%f1(2)
+      q = sq%f(4)
+      CALL bicube_eval(rzphi, psi, 0.0_r8, 0)
+      jac = rzphi%f(4)
+      jac1 = rzphi%fx(4)
+      
+      CALL cspline_eval(metric%cs, psi, 0)
+      g22(0:-mband:-1) = metric%cs%f(2*mband+2:3*mband+2)
+      g23(0:-mband:-1) = metric%cs%f(3*mband+3:4*mband+3)
+      g33(0:-mband:-1) = metric%cs%f(4*mband+4:5*mband+4)
+      g22(1:mband) = CONJG(g22(-1:-mband:-1))
+      g23(1:mband) = CONJG(g23(-1:-mband:-1))
+      g33(1:mband) = CONJG(g33(-1:-mband:-1))
+      
+c-----------------------------------------------------------------------
+c     compute K-related quantities in mode space.
+c-----------------------------------------------------------------------
+      ipert = 0
+      K_mn = 0.0_r8
+      DO m1 = mlow, mhigh
+         ipert = ipert + 1
+         DO dm = MAX(1-ipert, -mband), MIN(mpert-ipert, mband)
+            jpert = ipert + dm
+            jth = -f1*twopi/jac
+            jze = q*jth - p1/chi1
+            bth = chi1 / jac
+            bze = q * chi1 / jac
+            
+            K_mn(ipert) = K_mn(ipert) + 
+     $           (g22(dm)*bth*jth + g33(dm)*bze*jze + 
+     $            g23(dm)*(bth*jze + bze*jth)) * bwp_mn(jpert)
+         ENDDO
+      ENDDO
+      
+c-----------------------------------------------------------------------
+c     convert to spatial functions if requested.
+c-----------------------------------------------------------------------
+      IF (PRESENT(K_fun)) THEN
+         CALL iscdftb(mfac, mpert, K_theta_fun, mthsurf, K_mn)
+         K_fun = K_theta_fun
+      ENDIF
+      
+      RETURN
+      END SUBROUTINE gpeq_K
+c-----------------------------------------------------------------------
+c     subprogram 13. gpeq_terms.
+c     compute integration terms for reconstruction diagnostics.
+c-----------------------------------------------------------------------
+      SUBROUTINE gpeq_terms(psi, mode, xspmn, term_mn, term_fun)
+      REAL(r8), INTENT(IN) :: psi
+      INTEGER, INTENT(IN) :: mode
+      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
+      COMPLEX(r8), DIMENSION(mpert), INTENT(OUT) :: term_mn
+      COMPLEX(r8), DIMENSION(0:mthsurf), OPTIONAL, INTENT(OUT)
+     $     :: term_fun
+
+      INTEGER :: ipert, jpert, dm, m1
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: term_theta_fun
+      
+c-----------------------------------------------------------------------
+c     placeholder: compute integration terms.
+c     full implementation depends on integration methodology.
+c-----------------------------------------------------------------------
+      term_mn = 0.0_r8
+      
+c-----------------------------------------------------------------------
+c     convert to spatial functions if requested.
+c-----------------------------------------------------------------------
+      IF (PRESENT(term_fun)) THEN
+         CALL iscdftb(mfac, mpert, term_theta_fun, mthsurf, term_mn)
+         term_fun = term_theta_fun
+      ENDIF
+      
+      RETURN
+      END SUBROUTINE gpeq_terms
+c-----------------------------------------------------------------------
+c     subprogram 14. gpeq_fcoords.
 c     transform coordinates to dcon coordinates. 
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_fcoords(psi,ftnmn,amf,amp,ri,bpi,bi,rci,ti,ji)
@@ -773,7 +1145,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_fcoords
 c-----------------------------------------------------------------------
-c     subprogram 10. gpeq_fcoordsout.
+c     subprogram 14. gpeq_fcoordsout.
 c     transform to dcon coordinates. Assumes mpert,lmpert,jac_out
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_fcoordsout(fmo,fmi,psi,ti,ji)
@@ -836,7 +1208,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_fcoordsout
 c-----------------------------------------------------------------------
-c     subprogram 11. gpeq_bcoords.
+c     subprogram 15. gpeq_bcoords.
 c     transform dcon coordinates to other coordinates.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_bcoords(psi,ftnmn,amf,amp,ri,bpi,bi,rci,ti,ji)
@@ -975,7 +1347,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_bcoords
 c-----------------------------------------------------------------------
-c     subprogram 12. gpeq_bcoordsout.
+c     subprogram 16. gpeq_bcoordsout.
 c     transform dcon to other coordinates. Assumes mpert,lmpert,jac_out
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_bcoordsout(fmo,fmi,psi,ti,ji)
@@ -1038,7 +1410,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_bcoordsout
 c-----------------------------------------------------------------------
-c     subprogram 13. gpeq_weight.
+c     subprogram 17. gpeq_weight.
 c     switch between a function and a weighted function.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_weight(psi,ftnmn,amf,amp,wegt)
@@ -1109,7 +1481,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_weight
 c-----------------------------------------------------------------------
-c     subprogram 14. gpeq_rzpgrid.
+c     subprogram 18. gpeq_rzpgrid.
 c     find magnetic coordinates for given rz coords.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_rzpgrid(nr,nz,psixy)
@@ -1212,7 +1584,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_rzpgrid
 c-----------------------------------------------------------------------
-c     subprogram 15. gpeq_rzpdiv.
+c     subprogram 19. gpeq_rzpdiv.
 c     make zero divergence of rzphi functions.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_rzpdiv(nr,nz,rval,zval,fr,fz,fp)
@@ -1278,7 +1650,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_rzpdiv
 c-----------------------------------------------------------------------
-c     subprogram 16. gpeq_alloc.
+c     subprogram 20. gpeq_alloc.
 c     allocate essential vectors in fourier space 
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_alloc
@@ -1301,7 +1673,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_alloc
 c-----------------------------------------------------------------------
-c     subprogram 17. gpeq_dealloc.
+c     subprogram 21. gpeq_dealloc.
 c     deallocate essential vectors in fourier space 
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_dealloc
@@ -1319,7 +1691,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_dealloc
 c-----------------------------------------------------------------------
-c     subprogram 18. gpeq_interp_singsurf.
+c     subprogram 22. gpeq_interp_singsurf.
 c     create spline for interpretation of solution near singular surface.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_interp_singsurf(fsp_sol,spot,npsi)
@@ -1394,7 +1766,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_interp_singsurf
 c-----------------------------------------------------------------------
-c     subprogram 19. gpeq_interp_sol.
+c     subprogram 23. gpeq_interp_sol.
 c     get bwn at psi after calling gpeq_interp_singsurf.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_interp_sol(fsp_sol,psi,interpbwn)

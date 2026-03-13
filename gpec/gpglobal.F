@@ -73,6 +73,8 @@ c-----------------------------------------------------------------------
      $     xrr_mn,xrz_mn,xrp_mn,brr_mn,brz_mn,brp_mn,
      $     chi_mn,che_mn,kax_mn,sbno_mn,sbno_fun,edge_mn,edge_fun,
      $     chy_mn,chx_mn,chw_mn,kaw_mn,mutual_indev,mutual_indinvev
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: C_psi_mn,C_theta_mn,
+     $     C_zeta_mn,C1_mn,C2_mn,C3_mn
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: wt,wt0,chp_mn,kap_mn,
      $     permeabev,chimats,chemats,flxmats,kaxmats,singbno_mn,
      $     plas_indev,plas_indinvev,reluctev,indrelev,permeabsv,
@@ -90,6 +92,9 @@ c-----------------------------------------------------------------------
 
       TYPE(spline_type) :: sq
       TYPE(bicube_type) :: psi_in,eqfun,rzphi
+      TYPE(bicube_type), ALLOCATABLE, TARGET :: gpout_shear
+      TYPE(bicube_type), ALLOCATABLE, TARGET :: gpout_curvature
+      TYPE(bicube_type), ALLOCATABLE, TARGET :: gpout_k
       TYPE(cspline_type) :: u1,u2,u3,u4,u5
       TYPE(cspline_type) :: smats,tmats,xmats,ymats,zmats
       TYPE(fspline_type) :: metric
@@ -152,6 +157,12 @@ c-----------------------------------------------------------------------
      $     plas_indevmats,permeabevmats,chxmats,chwmats,
      $     mutual_indmats,mutual_indevmats,mutual_indinvmats,
      $     mutual_indinvevmats)
+      IF(ALLOCATED(C_psi_mn)) DEALLOCATE(C_psi_mn)
+      IF(ALLOCATED(C_theta_mn)) DEALLOCATE(C_theta_mn)
+      IF(ALLOCATED(C_zeta_mn)) DEALLOCATE(C_zeta_mn)
+      IF(ALLOCATED(C1_mn)) DEALLOCATE(C1_mn)
+      IF(ALLOCATED(C2_mn)) DEALLOCATE(C2_mn)
+      IF(ALLOCATED(C3_mn)) DEALLOCATE(C3_mn)
 
       CALL spline_dealloc(sq)
       CALL bicube_dealloc(eqfun)

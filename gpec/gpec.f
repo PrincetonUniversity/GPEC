@@ -37,7 +37,7 @@ c-----------------------------------------------------------------------
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
      $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag,
      $     arzphifun_flag,xbrzphifun_flag,pmodbmn_flag,xclebsch_flag,
-     $     filter_flag,gal_flag,delpsi_flag,
+     $     filter_flag,gal_flag,delpsi_flag,recon_flag,
      $     singthresh_callen_flag,singthresh_slayer_flag,singthresh_flag
       LOGICAL, DIMENSION(100) :: ss_flag
       COMPLEX(r8), DIMENSION(:), POINTER :: finmn,foutmn,xspmn,
@@ -70,7 +70,7 @@ c-----------------------------------------------------------------------
      $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout,filter_flag,
      $     netcdf_flag,ascii_flag,singthresh_flag,
      $     singthresh_callen_flag,singthresh_slayer_flag,
-     $     singthresh_slayer_inpr,out_ahg2msc
+     $     singthresh_slayer_inpr,out_ahg2msc,recon_flag
       NAMELIST/gpec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,jacfac_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
@@ -194,6 +194,7 @@ c-----------------------------------------------------------------------
       test_flag=.FALSE.
       eigm_flag=.FALSE.
       mutual_test_flag=.FALSE.
+      recon_flag=.FALSE.
 
       majr=10.0
       minr=1.0
@@ -677,7 +678,9 @@ c-----------------------------------------------------------------------
       IF (arzphifun_flag) THEN
          CALL gpout_arzphifun(mode,xspmn)
       ENDIF
-
+      IF (recon_flag) THEN
+         CALL gpout_recon(mode,xspmn)
+      ENDIF      
 c-----------------------------------------------------------------------
 c     diagnose.
 c-----------------------------------------------------------------------
