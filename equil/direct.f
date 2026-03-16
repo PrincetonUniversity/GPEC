@@ -39,6 +39,7 @@ c-----------------------------------------------------------------------
       END TYPE direct_bfield_type
 
       REAL(r8) :: etol=1e-8
+      INTEGER  :: enstep=16384
 
       CONTAINS
 c-----------------------------------------------------------------------
@@ -51,9 +52,8 @@ c-----------------------------------------------------------------------
       SUBROUTINE direct_run
 
       INTEGER :: ir,iz,itheta,ipsi
-      INTEGER, PARAMETER :: nstep=8192
       REAL(r8) :: f0fac,f0,ffac,rfac,eta,r,jacfac,w11,w12,delpsi,q
-      REAL(r8), ALLOCATABLE, DIMENSION(:,:) :: y_out
+      REAL(r8), DIMENSION(0:enstep,0:4) :: y_out
       REAL(r8), DIMENSION(2, mpsi+1) :: xdx
       REAL(r8), DIMENSION(3,3) :: v
 
@@ -68,7 +68,7 @@ c-----------------------------------------------------------------------
      $        "Warning: direct equilibrium with psihigh =",psihigh,
      $        " could hang on separatrix."
       direct_infinite_loop_flag = .FALSE.
-      ALLOCATE(y_out(0:nstep,0:4))
+      ! ALLOCATE(y_out(0:nstep,0:4))
 c-----------------------------------------------------------------------
 c     fit input to cubic splines and diagnose.
 c-----------------------------------------------------------------------
@@ -251,7 +251,7 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
       CALL bicube_fit(eqfun,"extrap","periodic")
-      DEALLOCATE(y_out)
+      ! DEALLOCATE(y_out)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -445,7 +445,6 @@ c-----------------------------------------------------------------------
       INTEGER, PARAMETER :: neq=4,liw=30,lrw=22+neq*16
       INTEGER :: iopt,istate,itask,itol,jac,mf,ir
       INTEGER, DIMENSION(liw) :: iwork
-      INTEGER, PARAMETER :: nstep=8192
       REAL(r8), PARAMETER :: eps=1e-12
       REAL(r8) :: atol,rtol,rfac,deta,r,z,eta,err,psi0,psifac,dr
       REAL(r8), DIMENSION(neq) :: y
@@ -529,7 +528,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     advance differential equations.
 c-----------------------------------------------------------------------
-         IF(eta >= twopi .OR. istep >= nstep  .OR.  istate < 0
+         IF(eta >= twopi .OR. istep >= enstep  .OR.  istate < 0
      $        .OR. ABS(err) >= 1)EXIT
          istep=istep+1
          CALL lsode(direct_fl_der,neq,y,eta,twopi,itol,rtol,atol,
@@ -538,10 +537,10 @@ c-----------------------------------------------------------------------
       IF(out_fl)WRITE(out_2d_unit,20)
       IF(bin_fl)WRITE(bin_2d_unit)
 c-----------------------------------------------------------------------
-c     abort if istep > nstep.
+c     abort if istep > enstep.
 c-----------------------------------------------------------------------
       IF(eta < twopi)THEN
-         WRITE(message,40)"direct_int: istep = nstep = ",nstep,
+         WRITE(message,40)"direct_int: istep = enstep = ",enstep,
      $        " at eta = ",eta,", ipsi = ",ipsi
          CALL program_stop(message)
       ENDIF

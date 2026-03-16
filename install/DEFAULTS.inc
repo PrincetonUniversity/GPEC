@@ -360,11 +360,45 @@
 #-----------------------------------------------------------------
 #
 #   Now compile using
-#    $ make
+#    $ make -j 8 2>&1 | tee make.log
 #
 #-----------------------------------------------------------------
 # general defaults
 #-----------------------------------------------------------------
+
+# Check if the user has set environment variables for the Fortran compiler and math libraries. 
+# If not, throw an error.
+
+ifndef FC
+    $(shell printf '\033[1;91mERROR:\033[0m Must set environment variable FC to a Fortran compiler (e.g. gfortran, ifort, pgfortran)\n' 1>&2)
+    $(error "Must set environment variable FC to a Fortran compiler (e.g. gfortran, ifort, pgfortran)")
+else ifeq ($(findstring ifort,$(FC)),ifort)
+    $(info Using Legacy Intel Fortran compiler)
+else ifeq ($(findstring ifx,$(FC)),ifx)
+    $(info Using Intel Fortran compiler)
+else ifeq ($(findstring gfortran,$(FC)),gfortran)
+    $(info Using GNU Fortran compiler)
+else ifeq ($(findstring pgfortran,$(FC)),pgfortran)
+    $(info Using PGI Fortran compiler)
+else
+    $(shell printf '\033[1;91mERROR:\033[0m Unsupported Fortran compiler. Must set environment variable FC to a Fortran compiler (e.g. gfortran, ifort, pgfortran)\n' 1>&2)
+    $(error "Unsupported Fortran compiler. Must set environment variable FC to a Fortran compiler (e.g. gfortran, ifort, pgfortran)")
+endif
+ifndef CC
+    $(shell printf '\033[1;91mERROR:\033[0m Must set environment variable CC to a C compiler (e.g. gcc, icc, pgcc)\n' 1>&2)
+    $(error "Must set environment variable CC to a C compiler (e.g. gcc, icc, pgcc)")
+else ifeq ($(findstring gcc,$(CC)),gcc)
+    $(info Using GNU C compiler)
+else ifeq ($(findstring icc,$(CC)),icc)
+    $(info Using Legacy Intel C compiler)
+else ifeq ($(findstring icx,$(CC)),icx)
+    $(info Using Intel C compiler)
+else ifeq ($(findstring pgcc,$(CC)),pgcc)
+    $(info Using PGI C compiler)
+else
+    $(shell printf '\033[1;91mERROR:\033[0m Unsupported C compiler. Must set environment variable CC to a C compiler (e.g. gcc, icc, pgcc)\n' 1>&2)
+    $(error "Unsupported C compiler. Must set environment variable CC to a C compiler (e.g. gcc, icc, pgcc)")
+endif
 
 # List of needed dependencies, will be appended if math or netcdf
 # libraries are not found
