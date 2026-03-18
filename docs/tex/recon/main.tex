@@ -10,6 +10,7 @@
 \usepackage{hyperref}
 \usepackage{cancel}
 \usepackage{color}
+\usepackage{pdflscape}
 
 \title{DCON $recon flag$ document}
 \author{Sunjae Lee}
@@ -898,9 +899,10 @@ q'
 &=\mathcal{J} (j^{\theta} \nabla \zeta \times \nabla \psi + j^{\zeta} \nabla \psi \times \nabla \theta)
 \end{align}
 
-\begin{equation}
-\vec{Q} = \mathcal{J} (Q^{\psi} \nabla \theta \times \nabla \zeta + Q^{\theta} \nabla \zeta \times \nabla \psi + Q^{\zeta} \nabla \psi \times \nabla \theta) = \mathcal{J} ( Q^{\psi} \vec{v_1} + Q^{\theta} \vec{v_2} + Q^{\zeta} \vec{v_3})
-\end{equation}
+\begin{align}
+\vec{Q} &= \mathcal{J} (Q^{\psi} \nabla \theta \times \nabla \zeta + Q^{\theta} \nabla \zeta \times \nabla \psi + Q^{\zeta} \nabla \psi \times \nabla \theta) &= \mathcal{J} ( Q^{\psi} \vec{v_1} + Q^{\theta} \vec{v_2} + Q^{\zeta} \vec{v_3}) \\
+&= Q_1 \nabla \psi + Q_2 \nabla \theta + Q_3 \nabla \zeta
+\end{align}
 
 \begin{equation}
 Q^{\psi} = \frac{\chi^\prime}{\mathcal{J}} (\frac{\partial}{\partial \theta} + q \frac{\partial}{\partial \zeta} )\xi^\psi = \frac{\chi^\prime}{\mathcal{J}} \sum_{m}^{} \sum_{n}^{} v_{m,n}(\psi) \cdot \exp 2 \pi i(m\theta -n\zeta)\cdot 2 \pi i (m-nq) 
@@ -981,8 +983,8 @@ Now we can reconstruct the cross term in the energy principle:
 
 \begin{align}
 C^\psi &= \vec{C} \cdot \nabla\psi = Q^\psi \\
-C^\theta &= \vec{C} \cdot \nabla\theta = Q^\theta + \frac{\xi^\psi}{|\nabla\psi|^2} \mu_0 \vec{j} \cdot (\nabla\psi \times \nabla\theta) \\
-C^\zeta &= \vec{C} \cdot \nabla\zeta = Q^\zeta + \frac{\xi^\psi}{|\nabla\psi|^2} \mu_0 \vec{j} \cdot (\nabla\psi \times \nabla\zeta)
+C^\theta &= \vec{C} \cdot \nabla\theta = Q^\theta + \xi^\psi \frac{1}{|\nabla\psi|^2} \mu_0 j^\zeta \\
+C^\zeta &= \vec{C} \cdot \nabla\zeta = Q^\zeta - \xi^\psi \frac{1}{|\nabla\psi|^2} \mu_0 j^\theta
 \end{align}
 
 \begin{align}
@@ -1407,6 +1409,154 @@ Each potential component couples different physical mechanisms:
 \end{itemize}
 \end{enumerate}
 
+
+\section{Variable Naming Convention and Mathematical Symbols}
+
+This section summarizes the implementation of C and Q vectors with proper tensor transformations between contravariant and covariant representations.
+
+\subsection{Fundamental Transformation Laws}
+
+The C and Q vectors are defined in two complementary basis systems:
+
+\textbf{Contravariant basis:} $\vec{w}_i \equiv \nabla \psi, \nabla \theta, \nabla \zeta$ \\
+\textbf{Covariant basis:} $\vec{v}_i \equiv \nabla \theta \times \nabla \zeta, \nabla \zeta \times \nabla \psi, \nabla \psi \times \nabla \theta$
+
+\begin{equation}
+\boxed{
+\begin{aligned}
+\text{Contravariant} \quad &Q^i = \frac{b^i}{\mathcal{J}} \\
+\text{Covariant} \quad &Q_i = g_{ij} Q^j = g_{ij} \frac{b^j}{\mathcal{J}} \\
+\text{Physics method} \quad &C_i = Q_i + (\vec{j} \times \vec{\xi})_i
+\end{aligned}
+}
+\end{equation}
+
+where $\mathcal{J}$ is the Jacobian, $g_{ij}$ is the metric tensor at MODE index 0, and $(\vec{j} \times \vec{\xi})_i$ represents current-displacement coupling.
+
+\subsection{Code Variable Mapping Table}
+
+\subsubsection*{Q Vector - Contravariant (w-basis, $Q^i$)}
+\footnotesize
+\begin{table}[h!]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Variable} & \textbf{Symbol/Definition} \\
+\hline
+\texttt{qwp\_tmp, qwp\_fun, qwp\_mn} & $Q^\psi$ (contravariant component) \\
+\texttt{qwt\_tmp, qwt\_fun, qwt\_mn} & $Q^\theta$ (contravariant component) \\
+\texttt{qwz\_tmp, qwz\_fun, qwz\_mn} & $Q^\zeta$ (contravariant component) \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection*{Q Vector - Covariant (v-basis, $Q_i$)}
+\footnotesize
+\begin{table}[h!]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Variable} & \textbf{Symbol/Definition} \\
+\hline
+\texttt{qvp\_tmp, qvp\_fun, qvp\_mn} & $Q_\psi = g_{11}Q^\psi + g_{12}Q^\theta + g_{13}Q^\zeta$ \\
+\texttt{qvt\_tmp, qvt\_fun, qvt\_mn} & $Q_\theta = g_{12}Q^\psi + g_{22}Q^\theta + g_{23}Q^\zeta$ \\
+\texttt{qvz\_tmp, qvz\_fun, qvz\_mn} & $Q_\zeta = g_{13}Q^\psi + g_{23}Q^\theta + g_{33}Q^\zeta$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection*{C Vector - Contravariant (w-basis, $C^i$)}
+\footnotesize
+\begin{table}[h!]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Variable} & \textbf{Symbol/Definition} \\
+\hline
+\texttt{cwp\_tmp, cwp\_fun, cwp\_mn} & $C^\psi$ (contravariant component) \\
+\texttt{cwt\_tmp, cwt\_fun, cwt\_mn} & $C^\theta$ (contravariant component) \\
+\texttt{cwz\_tmp, cwz\_fun, cwz\_mn} & $C^\zeta$ (contravariant component) \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection*{C Vector - Covariant (v-basis, $C_i$)}
+\footnotesize
+\begin{table}[h!]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Variable} & \textbf{Symbol/Definition} \\
+\hline
+\texttt{cvp\_tmp, cvp\_fun} & $C_\psi^{\text{metric}} = g_{ij}C^j$ (metric contraction) \\
+\texttt{cvt\_tmp, cvt\_fun} & $C_\theta^{\text{metric}} = g_{ij}C^j$ (metric contraction) \\
+\texttt{cvz\_tmp, cvz\_fun} & $C_\zeta^{\text{metric}} = g_{ij}C^j$ (metric contraction) \\
+\hline
+\multicolumn{2}{|l|}{\textit{Physics form with current-displacement coupling:}} \\
+\hline
+\texttt{cvp\_fun\_p, cvp\_mn} & $C_\psi = C_\psi^{\text{metric}} + (\vec{j} \times \vec{\xi})_\psi$ \\
+\texttt{cvt\_fun\_p, cvt\_mn} & $C_\theta = C_\theta^{\text{metric}} + (\vec{j} \times \vec{\xi})_\theta$ \\
+\texttt{cvz\_fun\_p, cvz\_mn} & $C_\zeta = C_\zeta^{\text{metric}} + (\vec{j} \times \vec{\xi})_\zeta$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection*{Input Variables and Parameters}
+\footnotesize
+\begin{table}[h!]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Variable} & \textbf{Symbol/Definition} \\
+\hline
+\texttt{bwp\_fun, bwt\_fun, bwz\_fun} & $\mathcal{J} Q^\psi, \mathcal{J} Q^\theta, \mathcal{J} Q^\zeta$ \\
+\texttt{jacs}$(itheta)$ & $\mathcal{J}(\theta)$ = Jacobian at each $\theta$ \\
+\texttt{metric\%cs\%f}$(0, i, j)$ & $g_{ij}(0)$ = Metric tensor at MODE index 0 \\
+\hline
+\end{tabular}
+\end{table}
+
+\paragraph{Variable Storage Types:}
+\begin{itemize}
+\item \textbf{\texttt{tmp}}: Local 1D array at single flux surface ($\psi$ level), dimension $(0:m_\theta)$
+\item \textbf{\texttt{fun}}: Global 2D spatial array on $(\theta, \psi)$ grid, dimension $(0:m_\theta, 0:m_\psi)$
+\item \textbf{\texttt{mn}}: Global 2D MODE space array, dimension $(m_{pert}, 0:m_\psi)$
+\item \textbf{\texttt{p}}: Physics form (includes j$\times\xi$ coupling term)
+\item \textbf{\texttt{w}}-basis: Contravariant (w-basis, using $\nabla$ forms)
+\item \textbf{\texttt{v}}-basis: Covariant (v-basis, using cross products)
+\end{itemize}
+
+\subsection{Computational Algorithm}
+
+The reconstruction algorithm follows these steps for each flux surface ($\psi$ level):
+
+\begin{enumerate}
+\item \textbf{Extract contravariant Q:} 
+\begin{equation}
+Q^i(\theta) = \frac{b^i(\theta)}{\mathcal{J}(\theta)} = \frac{\text{bwp\_fun}(\theta), \text{bwt\_fun}(\theta), \text{bwz\_fun}(\theta)}{\text{jacs}(\theta)}
+\end{equation}
+
+\item \textbf{Apply metric contraction for covariant Q:}
+\begin{equation}
+Q_i(\theta) = g_{ij}(0) \cdot Q^j(\theta) \quad \text{where } i,j \in \{\psi, \theta, \zeta\}
+\end{equation}
+
+\item \textbf{Compute physics-based C with $j \times \xi$ coupling:}
+\begin{equation}
+C_i(\theta) = Q_i(\theta) + (\vec{j} \times \vec{\xi})_i(\theta)
+\end{equation}
+
+\item \textbf{Store spatial representations:}
+\begin{equation}
+\text{qwp\_fun}(\theta, \psi) = Q^\psi(\theta), \quad \text{qvp\_fun}(\theta, \psi) = Q_\psi(\theta), \quad \cdots
+\end{equation}
+
+\item \textbf{Transform to MODE space via Fourier:}
+\begin{equation}
+\tilde{Q}^\psi_{n,m} = \text{ISCDFTF}(Q^\psi(\theta)) \quad \Rightarrow \quad \text{qwp\_mn}(m_{pert}, \psi)
+\end{equation}
+
+\end{enumerate}
 
 \bibliographystyle{plain}
 \bibliography{references}
