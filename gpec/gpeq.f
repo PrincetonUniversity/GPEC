@@ -1075,62 +1075,76 @@ c-----------------------------------------------------------------------
       END SUBROUTINE gpeq_shear
 c-----------------------------------------------------------------------
 c     subprogram 12. gpeq_curvature.
-c     compute curvature mode coefficients and spatial functions.
+c     compute curvature in spatial domain.
+c     κ·∇ψ = (|∇ψ|²/B²)[μ₀p' + (1/2)(∂B²/∂ψ) + (1/2)(∂B²/∂θ)(∇ψ·∇ψ)/(∇ψ·∇θ)]
 c-----------------------------------------------------------------------
-      SUBROUTINE gpeq_curvature(psi, curv_mn, curv_fun)
+      SUBROUTINE gpeq_curvature(psi, curv_fun)
       REAL(r8), INTENT(IN) :: psi
-      COMPLEX(r8), DIMENSION(mpert), INTENT(OUT) :: curv_mn
-      COMPLEX(r8), DIMENSION(0:mthsurf), OPTIONAL, INTENT(OUT)
-     $     :: curv_fun
+      COMPLEX(r8), DIMENSION(0:mthsurf), INTENT(OUT) :: curv_fun
 
-      INTEGER :: itheta, ipert, jpert, dm, m1
-      REAL(r8) :: q, p1, chi1, eta, r, rfac, bsq_val
-      COMPLEX(r8), DIMENSION(-mband:mband) :: g22, g23, g33
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: curv_theta_fun
-      COMPLEX(r8), DIMENSION(mpert) :: bvt_local, bvz_local
-      
-      chi1 = psio * twopi
-      
+      INTEGER :: itheta
+      REAL(r8) :: q, q1, p1, jac, rfac, eta, r_val, theta_val
+      REAL(r8) :: chi1, delpsi
+      REAL(r8) :: w11, w12, w13, w21, w22, w23, w31, w32, w33
+      REAL(r8) :: v21, v22, v23, v33
+      REAL(r8) :: bsq_val, bsq_psi, bsq_theta
+      REAL(r8) :: dpdt , kappa_psi, safe_denom
+      TYPE(spline_type) :: bsq_temp
+
+c-----------------------------------------------------------------------
+c     Setup: get equilibrium at this psi.
+c-----------------------------------------------------------------------
       CALL spline_eval(sq, psi, 1)
       q = sq%f(4)
+      q1 = sq%f1(4)
       p1 = sq%f1(2)
-      CALL cspline_eval(metric%cs, psi, 0)
-      
-      g22(0:-mband:-1) = metric%cs%f(2*mband+2:3*mband+2)
-      g23(0:-mband:-1) = metric%cs%f(3*mband+3:4*mband+3)
-      g33(0:-mband:-1) = metric%cs%f(4*mband+4:5*mband+4)
-      g22(1:mband) = CONJG(g22(-1:-mband:-1))
-      g23(1:mband) = CONJG(g23(-1:-mband:-1))
-      g33(1:mband) = CONJG(g33(-1:-mband:-1))
-      
+      chi1 = psio * twopi
+
 c-----------------------------------------------------------------------
-c     compute covariant components needed for curvature.
+c     Step 3: Compute curvature at all theta points.
 c-----------------------------------------------------------------------
-      ipert = 0
-      bvt_local = CMPLX(0.0_r8, 0.0_r8, r8)
-      bvz_local = CMPLX(0.0_r8, 0.0_r8, r8)
-      curv_mn = CMPLX(0.0_r8, 0.0_r8, r8)
-      DO m1 = mlow, mhigh
-         ipert = ipert + 1
-         DO dm = MAX(1-ipert, -mband), MIN(mpert-ipert, mband)
-            jpert = ipert + dm
-            bvt_local(ipert) = bvt_local(ipert) 
-     $           + g22(dm)*bmt_mn(jpert) + g23(dm)*bmz_mn(jpert)
-            bvz_local(ipert) = bvz_local(ipert) 
-     $           + g23(dm)*bmt_mn(jpert) + g33(dm)*bmz_mn(jpert)
-         ENDDO
-         curv_mn(ipert) = (chi1**2 / mu0) * 
-     $        (p1 + bvt_local(ipert)*bvz_local(ipert))
+      DO itheta = 0, mthsurf
+         theta_val = theta(itheta)
+         CALL bicube_eval(rzphi, psi, theta_val, 1)
+         
+         jac = rzphi%f(4)
+         rfac = SQRT(rzphi%f(1))
+         eta = twopi*(theta_val + rzphi%f(2))
+         r_val = ro + rfac*COS(eta)
+
+c        Compute contravariant metrics
+         w11 = (1.0_r8 + rzphi%fy(2))*(twopi**2)*rfac*r_val/jac
+         w12 = -rzphi%fy(1)*pi*r_val/(rfac*jac)
+         
+         w21 = -(twopi**2)*rfac*r_val*rzphi%fx(2)/jac
+         w22 = pi*r_val*rzphi%fx(1)/(rfac*jac)
+         
+         w31 = (twopi*r_val*rfac/jac)*
+     $        (rzphi%fx(2)*rzphi%fy(3) - rzphi%fx(3)*
+     $        (1.0_r8 + rzphi%fy(2)))
+         w32 = (r_val/(2.0_r8*rfac*jac))*
+     $        (rzphi%fx(3)*rzphi%fy(1) - rzphi%fx(1)*rzphi%fy(3))
+
+c        Compute |∇ψ|² and ∇ψ·∇θ
+         delpsi = SQRT(w11**2 + w12**2)
+         dpdt = w11*w21 + w12*w22
+
+         CALL bicube_eval(eqfun, psi, theta_val, 1)
+c        Retrieve B² and derivatives
+         bsq_val = eqfun%f(1) ** 2
+         bsq_psi = eqfun%fx(1) * 2 * eqfun%f(1)
+         bsq_theta = eqfun%fy(1) * 2 * eqfun%f(1)
+
+c        Compute κ·∇ψ safely
+
+         kappa_psi = (delpsi**2 / bsq_val) *
+     $           (p1 + 0.5_r8*bsq_psi +
+     $           0.5_r8*bsq_theta*dpdt/(delpsi**2))
+
+         curv_fun(itheta) = CMPLX(kappa_psi, 0.0_r8, r8)
+
       ENDDO
-      
 c-----------------------------------------------------------------------
-c     convert to spatial functions if requested.
-c-----------------------------------------------------------------------
-      IF (PRESENT(curv_fun)) THEN
-         CALL iscdftb(mfac, mpert, curv_theta_fun, mthsurf, curv_mn)
-         curv_fun = curv_theta_fun
-      ENDIF
-      
       RETURN
       END SUBROUTINE gpeq_curvature
 c-----------------------------------------------------------------------
@@ -1885,7 +1899,14 @@ c-----------------------------------------------------------------------
      $     xno_mn(mpert),xta_mn(mpert),xpa_mn(mpert),
      $     bno_mn(mpert),bta_mn(mpert),bpa_mn(mpert),
      $     xrr_mn(mpert),xrz_mn(mpert),xrp_mn(mpert),
-     $     brr_mn(mpert),brz_mn(mpert),brp_mn(mpert))
+     $     brr_mn(mpert),brz_mn(mpert),brp_mn(mpert),
+     $     qvp_mn(mpert,0:mpsi),qvt_mn(mpert,0:mpsi),
+     $     qvz_mn(mpert,0:mpsi),cvp_mn(mpert,0:mpsi),
+     $     cvt_mn(mpert,0:mpsi),cvz_mn(mpert,0:mpsi),
+     $     qwp_mn(mpert,0:mpsi),qwt_mn(mpert,0:mpsi),
+     $     qwz_mn(mpert,0:mpsi),cwp_mn(mpert,0:mpsi),
+     $     cwt_mn(mpert,0:mpsi),cwz_mn(mpert,0:mpsi),
+     $     DST_mn(0:mthsurf,0:mpsi),DST_fun(0:mthsurf,0:mpsi))
       IF(debug_flag) PRINT *, "->Leaving gpeq_alloc"
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1903,7 +1924,10 @@ c-----------------------------------------------------------------------
      $     xwp_mn,xwt_mn,xwz_mn,bwp_mn,bwt_mn,bwz_mn,xmt_mn,bmt_mn,
      $     xvp_mn,xvt_mn,xvz_mn,bvp_mn,bvt_mn,bvz_mn,xmz_mn,bmz_mn,
      $     xno_mn,xta_mn,xpa_mn,bno_mn,bta_mn,bpa_mn,
-     $     xrr_mn,xrz_mn,xrp_mn,brr_mn,brz_mn,brp_mn)
+     $     xrr_mn,xrz_mn,xrp_mn,brr_mn,brz_mn,brp_mn,
+     $     qvp_mn,qvt_mn,qvz_mn,cvp_mn,cvt_mn,cvz_mn,
+     $     qwp_mn,qwt_mn,qwz_mn,cwp_mn,cwt_mn,cwz_mn,
+     $     DST_mn,DST_fun)
       IF(debug_flag) PRINT *, "->Leaving gpeq_dealloc"
 c-----------------------------------------------------------------------
 c     terminate.
