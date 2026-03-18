@@ -6912,23 +6912,6 @@ c-----------------------------------------------------------------------
 c     allocate C vector arrays for EPF calculation.
 c     Storage: C_*_mn(mpert, 0:mpsi) for all psi levels.
 c-----------------------------------------------------------------------
-      IF (.NOT. ALLOCATED(cwp_mn)) THEN
-         ALLOCATE(cwp_mn(mpert, 0:mpsi))
-         ALLOCATE(cwt_mn(mpert, 0:mpsi))
-         ALLOCATE(cwz_mn(mpert, 0:mpsi))
-         cwp_mn = 0.0_r8
-         cwt_mn = 0.0_r8
-         cwz_mn = 0.0_r8
-      ENDIF
-      IF (.NOT. ALLOCATED(DST_mn)) THEN
-         ALLOCATE(DST_mn(mpert, 0:mpsi))
-         DST_mn = 0.0_r8
-      ENDIF
-      IF (.NOT. ALLOCATED(DST_fun)) THEN
-         ALLOCATE(DST_fun(0:mthsurf, 0:mpsi))
-         DST_fun = 0.0_r8
-      ENDIF
-      
 c     Allocate C and Q vector spatial function arrays (theta, psi grid)
       IF (.NOT. ALLOCATED(cwp_fun)) THEN
          ALLOCATE(cwp_fun(0:mthsurf, 0:mpsi))
@@ -6971,27 +6954,6 @@ c     Allocate C and Q vector spatial function arrays (theta, psi grid)
          qwp_fun = 0.0_r8
          qwt_fun = 0.0_r8
          qwz_fun = 0.0_r8
-      ENDIF
-      
-      IF (.NOT. ALLOCATED(qvp_mn)) THEN
-         ALLOCATE(qvp_mn(mpert, 0:mpsi))
-         ALLOCATE(qvt_mn(mpert, 0:mpsi))
-         ALLOCATE(qvz_mn(mpert, 0:mpsi))
-         ALLOCATE(cvp_mn(mpert, 0:mpsi))
-         ALLOCATE(cvt_mn(mpert, 0:mpsi))
-         ALLOCATE(cvz_mn(mpert, 0:mpsi))
-         ALLOCATE(qwp_mn(mpert, 0:mpsi))
-         ALLOCATE(qwt_mn(mpert, 0:mpsi))
-         ALLOCATE(qwz_mn(mpert, 0:mpsi))
-         qvp_mn = 0.0_r8
-         qvt_mn = 0.0_r8
-         qvz_mn = 0.0_r8
-         cvp_mn = 0.0_r8
-         cvt_mn = 0.0_r8
-         cvz_mn = 0.0_r8
-         qwp_mn = 0.0_r8
-         qwt_mn = 0.0_r8
-         qwz_mn = 0.0_r8
       ENDIF
 
 c-----------------------------------------------------------------------
@@ -7089,13 +7051,10 @@ c        Compute all necessary gpeq quantities at this psi level.
          CALL gpeq_contra(psi)
          CALL gpeq_cova(psi)
          CALL gpeq_normal(psi)
-         CALL gpeq_tangent(psi)
-         CALL gpeq_parallel(psi)
-         CALL gpeq_rzphi(psi)
 
-c        Compute shear/curvature/K in mode-space and spatial-space.
+c        Compute shear/curvature/K in spatial-space.
          CALL gpeq_shear(psi, shear_fun)
-         CALL gpeq_curvature(psi, curv_mn, curv_fun)
+         CALL gpeq_curvature(psi, curv_fun)
          CALL gpeq_K(psi, K_mn, K_fun)
 
 c        Store spatial values with coordinates.

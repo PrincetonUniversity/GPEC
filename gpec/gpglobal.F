@@ -164,15 +164,7 @@ c-----------------------------------------------------------------------
      $     plas_indevmats,permeabevmats,chxmats,chwmats,
      $     mutual_indmats,mutual_indevmats,mutual_indinvmats,
      $     mutual_indinvevmats)
-      IF(ALLOCATED(cwp_mn)) DEALLOCATE(cwp_mn)
-      IF(ALLOCATED(cwt_mn)) DEALLOCATE(cwt_mn)
-      IF(ALLOCATED(cwz_mn)) DEALLOCATE(cwz_mn)
-      IF(ALLOCATED(cvp_mn)) DEALLOCATE(cvp_mn)
-      IF(ALLOCATED(cvt_mn)) DEALLOCATE(cvt_mn)
-      IF(ALLOCATED(cvz_mn)) DEALLOCATE(cvz_mn)
-      IF(ALLOCATED(DST_mn)) DEALLOCATE(DST_mn)
-      IF(ALLOCATED(DST_fun)) DEALLOCATE(DST_fun)
-
+     
       CALL spline_dealloc(sq)
       CALL bicube_dealloc(eqfun)
       CALL bicube_dealloc(rzphi)
