@@ -645,26 +645,10 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_surface
 c-----------------------------------------------------------------------
-c     subprogram 9. gpeq_epf.
+c     subprogram 9. gpeq_c.
 c     compute C vector (covariant + contravariant) for EPF calculation.
-c     
-c     Stores mode-space coefficients for all psi levels:
-c       C_psi_mn(mpert, 0:mpsi)   - covariant psi component
-c       C_theta_mn(mpert, 0:mpsi) - covariant theta component
-c       C_zeta_mn(mpert, 0:mpsi)  - covariant zeta component
-c       C1_mn(mpert, 0:mpsi)      - contravariant scalar C_1
-c       C2_mn(mpert, 0:mpsi)      - contravariant scalar C_2
-c       C3_mn(mpert, 0:mpsi)      - contravariant scalar C_3
-c     
-c     INPUT:  psi  (flux coordinate)
-c             ipsi (psi index for storage)
-c     
-c     REFERENCES:
-c     - Q = ξ × (∇ × B) in energy principle
-c     - C = Q + ξ·n̂ (μ₀ j × n̂) where n̂ = ∇ψ/|∇ψ|
-c     - Formulas from main.tex section "Reconstruction v1"
 c-----------------------------------------------------------------------
-      SUBROUTINE gpeq_epf(psi, ipsi)
+      SUBROUTINE gpeq_c(psi, ipsi)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -674,27 +658,33 @@ c-----------------------------------------------------------------------
       INTEGER :: itheta, ipert, jpert, m, m1, dm
       
       REAL(r8) :: q, q1, f1raw, p1, chi1, jac, delpsi
-      REAL(r8) :: eta, rfac
+      REAL(r8) :: eta, rfac, singfac
       REAL(r8), DIMENSION(0:mthsurf) :: jacs, dphi, r_vec, z_vec
       
-c     Metric tensor (COMPLEX - see gpeq_cova)
+
       COMPLEX(r8), DIMENSION(-mband:mband) :: g11, g12, g22, g23,
      $     g31, g33
       
-c     Eigenfunction components in spatial representation
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: xi_psi_fun, xi_s_fun,
-     $     xwp_fun, xmt_fun
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: xi_psi_fun
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: bwp_fun, bwt_fun, 
+     $     bwz_fun, bvp_fun, bvt_fun, bvz_fun,
+     $     cvp_fun_p, cvt_fun_p, cvz_fun_p, xno_fun
       
-c     C vector components (covariant) in spatial rep
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: C_psi_fun, C_theta_fun,
-     $     C_zeta_fun, C1_fun, C2_fun, C3_fun
+c     Supporting variables for Fourier reconstruction
+      REAL(r8) :: jwt, jwz
       
 c     Supporting functions
-      REAL(r8), DIMENSION(0:mthsurf) :: delpsi_arr
+      REAL(r8), DIMENSION(0:mthsurf) :: delpsi_arr, dpdt_arr, dpdz_arr
+      
+c     Local temporal arrays for computation
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: qwp_tmp, qwt_tmp, qwz_tmp
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: qvp_tmp, qvt_tmp, qvz_tmp
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: cwp_tmp, cwt_tmp, cwz_tmp
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: cvp_tmp, cvt_tmp, cvz_tmp
       
       IF(debug_flag) PRINT *, "Entering gpeq_epf at ipsi=", ipsi
 c-----------------------------------------------------------------------
-c     0) Setup: evaluate equilibrium data at this psi.
+c     1) Setup: equilibrium and metric at this psi.
 c-----------------------------------------------------------------------
       CALL spline_eval(sq, psi, 1)
       q = sq%f(4)
@@ -702,8 +692,7 @@ c-----------------------------------------------------------------------
       f1raw = sq%f1(1)
       p1 = sq%f1(2)
       chi1 = psio * twopi
-      
-c     Get metric tensor (same as gpeq_cova)
+
       CALL cspline_eval(metric%cs, psi, 0)
       g11(0:-mband:-1) = metric%cs%f(1:mband+1)
       g22(0:-mband:-1) = metric%cs%f(2*mband+2:3*mband+2)
@@ -711,17 +700,28 @@ c     Get metric tensor (same as gpeq_cova)
       g23(0:-mband:-1) = metric%cs%f(3*mband+4:4*mband+4)
       g31(0:-mband:-1) = metric%cs%f(4*mband+5:5*mband+5)
       g12(0:-mband:-1) = metric%cs%f(5*mband+6:6*mband+6)
-      
-c     Fill upper half of metric arrays (conjugate symmetry)
+
       g11(1:mband) = CONJG(g11(-1:-mband:-1))
       g22(1:mband) = CONJG(g22(-1:-mband:-1))
       g33(1:mband) = CONJG(g33(-1:-mband:-1))
       g23(1:mband) = CONJG(g23(-1:-mband:-1))
       g31(1:mband) = CONJG(g31(-1:-mband:-1))
       g12(1:mband) = CONJG(g12(-1:-mband:-1))
-
 c-----------------------------------------------------------------------
-c     1) Compute theta grid: |∇ψ|² and coordinate values.
+c     3) Reconstruct eigenfunctions in spatial representation.
+c-----------------------------------------------------------------------
+      CALL iscdftb(mfac, mpert, xi_psi_fun, mthsurf, xsp_mn)
+      CALL iscdftb(mfac, mpert, bwp_fun, mthsurf, bwp_mn)
+      CALL iscdftb(mfac, mpert, bwt_fun, mthsurf, bwt_mn)
+      CALL iscdftb(mfac, mpert, bwz_fun, mthsurf, bwz_mn)
+
+      CALL iscdftb(mfac,mpert,bvp_fun,mthsurf,bvp_mn)
+      CALL iscdftb(mfac,mpert,bvt_fun,mthsurf,bvt_mn)
+      CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
+
+      CALL iscdftb(mfac,mpert,xno_fun,mthsurf,xno_mn)
+c-----------------------------------------------------------------------
+c     4) Extract contravariant components: divide by jacobian.
 c-----------------------------------------------------------------------
       DO itheta = 0, mthsurf
          CALL bicube_eval(rzphi, psi, theta(itheta), 1)
@@ -732,56 +732,192 @@ c-----------------------------------------------------------------------
          z_vec(itheta) = zo + rfac*SIN(eta)
          jacs(itheta) = jac
          dphi(itheta) = rzphi%f(3)
-         
-c        Compute |∇ψ|² from contravariant metric
+         delpsi_arr(itheta) = SQRT(w(1,1)**2 + w(1,2)**2)
+
          w(1,1) = (1.0_r8 + rzphi%fy(2))*twopi**2*rfac*r_vec(itheta)
      $        /jac
          w(1,2) = -rzphi%fy(1)*pi*r_vec(itheta)/(rfac*jac)
-         delpsi_arr(itheta) = SQRT(w(1,1)**2 + w(1,2)**2)
+         
+         w(2,1) = -twopi**2*rfac*r_vec(itheta)*rzphi%fx(2)/jac
+         w(2,2) = pi*r_vec(itheta)*rzphi%fx(1)/(rfac*jac)
+
+         w(3,1) = (twopi*r_vec(itheta)*rfac/jac)*
+     $          (rzphi%fx(2)*rzphi%fy(3)-rzphi%fx(3)*(1+rzphi%fy(2)))
+         w(3,2) = (r_vec(itheta)/(2*rfac*jac))*
+     $             (rzphi%fx(3)*rzphi%fy(1)-rzphi%fx(1)*rzphi%fy(3))
+
+         dpdt_arr(itheta) = w(1,1)*w(2,1) + w(1,2)*w(2,2)
+         dpdz_arr(itheta) = w(1,1)*w(3,1) + w(1,2)*w(3,2)
+
+         qwp_tmp(itheta) = bwp_fun(itheta) / CMPLX(jac, 0.0_r8, r8)
+         qwt_tmp(itheta) = bwt_fun(itheta) / CMPLX(jac, 0.0_r8, r8)
+         qwz_tmp(itheta) = bwz_fun(itheta) / CMPLX(jac, 0.0_r8, r8)
+
+         qvp_tmp(itheta) = bvp_fun(itheta) 
+         qvt_tmp(itheta) = bvt_fun(itheta)
+         qvz_tmp(itheta) = bvz_fun(itheta) 
+         
       ENDDO
-
 c-----------------------------------------------------------------------
-c     2) Reconstruct eigenfunctions in spatial representation.
-c        Use iscdftb: mode-space coefficients → spatial functions
-c-----------------------------------------------------------------------
-      CALL iscdftb(mfac, mpert, xi_psi_fun, mthsurf, xsp_mn)
-      CALL iscdftb(mfac, mpert, xi_s_fun, mthsurf, xss_mn)
-      CALL iscdftb(mfac, mpert, xwp_fun, mthsurf, xwp_mn)
-      CALL iscdftb(mfac, mpert, xmt_fun, mthsurf, xmt_mn)
-
-c-----------------------------------------------------------------------
-c     3) Construct C vectors in spatial representation.
-c        For now: simplified version using existing eigenfunctions.
-c        Full version would include current coupling terms.
+c     6) Apply physics method: add j × ξ term to covariant C.
 c-----------------------------------------------------------------------
       DO itheta = 0, mthsurf
-         C_psi_fun(itheta) = xwp_fun(itheta)
-         C_theta_fun(itheta) = xmt_fun(itheta)
-         C_zeta_fun(itheta) = CMPLX(0.0_r8, 0.0_r8, r8)
-         
-c        Contravariant representation (same as covariant for now)
-         C1_fun(itheta) = C_psi_fun(itheta)
-         C2_fun(itheta) = C_theta_fun(itheta)
-         C3_fun(itheta) = C_zeta_fun(itheta)
+         jac = jacs(itheta)
+         delpsi = delpsi_arr(itheta)**2
+         jwt = - sq%f1(3) / jac
+         jwz = - sq%f1(2) / chi1 - sq%f1(3) * q / jac
+
+         cwp_tmp(itheta) = qwp_tmp(itheta)
+         cwt_tmp(itheta) = qwt_tmp(itheta)+xno_fun(itheta)*jwz / delpsi
+         cwz_tmp(itheta) = qwz_tmp(itheta)-xno_fun(itheta)*jwt / delpsi
+
+         cvp_fun_p(itheta) = qvp_tmp(itheta)+ jac*xno_fun(itheta)/delpsi
+     $        * (jwt*(dpdz_arr(itheta)) + jwz*(dpdt_arr(itheta)))
+         cvt_fun_p(itheta) = qvt_tmp(itheta)+ jac*xi_psi_fun(itheta)*jwz
+         cvz_fun_p(itheta) = qvz_tmp(itheta)- jac*xi_psi_fun(itheta)*jwt
+
+      ENDDO
+c-----------------------------------------------------------------------
+c     7) Metric contraction: C covariant = g_ij * C contravariant.
+c-----------------------------------------------------------------------
+      DO itheta = 0, mthsurf
+         cvp_tmp(itheta) = g11(0)*cwp_tmp(itheta) +
+     $        g12(0)*cwt_tmp(itheta) + g31(0)*cwz_tmp(itheta)
+         cvt_tmp(itheta) = g12(0)*cwp_tmp(itheta) +
+     $        g22(0)*cwt_tmp(itheta) + g23(0)*cwz_tmp(itheta)
+         cvz_tmp(itheta) = g31(0)*cwp_tmp(itheta) +
+     $        g23(0)*cwt_tmp(itheta) + g33(0)*cwz_tmp(itheta)
+      ENDDO
+c-----------------------------------------------------------------------
+c     8) Store results to global arrays (spatial and mode space).
+c-----------------------------------------------------------------------
+      cwp_fun(0:mthsurf, ipsi) = cwp_tmp(0:mthsurf)
+      cwt_fun(0:mthsurf, ipsi) = cwt_tmp(0:mthsurf)
+      cwz_fun(0:mthsurf, ipsi) = cwz_tmp(0:mthsurf)
+
+      cvp_fun(0:mthsurf, ipsi) = cvp_tmp(0:mthsurf)
+      cvt_fun(0:mthsurf, ipsi) = cvt_tmp(0:mthsurf)
+      cvz_fun(0:mthsurf, ipsi) = cvz_tmp(0:mthsurf)
+
+      cvp_funp(0:mthsurf, ipsi) = cvp_fun_p(0:mthsurf)
+      cvt_funp(0:mthsurf, ipsi) = cvt_fun_p(0:mthsurf)
+      cvz_funp(0:mthsurf, ipsi) = cvz_fun_p(0:mthsurf)
+
+      qwp_fun(0:mthsurf, ipsi) = qwp_tmp(0:mthsurf)
+      qwt_fun(0:mthsurf, ipsi) = qwt_tmp(0:mthsurf)
+      qwz_fun(0:mthsurf, ipsi) = qwz_tmp(0:mthsurf)
+
+      qvp_fun(0:mthsurf, ipsi) = qvp_tmp(0:mthsurf)
+      qvt_fun(0:mthsurf, ipsi) = qvt_tmp(0:mthsurf)
+      qvz_fun(0:mthsurf, ipsi) = qvz_tmp(0:mthsurf)
+
+
+      CALL iscdftf(mfac, mpert, cwp_tmp, mthsurf,
+     $     cwp_mn(1:mpert, ipsi))
+      CALL iscdftf(mfac, mpert, cwt_tmp, mthsurf,
+     $     cwt_mn(1:mpert, ipsi))
+      CALL iscdftf(mfac, mpert, cwz_tmp, mthsurf,
+     $     cwz_mn(1:mpert, ipsi))
+      CALL iscdftf(mfac, mpert, cvp_fun_p, mthsurf,
+     $     cvp_mn(1:mpert, ipsi))
+      CALL iscdftf(mfac, mpert, cvt_fun_p, mthsurf,
+     $     cvt_mn(1:mpert, ipsi))
+      CALL iscdftf(mfac, mpert, cvz_fun_p, mthsurf,
+     $     cvz_mn(1:mpert, ipsi))
+      CALL iscdftf(mfac, mpert, qwp_tmp, mthsurf,
+     $     qwp_mn(1:mpert, ipsi))
+      CALL iscdftf(mfac, mpert, qwt_tmp, mthsurf,
+     $     qwt_mn(1:mpert, ipsi))
+      CALL iscdftf(mfac, mpert, qwz_tmp, mthsurf,
+     $     qwz_mn(1:mpert, ipsi))
+      CALL iscdftf(mfac, mpert, qvp_tmp, mthsurf,
+     $     qvp_mn(1:mpert, ipsi))
+      CALL iscdftf(mfac, mpert, qvt_tmp, mthsurf,
+     $     qvt_mn(1:mpert, ipsi))
+      CALL iscdftf(mfac, mpert, qvz_tmp, mthsurf,
+     $     qvz_mn(1:mpert, ipsi))
+      
+      IF(debug_flag) PRINT *, "->Leaving gpeq_c at ipsi=", ipsi
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpeq_c
+c-----------------------------------------------------------------------
+c     subprogram 9b. gpeq_epf.
+c     compute C norm squared: three forms (cw only, cv only, mixed).
+c-----------------------------------------------------------------------
+      SUBROUTINE gpeq_epf(psi, ipsi)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      REAL(r8), INTENT(IN) :: psi
+      INTEGER, INTENT(IN) :: ipsi
+
+      INTEGER :: itheta
+      
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: cwp_tmp, cwt_tmp, cwz_tmp
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: cvp_tmp, cvt_tmp, cvz_tmp
+      
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: c2_cw_tmp,c2_cv_tmp,
+     $               c2_cvw_tmp
+      
+      IF(debug_flag) PRINT *, "Entering gpeq_epf at ipsi=", ipsi
+c-----------------------------------------------------------------------
+c     Call gpeq_c to compute C components first.
+c-----------------------------------------------------------------------
+      CALL gpeq_c(psi, ipsi)
+      
+c-----------------------------------------------------------------------
+c     Extract C components from global storage.
+c-----------------------------------------------------------------------
+      cwp_tmp(0:mthsurf) = cwp_fun(0:mthsurf, ipsi)
+      cwt_tmp(0:mthsurf) = cwt_fun(0:mthsurf, ipsi)
+      cwz_tmp(0:mthsurf) = cwz_fun(0:mthsurf, ipsi)
+      
+      cvp_tmp(0:mthsurf) = cvp_fun(0:mthsurf, ipsi)
+      cvt_tmp(0:mthsurf) = cvt_fun(0:mthsurf, ipsi)
+      cvz_tmp(0:mthsurf) = cvz_fun(0:mthsurf, ipsi)
+
+c-----------------------------------------------------------------------
+c     1) C^2 from contravariant components only.
+c     Note: |C^i|^2 = C^i C^i (no metric needed for this form)
+c-----------------------------------------------------------------------
+      DO itheta = 0, mthsurf
+         c2_cw_tmp(itheta) = cwp_tmp(itheta)*cwp_tmp(itheta)+
+     $        cwt_tmp(itheta)*cwt_tmp(itheta)+
+     $        cwz_tmp(itheta)*cwz_tmp(itheta)
+      ENDDO
+      
+c-----------------------------------------------------------------------
+c     2) C^2 from covariant components only.
+c     Note: |C_i|^2 = C_i C_i (metric already included in cvp_tmp)
+c-----------------------------------------------------------------------
+      DO itheta = 0, mthsurf
+         c2_cv_tmp(itheta) = cvp_tmp(itheta)*cvp_tmp(itheta)+
+     $        cvt_tmp(itheta)*cvt_tmp(itheta)+
+     $        cvz_tmp(itheta)*cvz_tmp(itheta)
+      ENDDO
+      
+c-----------------------------------------------------------------------
+c     3) C^2 using both covariant and contravariant.
+c     Note: C_i C^i = CONJG(cvp) * cwp + CONJG(cvt) * cwt + ...
+c-----------------------------------------------------------------------
+      DO itheta = 0, mthsurf
+         c2_cvw_tmp(itheta) = CONJG(cvp_tmp(itheta))*
+     $        cwp_tmp(itheta)+CONJG(cvt_tmp(itheta))*cwt_tmp(itheta)+
+     $        CONJG(cvz_tmp(itheta))*cwz_tmp(itheta)
       ENDDO
 
 c-----------------------------------------------------------------------
-c     4) Fourier transform C components to mode-space and store.
-c        Use iscdftf: spatial functions → mode-space coefficients
+c     Store results to global arrays.
 c-----------------------------------------------------------------------
-      CALL iscdftf(mfac, mpert, C_psi_fun, mthsurf,
-     $     C_psi_mn(1:mpert, ipsi))
-      CALL iscdftf(mfac, mpert, C_theta_fun, mthsurf,
-     $     C_theta_mn(1:mpert, ipsi))
-      CALL iscdftf(mfac, mpert, C_zeta_fun, mthsurf,
-     $     C_zeta_mn(1:mpert, ipsi))
-      CALL iscdftf(mfac, mpert, C1_fun, mthsurf,
-     $     C1_mn(1:mpert, ipsi))
-      CALL iscdftf(mfac, mpert, C2_fun, mthsurf,
-     $     C2_mn(1:mpert, ipsi))
-      CALL iscdftf(mfac, mpert, C3_fun, mthsurf,
-     $     C3_mn(1:mpert, ipsi))
-      
+      IF (ipsi <= mpsi) THEN
+         c2_cw_fun(0:mthsurf, ipsi) = c2_cw_tmp(0:mthsurf)
+         c2_cv_fun(0:mthsurf, ipsi) = c2_cv_tmp(0:mthsurf)
+         c2_cvw_fun(0:mthsurf, ipsi) = c2_cvw_tmp(0:mthsurf)
+      ENDIF
+
       IF(debug_flag) PRINT *, "->Leaving gpeq_epf at ipsi=", ipsi
 c-----------------------------------------------------------------------
 c     terminate.
@@ -790,11 +926,27 @@ c-----------------------------------------------------------------------
       END SUBROUTINE gpeq_epf
 c-----------------------------------------------------------------------
 c     subprogram 10. gpeq_dst.
-c     compute DST mode coefficients and spatial functions.
+c     compute DST(psi,theta) = K(psi,theta) * CONJG(xi_normal(psi,theta)).
+c     Store both theta-space and mode-space for later integration.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_dst(psi, ipsi)
       REAL(r8), INTENT(IN) :: psi
       INTEGER, INTENT(IN) :: ipsi
+      COMPLEX(r8), DIMENSION(mpert) :: K_mn
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: K_fun, xi_normal_fun,
+     $     dst_theta_fun
+
+c-----------------------------------------------------------------------
+c     DST(psi,theta) = K(psi,theta) * CONJG(xi_normal(psi,theta))
+c     Store both theta-space and mode-space for later integration.
+c-----------------------------------------------------------------------
+      CALL gpeq_K(psi, K_mn, K_fun)
+      CALL iscdftb(mfac, mpert, xi_normal_fun, mthsurf, xsp_mn)
+      dst_theta_fun = K_fun * CONJG(xi_normal_fun)
+
+      DST_fun(0:mthsurf, ipsi) = dst_theta_fun
+      CALL iscdftf(mfac, mpert, dst_theta_fun, mthsurf,
+     $     DST_mn(1:mpert, ipsi))
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -802,55 +954,123 @@ c-----------------------------------------------------------------------
       END SUBROUTINE gpeq_dst
 c-----------------------------------------------------------------------
 c     subprogram 11. gpeq_shear.
-c     compute magnetic shear mode coefficients and spatial functions.
+c     compute magnetic shear at a single psi level.
+c     approach: compute spatial domain first (theta), then FFT to mode space.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpeq_shear(psi, shear_mn, shear_fun)
+      SUBROUTINE gpeq_shear(psi, shear_fun)
       REAL(r8), INTENT(IN) :: psi
-      COMPLEX(r8), DIMENSION(mpert), INTENT(OUT) :: shear_mn
-      COMPLEX(r8), DIMENSION(0:mthsurf), OPTIONAL, INTENT(OUT) 
-     $     :: shear_fun
+      COMPLEX(r8), DIMENSION(0:mthsurf), INTENT(OUT) :: shear_fun
 
-      INTEGER :: itheta, ipert, jpert, dm, m1
-      REAL(r8) :: q, q1, eta, r, rfac
-      REAL(r8), DIMENSION(0:mthsurf) :: theta_vals
-      COMPLEX(r8), DIMENSION(-mband:mband) :: jmat, jmat1
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: shear_theta_fun
-      
+      INTEGER :: itheta
+      REAL(r8) :: q, q1, jac, rfac, eta, r_val, theta_val
+      REAL(r8) :: w11, w12, w21, w22, w31, w32
+      REAL(r8) :: v11, v12, v13, v21, v22, v23, v33
+      REAL(r8) :: dpdp, dpdt, dpdz, shear_deriv
+      REAL(r8) :: shear_contra, shear_cova, diff_shear
+      TYPE(spline_type) :: shear_temp
+
+c-----------------------------------------------------------------------
+c     Setup: get equilibrium at this psi.
+c-----------------------------------------------------------------------
       CALL spline_eval(sq, psi, 1)
       q = sq%f(4)
       q1 = sq%f1(4)
-      CALL cspline_eval(metric%cs, psi, 0)
-      
-      jmat(0:-mband:-1) = metric%cs%f(6*mband+7:7*mband+7)
-      jmat1(0:-mband:-1) = metric%cs%f(7*mband+8:8*mband+8)
-      jmat(1:mband) = CONJG(jmat(-1:-mband:-1))
-      jmat1(1:mband) = CONJG(jmat1(-1:-mband:-1))
-      
+
 c-----------------------------------------------------------------------
-c     compute shear in mode space from metric tensors and solutions.
+c     Allocate spline for shear_temp with 5 components:
+c     1: covariant numerator term
+c     2: (q*dpdt - dpdz) numerator
+c     3: g_psi_g_psi denominator
+c     4: contravariant denominator (v21^2 + v22^2)*r^2
+c     5: covariant shear (component 1 / component 4)
 c-----------------------------------------------------------------------
-      ipert = 0
-      shear_mn = 0.0_r8
-      DO m1 = mlow, mhigh
-         ipert = ipert + 1
-         DO dm = MAX(1-ipert, -mband), MIN(mpert-ipert, mband)
-            jpert = ipert + dm
-            shear_mn(ipert) = shear_mn(ipert)
-     $           + (twopi**2/jac) * (q1 
-     $           + (jmat(dm)*xwp_mn(jpert) - q*jmat1(dm)*xwp_mn(jpert))/
-     $           q)
-         ENDDO
+      CALL spline_alloc(shear_temp, mthsurf, 5)
+      shear_temp%xs = theta(0:mthsurf)
+      shear_temp%name = "shear_temp"
+
+c-----------------------------------------------------------------------
+c     Step 1: Compute shear components at all theta points.
+c-----------------------------------------------------------------------
+      DO itheta = 0, mthsurf
+         theta_val = theta(itheta)
+         CALL bicube_eval(rzphi, psi, theta(itheta), 1)
+         
+         jac = rzphi%f(4)
+         rfac = SQRT(MAX(rzphi%f(1), 0.0_r8))
+         eta = twopi*(theta_val + rzphi%f(2))
+         r_val = ro + rfac*COS(eta)
+
+         
+c        Compute w_ij contravariant metric in Cartesian components
+         w11 = (1.0_r8 + rzphi%fy(2))*twopi**2*rfac*r_val/jac
+         w12 = -rzphi%fy(1)*pi*r_val/(rfac*jac)
+         
+         w21 = -twopi**2*rfac*r_val*rzphi%fx(2)/jac
+         w22 = pi*r_val*rzphi%fx(1)/(rfac*jac)
+         
+         w31 = (twopi*r_val*rfac/jac)*
+     $        (rzphi%fx(2)*rzphi%fy(3) - rzphi%fx(3)*(1.0_r8 + 
+     $        rzphi%fy(2)))
+         w32 = (r_val/(2.0_r8*rfac*jac))*
+     $        (rzphi%fx(3)*rzphi%fy(1) - rzphi%fx(1)*rzphi%fy(3))
+
+c        Compute covariant basis v_ij = ∂r/∂ξ_j (Cartesian components)
+c        From recon_metric:
+         v11 = rzphi%fx(1)/(2.0_r8*rfac*jac)
+         v12 = rzphi%fx(2)*twopi*rfac/jac
+         v13 = rzphi%fx(3)*r_val/jac
+
+         v21 = rzphi%fy(1)/(2.0_r8*rfac*jac)
+         v22 = (1.0_r8 + rzphi%fy(2))*twopi*rfac/jac
+         v23 = rzphi%fy(3)*r_val/jac
+         
+c        Component 33 of covariant basis
+         v33 = twopi*r_val/jac
+
+c        Contravariant dot products: dpdp = ∇ψ·∇ψ, etc.
+         dpdp = w11**2 + w12**2
+         dpdt = w11*w21 + w12*w22
+         dpdz = w11*w31 + w12*w32
+
+         shear_temp%fs(itheta, 1) = twopi*r_val*jac*
+     $        (-(v11*v21+v12*v22)*(v23+q*v33)+v13*(v21**2+v22**2))
+         shear_temp%fs(itheta, 2) = (q*dpdt - dpdz)
+         shear_temp%fs(itheta, 3) = dpdp
+         shear_temp%fs(itheta, 4) = 
+     $        twopi**2 * r_val**2 * (v21**2 + v22**2)
+
+
+         shear_temp%fs(itheta, 5) = 
+     $           shear_temp%fs(itheta, 1) / shear_temp%fs(itheta, 4)
+
       ENDDO
-      
 c-----------------------------------------------------------------------
-c     convert to spatial functions if requested.
+c     Step 2: Fit spline to compute derivatives.
 c-----------------------------------------------------------------------
-      IF (PRESENT(shear_fun)) THEN
-         CALL iscdftb(mfac, mpert, shear_theta_fun, mthsurf, 
-     $        shear_mn)
-         shear_fun = shear_theta_fun
-      ENDIF
-      
+      CALL spline_fit(shear_temp, "periodic")
+c-----------------------------------------------------------------------
+c     Step 3: Compute shear_fun = (2π²/J)*(q' + ∂shear_temp/∂θ)
+c     Compare covariant and contravariant approaches.
+c-----------------------------------------------------------------------
+      DO itheta = 0, mthsurf
+         theta_val = theta(itheta)
+
+         CALL spline_eval(shear_temp, theta_val, 1)
+         CALL bicube_eval(rzphi, psi, theta_val, 1)
+         jac = rzphi%f(4)
+         
+c        Contravariant approach: derivative of component 5
+         shear_deriv = shear_temp%f1(5)
+         shear_contra = (twopi**2/jac)*(q1 + shear_deriv)
+         shear_fun(itheta) = CMPLX(shear_contra, 0.0_r8, r8)
+
+      ENDDO
+
+c-----------------------------------------------------------------------
+c     Step 4: Transform to mode space via FFT.
+c-----------------------------------------------------------------------
+      CALL spline_dealloc(shear_temp)
+c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_shear
 c-----------------------------------------------------------------------
@@ -887,9 +1107,9 @@ c-----------------------------------------------------------------------
 c     compute covariant components needed for curvature.
 c-----------------------------------------------------------------------
       ipert = 0
-      bvt_local = 0.0_r8
-      bvz_local = 0.0_r8
-      curv_mn = 0.0_r8
+      bvt_local = CMPLX(0.0_r8, 0.0_r8, r8)
+      bvz_local = CMPLX(0.0_r8, 0.0_r8, r8)
+      curv_mn = CMPLX(0.0_r8, 0.0_r8, r8)
       DO m1 = mlow, mhigh
          ipert = ipert + 1
          DO dm = MAX(1-ipert, -mband), MIN(mpert-ipert, mband)
@@ -929,7 +1149,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(-mband:mband) :: g22, g33, g23
       COMPLEX(r8), DIMENSION(0:mthsurf) :: K_theta_fun
       COMPLEX(r8), DIMENSION(mpert) :: bvt_local, bvz_local
-      COMPLEX(r8), DIMENSION(mpert) :: sigma_mn, shear_mn
+      COMPLEX(r8), DIMENSION(mpert) :: sigma_mn
       
       chi1 = psio * twopi
       
@@ -953,7 +1173,7 @@ c-----------------------------------------------------------------------
 c     compute K-related quantities in mode space.
 c-----------------------------------------------------------------------
       ipert = 0
-      K_mn = 0.0_r8
+      K_mn = CMPLX(0.0_r8, 0.0_r8, r8)
       DO m1 = mlow, mhigh
          ipert = ipert + 1
          DO dm = MAX(1-ipert, -mband), MIN(mpert-ipert, mband)
@@ -998,7 +1218,7 @@ c-----------------------------------------------------------------------
 c     placeholder: compute integration terms.
 c     full implementation depends on integration methodology.
 c-----------------------------------------------------------------------
-      term_mn = 0.0_r8
+      term_mn = CMPLX(0.0_r8, 0.0_r8, r8)
       
 c-----------------------------------------------------------------------
 c     convert to spatial functions if requested.
