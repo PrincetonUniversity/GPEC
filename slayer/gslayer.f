@@ -73,7 +73,7 @@ c-----------------------------------------------------------------------
       eta= 1.65e-9*lnLamb/(t_e/1e3)**1.5 ! spitzer resistivity (wesson)
       rho=(mu_i*m_p)*n_e               ! mass density
 
-      b_l=(nrs/mrs)*nrs*sval*bt/R0     ! characteristic magnetic field
+      b_l=(nrs/mrs)*rs*sval*bt/R0      ! characteristic magnetic field
       v_a=b_l/(mu0*rho)**0.5           ! alfven velocity
       rho_s=1.02e-4*(mu_i*t_e)**0.5/bt ! ion Lamour by elec. Temp.
 
