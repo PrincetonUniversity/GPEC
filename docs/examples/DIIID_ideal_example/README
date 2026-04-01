@@ -12,7 +12,7 @@ Following a typical workflow we first ``cd`` to the example's directory, then ru
   DCON START => ...
   DCON STOP => Normal termination.
 
-From the positive total free-boundary energy, we see that the plasma is stable for n=1 perturbations. Total energies of order 1e0--1e-2 indicate clear stability, while values of order 1e-3 or smaller may warrant further investigation. It is always a good idea to verify the solution using ``xdraw`` or by reviewing ``dcon.out``.
+From the positive total free-boundary energy, we see that the plasma is stable for n=1 perturbations. Total energies of order 1e0--1e-2 indicate clear stability, while values of order 1e-3 or smaller may warrant further investigation. It is always a good idea to verify the solution using ``xdraw``, OMFIT, or your own ploting routines. One can also skim the human readable ``dcon.out`` ascii output.
 
 A ``stride.in`` is also included, allowing STRIDE to be run as an alternative stability solver. STRIDE parallelizes the ODE integration across radial intervals and should give consistent n=1 stability results::
 
@@ -38,7 +38,5 @@ Finally, we run PENTRC to compute the neoclassical toroidal viscosity (NTV) torq
 
   PENTRC START => ...
   PENTRC STOP => Normal termination.
-
-.. note:: The warnings about magnetic wells are expected in this equilibrium and can be disregarded.
 
 The full (``fgar``) and trapped-only (``tgar``) torque calculations agree reasonably well, consistent with the expectation that banana-orbit particles dominate the nonambipolar transport. The reduced large-aspect-ratio (``rlar``) result typically differs significantly from the general-aspect-ratio calculations for shaped, high-beta H-mode plasmas.
