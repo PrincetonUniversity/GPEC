@@ -113,7 +113,7 @@ c-----------------------------------------------------------------------
          INTEGER, DIMENSION(2*mpert) :: ipiv
          COMPLEX(r8), DIMENSION(2*mpert,2*mpert) :: uFMInv
          COMPLEX(r8), DIMENSION(2*mpert) :: uwork
-         COMPLEX(r8), DIMENSION(2*mpert,2*mpert) :: identityMat
+         COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: identityMat
 
 !NOTE #1: INTEGER, DIMENSION(:), POINTER, PRIVATE :: iwork
 !         REAL(r8), DIMENSION(:), POINTER, PRIVATE :: rwork
@@ -153,8 +153,6 @@ c-----------------------------------------------------------------------
      $           ABS(nn*sing(iS)%q1)
             scalc(iS)%singEdgesLR(2) = sing(iS)%psifac + singfac_min/
      $           ABS(nn*sing(iS)%q1)
-            WRITE(*,'(1x,i5,2(es11.3))') iS,scalc(iS)%singEdgesLR(1),
-     $           scalc(iS)%singEdgesLR(2)
 
             !This finds the index of the singular column
             scalc(iS)%sing_col = NINT(nn*sing(iS)%q)-mlow+1
@@ -187,6 +185,7 @@ c-----------------------------------------------------------------------
          ALLOCATE(rwork(lrw), zwork(lzw), iwork(liw),
      $        atol(2*mpert,2*mpert))
 
+         ALLOCATE(identityMat(2*mpert,2*mpert))
          identityMat = 0.0_r8
          DO i = 1,2*mpert
             identityMat(i,i) = 1.0_r8
@@ -435,6 +434,7 @@ c-----------------------------------------------------------------------
                      CALL ZVODE1(sing_derFM,neq,uFM,startPsi,endPsi,
      $                    itol,rtol,atol,itask,istate,iopt,zwork,lzw,
      $                    rwork,lrw,iwork,liw,ode_nojac,mf,rpar,ipar)
+                     IF(istate < 0) EXIT
                   ENDDO
                   IF ( grid_packing == "naive" ) THEN
                      CALL SYSTEM_CLOCK(COUNT=fTime)
@@ -462,6 +462,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
+      DEALLOCATE(identityMat)
       RETURN
       END SUBROUTINE ode_run
 c-----------------------------------------------------------------------
