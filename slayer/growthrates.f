@@ -305,6 +305,7 @@ c --- scan workspace
       REAL(r8) :: ing_step                      ! coarse grid spacing
       REAL(r8) :: ing_coarse, iing_coarse       ! Re/Im coords for coarse node
       LOGICAL  :: cross_real, cross_imag        ! zero-crossing flags
+      LOGICAL  :: pts_full                      ! MAX_PTS reached flag
       COMPLEX(r8) :: q_curr                     ! current evaluation point
       INTEGER, ALLOCATABLE :: coarse_indices(:,:)  ! (Q_num,Q_num) node index map
 
@@ -336,8 +337,10 @@ c     Pass 1: compute all grid nodes and store their hash indices
              iing_coarse = -scan_width + (j - 1) * ing_step
              q_curr = CMPLX(ing_coarse, iing_coarse)
 
-             CALL get_or_compute(q_curr, coarse_indices(i,j), n_k,
-     $                        sl_in, msing_max, coupling_flag)
+             CALL get_or_compute(q_curr,
+     $            coarse_indices(i,j), n_k, sl_in,
+     $            msing_max, coupling_flag, pts_full)
+             IF (pts_full) GOTO 900
          END DO
       END DO
 
@@ -389,31 +392,46 @@ c             check for sign change in Im(D) across cell corners
   
               IF (cross_real .OR. cross_imag) THEN
 c                 refine: compute 5 midpoints, create 4 sub-cells
-                  
+
                   ! Top-Mid
-                  q_curr = 0.5d0*(Q_store(idx_TL)+Q_store(idx_TR))
-                  CALL get_or_compute(q_curr, idx_TM,n_k,
-     $              sl_in,msing_max,coupling_flag)
+                  q_curr = 0.5d0*(Q_store(idx_TL)
+     $                 +Q_store(idx_TR))
+                  CALL get_or_compute(q_curr,idx_TM,
+     $              n_k,sl_in,msing_max,
+     $              coupling_flag,pts_full)
+                  IF (pts_full) GOTO 900
 
                   ! Bot-Mid
-                  q_curr = 0.5d0*(Q_store(idx_BL)+Q_store(idx_BR))
-                  CALL get_or_compute(q_curr, idx_BM,n_k,
-     $              sl_in,msing_max,coupling_flag)
+                  q_curr = 0.5d0*(Q_store(idx_BL)
+     $                 +Q_store(idx_BR))
+                  CALL get_or_compute(q_curr,idx_BM,
+     $              n_k,sl_in,msing_max,
+     $              coupling_flag,pts_full)
+                  IF (pts_full) GOTO 900
 
                   ! Left-Mid
-                  q_curr = 0.5d0*(Q_store(idx_TL)+Q_store(idx_BL))
-                  CALL get_or_compute(q_curr, idx_LM,n_k,
-     $              sl_in,msing_max,coupling_flag)
+                  q_curr = 0.5d0*(Q_store(idx_TL)
+     $                 +Q_store(idx_BL))
+                  CALL get_or_compute(q_curr,idx_LM,
+     $              n_k,sl_in,msing_max,
+     $              coupling_flag,pts_full)
+                  IF (pts_full) GOTO 900
 
                   ! Right-Mid
-                  q_curr = 0.5d0*(Q_store(idx_TR)+Q_store(idx_BR))
-                  CALL get_or_compute(q_curr, idx_RM,n_k,
-     $              sl_in,msing_max,coupling_flag)
+                  q_curr = 0.5d0*(Q_store(idx_TR)
+     $                 +Q_store(idx_BR))
+                  CALL get_or_compute(q_curr,idx_RM,
+     $              n_k,sl_in,msing_max,
+     $              coupling_flag,pts_full)
+                  IF (pts_full) GOTO 900
 
                   ! Center
-                  q_curr = 0.5d0*(Q_store(idx_TL)+Q_store(idx_BR))
-                  CALL get_or_compute(q_curr, idx_MM,n_k,
-     $              sl_in,msing_max,coupling_flag)
+                  q_curr = 0.5d0*(Q_store(idx_TL)
+     $                 +Q_store(idx_BR))
+                  CALL get_or_compute(q_curr,idx_MM,
+     $              n_k,sl_in,msing_max,
+     $              coupling_flag,pts_full)
+                  IF (pts_full) GOTO 900
                   
                   ! Create 4 sub-cells (TL, TR, BL, BR quadrants)
                   n_new_cells = n_new_cells + 1
@@ -455,8 +473,17 @@ c --- swap arrays for next refinement pass
           cells(:, 1:n_cells) = new_cells(:, 1:n_cells)
 
       END DO
+      GOTO 910
+ 900  CONTINUE
+      WRITE(*,'(A,I8,A)')
+     $   ' WARNING: MAX_PTS (', MAX_PTS,
+     $   ') reached during AMR.'
+      WRITE(*,'(A)')
+     $   '   Saving existing results.'
+ 910  CONTINUE
       DEALLOCATE(cells, new_cells)
-      WRITE(*,*) "AMR Scan Complete. Total Points:", n_pts
+      WRITE(*,*) "AMR Scan Complete. Total Points:",
+     $   n_pts
       RETURN
       END SUBROUTINE dispersion_AMR
           
@@ -469,8 +496,9 @@ c
 c     Uses 64-bit arithmetic internally to avoid integer overflow
 c     in the hash function.
 c-----------------------------------------------------------------------
-      SUBROUTINE get_or_compute(q_in,idx_out,n_k,sl_in,msing_max,
-     $                          coupling_flag)
+      SUBROUTINE get_or_compute(q_in,idx_out,n_k,sl_in,
+     $                          msing_max,coupling_flag,
+     $                          full)
 
 c --- arguments
       COMPLEX(r8), INTENT(IN) :: q_in        ! complex-Q evaluation point
@@ -479,12 +507,14 @@ c --- arguments
       INTEGER, INTENT(IN) :: msing_max       ! max surfaces to include
       TYPE(slayer_inputs_type), INTENT(IN) :: sl_in
       LOGICAL, INTENT(IN) :: coupling_flag   ! use coupled dispersion_det?
+      LOGICAL, INTENT(OUT) :: full           ! .TRUE. if MAX_PTS reached
 c --- locals
       INTEGER :: h               ! hash bucket index
       INTEGER :: curr             ! linked-list traversal index
       COMPLEX(r8) :: delta_val    ! computed dispersion result
       INTEGER(8) :: ix8, iy8, h8  ! 64-bit intermediates for hash
 
+      full = .FALSE.
 c --- 1. compute hash from quantised Re/Im coordinates (64-bit safe)
       ix8 = NINT(REAL(q_in) * HASH_SCALE, KIND=8)
       iy8 = NINT(AIMAG(q_in) * HASH_SCALE, KIND=8)
@@ -510,8 +540,10 @@ c --- 2. search hash chain for existing point
 c --- 3. point not found: evaluate dispersion relation and store
       n_pts = n_pts + 1
       IF (n_pts > MAX_PTS) THEN
-          WRITE(*,*) "ERROR: AMR exceeded MAX_PTS"
-          STOP "get_or_compute: MAX_PTS exceeded"
+          n_pts = n_pts - 1
+          full = .TRUE.
+          idx_out = -1
+          RETURN
       END IF
 
       idx_out = n_pts
@@ -539,8 +571,9 @@ c     get_or_compute_v2: hash-cached dispersion evaluation for AMR v2.
 c     Identical to get_or_compute but applies the ifac (imaginary-unit)
 c     Wick rotation that compute_delta_sub uses:  g_tmp = q_in * ifac.
 c-----------------------------------------------------------------------
-      SUBROUTINE get_or_compute_v2(q_in, idx_out, n_k, sl_in,
-     $                              msing_max, coupling_flag)
+      SUBROUTINE get_or_compute_v2(q_in, idx_out, n_k,
+     $                              sl_in, msing_max,
+     $                              coupling_flag, full)
 
       IMPLICIT NONE
 
@@ -550,12 +583,14 @@ c --- arguments
       INTEGER, INTENT(IN)      :: n_k, msing_max
       TYPE(slayer_inputs_type), INTENT(IN) :: sl_in
       LOGICAL, INTENT(IN)      :: coupling_flag
+      LOGICAL, INTENT(OUT)     :: full
 
 c --- locals
       INTEGER     :: h, curr
       COMPLEX(r8) :: delta_val
       INTEGER(8)  :: ix8, iy8, h8
 
+      full = .FALSE.
 c --- 1. compute hash bucket
       ix8 = NINT(REAL(q_in) * HASH_SCALE, KIND=8)
       iy8 = NINT(AIMAG(q_in) * HASH_SCALE, KIND=8)
@@ -576,8 +611,10 @@ c --- 2. search hash chain for existing point
 c --- 3. not found: evaluate with ifac rotation and store
       n_pts = n_pts + 1
       IF (n_pts > MAX_PTS) THEN
-          WRITE(*,*) 'ERROR: AMR v2 cache exceeded MAX_PTS'
-          STOP 'get_or_compute_v2: MAX_PTS exceeded'
+          n_pts = n_pts - 1
+          full = .TRUE.
+          idx_out = -1
+          RETURN
       END IF
 
       idx_out = n_pts
@@ -637,6 +674,7 @@ c --- locals
       REAL(r8)    :: step                     ! grid spacing
       REAL(r8)    :: x, y                     ! real / imag grid coords
       LOGICAL     :: cross_real, cross_imag   ! zero-crossing flags
+      LOGICAL     :: pts_full                 ! MAX_PTS reached flag
       INTEGER     :: n_new_cells              ! count during refinement
       INTEGER     :: cells_to_refine          ! cells flagged per pass
       INTEGER     :: cells_kept               ! cells kept per pass
@@ -691,7 +729,8 @@ c             evaluate dispersion at each corner (hash-cached)
                   CALL get_or_compute_v2(
      $                amr_cells(n_amr_cells)%Q(corner),
      $                idx_tmp, n_k, sl_in, msing_max,
-     $                coupling_flag)
+     $                coupling_flag, pts_full)
+                  IF (pts_full) GOTO 800
                   amr_cells(n_amr_cells)%D(corner) =
      $                D_store(idx_tmp)
               END DO
@@ -722,9 +761,13 @@ c         build new cell list: subdivide flagged, keep the rest
 
           DO c = 1, n_amr_cells
               IF (amr_cells(c)%needs_refine) THEN
-                  CALL subdivide_cell_sub(amr_cells(c),
-     $                 new_cells, n_new_cells, MAX_CELLS,
-     $                 n_k, sl_in, msing_max, coupling_flag)
+                  CALL subdivide_cell_sub(
+     $                 amr_cells(c),
+     $                 new_cells, n_new_cells,
+     $                 MAX_CELLS, n_k, sl_in,
+     $                 msing_max, coupling_flag,
+     $                 pts_full)
+                  IF (pts_full) GOTO 800
               ELSE
                   n_new_cells = n_new_cells + 1
                   IF (n_new_cells > MAX_CELLS) THEN
@@ -743,7 +786,16 @@ c         swap arrays for next pass (pointer swap, no element copy)
           n_amr_cells = n_new_cells
 
       END DO
+      GOTO 810
 
+ 800  CONTINUE
+      WRITE(*,'(A,I8,A)')
+     $   ' WARNING: MAX_PTS (', MAX_PTS,
+     $   ') reached during AMR v2.'
+      WRITE(*,'(A)')
+     $   '   Saving existing results.'
+
+ 810  CONTINUE
 c --- 4. output: Q_store/D_store already populated by hash cache.
 c     Trim to exact size n_pts and deallocate hash infrastructure.
 
@@ -756,7 +808,7 @@ c     Trim to exact size n_pts and deallocate hash infrastructure.
 
       IF (ALLOCATED(hash_head)) DEALLOCATE(hash_head)
       IF (ALLOCATED(hash_next)) DEALLOCATE(hash_next)
-      DEALLOCATE(new_cells)
+      IF (ALLOCATED(new_cells)) DEALLOCATE(new_cells)
 c     keep amr_cells allocated for potential post-run inspection
 
       WRITE(*,*) 'AMR v2 Complete. Unique output points:', n_pts
@@ -840,9 +892,10 @@ c     computing 5 midpoints (bottom-mid, top-mid, left-mid, right-mid,
 c     centre) and evaluating the dispersion relation at each.  The 4
 c     resulting child cells are appended to new_cells.
 c-----------------------------------------------------------------------
-      SUBROUTINE subdivide_cell_sub(parent, new_cells, n_new,
-     $                              max_cells, n_k, sl_in,
-     $                              msing_max, coupling_flag)
+      SUBROUTINE subdivide_cell_sub(parent,
+     $      new_cells, n_new, max_cells, n_k,
+     $      sl_in, msing_max, coupling_flag,
+     $      pts_full)
 
       IMPLICIT NONE
 
@@ -855,6 +908,7 @@ c --- arguments
       INTEGER, INTENT(IN)    :: msing_max
       TYPE(slayer_inputs_type), INTENT(IN) :: sl_in
       LOGICAL, INTENT(IN)    :: coupling_flag
+      LOGICAL, INTENT(OUT)   :: pts_full    ! MAX_PTS flag
 c --- corner coordinates and D-values from parent
       COMPLEX(r8) :: q_bl, q_br, q_tl, q_tr
       COMPLEX(r8) :: d_bl, d_br, d_tl, d_tr
@@ -882,20 +936,31 @@ c --- compute 5 midpoint coordinates
       q_mm = 0.25d0 * (q_bl + q_br + q_tl + q_tr)
 
 c --- evaluate dispersion at new midpoints (hash-cached)
+      pts_full = .FALSE.
       CALL get_or_compute_v2(q_bm, idx_tmp,
-     $     n_k, sl_in, msing_max, coupling_flag)
+     $     n_k, sl_in, msing_max,
+     $     coupling_flag, pts_full)
+      IF (pts_full) RETURN
       d_bm = D_store(idx_tmp)
       CALL get_or_compute_v2(q_tm, idx_tmp,
-     $     n_k, sl_in, msing_max, coupling_flag)
+     $     n_k, sl_in, msing_max,
+     $     coupling_flag, pts_full)
+      IF (pts_full) RETURN
       d_tm = D_store(idx_tmp)
       CALL get_or_compute_v2(q_lm, idx_tmp,
-     $     n_k, sl_in, msing_max, coupling_flag)
+     $     n_k, sl_in, msing_max,
+     $     coupling_flag, pts_full)
+      IF (pts_full) RETURN
       d_lm = D_store(idx_tmp)
       CALL get_or_compute_v2(q_rm, idx_tmp,
-     $     n_k, sl_in, msing_max, coupling_flag)
+     $     n_k, sl_in, msing_max,
+     $     coupling_flag, pts_full)
+      IF (pts_full) RETURN
       d_rm = D_store(idx_tmp)
       CALL get_or_compute_v2(q_mm, idx_tmp,
-     $     n_k, sl_in, msing_max, coupling_flag)
+     $     n_k, sl_in, msing_max,
+     $     coupling_flag, pts_full)
+      IF (pts_full) RETURN
       d_mm = D_store(idx_tmp)
 
 c --- check space for 4 new cells
@@ -983,9 +1048,13 @@ c --- locals
       n_total_corners = num_cells * 4
 
       IF (n_total_corners > MAX_PTS) THEN
-          WRITE(*,*) 'ERROR: n_total_corners=', n_total_corners,
-     $               ' exceeds MAX_PTS=', MAX_PTS
-          STOP 'flatten_cells_to_points_sub: MAX_PTS exceeded'
+          WRITE(*,'(A,I8,A,I8)')
+     $      ' WARNING: n_total_corners=',
+     $      n_total_corners,
+     $      ' exceeds MAX_PTS=', MAX_PTS
+          WRITE(*,'(A)')
+     $      '   Clamping to MAX_PTS.'
+          n_total_corners = MAX_PTS
       END IF
 
       IF (num_cells <= 0) THEN
@@ -1002,12 +1071,15 @@ c --- gather all corners from cells
       idx = 0
       DO c = 1, num_cells
           DO corner = 1, 4
+              IF (idx >= n_total_corners) GOTO 700
               idx = idx + 1
               temp_Q(idx) = amr_cells(c)%Q(corner)
               temp_D(idx) = amr_cells(c)%D(corner)
               sort_idx(idx) = idx
           END DO
       END DO
+ 700  CONTINUE
+      n_total_corners = idx
 
 c --- sort by (Re(Q), Im(Q)) via quicksort on the index array
       CALL qsort_complex_idx(temp_Q, sort_idx, 1, n_total_corners)
