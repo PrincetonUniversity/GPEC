@@ -9,21 +9,17 @@ c     determinant, and both AMR scanner variants used by the main
 c     SLAYER driver (slayer.f).
 c
 c     Subprograms:
-c       1. output_gamma          - write results to netCDF via
-c                                  slayer_netcdf_mod
-c       2. allocate_inputs       - allocate slayer_inputs_type arrays
-c       3. allocate_outputs      - allocate slayer_outputs_type arrays
+c       1. output_gamma          - write results to netCDF
+c       2. allocate_inputs       - allocate slayer_inputs_type
+c       3. allocate_outputs      - allocate slayer_outputs_type
 c       4. shrink_array          - trim over-allocated scan arrays
 c       5. grow_array            - expand scan arrays dynamically
 c       6. calc_determinant      - 2x2 / 3x3 complex determinant
 c       7. dispersion_det        - coupled dispersion determinant
-c       8. dispersion_AMR        - AMR scan v1 (hash-based dedup)
-c       9. dispersion_AMR_v2     - AMR scan v2 (cell-based storage)
-c
-c     Helper subroutines (v1): get_or_compute
-c     Helper subroutines (v2): get_or_compute_v2,
-c       compute_delta_sub, check_cell_crossing_sub,
-c       subdivide_cell_sub, flatten_cells_to_points_sub
+c       8. get_or_compute_v2     - hash-cached dispersion eval
+c       9. dispersion_AMR_v2     - AMR scan (cell-based storage)
+c      10. check_cell_crossing_sub - zero-crossing test
+c      11. subdivide_cell_sub    - cell refinement
 c-----------------------------------------------------------------------
 
       USE omp_lib
@@ -172,7 +168,7 @@ c --- arguments
                     
         CASE default
         ! Unsupported matrix size
-            detk = (0.0, 0.0)
+            detk = CMPLX(0.0_r8, 0.0_r8, KIND=r8)
             status = -1
                     
       END SELECT
@@ -223,7 +219,8 @@ c        set module-level variables for riccati_f
          g_tmp = g_in
          tmp_delta=riccati_f()
 c        de-normalise delta by lu^(1/3)
-         det_val=tmp_delta*(sl_in%lu_arr(1)**(1.0/3.0))
+         det_val=tmp_delta*
+     $      (sl_in%lu_arr(1)**(1.0_r8/3.0_r8))
 
 c        return Deltaprime - delta(Q)
          dispersion_det = sl_in%Re_dp_arr(1) - det_val
@@ -231,7 +228,7 @@ c        return Deltaprime - delta(Q)
 c --- coupled-surface branch (2 or 3 surfaces)
       ELSEIF ((msing_max == 2) .OR. (msing_max == 3)) THEN
          ALLOCATE(delta_Q(msing_max,msing_max))
-         delta_Q=(0.0,0.0)
+         delta_Q=CMPLX(0.0_r8, 0.0_r8, KIND=r8)
          DO k=1,msing_max
 c           set module-level variables for this surface
             Q_e = sl_in%Q_e_arr(k)
@@ -245,9 +242,11 @@ c           set module-level variables for this surface
             iota_e = Q_e / (Q_e - Q_i)
 
 c           evaluate riccati_f at rescaled growth rate, de-normalise
-            g_tmp = (g_in*sl_in%Qconv_arr(1))/tauk ! sets module-level g_tmp to SCALED value
+c           rescale g_in to this surface's normalisation
+            g_tmp = (g_in*sl_in%Qconv_arr(1))/tauk
             delta_Q(k,k)=riccati_f()
-            delta_Q(k,k)=delta_Q(k,k)*sl_in%lu_arr(k)**(1.0/3.0)
+            delta_Q(k,k)=delta_Q(k,k)*
+     $         sl_in%lu_arr(k)**(1.0_r8/3.0_r8)
          END DO
 
 c        compute det(dp_matrix - delta_Q)
@@ -259,6 +258,7 @@ c        compute det(dp_matrix - delta_Q)
      $           msing_max
             STOP 'dispersion_det: calc_determinant failed'
          END IF
+         DEALLOCATE(delta_Q, result_matrix)
          dispersion_det = det_val
       ELSE
          WRITE(*,*) "Error: no support for msing > 3"
@@ -267,309 +267,8 @@ c        compute det(dp_matrix - delta_Q)
       END FUNCTION dispersion_det
 
 c-----------------------------------------------------------------------
-c     dispersion_AMR: hash-based adaptive mesh refinement scanner.\nc     
-c     Scans a 2D complex-Q grid for zeros of the dispersion relation
-c     D(Q) using adaptive refinement.  A coarse grid is evaluated
-c     first (two-pass: nodes then cells), then cells that span a zero
-c     crossing in Re(D) or Im(D) are subdivided.
-c
-c     Point deduplication uses a spatial hash table (HASH_SZ buckets,
-c     chained) so that midpoints shared between neighbouring cells
-c     are evaluated only once.
-c-----------------------------------------------------------------------
-      SUBROUTINE dispersion_AMR(n_k,sl_in,msing_max,
-     $                          scan_width,Q_num,AMR_passes,
-     $                          coupling_flag)
-c     DEPRECATED: use dispersion_AMR_v2 instead.
-c     This v1 hash-based scanner is retained for
-c     backwards compatibility only.
-
-c --- arguments
-      INTEGER, INTENT(IN)  :: n_k           ! number of rational surfaces
-      INTEGER, INTENT(IN)  :: msing_max     ! max surfaces for coupling
-      INTEGER, INTENT(IN)  :: Q_num         ! grid points per axis
-      INTEGER, INTENT(IN)  :: AMR_passes    ! refinement passes
-      REAL(r8), INTENT(IN) :: scan_width    ! half-width of Re/Im scan window
-      TYPE(slayer_inputs_type), INTENT(IN) :: sl_in
-      LOGICAL, INTENT(IN)  :: coupling_flag ! coupled dispersion_det?
-c --- cell storage
-      INTEGER, ALLOCATABLE :: cells(:,:)       ! (4, max) corner indices per cell
-      INTEGER, ALLOCATABLE :: new_cells(:,:)   ! scratch for next level
-c --- loop / index variables
-      INTEGER :: n_cells, n_new_cells, i, j
-      INTEGER :: c_idx, pass
-      INTEGER :: idx_TL, idx_TR, idx_BL, idx_BR   ! corner indices
-      INTEGER :: idx_TM, idx_BM, idx_LM, idx_RM, idx_MM  ! midpoint indices
-c --- scan workspace
-      REAL(r8) :: r_min, r_max, i_min, i_max   ! min/max Re/Im across corners
-      REAL(r8) :: ing_step                      ! coarse grid spacing
-      REAL(r8) :: ing_coarse, iing_coarse       ! Re/Im coords for coarse node
-      LOGICAL  :: cross_real, cross_imag        ! zero-crossing flags
-      LOGICAL  :: pts_full                      ! MAX_PTS reached flag
-      COMPLEX(r8) :: q_curr                     ! current evaluation point
-      INTEGER, ALLOCATABLE :: coarse_indices(:,:)  ! (Q_num,Q_num) node index map
-
-c --- 1. initialise hash table and point/cell storage
-      IF (ALLOCATED(Q_store)) DEALLOCATE(Q_store)
-      IF (ALLOCATED(D_store)) DEALLOCATE(D_store)
-      IF (ALLOCATED(hash_head)) DEALLOCATE(hash_head)
-      IF (ALLOCATED(hash_next)) DEALLOCATE(hash_next)
-
-      ALLOCATE(Q_store(MAX_PTS), D_store(MAX_PTS))
-      ALLOCATE(hash_head(HASH_SZ), hash_next(MAX_PTS))
-      ALLOCATE(cells(4, 200000), new_cells(4, 200000))
-
-      hash_head = 0
-      hash_next = 0
-      n_pts = 0
-      n_cells = 0
-
-c --- 2. build initial coarse grid (two-pass method)
-c     Pass 1 computes and hashes every node; Pass 2 stitches cells
-c     from the stored indices -- no floating-point comparison needed.
-      ALLOCATE(coarse_indices(Q_num, Q_num))
-      ing_step = (2.0*scan_width) / (Q_num - 1)
-
-c     Pass 1: compute all grid nodes and store their hash indices
-      DO i = 1, Q_num
-         DO j = 1, Q_num
-             ing_coarse = -scan_width + (i - 1) * ing_step
-             iing_coarse = -scan_width + (j - 1) * ing_step
-             q_curr = CMPLX(ing_coarse, iing_coarse)
-
-             CALL get_or_compute(q_curr,
-     $            coarse_indices(i,j), n_k, sl_in,
-     $            msing_max, coupling_flag, pts_full)
-             IF (pts_full) GOTO 900
-         END DO
-      END DO
-
-c     Pass 2: stitch cells from the stored integer indices
-      DO i = 1, Q_num - 1
-         DO j = 1, Q_num - 1
-             n_cells = n_cells + 1
-             cells(1, n_cells) = coarse_indices(i, j)     ! TL
-             cells(2, n_cells) = coarse_indices(i+1, j)   ! TR
-             cells(3, n_cells) = coarse_indices(i, j+1)   ! BL
-             cells(4, n_cells) = coarse_indices(i+1, j+1) ! BR
-         END DO
-      END DO
-      DEALLOCATE(coarse_indices)
-  
-c --- 3. refinement passes: subdivide cells with zero crossings
-      DO pass = 1, AMR_PASSES
-          WRITE(*,'(A,I2,A,I6,A)') '   > Pass ', pass,
-     $         ': Checking ', n_cells, ' cells...'
-          n_new_cells = 0
-
-          DO c_idx = 1, n_cells
-              idx_TL = cells(1, c_idx)
-              idx_TR = cells(2, c_idx)
-              idx_BL = cells(3, c_idx)
-              idx_BR = cells(4, c_idx)
-
-c             check for sign change in Re(D) across cell corners
-              r_min = MIN(REAL(D_store(idx_TL)),
-     $                         REAL(D_store(idx_TR)),
-     $                         REAL(D_store(idx_BL)),
-     $                         REAL(D_store(idx_BR)))
-              r_max = MAX(REAL(D_store(idx_TL)),
-     $                         REAL(D_store(idx_TR)),
-     $                         REAL(D_store(idx_BL)),
-     $                         REAL(D_store(idx_BR)))
-              cross_real = (r_min * r_max <= 0.0d0)
-
-c             check for sign change in Im(D) across cell corners
-              i_min = MIN(AIMAG(D_store(idx_TL)),
-     $                         AIMAG(D_store(idx_TR)),
-     $                         AIMAG(D_store(idx_BL)),
-     $                         AIMAG(D_store(idx_BR)))
-              i_max = MAX(AIMAG(D_store(idx_TL)),
-     $                         AIMAG(D_store(idx_TR)),
-     $                         AIMAG(D_store(idx_BL)),
-     $                         AIMAG(D_store(idx_BR)))
-              cross_imag = (i_min * i_max <= 0.0d0)
-  
-              IF (cross_real .OR. cross_imag) THEN
-c                 refine: compute 5 midpoints, create 4 sub-cells
-
-                  ! Top-Mid
-                  q_curr = 0.5d0*(Q_store(idx_TL)
-     $                 +Q_store(idx_TR))
-                  CALL get_or_compute(q_curr,idx_TM,
-     $              n_k,sl_in,msing_max,
-     $              coupling_flag,pts_full)
-                  IF (pts_full) GOTO 900
-
-                  ! Bot-Mid
-                  q_curr = 0.5d0*(Q_store(idx_BL)
-     $                 +Q_store(idx_BR))
-                  CALL get_or_compute(q_curr,idx_BM,
-     $              n_k,sl_in,msing_max,
-     $              coupling_flag,pts_full)
-                  IF (pts_full) GOTO 900
-
-                  ! Left-Mid
-                  q_curr = 0.5d0*(Q_store(idx_TL)
-     $                 +Q_store(idx_BL))
-                  CALL get_or_compute(q_curr,idx_LM,
-     $              n_k,sl_in,msing_max,
-     $              coupling_flag,pts_full)
-                  IF (pts_full) GOTO 900
-
-                  ! Right-Mid
-                  q_curr = 0.5d0*(Q_store(idx_TR)
-     $                 +Q_store(idx_BR))
-                  CALL get_or_compute(q_curr,idx_RM,
-     $              n_k,sl_in,msing_max,
-     $              coupling_flag,pts_full)
-                  IF (pts_full) GOTO 900
-
-                  ! Center
-                  q_curr = 0.5d0*(Q_store(idx_TL)
-     $                 +Q_store(idx_BR))
-                  CALL get_or_compute(q_curr,idx_MM,
-     $              n_k,sl_in,msing_max,
-     $              coupling_flag,pts_full)
-                  IF (pts_full) GOTO 900
-                  
-                  ! Create 4 sub-cells (TL, TR, BL, BR quadrants)
-                  n_new_cells = n_new_cells + 1
-                  new_cells(1, n_new_cells) = idx_TL
-                  new_cells(2, n_new_cells) = idx_TM
-                  new_cells(3, n_new_cells) = idx_LM
-                  new_cells(4, n_new_cells) = idx_MM
-                  
-                  ! Sub 2 (Top-Right)
-                  n_new_cells = n_new_cells + 1
-                  new_cells(1, n_new_cells) = idx_TM
-                  new_cells(2, n_new_cells) = idx_TR
-                  new_cells(3, n_new_cells) = idx_MM
-                  new_cells(4, n_new_cells) = idx_RM
-                  
-                  ! Sub 3 (Bot-Left)
-                  n_new_cells = n_new_cells + 1
-                  new_cells(1, n_new_cells) = idx_LM
-                  new_cells(2, n_new_cells) = idx_MM
-                  new_cells(3, n_new_cells) = idx_BL
-                  new_cells(4, n_new_cells) = idx_BM
-                  
-                  ! Sub 4 (Bot-Right)
-                  n_new_cells = n_new_cells + 1
-                  new_cells(1, n_new_cells) = idx_MM
-                  new_cells(2, n_new_cells) = idx_RM
-                  new_cells(3, n_new_cells) = idx_BM
-                  new_cells(4, n_new_cells) = idx_BR
-                  
-              ELSE
-                  ! No refinement needed, keep original cell
-                  n_new_cells = n_new_cells + 1
-                  new_cells(:, n_new_cells) = cells(:, c_idx)
-              END IF
-          END DO
-          
-c --- swap arrays for next refinement pass
-          n_cells = n_new_cells
-          cells(:, 1:n_cells) = new_cells(:, 1:n_cells)
-
-      END DO
-      GOTO 910
- 900  CONTINUE
-      WRITE(*,'(A,I8,A)')
-     $   ' WARNING: MAX_PTS (', MAX_PTS,
-     $   ') reached during AMR.'
-      WRITE(*,'(A)')
-     $   '   Saving existing results.'
- 910  CONTINUE
-      DEALLOCATE(cells, new_cells)
-      WRITE(*,*) "AMR Scan Complete. Total Points:",
-     $   n_pts
-      RETURN
-      END SUBROUTINE dispersion_AMR
-          
-c-----------------------------------------------------------------------
-c     get_or_compute: hash-based point lookup for dispersion_AMR v1.
-c     If q_in is already in the hash table, return its index.
-c     Otherwise, evaluate the dispersion relation at q_in, store
-c     the result, and insert into the hash table.
-c
-c     Uses 64-bit arithmetic internally to avoid integer overflow
-c     in the hash function.
-c-----------------------------------------------------------------------
-      SUBROUTINE get_or_compute(q_in,idx_out,n_k,sl_in,
-     $                          msing_max,coupling_flag,
-     $                          full)
-
-c --- arguments
-      COMPLEX(r8), INTENT(IN) :: q_in        ! complex-Q evaluation point
-      INTEGER, INTENT(OUT) :: idx_out        ! returned point index
-      INTEGER, INTENT(IN) :: n_k             ! number of surfaces
-      INTEGER, INTENT(IN) :: msing_max       ! max surfaces to include
-      TYPE(slayer_inputs_type), INTENT(IN) :: sl_in
-      LOGICAL, INTENT(IN) :: coupling_flag   ! use coupled dispersion_det?
-      LOGICAL, INTENT(OUT) :: full           ! .TRUE. if MAX_PTS reached
-c --- locals
-      INTEGER :: h               ! hash bucket index
-      INTEGER :: curr             ! linked-list traversal index
-      COMPLEX(r8) :: delta_val    ! computed dispersion result
-      INTEGER(8) :: ix8, iy8, h8  ! 64-bit intermediates for hash
-
-      full = .FALSE.
-c --- 1. compute hash from quantised Re/Im coordinates (64-bit safe)
-      ix8 = NINT(REAL(q_in) * HASH_SCALE, KIND=8)
-      iy8 = NINT(AIMAG(q_in) * HASH_SCALE, KIND=8)
-      h8 = MOD(ABS(ix8 * 73856093_8 + iy8 * 19349663_8),
-     $         INT(HASH_SZ, 8)) + 1_8
-      h = INT(h8)
-
-      IF (h < 1 .OR. h > HASH_SZ) THEN
-         WRITE(*,*) "HASH ERROR: h=", h, " q_in=", q_in
-         STOP "get_or_compute: hash out of bounds"
-      END IF
-
-c --- 2. search hash chain for existing point
-      curr = hash_head(h)
-      DO WHILE (curr /= 0)
-          IF (ABS(Q_store(curr) - q_in) < 1.0d-8) THEN
-              idx_out = curr
-              RETURN
-          END IF
-          curr = hash_next(curr)
-      END DO
-
-c --- 3. point not found: evaluate dispersion relation and store
-      n_pts = n_pts + 1
-      IF (n_pts > MAX_PTS) THEN
-          n_pts = n_pts - 1
-          full = .TRUE.
-          idx_out = -1
-          RETURN
-      END IF
-
-      idx_out = n_pts
-      Q_store(idx_out) = q_in
-
-      IF (coupling_flag) THEN
-c          dispersion_det sets g_tmp per-surface internally;
-c          pass q_in directly as g_in argument.
-           delta_val = dispersion_det(q_in, n_k, sl_in, msing_max)
-      ELSE
-           g_tmp = q_in
-           delta_val = riccati_f()
-           delta_val = delta_val - delta_eff
-      END IF
-      D_store(idx_out) = delta_val
-
-c --- 4. insert into hash chain (prepend)
-      hash_next(idx_out) = hash_head(h)
-      hash_head(h) = idx_out
-
-      END SUBROUTINE get_or_compute
-
-c-----------------------------------------------------------------------
 c     get_or_compute_v2: hash-cached dispersion evaluation for AMR v2.
-c     Identical to get_or_compute but applies the ifac (imaginary-unit)
-c     Wick rotation that compute_delta_sub uses:  g_tmp = q_in * ifac.
+c     Applies ifac Wick rotation: g_tmp = q_in * ifac.
 c-----------------------------------------------------------------------
       SUBROUTINE get_or_compute_v2(q_in, idx_out, n_k,
      $                              sl_in, msing_max,
@@ -822,38 +521,6 @@ c     keep amr_cells allocated for potential post-run inspection
       END SUBROUTINE dispersion_AMR_v2
 
 c-----------------------------------------------------------------------
-c     compute_delta_sub: evaluate the dispersion relation at a single
-c     complex-Q point for dispersion_AMR_v2.  Multiplies q_in by ifac
-c     before passing to the Riccati solver or coupled-surface
-c     determinant routine.
-c-----------------------------------------------------------------------
-      SUBROUTINE compute_delta_sub(q_in, n_k, sl_in, msing_max,
-     $                             coupling_flag, delta_out)
-
-      IMPLICIT NONE
-
-c --- arguments
-      COMPLEX(r8), INTENT(IN)  :: q_in          ! complex-Q evaluation point
-      INTEGER, INTENT(IN)      :: n_k           ! number of surfaces
-      INTEGER, INTENT(IN)      :: msing_max     ! max surfaces for coupling
-      TYPE(slayer_inputs_type), INTENT(IN) :: sl_in
-      LOGICAL, INTENT(IN)      :: coupling_flag ! use coupled det?
-      COMPLEX(r8), INTENT(OUT) :: delta_out     ! dispersion result
-
-      IF (coupling_flag) THEN
-          g_tmp = q_in*ifac
-          delta_out = dispersion_det(g_tmp, n_k, sl_in, msing_max)
-      ELSE
-          g_tmp = q_in*ifac
-          delta_out = riccati_f()
-          delta_out = delta_out - delta_eff
-      END IF
-
-      RETURN
-      END SUBROUTINE compute_delta_sub
-
-
-c-----------------------------------------------------------------------
 c     check_cell_crossing_sub: test whether a cell’s 4 corner D-values
 c     span a zero crossing in Re(D) and/or Im(D).  Used by
 c     dispersion_AMR_v2 to decide which cells to refine.
@@ -1020,160 +687,4 @@ c --- child 4: top-right quadrant (MM, RM, TM, TR)
       RETURN
       END SUBROUTINE subdivide_cell_sub
 
-
-c-----------------------------------------------------------------------
-c     flatten_cells_to_points_sub: extract unique (Q, D) points from
-c     the cell array into the module-level Q_store / D_store arrays.
-c     Uses a brute-force O(n^2) duplicate check which is acceptable
-c     for moderate cell counts; could be replaced by a hash set for
-c     very large scans.
-c
-c     n_total_corners = num_cells*4; guarded against MAX_PTS overflow.
-c-----------------------------------------------------------------------
-      SUBROUTINE flatten_cells_to_points_sub(num_cells)
-
-      IMPLICIT NONE
-
-c --- arguments
-      INTEGER, INTENT(IN) :: num_cells       ! number of cells to flatten
-c --- locals
-      INTEGER :: c, corner, i, idx
-      INTEGER :: n_total_corners              ! = num_cells * 4
-      COMPLEX(r8), ALLOCATABLE :: temp_Q(:)  ! all corner Q-values
-      COMPLEX(r8), ALLOCATABLE :: temp_D(:)  ! all corner D-values
-      INTEGER, ALLOCATABLE :: sort_idx(:)    ! sort permutation
-      REAL(r8) :: tol                        ! duplicate tolerance
-
-      tol = 1.0d-10
-      n_total_corners = num_cells * 4
-
-      IF (n_total_corners > MAX_PTS) THEN
-          WRITE(*,'(A,I8,A,I8)')
-     $      ' WARNING: n_total_corners=',
-     $      n_total_corners,
-     $      ' exceeds MAX_PTS=', MAX_PTS
-          WRITE(*,'(A)')
-     $      '   Clamping to MAX_PTS.'
-          n_total_corners = MAX_PTS
-      END IF
-
-      IF (num_cells <= 0) THEN
-          WRITE(*,*) 'ERROR: No cells to flatten'
-          n_pts = 0
-          RETURN
-      END IF
-
-c --- gather all corners from cells
-      ALLOCATE(temp_Q(n_total_corners))
-      ALLOCATE(temp_D(n_total_corners))
-      ALLOCATE(sort_idx(n_total_corners))
-
-      idx = 0
-      DO c = 1, num_cells
-          DO corner = 1, 4
-              IF (idx >= n_total_corners) GOTO 700
-              idx = idx + 1
-              temp_Q(idx) = amr_cells(c)%Q(corner)
-              temp_D(idx) = amr_cells(c)%D(corner)
-              sort_idx(idx) = idx
-          END DO
-      END DO
- 700  CONTINUE
-      n_total_corners = idx
-
-c --- sort by (Re(Q), Im(Q)) via quicksort on the index array
-      CALL qsort_complex_idx(temp_Q, sort_idx, 1, n_total_corners)
-
-c --- linear scan to count unique points (sorted order)
-      n_pts = 1
-      DO i = 2, n_total_corners
-          IF (ABS(temp_Q(sort_idx(i)) - temp_Q(sort_idx(i-1)))
-     $        >= tol) THEN
-              n_pts = n_pts + 1
-          END IF
-      END DO
-
-c --- copy unique points to module-level output arrays
-      IF (ALLOCATED(Q_store)) DEALLOCATE(Q_store)
-      IF (ALLOCATED(D_store)) DEALLOCATE(D_store)
-      ALLOCATE(Q_store(n_pts))
-      ALLOCATE(D_store(n_pts))
-
-      idx = 1
-      Q_store(1) = temp_Q(sort_idx(1))
-      D_store(1) = temp_D(sort_idx(1))
-      DO i = 2, n_total_corners
-          IF (ABS(temp_Q(sort_idx(i)) - temp_Q(sort_idx(i-1)))
-     $        >= tol) THEN
-              idx = idx + 1
-              Q_store(idx) = temp_Q(sort_idx(i))
-              D_store(idx) = temp_D(sort_idx(i))
-          END IF
-      END DO
-
-      DEALLOCATE(temp_Q, temp_D, sort_idx)
-
-      RETURN
-      END SUBROUTINE flatten_cells_to_points_sub
-
-c-----------------------------------------------------------------------
-c     qsort_complex_idx: in-place quicksort of an index array by
-c     the complex keys (Re then Im).  Operates on sort_idx so the
-c     Q/D data arrays remain untouched.
-c-----------------------------------------------------------------------
-      RECURSIVE SUBROUTINE qsort_complex_idx(keys, idx, lo, hi)
-
-      IMPLICIT NONE
-
-      COMPLEX(r8), INTENT(IN)    :: keys(:)
-      INTEGER,     INTENT(INOUT) :: idx(:)
-      INTEGER,     INTENT(IN)    :: lo, hi
-
-      INTEGER :: i, j, pivot_idx, tmp
-      REAL(r8) :: p_re, p_im, k_re, k_im
-
-      IF (lo >= hi) RETURN
-
-c     median-of-three pivot selection
-      pivot_idx = idx((lo + hi) / 2)
-      p_re = REAL(keys(pivot_idx), KIND=r8)
-      p_im = AIMAG(keys(pivot_idx))
-
-      i = lo
-      j = hi
-      DO WHILE (i <= j)
-c         advance i while keys(idx(i)) < pivot
-          k_re = REAL(keys(idx(i)), KIND=r8)
-          k_im = AIMAG(keys(idx(i)))
-          DO WHILE (k_re < p_re .OR.
-     $             (k_re == p_re .AND. k_im < p_im))
-              i = i + 1
-              k_re = REAL(keys(idx(i)), KIND=r8)
-              k_im = AIMAG(keys(idx(i)))
-          END DO
-c         retreat j while keys(idx(j)) > pivot
-          k_re = REAL(keys(idx(j)), KIND=r8)
-          k_im = AIMAG(keys(idx(j)))
-          DO WHILE (k_re > p_re .OR.
-     $             (k_re == p_re .AND. k_im > p_im))
-              j = j - 1
-              k_re = REAL(keys(idx(j)), KIND=r8)
-              k_im = AIMAG(keys(idx(j)))
-          END DO
-c         swap if pointers haven't crossed
-          IF (i <= j) THEN
-              tmp    = idx(i)
-              idx(i) = idx(j)
-              idx(j) = tmp
-              i = i + 1
-              j = j - 1
-          END IF
-      END DO
-
-c     recurse on partitions
-      IF (lo < j) CALL qsort_complex_idx(keys, idx, lo, j)
-      IF (i < hi) CALL qsort_complex_idx(keys, idx, i, hi)
-
-      RETURN
-      END SUBROUTINE qsort_complex_idx
       END MODULE growthrates_mod
