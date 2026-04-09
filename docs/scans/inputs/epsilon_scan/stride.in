@@ -1,0 +1,70 @@
+&stride_control
+    bal_flag=t
+    mat_flag=t
+    ode_flag=t
+    vac_flag=t
+    mer_flag=t
+
+    sas_flag=f           ! Overridden from default True
+    dmlim=0.2
+    qlow=1.02
+    qhigh=3.6            ! Overridden from default 1e3
+    sing_start=0
+
+    nn=1
+    delta_mlow=8
+    delta_mhigh=8
+    delta_mband=0
+    mthvac=960            ! Overridden from default 512
+    thmax0=1
+
+    tol_nr=1e-12          ! Overridden from default 1e-8
+    tol_r=1e-12           ! Overridden from default 1e-8
+    crossover=1e-2
+    singfac_min=1e-4
+    ucrit=1e4
+    sing_order=8          ! Higher order for epsilon scan
+
+    use_classic_splines=f
+    use_notaknot_splines=f
+/
+
+&stride_output
+    out_ahg2msc=f
+    crit_break=t
+    ahb_flag=f
+    msol_ahb=1
+    mthsurf0=1
+    bin_euler=f
+    euler_stride=1
+    out_bal1=f
+    bin_bal1=f
+    out_bal2=f
+    bin_bal2=f
+    netcdf_out=t
+/
+
+&stride_params
+    nThreads=0
+    fourfit_metric_parallel=f
+    vac_parallel=t
+
+    nIntervalsTot=33
+    grid_packing="singularities"
+    axis_mid_pt_skew=12.0
+    asymp_at_sing=t
+    kill_big_soln_for_ideal_dW=f
+
+    calc_delta_prime=t
+    calc_dp_with_vac=t
+    big_soln_err_tol=1e-7
+
+    integrate_riccati=f
+    riccati_bounce=t
+    riccati_match_hamiltonian_evals=f
+    verbose_riccati_output=t
+    ric_dt=1e-8
+    ric_tol=1e-6
+
+    verbose_performance_output=f
+/
