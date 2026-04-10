@@ -95,7 +95,7 @@ c-----------------------------------------------------------------------
       INTEGER :: interp_np=10
       INTEGER :: basis_type=0
       INTEGER, PRIVATE :: np=3
-      INTEGER :: nx=128,nq=4
+      INTEGER :: nx=512,nq=4
       INTEGER :: cutoff=5
       INTEGER, DIMENSION(4), PRIVATE:: tid=(/3,5,6,4/)
       REAL(r8) :: xmin=0,deltac_tol=1e-5,pfac=1

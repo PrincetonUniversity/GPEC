@@ -648,58 +648,93 @@ c-----------------------------------------------------------------------
       LOGICAL, DIMENSION(0:1) :: set
       CHARACTER(64) :: message
       REAL(r8), PARAMETER :: xlogmin=-1,dxlog=.01
-      INTEGER :: ixlog,nxlog=1000,i
-      REAL(r8) :: xlog,x,dxfac
+      INTEGER :: ixlog,nxlog=1000,i,ibis
+      INTEGER, PARAMETER :: nbisect=60
+      REAL(r8) :: xlog,x,dxfac,x_prev,dmax_prev,dmax
+      REAL(r8) :: xlo,xhi,xmid
       REAL(r8), DIMENSION(2) :: delta
+      REAL(r8), DIMENSION(0:2) :: xmax_lo,xmax_hi
+      LOGICAL, DIMENSION(0:2) :: bracketed
 c-----------------------------------------------------------------------
 c     start loops over x.
 c-----------------------------------------------------------------------
       set=.TRUE.
+      bracketed=.FALSE.
       dxfac=10**dxlog
       xlog=xlogmin
       x=10**xlog
       ixlog=0
+      CALL inps_delta(x,delta)
+      dmax_prev=MAXVAL(delta)
+      x_prev=x
+      ixlog=1
+      xlog=xlog+dxlog
+      x=x*dxfac
       DO
 c-----------------------------------------------------------------------
 c     compute delta and diagnose.
 c-----------------------------------------------------------------------
          CALL inps_delta(x,delta)
+         dmax=MAXVAL(delta)
          IF(diagnose)THEN
             WRITE(*,'(3(a,es10.3))')
      $           " e = ",rt%e,", f = ",rt%f,", h = ",rt%h
             WRITE(*,'(4(a,es10.3))')
-     $           " g = ",rt%g,", k = ",rt%k,", q = ",REAL(rt%q)
-            WRITE(*,'(a,es10.3,a,2es10.3)')" x = ",x,", delta = ",delta
-            CALL program_stop("inps_xmax: abort after diagnose.")
+     $           " g = ",rt%g,", k = ",rt%k,
+     $           ", q = ",REAL(rt%q)
+            WRITE(*,'(a,es10.3,a,2es10.3)')
+     $           " x = ",x,", delta = ",delta
+            CALL program_stop
+     $           ("inps_xmax: abort after diagnose.")
          ENDIF
 c-----------------------------------------------------------------------
-c     compute x1 and x2.
+c     bracket each threshold crossing.
 c-----------------------------------------------------------------------
-         DO i=0,1
-            IF(MAXVAL(delta) < eps(i) .AND. set(i))THEN
-               xmax(i)=x
-               set(i)=.FALSE.
+         DO i=0,2
+            IF(dmax_prev >= eps(i) .AND.
+     $           dmax < eps(i) .AND.
+     $           .NOT. bracketed(i))THEN
+               xmax_lo(i)=x_prev
+               xmax_hi(i)=x
+               bracketed(i)=.TRUE.
             ENDIF
          ENDDO
-         IF(MAXVAL(delta) < eps(2))THEN
-            xmax(2)=x
-            EXIT
-         ENDIF
+         IF(ALL(bracketed)) EXIT
 c-----------------------------------------------------------------------
 c     abort if ixlog = nxlog.
 c-----------------------------------------------------------------------
          IF(ixlog == nxlog)THEN
             WRITE(message,'(a,g0,a,es10.3)')
-     $           "inps_xmax: abort with ixlog = nxlog = ",nxlog,
+     $           "inps_xmax: abort with ixlog"
+     $           //" = nxlog = ",nxlog,
      $           ", xlog = ",xlog
             CALL program_stop(message)
          ENDIF
 c-----------------------------------------------------------------------
 c     finish loop over x.
 c-----------------------------------------------------------------------
+         x_prev=x
+         dmax_prev=dmax
          ixlog=ixlog+1
          xlog=xlog+dxlog
          x=x*dxfac
+      ENDDO
+c-----------------------------------------------------------------------
+c     bisect each bracket to find smooth xmax.
+c-----------------------------------------------------------------------
+      DO i=0,2
+         xlo=xmax_lo(i)
+         xhi=xmax_hi(i)
+         DO ibis=1,nbisect
+            xmid=(xlo+xhi)/2
+            CALL inps_delta(xmid,delta)
+            IF(MAXVAL(delta) < eps(i))THEN
+               xhi=xmid
+            ELSE
+               xlo=xmid
+            ENDIF
+         ENDDO
+         xmax(i)=(xlo+xhi)/2
       ENDDO
 c-----------------------------------------------------------------------
 c     terminate.
