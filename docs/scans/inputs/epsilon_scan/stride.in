@@ -23,7 +23,7 @@
     crossover=1e-2
     singfac_min=1e-4
     ucrit=1e4
-    sing_order=8          ! Higher order for epsilon scan
+    sing_order=6
 
     use_classic_splines=f
     use_notaknot_splines=f
