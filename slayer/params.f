@@ -140,15 +140,20 @@ c     Diamagnetic frequencies and normalised Q parameters.
 c     Qconv converts dimensional frequencies to the normalised Q
 c     used in the SLAYER dispersion relation (Cole scaling).
 c-----------------------------------------------------------------------
-      omega_e = -t_e/(bt*R0)*(1.0/l_n + 1.0/l_t)*qval  ! electron diamagnetic [rad/s]
-      omega_i =  t_i/(bt*R0)*(1.0/l_n + 1.0/l_t)*qval  ! ion diamagnetic     [rad/s]
-
       Qconv = lu**(1.0/3.0) * tau_h     ! frequency normalisation (Cole)
       tauk  = Qconv                      ! stored in sglobal_mod
+      Q     = Qconv * omega             ! normalised rotation frequency
 
-      Q   = Qconv * omega               ! normalised rotation frequency
-      Q_e = -Qconv * omega_e            ! normalised electron diamagnetic
-      Q_i = -Qconv * omega_i            ! normalised ion diamagnetic
+c     Diamagnetic frequencies require gradient lengths; skip when the
+c     caller does not provide them (l_n <= 0 or l_t <= 0). Callers that
+c     compute omega_e/omega_i by other means must set Q_e and Q_i
+c     themselves afterwards.
+      IF (l_n > 0.0_r8 .AND. l_t > 0.0_r8) THEN
+         omega_e = -t_e/(bt*R0)*(1.0/l_n + 1.0/l_t)*qval
+         omega_i =  t_i/(bt*R0)*(1.0/l_n + 1.0/l_t)*qval
+         Q_e = -Qconv * omega_e
+         Q_i = -Qconv * omega_i
+      END IF
 
 c     normalised ion Larmor radius (critical stability parameter)
       ds = lu**(1.0/3.0) * rho_s / rs

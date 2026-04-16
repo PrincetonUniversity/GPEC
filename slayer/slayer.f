@@ -106,6 +106,8 @@ c-----------------------------------------------------------------------
       REAL(r8) :: inQ                ! normalized ExB rotation freq.
       REAL(r8) :: inQ_e              ! normalized electron diamagnetic
       REAL(r8) :: inQ_i              ! normalized ion diamagnetic
+      REAL(r8) :: inQ_e_ovr(8)      ! per-surface Q_e overrides (read_eq)
+      REAL(r8) :: inQ_i_ovr(8)      ! per-surface Q_i overrides (read_eq)
       REAL(r8) :: inpr               ! normalized pressure gradient
       REAL(r8) :: inpe               ! normalized electron pressure
       REAL(r8) :: inc_beta           ! normalized beta
@@ -187,7 +189,8 @@ c-----------------------------------------------------------------------
      $    ncfile,params_flag,mm,nn,n_e,t_e,t_i,sval,bt,rs,R0,omega,
      $    l_t,l_n,qval,mu_i,zeff,dr_val,dgeo_val,chi_p_prof,
      $    chi_t_prof,kappa_prof,inpr,inpe,inQ,inQ_e,inQ_i,inc_beta,
-     $    inds,intau,Q0,delta_prime,delta_n_p,ingamma
+     $    inds,intau,Q0,delta_prime,delta_n_p,ingamma,
+     $    inQ_e_ovr,inQ_i_ovr
       NAMELIST/slayer_control/inum,jnum,knum,Q_num,scan_width,
      $    AMR_passes,msing_max,dc_type,read_eq,Pperp_Ptor_flag,
      $    coupling_flag,QPscan_flag,Qscan_flag,QPescan_flag,
@@ -231,6 +234,8 @@ c-----------------------------------------------------------------------
       inQ      = 0.0
       inQ_e    = 0.0
       inQ_i    = 0.0
+      inQ_e_ovr = 0.0
+      inQ_i_ovr = 0.0
       inpr     = 0.0
       inpe     = 0.0
       inc_beta = 0.0
@@ -347,6 +352,11 @@ c     the normalized quantities (Q, Q_e, Q_i, c_beta, ds, tau, lu)
 c     used by the Riccati solver.
 c-----------------------------------------------------------------------
       IF (params_flag) THEN
+         nr = nn   ! ensure toroidal mode number is set for Wd iteration
+         mr = mm   ! ensure poloidal mode number is set
+         chis(1) = chi_p_prof(1) ! chi_perp
+         chis(2) = chi_t_prof(1) ! chi_tor
+         chis(3) = kappa_prof(1) ! kappa
          CALL params(n_e,t_e,t_i,omega,chis,dr_val,dgeo_val,
      $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
          ! Copy module-level results into local working variables.
@@ -484,6 +494,30 @@ c-----------------------------------------------------------------------
             n_k = SIZE(sl_in%qval_arr)
             CALL allocate_outputs(n_k,sl_out)
 
+c           Override Q_e/Q_i with namelist values if nonzero.
+c           inQ_e overrides all surfaces; per-surface arrays take
+c           precedence (surface k gets inQ_e_ovr(k) if nonzero).
+            IF (ABS(inQ_e) > 0.0) THEN
+               WRITE(*,*) 'Overriding all Q_e with inQ_e=',inQ_e
+               sl_in%Q_e_arr(:) = inQ_e
+            END IF
+            IF (ABS(inQ_i) > 0.0) THEN
+               WRITE(*,*) 'Overriding all Q_i with inQ_i=',inQ_i
+               sl_in%Q_i_arr(:) = inQ_i
+            END IF
+            DO k = 1, MIN(n_k, SIZE(inQ_e_ovr))
+               IF (ABS(inQ_e_ovr(k)) > 0.0) THEN
+                  WRITE(*,*) '  Q_e override surface',k,':',
+     $               sl_in%Q_e_arr(k),' ->',inQ_e_ovr(k)
+                  sl_in%Q_e_arr(k) = inQ_e_ovr(k)
+               END IF
+            END DO
+            DO k = 1, MIN(n_k, SIZE(inQ_i_ovr))
+               IF (ABS(inQ_i_ovr(k)) > 0.0) THEN
+                  sl_in%Q_i_arr(k) = inQ_i_ovr(k)
+               END IF
+            END DO
+
          ELSE
             ! Single-surface mode: build inputs from namelist.
             n_k = 1
@@ -594,6 +628,17 @@ c-----------------------------------------------------------------------
                n_k = SIZE(sl_in%qval_arr)
                CALL allocate_outputs(n_k,sl_out)
             END IF
+c           Apply Q_e/Q_i overrides (same logic as est_gamma path)
+            DO k = 1, MIN(n_k, SIZE(inQ_e_ovr))
+               IF (ABS(inQ_e_ovr(k)) > 0.0) THEN
+                  sl_in%Q_e_arr(k) = inQ_e_ovr(k)
+               END IF
+            END DO
+            DO k = 1, MIN(n_k, SIZE(inQ_i_ovr))
+               IF (ABS(inQ_i_ovr(k)) > 0.0) THEN
+                  sl_in%Q_i_arr(k) = inQ_i_ovr(k)
+               END IF
+            END DO
          ELSE
             n_k = 1
 

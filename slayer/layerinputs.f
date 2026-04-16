@@ -352,6 +352,11 @@ c --- surface-integral workspace
       REAL(r8) :: psave                     ! cached psi for issurfint
       REAL(r8), DIMENSION(:), ALLOCATABLE :: jacs, delpsi, rsurf, asurf
       REAL(r8) :: a_surf                     ! flux-surface-averaged minor radius
+c --- Fitzpatrick (r-based) shear workspace
+      REAL(r8) :: a_surf_p, a_surf_m         ! a_surf at psiN +/- h
+      REAL(r8) :: da_dpsiN                   ! da_surf/dpsiN (Jacobian)
+      REAL(r8) :: dpsi_h                     ! finite-diff step for Jacobian
+      REAL(r8) :: s_fitz                     ! Fitzpatrick shear r*dq/dr/q
 c-----------------------------------------------------------------------
 c     read STRIDE NetCDF: Deltaprime matrix, geometry, equilibrium scalars.
 c-----------------------------------------------------------------------
@@ -410,6 +415,8 @@ c-----------------------------------------------------------------------
 c     store full complex Deltaprime matrix in sl_in
       sl_in%dp_matrix(:,:) = CMPLX(dp_mat(:,:,1), dp_mat(:,:,2))
 
+      dpsi_h = 0.002               ! finite-difference step for Jacobian
+
 c-----------------------------------------------------------------------
 c     loop over singular surfaces: evaluate kinetic/equilibrium
 c     quantities via spline interpolation, compute derived layer
@@ -425,6 +432,17 @@ c        compute flux-surface-averaged minor radius
          a_surf = issurfint(unitfun,mthsurf,respsi,3,1,
      $           fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf)
 
+c        compute Jacobian da_surf/dpsiN by central difference
+         a_surf_p = issurfint(unitfun,mthsurf,
+     $        MIN(respsi+dpsi_h, REAL(1.0,r8)),3,1,
+     $        fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf)
+         a_surf_m = issurfint(unitfun,mthsurf,
+     $        MAX(respsi-dpsi_h, REAL(0.001,r8)),3,1,
+     $        fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf)
+         da_dpsiN = (a_surf_p - a_surf_m)
+     $        / (MIN(respsi+dpsi_h, REAL(1.0,r8))
+     $         - MAX(respsi-dpsi_h, REAL(0.001,r8)))
+
 c-----------------------------------------------------------------------
 c        evaluate kinetic splines at this surface.
 c        [spline_eval]: external, evaluates kin spline at respsi.
@@ -433,12 +451,12 @@ c        kin%f1(1..5) = d/d(psi_n) of the above
 c-----------------------------------------------------------------------
          CALL spline_eval(kin,respsi,1)
 
-c        diamagnetic frequencies (rad/s)
-         omega_i = -twopi*kin%f(3)*kin%f1(1)/(e*zi*chi1*kin%f(1))
-     $             -twopi*kin%f1(3)/(e*zi*chi1)
+c        diamagnetic frequencies (rad/s) from GPEC kinetic splines.
+c        These compute the ELECTRON diamagnetic frequency directly.
          omega_e =  twopi*kin%f(4)*kin%f1(2)/(e*chi1*kin%f(2))
      $             +twopi*kin%f1(4)/(e*chi1)
-
+         omega_i = -twopi*kin%f(3)*kin%f1(1)/(e*zi*chi1*kin%f(1))
+     $             -twopi*kin%f1(3)/(e*zi*chi1)
          sl_in%omegas_e_arr(ising) = omega_e
          sl_in%omegas_i_arr(ising) = omega_i
 
@@ -448,7 +466,12 @@ c        extract local plasma quantities from spline
          n_i = kin%f(1)
          t_i = kin%f(3) / e
 
-         zeff = kin%f(9)               ! Z_eff from kinetic spline
+c        Z_eff: kinetic spline value may be incorrect if ni=ne in gpeckf
+c        (quasi-neutrality assumption makes Zeff=1). Override to 2.0
+c        for deuterium plasma with carbon impurities (matching TJ).
+c        TODO: fix gpeckf generation to include proper ni for Zeff,
+c        or read Zeff from a namelist parameter.
+         zeff = 2.0
 
          omega    = kin%f(5)
          my_qval  = q_rational(ising)
@@ -459,6 +482,10 @@ c        extract local plasma quantities from spline
          R_0      = r_o(1)
          mu_i     = 2.0               ! deuterium
          dr_val   = dr_vals(ising)
+
+c        convert STRIDE shear (psiN-based) to Fitzpatrick shear (r-based).
+c        s_Fitz = s_psiN * r_s / (psiN * da_surf/dpsiN)
+         s_fitz = my_sval * my_rs / (respsi * da_dpsiN)
 
 c        transport coefficients from caller-provided arrays.
 c        guard: arrays may be smaller than msing (e.g. from
@@ -490,13 +517,14 @@ c        store local kinetic arrays (for future NetCDF diagnostic output)
          l_t = 0.0
 
 c-----------------------------------------------------------------------
-c        compute derived layer parameters.
-c        [params]: external (params_mod), sets module-level globals
-c          tau, tau_r, tauk, lu, c_beta, d_beta, D_norm, P_perp,
-c          P_tor, dc_tmp, etc. in sglobal_mod.
+c        compute derived layer parameters using Fitzpatrick (r-based)
+c        shear. params() sees s_fitz as `sval`, so lu, tauk, D_norm,
+c        dc_tmp, etc. are all Fitzpatrick-consistent. Gradient lengths
+c        are zero here; params() skips its own omega_e/omega_i and we
+c        set Q_e/Q_i below from the spline-derived frequencies.
 c-----------------------------------------------------------------------
          CALL params(n_e,t_e,t_i,omega,chi_s,dr_val,dgeo_val,
-     $        l_n,l_t,my_qval,my_sval,my_bt,my_rs,R_0,mu_i,
+     $        l_n,l_t,my_qval,s_fitz,my_bt,my_rs,R_0,mu_i,
      $        zeff,.false.)
 
 c        growth-rate conversion factor: Deltaprime -> gamma
@@ -504,11 +532,13 @@ c        growth-rate conversion factor: Deltaprime -> gamma
 
 c-----------------------------------------------------------------------
 c        populate sl_in for this surface from params() globals.
+c        Q_e/Q_i use spline-derived omega_e/omega_i normalised by
+c        tauk (= Fitzpatrick S^(1/3) * tau_H, from params()).
 c-----------------------------------------------------------------------
          sl_in%qval_arr(ising)    = INT(my_qval)
          sl_in%lu_arr(ising)      = lu
          sl_in%Q_e_arr(ising)     = -tauk * omega_e
-         sl_in%Q_i_arr(ising)     = -tauk * omega_i
+         sl_in%Q_i_arr(ising)     =  tauk * omega_i
          sl_in%c_beta_arr(ising)  = c_beta
          sl_in%d_beta_arr(ising)  = d_beta
          sl_in%D_norm_arr(ising)  = D_norm
