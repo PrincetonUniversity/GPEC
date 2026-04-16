@@ -8,6 +8,7 @@ GPEC documentation website site map
    references.rst
    contact.rst
    outputs.rst
+   sign_conventions.rst
    dcon_readme.rst
    examples.rst
    releases.rst
