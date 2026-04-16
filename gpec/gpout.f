@@ -49,6 +49,11 @@ c-----------------------------------------------------------------------
 
       IMPLICIT NONE
 
+      REAL(r8) :: rzphi_rmin = 0.0_r8
+      REAL(r8) :: rzphi_rmax = 3.0_r8
+      REAL(r8) :: rzphi_zmin = 0.0_r8
+      REAL(r8) :: rzphi_zmax = 3.0_r8
+
       ! harvest variables
       INCLUDE 'harvest_lib.inc77'
       INTEGER  :: ierr
@@ -5016,7 +5021,8 @@ c-----------------------------------------------------------------------
 
       IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
      $     vbrzphi_flag) DEALLOCATE(gdr,gdz,gdl,gdpsi,gdthe,gdphi)
-      CALL gpeq_rzpgrid(nr,nz,psixy) ! reset the grid
+      CALL gpeq_rzpgrid(nr,nz,psixy,rzphi_rmin,rzphi_rmax,
+     $  rzphi_zmin,rzphi_zmax) ! reset the grid
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -5033,7 +5039,6 @@ c     declaration.
 c-----------------------------------------------------------------------
       LOGICAL, DIMENSION(100), INTENT(IN) :: ss_flag
       INTEGER, INTENT(IN) :: nr,nz
-
       INTEGER :: i,j,k,snum,iss,ns
       INTEGER :: i_id, r_id, z_id, br_id, bz_id, bp_id, s_id, sdid
 

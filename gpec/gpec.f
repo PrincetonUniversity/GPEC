@@ -60,6 +60,7 @@ c-----------------------------------------------------------------------
      $     sing_spot,sing_npsi,reg_flag,reg_spot,
      $     chebyshev_flag,nche,nchr,nchz,use_classic_splines
       NAMELIST/gpec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
+     $     rzphi_rmin,rzphi_rmax,rzphi_zmin,rzphi_zmax,
      $     singfld_flag,pmodb_flag,xbnormal_flag,rstep,jsurf_out,
      $     jac_out,power_bout,power_rout,power_bpout,power_rcout,
      $     tmag_out,mlim_out,eqbrzphi_flag,brzphi_flag,xrzphi_flag,
@@ -146,6 +147,10 @@ c-----------------------------------------------------------------------
       nrzeq_flag=.FALSE.
       nr=64
       nz=64
+      rzphi_rmin=0
+      rzphi_rmax=3
+      rzphi_zmin=0
+      rzphi_zmax=3
       eqbrzphi_flag=.FALSE.
       brzphi_flag=.FALSE.
       xrzphi_flag=.FALSE.
@@ -569,7 +574,8 @@ c-----------------------------------------------------------------------
          nr=mr
          nz=mz
       ENDIF
-      CALL gpeq_rzpgrid(nr,nz,psixy)
+      CALL gpeq_rzpgrid(nr,nz,psixy,rzphi_rmin,rzphi_rmax,
+     $   rzphi_zmin,rzphi_zmax)
 c-----------------------------------------------------------------------
 c     full analysis.
 c-----------------------------------------------------------------------

@@ -1109,20 +1109,22 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_weight
 c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
 c     subprogram 14. gpeq_rzpgrid.
 c     find magnetic coordinates for given rz coords.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpeq_rzpgrid(nr,nz,psixy)
+      SUBROUTINE gpeq_rzpgrid(nr,nz,psixy,
+     $     rzphi_rmin,rzphi_rmax,rzphi_zmin,rzphi_zmax)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: nr,nz,psixy
-
+      REAL(r8), INTENT(IN) :: rzphi_rmin,rzphi_rmax,
+     $     rzphi_zmin,rzphi_zmax
       INTEGER :: i,j,itheta
       REAL(r8) :: xint,zint,ttheta,ptheta
-
+      REAL(r8) :: rmin_loc,rmax_loc,zmin_loc,zmax_loc
       REAL(r8), DIMENSION(0:mthsurf) :: thetas,rbarr,etarr
-
       TYPE(spline_type) :: rbeta
 
       ALLOCATE(gdr(0:nr,0:nz),gdz(0:nr,0:nz),gdl(0:nr,0:nz),
@@ -1149,8 +1151,25 @@ c-----------------------------------------------------------------------
          ENDDO
          RETURN
       ENDIF
-      xint=(psi_in%xs(mr)-psi_in%xs(0))/nr
-      zint=(psi_in%ys(mz)-psi_in%ys(0))/nz
+
+      IF (rzphi_rmin >= 0.0_r8 .AND. rzphi_rmax > rzphi_rmin) THEN
+         rmin_loc = rzphi_rmin
+         rmax_loc = rzphi_rmax
+      ELSE
+         rmin_loc = psi_in%xs(0)
+         rmax_loc = psi_in%xs(mr)
+      ENDIF
+
+      IF (rzphi_zmin >= 0.0_r8 .AND. rzphi_zmax > rzphi_zmin) THEN
+         zmin_loc = rzphi_zmin
+         zmax_loc = rzphi_zmax
+      ELSE
+         zmin_loc = psi_in%ys(0)
+         zmax_loc = psi_in%ys(mz)
+      ENDIF
+
+      xint = (rmax_loc - rmin_loc) / nr
+      zint = (zmax_loc - zmin_loc) / nz
       IF(debug_flag) WRITE(*,*) "Used psi_in"
 
       ! information of plasma boundary
@@ -1166,8 +1185,9 @@ c-----------------------------------------------------------------------
 
       DO i=0,nr 
          DO j=0,nz
-            gdr(i,j)=psi_in%xs(0)+i*xint
-            gdz(i,j)=psi_in%ys(0)+j*zint
+
+            gdr(i,j) = rmin_loc + i * xint
+            gdz(i,j) = zmin_loc + j * zint
 
             ! compare grid with equilibrium input
             IF ((nr==mr) .AND. (nz==mz)) THEN
@@ -1176,9 +1196,12 @@ c-----------------------------------------------------------------------
                CALL bicube_eval(psi_in,gdr(i,j),gdz(i,j),0)
                gdpsi(i,j)=psi_in%f(1)
             ENDIF
+
             ! avoid o-point 
             IF (gdpsi(i,j)<psilow) gdpsi(i,j)=psilow
+
             ttheta=ATAN2((gdz(i,j)-zo),(gdr(i,j)-ro))
+
             IF (ttheta >= 0) THEN 
                ptheta=ttheta/twopi
             ELSE
@@ -1187,6 +1210,7 @@ c-----------------------------------------------------------------------
 
             IF (gdpsi(i,j)<psilim) THEN
                CALL spline_eval(rbeta,ptheta,0)
+
             ! recheck whether it is inside the boundary 
                IF (SQRT((gdr(i,j)-ro)**2+(gdz(i,j)-zo)**2)<rbeta%f(1))
      $              THEN
@@ -1200,10 +1224,13 @@ c-----------------------------------------------------------------------
                   gdphi(i,j)=-rzphi%f(3)/twopi
                ENDIF
             ENDIF
+
             ! mark inside the domain of calculations
             IF (gdpsi(i,j)<psifac(1)) gdl(i,j)=2
+
          ENDDO
       ENDDO
+
       CALL spline_dealloc(rbeta)
       IF(debug_flag) WRITE(*,*) "Leaving gpeq_rzgrid"
 c-----------------------------------------------------------------------
