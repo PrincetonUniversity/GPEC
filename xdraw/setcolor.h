@@ -13,7 +13,4 @@ extern int getgoodfont (char *fonttitle,int lowpoint,int highpoint,
 			char *searchfontname);
 int SetShades(double hue, double chroma,long *pixels, int n);
 int AllocShades(long *pixels, int n, int k);
-
-
-
-
+void redraw_dialog();
