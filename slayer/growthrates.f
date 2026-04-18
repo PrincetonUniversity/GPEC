@@ -249,8 +249,20 @@ c           rescale g_in to this surface's normalisation
      $         sl_in%lu_arr(k)**(1.0_r8/3.0_r8)
          END DO
 
-c        compute det(dp_matrix - delta_Q)
+c        Coupled dispersion: det(Delta' - diag(Delta_c) - delta_Q).
+c        Delta_crit is a *local* layer-intrinsic offset at each
+c        rational surface, so it modifies only the diagonal of
+c        Delta'; outer-region off-diagonal couplings are untouched.
+c        This reduces to the single-surface matching
+c           (Delta'_kk - Delta_crit_k) = S^(1/3) * Delta_s
+c        on the diagonal. When dc_type='none', d_crit_arr is zero
+c        and the subtraction is a no-op, so this is backward
+c        compatible with the original coupled behaviour.
          result_matrix = sl_in%dp_matrix - delta_Q
+         DO k = 1, msing_max
+            result_matrix(k,k) = result_matrix(k,k)
+     $           - CMPLX(sl_in%d_crit_arr(k), 0.0_r8, KIND=r8)
+         END DO
          CALL calc_determinant(result_matrix, msing_max, det_val,
      $        det_status)
          IF (det_status /= 0) THEN
