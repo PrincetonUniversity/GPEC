@@ -537,8 +537,14 @@ c        tauk (= Fitzpatrick S^(1/3) * tau_H, from params()).
 c-----------------------------------------------------------------------
          sl_in%qval_arr(ising)    = INT(my_qval)
          sl_in%lu_arr(ising)      = lu
+c        Use the same -tauk prefactor for both so opposite-signed
+c        spline omega_e, omega_i (electron vs ion diamagnetic
+c        frequencies) produce opposite-signed Q_e, Q_i. Matches
+c        params.f convention: Q_e = -Qconv*omega_e, Q_i = -Qconv*omega_i.
+c        Using +tauk on Q_i cancels the physical sign and drives
+c        Q_e - Q_i -> 0 for ni=ne, Ti=Te (iota_e blows up).
          sl_in%Q_e_arr(ising)     = -tauk * omega_e
-         sl_in%Q_i_arr(ising)     =  tauk * omega_i
+         sl_in%Q_i_arr(ising)     = -tauk * omega_i
          sl_in%c_beta_arr(ising)  = c_beta
          sl_in%d_beta_arr(ising)  = d_beta
          sl_in%D_norm_arr(ising)  = D_norm
