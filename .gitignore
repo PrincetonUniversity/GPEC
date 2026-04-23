@@ -53,3 +53,13 @@ sum/sum
 xdraw/pspack
 xdraw/xdraw
 slayer/slayer
+
+*.aux
+*.blg
+*.bbl
+*.fdb_latexmk
+*.fls
+*.log
+*.synctex.gz
+*.pdf
+*.png
