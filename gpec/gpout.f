@@ -811,7 +811,12 @@ c-----------------------------------------------------------------------
      $      localcoup_out_vals(nsingcoup, osing),
      $      localcoup_out_vecs(nsingcoup,tmpert,osing),
      $      localcoup_out_bvecs(nsingcoup,tmpert,osing),
+     $      localcoup_out(nsingcoup,osing,tmpert),
      $      matmo(tmpert, osing))
+         DO i=1,nsingcoup
+            localcoup_out(i,:,:) =
+     $         singcoup_out(i,ol:ou,:)
+         ENDDO
 
          DO i=1,nsingcoup
             work=0
@@ -1058,7 +1063,8 @@ c-----------------------------------------------------------------------
       DEALLOCATE(singcoup_out, singcoup_out_bvecs, singcoup_out_vals,
      $     tmfac, fldflxmn, temp1, flxtofld)
       IF (osing<msing) THEN
-         DEALLOCATE(localcoup_out_bvecs, localcoup_out_vals)
+         DEALLOCATE(localcoup_out_bvecs,
+     $      localcoup_out_vals, localcoup_out)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -5743,7 +5749,10 @@ c-----------------------------------------------------------------------
      $   x_id,xe_id,xt_id,wf_id,rf_id,sf_id,ex_id,et_id,
      $   wev_id,wes_id,wep_id,rev_id,res_id,rep_id,sev_id,ses_id,sep_id,
      $   etf_id,ftf_id,exf_id,fxf_id,rm_id,wm_id,pm_id,
-     $   wtv_id, wte_id, wt_id,cc_id
+     $   wtv_id, wte_id, wt_id,cc_id,
+     $   fb_id,fbf_id,
+     $   scb_id,svb_id,seb_id,sfb_id,
+     $   scx_id,svx_id,sex_id,sfx_id
       REAL(r8) :: norm
       REAL(r8), DIMENSION(0:mthsurf) :: units
       REAL(r8), DIMENSION(0:mthsurf) :: dphi
@@ -5769,6 +5778,12 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,msing) :: svecs
       COMPLEX(r8), DIMENSION(0:mthsurf,mpert)::wfuns,rfuns
       COMPLEX(r8), DIMENSION(0:mthsurf,msing)::sfuns
+c     C_xb (un-weighted field) and C_x (flux) SVD variables
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: ftob
+      COMPLEX(r8), DIMENSION(msing,mpert) :: bcoupm, xcoupm
+      REAL(r8), DIMENSION(msing) :: bsvals, xsvals
+      COMPLEX(r8), DIMENSION(mpert,msing) :: bsvecs, xsvecs
+      COMPLEX(r8), DIMENSION(0:mthsurf,msing)::bsfuns, xsfuns
 
       IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*)"Computing energy normalized flux bases"
@@ -5958,6 +5973,35 @@ c-----------------------------------------------------------------------
          CALL zgesvd('S','O',msing,mpert,matsm,msing,svals, !'O' writes VT to A
      $        matss,msing,matsm,msing,worksvd,lwork,sworksvd,info)
          svecs=CONJG(TRANSPOSE(matsm))
+c        C_xb SVD (un-weighted field coupling)
+         bcoupm = singcoup(1,:,:)
+         matsm = bcoupm
+         lwork = 3*mpert
+         worksvd = 0
+         sworksvd = 0
+         CALL zgesvd('S','O',msing,mpert,matsm,
+     $        msing,bsvals,matss,msing,matsm,
+     $        msing,worksvd,lwork,sworksvd,info)
+         bsvecs = CONJG(TRANSPOSE(matsm))
+c        flux-to-field transform matrix
+         ftob = 0
+         DO i=1,mpert
+            temp = 0
+            temp(i) = 1.0_r8
+            CALL gpeq_weight(psilim,temp,
+     $           mfac,mpert,0)
+            ftob(:,i) = temp
+         ENDDO
+c        C_x SVD (flux coupling)
+         xcoupm = MATMUL(singcoup(1,:,:),ftob)
+         matsm = xcoupm
+         lwork = 3*mpert
+         worksvd = 0
+         sworksvd = 0
+         CALL zgesvd('S','O',msing,mpert,matsm,
+     $        msing,xsvals,matss,msing,matsm,
+     $        msing,worksvd,lwork,sworksvd,info)
+         xsvecs = CONJG(TRANSPOSE(matsm))
          IF(coil_flag)THEN
               ALLOCATE(coilcoupmat(msing,coil_num),
      $                 matcs(coil_num, msing))
@@ -6252,6 +6296,44 @@ c-----------------------------------------------------------------------
      $                            (/sdid/),sep_id) )
             CALL check( nf90_put_att(mncid,sep_id,"long_name",
      $       "Singular-coupling eigenmode total energy") )
+c           C_xb definitions (un-weighted field coupling)
+            CALL check( nf90_def_var(mncid,"C_xb",
+     $         nf90_double,(/mdid,sdid,idid/),scb_id))
+            CALL check( nf90_put_att(mncid,scb_id,
+     $       "long_name","Un-weighted field to "//
+     $       "singular field coupling") )
+            CALL check( nf90_def_var(mncid,
+     $         "C_xb_eigenvector",nf90_double,
+     $         (/mdid,sdid,idid/),svb_id) )
+            CALL check( nf90_put_att(mncid,svb_id,
+     $       "long_name","Un-weighted field to "//
+     $       "singular field right-singular "//
+     $       "vectors") )
+            CALL check( nf90_def_var(mncid,
+     $         "C_xb_eigenvalue",nf90_double,
+     $         (/sdid/),seb_id) )
+            CALL check( nf90_put_att(mncid,seb_id,
+     $       "long_name","Un-weighted field to "//
+     $       "singular field SVD singular "//
+     $       "values") )
+c           C_x definitions (flux coupling)
+            CALL check( nf90_def_var(mncid,"C_x",
+     $         nf90_double,(/mdid,sdid,idid/),scx_id))
+            CALL check( nf90_put_att(mncid,scx_id,
+     $       "long_name","Flux to singular "//
+     $       "field coupling") )
+            CALL check( nf90_def_var(mncid,
+     $         "C_x_eigenvector",nf90_double,
+     $         (/mdid,sdid,idid/),svx_id) )
+            CALL check( nf90_put_att(mncid,svx_id,
+     $       "long_name","Flux to singular "//
+     $       "field right-singular vectors") )
+            CALL check( nf90_def_var(mncid,
+     $         "C_x_eigenvalue",nf90_double,
+     $         (/sdid/),sex_id) )
+            CALL check( nf90_put_att(mncid,sex_id,
+     $       "long_name","Flux to singular "//
+     $       "field SVD singular values") )
          ENDIF
 
          CALL check( nf90_def_var(mncid,"Phi_xe",nf90_double,
@@ -6264,6 +6346,13 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(mncid,fx_id,"units","Wb") )
          CALL check( nf90_put_att(mncid,fx_id,"long_name",
      $    "External flux") )
+         CALL check( nf90_def_var(mncid,"Phi_xb",
+     $               nf90_double,(/mdid,idid/),fb_id) )
+         CALL check( nf90_put_att(mncid,fb_id,
+     $    "units","T") )
+         CALL check( nf90_put_att(mncid,fb_id,
+     $    "long_name",
+     $    "Un-weighted external field") )
          CALL check( nf90_def_var(mncid,"Phi_e",nf90_double,
      $               (/mdid,idid/),et_id) )
          CALL check( nf90_put_att(mncid,et_id,"units","T") )
@@ -6310,6 +6399,14 @@ c-----------------------------------------------------------------------
             CALL check( nf90_put_att(mncid,fxf_id,"units","Wb") )
             CALL check( nf90_put_att(mncid,fxf_id,"long_name",
      $       "External flux") )
+            CALL check( nf90_def_var(mncid,
+     $         "Phi_xb_fun",nf90_double,
+     $         (/tdid,idid/),fbf_id) )
+            CALL check( nf90_put_att(mncid,
+     $       fbf_id,"units","T") )
+            CALL check( nf90_put_att(mncid,
+     $       fbf_id,"long_name",
+     $       "Un-weighted external field") )
             CALL check( nf90_def_var(mncid,"Phi_e_fun",nf90_double,
      $                  (/tdid,idid/),etf_id) )
             CALL check( nf90_put_att(mncid,etf_id,"units","T") )
@@ -6336,10 +6433,24 @@ c-----------------------------------------------------------------------
             CALL check( nf90_put_att(mncid,rf_id,"long_name",
      $         "Energy norm external field reluctance eigenmodes") )
             IF(singcoup_set)THEN
-               CALL check( nf90_def_var(mncid,"C_xe_eigenvector_fun",
-     $                  nf90_double,(/tdid,sdid,idid/),sf_id) )
-               CALL check( nf90_put_att(mncid,sf_id,"long_name",
-     $          "Energy norm external field resonant-coupling modes") )
+               CALL check( nf90_def_var(mncid,
+     $           "C_xe_eigenvector_fun",nf90_double,
+     $           (/tdid,sdid,idid/),sf_id) )
+               CALL check(nf90_put_att(mncid,sf_id,
+     $          "long_name","Energy norm external"//
+     $          " field resonant-coupling modes"))
+               CALL check( nf90_def_var(mncid,
+     $           "C_xb_eigenvector_fun",nf90_double,
+     $           (/tdid,sdid,idid/),sfb_id) )
+               CALL check(nf90_put_att(mncid,
+     $          sfb_id,"long_name","Un-weighted "//
+     $          "field resonant-coupling modes"))
+               CALL check( nf90_def_var(mncid,
+     $           "C_x_eigenvector_fun",nf90_double,
+     $           (/tdid,sdid,idid/),sfx_id) )
+               CALL check(nf90_put_att(mncid,
+     $          sfx_id,"long_name","Flux "//
+     $          "resonant-coupling modes"))
             ENDIF
          ENDIF
          ! End definitions
@@ -6391,6 +6502,26 @@ c-----------------------------------------------------------------------
             CALL check( nf90_put_var(mncid,sv_id,RESHAPE(
      $       (/REAL(svecs),AIMAG(svecs)/),(/mpert,msing,2/))))
             CALL check( nf90_put_var(mncid,se_id,svals) )
+c           C_xb writes
+            matms = TRANSPOSE(bcoupm)
+            CALL check(nf90_put_var(mncid,scb_id,
+     $       RESHAPE((/REAL(matms),AIMAG(matms)/),
+     $       (/mpert,msing,2/))))
+            CALL check(nf90_put_var(mncid,svb_id,
+     $       RESHAPE((/REAL(bsvecs),
+     $       AIMAG(bsvecs)/),(/mpert,msing,2/))))
+            CALL check(nf90_put_var(mncid,
+     $       seb_id,bsvals))
+c           C_x writes
+            matms = TRANSPOSE(xcoupm)
+            CALL check(nf90_put_var(mncid,scx_id,
+     $       RESHAPE((/REAL(matms),AIMAG(matms)/),
+     $       (/mpert,msing,2/))))
+            CALL check(nf90_put_var(mncid,svx_id,
+     $       RESHAPE((/REAL(xsvecs),
+     $       AIMAG(xsvecs)/),(/mpert,msing,2/))))
+            CALL check(nf90_put_var(mncid,
+     $       sex_id,xsvals))
          ENDIF
 
          ! Energies for postprocessing re-normalization
@@ -6483,6 +6614,12 @@ c-----------------------------------------------------------------------
      $               AIMAG(temp)/),(/mpert,2/))) )
          CALL check( nf90_put_var(mncid,fx_id,RESHAPE((/REAL(finmn),
      $               AIMAG(finmn)/),(/mpert,2/))) )
+c        Phi_xb: convert flux to un-weighted field
+         temp = finmn
+         CALL gpeq_weight(psilim,temp,mfac,mpert,0)
+         CALL check(nf90_put_var(mncid,fb_id,
+     $     RESHAPE((/REAL(temp),AIMAG(temp)/),
+     $     (/mpert,2/))) )
          IF(fun_flag)THEN
            CALL iscdftb(mfac,mpert,tempfun,mthsurf,foutmn)
            tempfun = tempfun * EXP(ifac * nn* dphi)
@@ -6492,6 +6629,16 @@ c-----------------------------------------------------------------------
            tempfun = tempfun * EXP(ifac * nn* dphi)
            CALL check(nf90_put_var(mncid,fxf_id,RESHAPE((/REAL(tempfun),
      $         -helicity*AIMAG(tempfun)/),(/mthsurf+1,2/))) )
+c          Phi_xb_fun
+           temp = finmn
+           CALL gpeq_weight(psilim,temp,mfac,mpert,0)
+           CALL iscdftb(mfac,mpert,tempfun,
+     $         mthsurf,temp)
+           tempfun = tempfun*EXP(ifac*nn*dphi)
+           CALL check(nf90_put_var(mncid,fbf_id,
+     $       RESHAPE((/REAL(tempfun),
+     $       -helicity*AIMAG(tempfun)/),
+     $       (/mthsurf+1,2/))) )
          ENDIF
          IF(coil_flag) THEN
            CALL check( nf90_put_var(mncid,mc_id,(/(i,i=1,coil_num)/)) )
@@ -6552,15 +6699,34 @@ c-----------------------------------------------------------------------
                IF(singcoup_set .AND. (i<=msing))THEN
                  CALL iscdftb(mfac,mpert,sfuns(:,i),mthsurf,svecs(:,i))
                  sfuns(:,i) = sfuns(:,i) * EXP(ifac * nn * dphi)
+                 CALL iscdftb(mfac,mpert,
+     $             bsfuns(:,i),mthsurf,bsvecs(:,i))
+                 bsfuns(:,i) = bsfuns(:,i)
+     $             * EXP(ifac * nn * dphi)
+                 CALL iscdftb(mfac,mpert,
+     $             xsfuns(:,i),mthsurf,xsvecs(:,i))
+                 xsfuns(:,i) = xsfuns(:,i)
+     $             * EXP(ifac * nn * dphi)
                ENDIF
             ENDDO
             CALL check( nf90_put_var(mncid,wf_id,RESHAPE((/REAL(wfuns),
      $             -helicity*AIMAG(wfuns)/),(/mthsurf+1,mpert,2/))) )
             CALL check( nf90_put_var(mncid,rf_id,RESHAPE((/REAL(rfuns),
      $             -helicity*AIMAG(rfuns)/),(/mthsurf+1,mpert,2/))) )
-            IF(singcoup_set)
-     $       CALL check( nf90_put_var(mncid,sf_id,RESHAPE((/REAL(sfuns),
-     $             -helicity*AIMAG(sfuns)/),(/mthsurf+1,msing,2/))) )
+            IF(singcoup_set) THEN
+              CALL check(nf90_put_var(mncid,sf_id,
+     $          RESHAPE((/REAL(sfuns),
+     $          -helicity*AIMAG(sfuns)/),
+     $          (/mthsurf+1,msing,2/))) )
+              CALL check(nf90_put_var(mncid,
+     $          sfb_id,RESHAPE((/REAL(bsfuns),
+     $          -helicity*AIMAG(bsfuns)/),
+     $          (/mthsurf+1,msing,2/))) )
+              CALL check(nf90_put_var(mncid,
+     $          sfx_id,RESHAPE((/REAL(xsfuns),
+     $          -helicity*AIMAG(xsfuns)/),
+     $          (/mthsurf+1,msing,2/))) )
+            ENDIF
          ENDIF
 
          ! close the file
