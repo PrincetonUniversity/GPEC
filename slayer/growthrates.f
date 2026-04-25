@@ -215,6 +215,9 @@ c        set module-level variables for riccati_f
          c_beta = sl_in%c_beta_arr(1)
          tauk = sl_in%Qconv_arr(1)
          iota_e = Q_e / (Q_e - Q_i)
+c        BENCHMARK PATCH: ensure pr is set so riccati_f's
+c        atol = 1e-7*pr**0.4 does not inherit a stale/zero module value.
+         pr = P_perp
 
          g_tmp = g_in
          tmp_delta=riccati_f()
@@ -240,6 +243,9 @@ c           set module-level variables for this surface
             c_beta = sl_in%c_beta_arr(k)
             tauk = sl_in%Qconv_arr(k)
             iota_e = Q_e / (Q_e - Q_i)
+c           BENCHMARK PATCH: ensure pr is set so riccati_f's
+c           atol = 1e-7*pr**0.4 does not inherit a stale/zero module value.
+            pr = P_perp
 
 c           evaluate riccati_f at rescaled growth rate, de-normalise
 c           rescale g_in to this surface's normalisation

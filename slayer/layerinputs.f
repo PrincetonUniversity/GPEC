@@ -484,8 +484,20 @@ c        or read Zeff from a namelist parameter.
          dr_val   = dr_vals(ising)
 
 c        convert STRIDE shear (psiN-based) to Fitzpatrick shear (r-based).
-c        s_Fitz = s_psiN * r_s / (psiN * da_surf/dpsiN)
+c        STRIDE's shear(ising) = psi_N * d(ln q)/d(psi_N)  (psi_N-based).
+c        Fitzpatrick's rfitzp formula needs s = (r/q) * dq/dr  (r-based).
+c        Chain-rule:  s_Fitz = s_psiN * r_s / (psi_N * da/dpsi_N).
+c        Typical magnitudes: s_psiN ~ 0.3-0.5 mid-plasma, while s_Fitz
+c        ~ 0.7-1.5 -- r-based shear is usually LARGER than psi_N-based
+c        because (r/psi_N) > (dr/dpsi_N) inside the mid-radius region.
          s_fitz = my_sval * my_rs / (respsi * da_dpsiN)
+         WRITE(*,'(A,I2,A,F7.4,A,F6.3,A,F8.4,A,F8.4,A,F7.3,A,F7.3)')
+     $        '  [layerinputs] q=', resm(ising),
+     $        ' psiN=', respsi,
+     $        ' r_s=', my_rs,
+     $        ' da/dpsiN=', da_dpsiN,
+     $        ' s_psiN=', my_sval,
+     $        '  -> s_Fitz=', s_fitz
 
 c        transport coefficients from caller-provided arrays.
 c        guard: arrays may be smaller than msing (e.g. from
