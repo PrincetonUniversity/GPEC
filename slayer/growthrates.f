@@ -264,7 +264,15 @@ c           (Delta'_kk - Delta_crit_k) = S^(1/3) * Delta_s
 c        on the diagonal. When dc_type='none', d_crit_arr is zero
 c        and the subtraction is a no-op, so this is backward
 c        compatible with the original coupled behaviour.
-         result_matrix = sl_in%dp_matrix - delta_Q
+c
+c        BENCHMARK PATCH: take only the (1:msing_max, 1:msing_max)
+c        sub-block of dp_matrix so callers can compute the coupled
+c        dispersion on a subset of the rational surfaces that STRIDE
+c        actually found. This is needed when STRIDE finds 4+ surfaces
+c        (e.g. DIII-D 147131 with sas_flag=t, qhigh=1e3) but the
+c        coupled-dispersion code only supports msing_max ≤ 3.
+         result_matrix = sl_in%dp_matrix(1:msing_max,1:msing_max)
+     $       - delta_Q
          DO k = 1, msing_max
             result_matrix(k,k) = result_matrix(k,k)
      $           - CMPLX(sl_in%d_crit_arr(k), 0.0_r8, KIND=r8)
