@@ -307,9 +307,21 @@ rmatch: v neededdeps $(RMATCH_OBJS) equil lsode
 	$(call print_success,rmatch -> $(BINDIR)/rmatch)
 
 # SLAYER
+../slayer/version.inc:
+	@ver="`git describe --tags`"; \
+	if [ ! -f $@ ] || ! grep -F "'$$ver'" $@ >/dev/null 2>&1; then \
+		echo ">>> Updating version file"; \
+		echo "      CHARACTER(len=*), PARAMETER :: version ='$$ver'" | tee $@; \
+	else \
+		echo ">>> Git version unchanged!"; \
+	fi
+	$(call print_success,version file updated: $@)
+
 SLAYER_LIBS = \
+	-lpentrc \
 	-llsode \
 	-lequil \
+	-lharvest \
 	$(MATHLIBS) \
 	$(NETCDFLIBS) \
 	$(NETCDF_EXTRA_LIBS)
@@ -317,7 +329,7 @@ SLAYER_LIBDIRS = \
 	-L$(LIBDIR) \
 	-L$(MATHDIR) \
 	-L$(NETCDFDIR)
-slayer: v neededdeps $(SLAYER_OBJS) lsode equil
+slayer: v neededdeps $(SLAYER_OBJS) lsode equil pentrc harvest
 	mkdir -p $(BINDIR)
 	rm -f ../slayer/slayer
 	$(FCSLAYER) -o ../slayer/slayer $(SLAYER_OBJS) $(SLAYER_LIBDIRS) $(SLAYER_LIBS) $(LDFLAGS)

@@ -358,7 +358,8 @@ c-----------------------------------------------------------------------
          total1=0_r8
          ALLOCATE(mx0(mpert,mpert),vx0(mpert))
          CALL stride_netcdf_out(mx0,mx0,mx0,vx0,vx0,vx0,
-     $          delta_prime_mat,plasma1,vacuum1,total1)
+     $          delta_prime_mat,plasma1,vacuum1,total1,
+     $          SPREAD(0._r8,1,msing),SPREAD(0._r8,1,msing))
          CALL stride_dealloc
       ENDIF
       IF(mat_flag .OR. ode_flag)DEALLOCATE(amat,bmat,cmat,ipiva,jmat)

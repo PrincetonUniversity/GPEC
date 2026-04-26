@@ -217,6 +217,7 @@ module inputs
         do i=1,5
             tmp%fs(0:,i) = table(1:,i+1)
         enddo
+
         call spline_fit(tmp,"extrap")
         if(write_log) print *,"Formed temporary spline"
 

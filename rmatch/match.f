@@ -92,12 +92,16 @@ c-----------------------------------------------------------------------
      $           deltac_flag=.FALSE.,deltaj_flag=.FALSE.,
      $           match_flag=.FALSE.
       LOGICAL :: bin_rpecsol=.FALSE.,out_rpecsol=.FALSE.
+      LOGICAL :: detgrid_flag=.FALSE.
       CHARACTER(10) :: model="deltac"
       INTEGER :: msing,totmsing,nstep=32,qscan_ising=1
       INTEGER :: scan_nstep, scan_estep
       INTEGER :: nroot=1,iroot,totnsol,ising_output=1,itermax=500
+      INTEGER :: detgrid_nre=64, detgrid_nim=64
       REAL(r8) :: eta(20),dlim=1000,massden(20),rotation(20)=0,ntor=1
       REAL(r8) :: scan_x0,scan_x1,relax_fac,scan_e0,scan_e1
+      REAL(r8) :: detgrid_re_min=-1.0, detgrid_re_max=1.0,
+     $            detgrid_im_min=-1.0, detgrid_im_max=1.0
       REAL(r8), DIMENSION(:), ALLOCATABLE :: taur_save
       REAL(r8), DIMENSION(:), ALLOCATABLE :: zo_out,zi_in
       COMPLEX(r8) :: initguess
@@ -137,7 +141,10 @@ c-----------------------------------------------------------------------
      $                         deflate,nroot,match_flag,ising_output,
      $                         match_sol,matrix_diagnose,fulldomain,
      $                         coil,itermax,relax_fac,init_scan_flag,
-     $                         scan_e0,scan_e1,eqscan_flag,scan_estep
+     $                         scan_e0,scan_e1,eqscan_flag,scan_estep,
+     $                         detgrid_flag,detgrid_nre,detgrid_nim,
+     $                         detgrid_re_min,detgrid_re_max,
+     $                         detgrid_im_min,detgrid_im_max
       NAMELIST/rmatch_output/ bin_rpecsol,out_rpecsol
       NAMELIST/nyquist_input/nyquist
 10    FORMAT(1x,"Eigenvalue=",1p,2e11.3)
@@ -246,7 +253,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     scan eigen value (Q) for different inner models.
 c-----------------------------------------------------------------------
-      IF(qscan_flag) CALL match_qscan        
+      IF(qscan_flag) CALL match_qscan
+c-----------------------------------------------------------------------
+c     2D complex-Q grid scan of the full match_delta determinant
+c     (patch added for Julia↔Fortran apples-to-apples comparison).
+c-----------------------------------------------------------------------
+      IF(detgrid_flag) CALL match_detgrid
 c-----------------------------------------------------------------------
 c     nyquist plot.
 c-----------------------------------------------------------------------
@@ -475,6 +487,17 @@ c            zi_in(ising)=zi_deltac
             zi_in(ising)=0
             q_in(ising)=q_deltac
             sol=0
+c     -- PATCH (Julia/Fortran benchmark) --
+c     Dump per-surface Δ for each match_delta call so we can compare
+c     Julia's Galerkin output to Fortran's at the same Q. Writes to
+c     delta_per_surface.out (appended each call; nuke before a run).
+            OPEN(UNIT=42, FILE='delta_per_surface.out',
+     $           POSITION='APPEND')
+            WRITE(42,'(2e22.14, i5, 4e22.14)')
+     $           REAL(guess_modify), AIMAG(guess_modify), ising,
+     $           REAL(deltar(ising,1)), AIMAG(deltar(ising,1)),
+     $           REAL(deltar(ising,2)), AIMAG(deltar(ising,2))
+            CLOSE(UNIT=42)
          END SELECT
 c-----------------------------------------------------------------------
 c     construct the matching matrix.
@@ -963,7 +986,52 @@ c     terminate.
 c-----------------------------------------------------------------------
       CALL program_stop("Normal termination for q scan.")
       END SUBROUTINE match_qscan
-      
+
+c-----------------------------------------------------------------------
+c     subprogram 7b. match_detgrid.
+c     scan match_delta on a 2D Q_re × Q_im grid and write an ascii dump
+c     (detgrid.out, format "qre qim re_det im_det") plus a binary
+c     (detgrid.bin). Patch added for Julia↔Fortran apples-to-apples
+c     comparison of the coupled GGJ dispersion relation.
+c-----------------------------------------------------------------------
+      SUBROUTINE match_detgrid
+      INTEGER :: ire, iim
+      REAL(r8) :: qre, qim, dre, dim
+      COMPLEX(r8) :: guess, det
+      COMPLEX(r8), DIMENSION(4*msing,4*msing) :: mat
+ 10   FORMAT(1p,4e20.11)
+      WRITE(*,*) "DETGRID: 2D scan of match_delta(Q, mat)"
+      WRITE(*,'(2x,a,i4,a,i4)') "nre=",detgrid_nre," nim=",detgrid_nim
+      WRITE(*,'(2x,a,2e12.3)') "Re(Q) range:",
+     $     detgrid_re_min, detgrid_re_max
+      WRITE(*,'(2x,a,2e12.3)') "Im(Q) range:",
+     $     detgrid_im_min, detgrid_im_max
+      OPEN(UNIT=bin_unit,FILE="detgrid.bin",STATUS="REPLACE",
+     $     FORM="UNFORMATTED")
+      CALL ascii_open(out_unit,"detgrid.out","REPLACE")
+      WRITE(out_unit,'(a)') "# Q_re   Q_im   Re(det)   Im(det)"
+      WRITE(bin_unit) detgrid_nre, detgrid_nim, msing
+      dre = (detgrid_re_max - detgrid_re_min) / MAX(1, detgrid_nre - 1)
+      dim = (detgrid_im_max - detgrid_im_min) / MAX(1, detgrid_nim - 1)
+      DO iim = 1, detgrid_nim
+         qim = detgrid_im_min + (iim-1) * dim
+         DO ire = 1, detgrid_nre
+            qre = detgrid_re_min + (ire-1) * dre
+            guess = CMPLX(qre, qim, r8)
+            det = match_delta(guess, mat)
+            WRITE(out_unit,10) qre, qim, REAL(det,r8), AIMAG(det)
+            WRITE(bin_unit) REAL(qre,4), REAL(qim,4),
+     $                       REAL(REAL(det,r8),4), REAL(AIMAG(det),4)
+         ENDDO
+         IF (MOD(iim, MAX(1,detgrid_nim/10)) == 0)
+     $      WRITE(*,'(4x,a,i4,a,i4)') "row ",iim," /",detgrid_nim
+      ENDDO
+      CALL ascii_close(out_unit)
+      WRITE(bin_unit)
+      CLOSE(UNIT=bin_unit)
+      WRITE(*,*) "DETGRID: wrote detgrid.out and detgrid.bin"
+      CALL program_stop("Normal termination for detgrid scan.")
+      END SUBROUTINE match_detgrid
 c-----------------------------------------------------------------------
 c     subprogram 8. match_delta_jardin.
 c     finite differential method of GGJ.
