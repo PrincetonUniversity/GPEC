@@ -1590,6 +1590,7 @@ c-----------------------------------------------------------------------
      $           a_id,pp_id,cp_id,wp_id,np_id,dp_id,
      $           bc_id,ti_id, te_id, ni_id, ne_id, we_id, wi_id, q1_id,
      $           rh_id, r1_id,wc_id,wmin_id,wsat_id,
+     $           pf_id,ph_id,
      $           astat
 
       INTEGER :: itheta,ising,icoup
@@ -1604,9 +1605,11 @@ c-----------------------------------------------------------------------
      $     chirikov,hw_v_crit,hw_sat,hw_min
       REAL(r8), DIMENSION(nsingcoup,msing) :: op
       COMPLEX(r8), DIMENSION(msing) :: delta,delcur,singcur,
-     $     singflx,singbwp
+     $     singflx,singbwp,singflx_field,singflx_halfarea
       COMPLEX(r8), DIMENSION(nsingcoup, msing) :: olap
-      COMPLEX(r8), DIMENSION(mpert,msing) :: singflx_mn
+      COMPLEX(r8), DIMENSION(mpert,msing) :: singflx_mn,
+     $     singflx_field_mn,singflx_halfarea_mn
+      COMPLEX(r8), DIMENSION(mpert) :: singflx_tmp
 
       TYPE(spline_type) :: spl
       TYPE(cspline_type) :: fsp_sol
@@ -1712,6 +1715,17 @@ c-----------------------------------------------------------------------
             singbno_mn(:,ising)=-singflx_mn(:,ising)
 !            CALL gpeq_weight(respsi,singbno_mn(:,ising),mfac,mpert,0)
          ENDIF
+c-----------------------------------------------------------------------
+c     additional resonant flux representations (units T):
+c     Phi_res_field    : flux -> normal field b   (gpeq_weight code 0)
+c     Phi_res_halfarea : flux -> sqrt(A)*b / sqrt(A) (code 6 / sqrt(A))
+c-----------------------------------------------------------------------
+         singflx_tmp = singflx_mn(:,ising)
+         CALL gpeq_weight(respsi,singflx_tmp,mfac,mpert,0)
+         singflx_field_mn(:,ising) = singflx_tmp
+         singflx_tmp = singflx_mn(:,ising)
+         CALL gpeq_weight(respsi,singflx_tmp,mfac,mpert,6)
+         singflx_halfarea_mn(:,ising) = singflx_tmp/SQRT(area(ising))
          singflx_mn(:,ising)=singflx_mn(:,ising)/area(ising)  ! Tesla
 c-----------------------------------------------------------------------
 c     compute half-width of magnetic island.
@@ -1957,6 +1971,18 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(fncid, p_id, "units", "T") )
          CALL check( nf90_put_att(fncid, p_id, "long_name",
      $     "Pitch resonant flux normalized by the surface area") )
+         CALL check( nf90_def_var(fncid, "Phi_res_field", nf90_double,
+     $      (/q_id,i_id/), pf_id) )
+         CALL check( nf90_put_att(fncid, pf_id, "units", "T") )
+         CALL check( nf90_put_att(fncid, pf_id, "long_name",
+     $     "Pitch resonant normal field b (flux weighted by "//
+     $     "1/(J|grad psi|); coordinate dependent, Park 2008)") )
+         CALL check( nf90_def_var(fncid, "Phi_res_halfarea",
+     $      nf90_double, (/q_id,i_id/), ph_id) )
+         CALL check( nf90_put_att(fncid, ph_id, "units", "T") )
+         CALL check( nf90_put_att(fncid, ph_id, "long_name",
+     $     "Pitch resonant half-area weighted field "//
+     $     "b*sqrt(J|grad psi|)/sqrt(A)") )
          CALL check( nf90_def_var(fncid, "Delta", nf90_double,
      $      (/q_id,i_id/), d_id) )
          CALL check( nf90_put_att(fncid, d_id, "long_name",
@@ -2057,6 +2083,16 @@ c-----------------------------------------------------------------------
          singflx = (/(singflx_mn(resnum(ising),ising), ising=1,msing)/)
          CALL check( nf90_put_var(fncid, p_id,
      $      RESHAPE((/REAL(singflx), AIMAG(singflx)/), (/msing,2/))) )
+         singflx_field = (/(singflx_field_mn(resnum(ising),ising),
+     $                     ising=1,msing)/)
+         CALL check( nf90_put_var(fncid, pf_id,
+     $      RESHAPE((/REAL(singflx_field),AIMAG(singflx_field)/),
+     $      (/msing,2/))) )
+         singflx_halfarea =
+     $      (/(singflx_halfarea_mn(resnum(ising),ising),ising=1,msing)/)
+         CALL check( nf90_put_var(fncid, ph_id,
+     $      RESHAPE((/REAL(singflx_halfarea),AIMAG(singflx_halfarea)/),
+     $      (/msing,2/))) )
          CALL check( nf90_put_var(fncid, d_id,
      $      RESHAPE((/REAL(delta), AIMAG(delta)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, bp_id,
