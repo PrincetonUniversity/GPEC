@@ -72,6 +72,7 @@ c-----------------------------------------------------------------------
      $   vsingfld                                   ! Vacuum resonant energy-normalized field with units of Tesla
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE ::
      $   singcoup,                                  ! Resonant coupling to external field (b_x) in working coordinates
+     $   singcoup_target,                           ! Resonant coupling matrix expressed in singcoup_jac_type coords (msing,slmpert)
      $   singcoup_out_vecs,                         ! Right singular vectors of power normalized resonant coupling matrices in output coordinates
      $   localcoup_out_vecs                         ! Right singular vectors of local power normalized resonant coupling matrices in output coordinates
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE ::
@@ -499,14 +500,14 @@ c-----------------------------------------------------------------------
 
       COMPLEX(r8), DIMENSION(mpert) :: finmn,foutmn,
      $     fkaxmn,singflx_mn,ftnmn
-      COMPLEX(r8), DIMENSION(lmpert) :: lftnmn
+      COMPLEX(r8), DIMENSION(slmpert) :: lftnmn
       COMPLEX(r8), DIMENSION(0:mthsurf) :: ftnfun
 
       REAL(r8), DIMENSION(msing) :: area,j_c,w_c,shear
 
       COMPLEX(r8), DIMENSION(msing,mpert) :: deltas,delcurs,
      $     singcurs,islandhwids
-      COMPLEX(r8), DIMENSION(mpert,lmpert) :: convmat
+      COMPLEX(r8), DIMENSION(mpert,slmpert) :: convmat
       COMPLEX(r8), DIMENSION(msing,mpert,mpert) :: fsurfindmats
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: fldflxmn,bmn
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE ::  temp1, flxtofld,
@@ -662,7 +663,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     convert coordinates for matrix on the plasma boundary.
 c-----------------------------------------------------------------------
-      IF ((jac_out /= jac_type).OR.(tout==0)) THEN
+      IF ((singcoup_jac_type /= jac_type).OR.(tout==0)) THEN
          IF(verbose) WRITE(*,*)"Converting coordinates"
          CALL spline_eval(sq,psilim,0)
          dphi=0
@@ -714,16 +715,16 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     convert coordinates. 
 c-----------------------------------------------------------------------
-         ALLOCATE(fldflxmn(lmpert), fldflxmat(lmpert,lmpert),
-     $        singcoup_out(nsingcoup,msing,lmpert), tmfac(lmpert))
-         DO i=1,lmpert
+         ALLOCATE(fldflxmn(slmpert), fldflxmat(slmpert,slmpert),
+     $        singcoup_out(nsingcoup,msing,slmpert), tmfac(slmpert))
+         DO i=1,slmpert
             lftnmn=0
             lftnmn(i)=1.0
             ! compute given function in dcon angle
             DO itheta=0,mthsurf
                ftnfun(itheta)=0
                ftnfun(itheta)=
-     $              lftnmn(i)*EXP(ifac*twopi*lmfac(i)*thetas(itheta))  
+     $              lftnmn(i)*EXP(ifac*twopi*slmfac(i)*thetas(itheta))
             ENDDO
             ! multiply toroidal factor for dcon angle
             IF (tout == 0) THEN
@@ -734,16 +735,16 @@ c-----------------------------------------------------------------------
             ENDIF
             CALL iscdftf(mfac,mpert,ftnfun,mthsurf,ftnmn)
             convmat(:,i)=ftnmn
-         
-            CALL iscdftb(lmfac,lmpert,ftnfun,mthsurf,lftnmn)
+
+            CALL iscdftb(slmfac,slmpert,ftnfun,mthsurf,lftnmn)
             ftnfun(:)=ftnfun(:)*sqrt(jacfac(:))
-            CALL iscdftf(lmfac,lmpert,ftnfun,mthsurf,fldflxmn)            
+            CALL iscdftf(slmfac,slmpert,ftnfun,mthsurf,fldflxmn)
             fldflxmat(:,i)=fldflxmn/sqrt(jarea)
          ENDDO
-         tmlow = lmlow
-         tmhigh = lmhigh
-         tmpert = lmpert
-         tmfac= lmfac
+         tmlow = slmlow
+         tmhigh = slmhigh
+         tmpert = slmpert
+         tmfac= slmfac
          DO i=1,nsingcoup
             singcoup_out(i,:,:) = MATMUL(singcoup(i,:,:),convmat)
          ENDDO
@@ -863,7 +864,7 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,a13,a8,1x,a12,I2)')
-     $        "jac_out = ",jac_out,"tmag_out =",tout
+     $        "jac_out = ",singcoup_jac_type,"tmag_out =",tout
          WRITE(out_unit,'(4(1x,a12,I4))')
      $        "msing =",msing,"mpert =",tmpert,
      $        "mlow =",tmlow,"mhigh =",tmhigh
@@ -906,7 +907,7 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,a12,a8,1x,a12,I2)')
-     $        "jac_out = ",jac_out,"tmag_out =",tmag_out
+     $        "jac_out = ",singcoup_jac_type,"tmag_out =",tout
          WRITE(out_unit,'(4(1x,a12,I4))')
      $        "msing =",msing,"mpert =",tmpert,
      $        "mlow =",tmlow,"mhigh =",tmhigh
@@ -945,7 +946,7 @@ c-----------------------------------------------------------------------
             WRITE(out_unit,*)version
             WRITE(out_unit,*)
             WRITE(out_unit,'(1x,a12,a8,1x,a12,I2)')
-     $           "jac_out = ",jac_out,"tmag_out =",tmag_out
+     $           "jac_out = ",singcoup_jac_type,"tmag_out =",tout
             WRITE(out_unit,'(4(1x,a12,I4))')
      $           "msing =",osing,"mpert =",tmpert,
      $           "mlow =",tmlow,"mhigh =",tmhigh
@@ -983,7 +984,7 @@ c-----------------------------------------------------------------------
 
          ! references to pre-defined dimensions
          CALL check( nf90_inq_dimid(mncid,"i",idid) )
-         CALL check( nf90_inq_dimid(mncid,"m_out",mdid) )
+         CALL check( nf90_inq_dimid(mncid,"m_singcoup_out",mdid) )
          CALL check( nf90_inq_dimid(mncid,"mode_C",cdid) )
          CALL check( nf90_inq_dimid(mncid,"mode_C_local",odid) )
 
@@ -1057,6 +1058,14 @@ c-----------------------------------------------------------------------
          CALL check( nf90_close(mncid) )
       ENDIF
 
+c-----------------------------------------------------------------------
+c     publish singcoup matrix in singcoup_jac_type coords (slmfac basis)
+c     so gpout_control_filter can run its C_xe/C_xb/C_x SVDs in the
+c     same coordinate without rebuilding convmat.
+c-----------------------------------------------------------------------
+      IF(ALLOCATED(singcoup_target)) DEALLOCATE(singcoup_target)
+      ALLOCATE(singcoup_target(nsingcoup,msing,tmpert))
+      singcoup_target = singcoup_out
 c-----------------------------------------------------------------------
 c     Deallocate local variables.
 c-----------------------------------------------------------------------
@@ -1593,7 +1602,7 @@ c-----------------------------------------------------------------------
      $           pf_id,ph_id,
      $           astat
 
-      INTEGER :: itheta,ising,icoup
+      INTEGER :: i,itheta,ising,icoup
       REAL(r8) :: respsi,lpsi,rpsi,shear,hdist,sbnosurf
       COMPLEX(r8) :: lbwp1mn,rbwp1mn
 
@@ -1610,6 +1619,10 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,msing) :: singflx_mn,
      $     singflx_field_mn,singflx_halfarea_mn
       COMPLEX(r8), DIMENSION(mpert) :: singflx_tmp
+      COMPLEX(r8), DIMENSION(slmpert,msing) :: singflx_s_mn,
+     $     singflx_field_s_mn,singflx_halfarea_s_mn
+      COMPLEX(r8), DIMENSION(slmpert) :: singflx_tmp_s
+      INTEGER, DIMENSION(msing) :: slresnum
 
       TYPE(spline_type) :: spl
       TYPE(cspline_type) :: fsp_sol
@@ -1719,7 +1732,38 @@ c-----------------------------------------------------------------------
 c     additional resonant flux representations (units T):
 c     Phi_res_field    : flux -> normal field b   (gpeq_weight code 0)
 c     Phi_res_halfarea : flux -> sqrt(A)*b / sqrt(A) (code 6 / sqrt(A))
+c     The flux Phi_res is coordinate-invariant at the resonant
+c     harmonic (Park 2008 Eq. 14); the field forms are coordinate
+c     dependent (Eq. 16). All three are expressed in the
+c     singcoup_jac_type basis (slmfac) by basis-changing singflx_mn
+c     at respsi via gpeq_bcoords before applying the field weighting.
 c-----------------------------------------------------------------------
+c        Use gpeq_target_decomp to get singflx in slmfac-target with
+c        proper coord-aware Jacobian weighting at uniform target
+c        sampling. The Phi_res value at m=nq is then coordinate
+c        invariant (Park 2008 Eq. 14), and Phi_res_field /
+c        Phi_res_halfarea match the energy-norm conventions used by
+c        the Phi_xe construction in gpout_control_filter.
+         CALL gpeq_target_decomp(respsi,singflx_mn(:,ising),
+     $       1,1,singflx_tmp_s,slmfac,slmpert,
+     $       singcoup_power_r,singcoup_power_bp,
+     $       singcoup_power_b,singcoup_power_rc,
+     $       singcoup_tmag_type)
+         singflx_s_mn(:,ising) = singflx_tmp_s/area(ising)
+         CALL gpeq_target_decomp(respsi,singflx_mn(:,ising),
+     $       1,0,singflx_tmp_s,slmfac,slmpert,
+     $       singcoup_power_r,singcoup_power_bp,
+     $       singcoup_power_b,singcoup_power_rc,
+     $       singcoup_tmag_type)
+         singflx_field_s_mn(:,ising) = singflx_tmp_s
+         CALL gpeq_target_decomp(respsi,singflx_mn(:,ising),
+     $       1,2,singflx_tmp_s,slmfac,slmpert,
+     $       singcoup_power_r,singcoup_power_bp,
+     $       singcoup_power_b,singcoup_power_rc,
+     $       singcoup_tmag_type)
+         singflx_halfarea_s_mn(:,ising) = singflx_tmp_s
+         slresnum(ising) = NINT(singtype(ising)%q*nn)-slmlow+1
+c        keep the mfac forms for downstream legacy code paths
          singflx_tmp = singflx_mn(:,ising)
          CALL gpeq_weight(respsi,singflx_tmp,mfac,mpert,0)
          singflx_field_mn(:,ising) = singflx_tmp
@@ -2080,16 +2124,21 @@ c-----------------------------------------------------------------------
      $        "Surface area of rational surface") )
          ENDIF
          CALL check( nf90_enddef(fncid) )
-         singflx = (/(singflx_mn(resnum(ising),ising), ising=1,msing)/)
+c        Phi_res / Phi_res_field / Phi_res_halfarea written using
+c        the singcoup_jac_type basis (slmfac); the resonant index
+c        is per-rational-surface in slmfac.
+         singflx = (/(singflx_s_mn(slresnum(ising),ising),
+     $                ising=1,msing)/)
          CALL check( nf90_put_var(fncid, p_id,
      $      RESHAPE((/REAL(singflx), AIMAG(singflx)/), (/msing,2/))) )
-         singflx_field = (/(singflx_field_mn(resnum(ising),ising),
+         singflx_field = (/(singflx_field_s_mn(slresnum(ising),ising),
      $                     ising=1,msing)/)
          CALL check( nf90_put_var(fncid, pf_id,
      $      RESHAPE((/REAL(singflx_field),AIMAG(singflx_field)/),
      $      (/msing,2/))) )
          singflx_halfarea =
-     $      (/(singflx_halfarea_mn(resnum(ising),ising),ising=1,msing)/)
+     $    (/(singflx_halfarea_s_mn(slresnum(ising),ising),ising=1,msing)
+     $      /)
          CALL check( nf90_put_var(fncid, ph_id,
      $      RESHAPE((/REAL(singflx_halfarea),AIMAG(singflx_halfarea)/),
      $      (/msing,2/))) )
@@ -5774,10 +5823,13 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(5*mpert) :: rworksvd
       REAL(r8), DIMENSION(5*msing) :: sworksvd
       COMPLEX(r8), DIMENSION(3*mpert) :: worksvd
+      ! SVD work buffers sized for slmpert (singcoup target basis)
+      REAL(r8), DIMENSION(5*slmpert) :: rworksvd_s
+      COMPLEX(r8), DIMENSION(3*slmpert) :: worksvd_s
 
       LOGICAL :: output
       INTEGER :: i,j,k,maxmode
-      INTEGER :: idid,mdid,xdid,wdid,rdid,pdid,sdid,tdid,cdid,
+      INTEGER :: idid,mdid,msodid,xdid,wdid,rdid,pdid,sdid,tdid,cdid,
      $   mx_id,mw_id,mr_id,mp_id,mc_id,
      $   we_id,re_id,pe_id,se_id,fc_id,fcf_id,pc_id,sl_id,cn_id,
      $   w_id,r_id,p_id,sc_id,sv_id,wr_id,wp_id,rp_id,ws_id,rs_id,ps_id,
@@ -5815,11 +5867,18 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(0:mthsurf,mpert)::wfuns,rfuns
       COMPLEX(r8), DIMENSION(0:mthsurf,msing)::sfuns
 c     C_xb (un-weighted field) and C_x (flux) SVD variables
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: ftob
-      COMPLEX(r8), DIMENSION(msing,mpert) :: bcoupm, xcoupm
-      REAL(r8), DIMENSION(msing) :: bsvals, xsvals
-      COMPLEX(r8), DIMENSION(mpert,msing) :: bsvecs, xsvecs
+c     in singcoup_jac_type coords (slmfac basis, size slmpert)
+      COMPLEX(r8), DIMENSION(slmpert,slmpert) :: ftob_s,
+     $    matmm_s,tempmm_s,sqrtamat_s,ftop_s,ptof_s
+      COMPLEX(r8), DIMENSION(msing,slmpert) :: bcoupm,xcoupm,
+     $    matsm_s,singcoupmat_s
+      REAL(r8), DIMENSION(msing) :: bsvals, xsvals, svals_s
+      COMPLEX(r8), DIMENSION(slmpert,msing) :: bsvecs,xsvecs,svecs_s,
+     $    matms_s
       COMPLEX(r8), DIMENSION(0:mthsurf,msing)::bsfuns, xsfuns
+      COMPLEX(r8), DIMENSION(slmpert) :: temp_s,finmn_s,foutmn_s,
+     $    phi_xe_s,phi_xb_s,phi_e_s
+      INTEGER, DIMENSION(slmpert) :: ipiv_s
 
       IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*)"Computing energy normalized flux bases"
@@ -5985,7 +6044,7 @@ c     Convert singcoup vectors to working coordinates.
 c-----------------------------------------------------------------------
       IF (singcoup_set) THEN
          matsm = 0
-         ! field to sqrt flux transform matrix in DCON coordinate
+c        field to sqrt flux transform matrix in DCON coordinate
          matmm=0
          DO i=1,mpert
             temp=0
@@ -5993,51 +6052,78 @@ c-----------------------------------------------------------------------
             CALL gpeq_weight(psilim,temp,mfac,mpert,2)
             matmm(:,i)=temp/sqrt(jarea)
          ENDDO
-         ! inverse
+c        inverse
          tempmm=0
          DO i=1,mpert
             tempmm(i,i)=1
          ENDDO
          CALL zgetrf(mpert,mpert,matmm,mpert,ipiv,info)
          CALL zgetrs('N',mpert,mpert,matmm,mpert,ipiv,tempmm,mpert,info)
-         ! singular coupling in DCON coordinate
+c        C_xe SVD in DCON coordinate (used by downstream filter)
          matsm=MATMUL(singcoup(1,:,:),tempmm)
          singcoupmat = matsm
          lwork = 3*mpert
          worksvd  = 0
          sworksvd = 0
-         CALL zgesvd('S','O',msing,mpert,matsm,msing,svals, !'O' writes VT to A
+         CALL zgesvd('S','O',msing,mpert,matsm,msing,svals,
      $        matss,msing,matsm,msing,worksvd,lwork,sworksvd,info)
          svecs=CONJG(TRANSPOSE(matsm))
-c        C_xb SVD (un-weighted field coupling)
-         bcoupm = singcoup(1,:,:)
-         matsm = bcoupm
-         lwork = 3*mpert
-         worksvd = 0
-         sworksvd = 0
-         CALL zgesvd('S','O',msing,mpert,matsm,
-     $        msing,bsvals,matss,msing,matsm,
-     $        msing,worksvd,lwork,sworksvd,info)
-         bsvecs = CONJG(TRANSPOSE(matsm))
-c        flux-to-field transform matrix
-         ftob = 0
-         DO i=1,mpert
-            temp = 0
-            temp(i) = 1.0_r8
-            CALL gpeq_weight(psilim,temp,
-     $           mfac,mpert,0)
-            ftob(:,i) = temp
+c-----------------------------------------------------------------------
+c        Recompute C_xe / C_xb / C_x SVDs in singcoup_jac_type coords
+c        (slmfac basis) for output. singcoup_target was built by
+c        gpout_singcoup as singcoup * convmat (msing, slmpert).
+c        Reuse the module-level fldflxmat (built in gpout_singcoup
+c        from convmat + sqrt(jacfac)/sqrt(jarea)) so the field->
+c        sqrt(A)b transform is consistent with the SVD that
+c        gpout_singcoup itself runs.
+c-----------------------------------------------------------------------
+         matsm_s = 0
+         matmm_s = fldflxmat
+         tempmm_s=0
+         DO i=1,slmpert
+            tempmm_s(i,i)=1
          ENDDO
-c        C_x SVD (flux coupling)
-         xcoupm = MATMUL(singcoup(1,:,:),ftob)
-         matsm = xcoupm
-         lwork = 3*mpert
-         worksvd = 0
-         sworksvd = 0
-         CALL zgesvd('S','O',msing,mpert,matsm,
-     $        msing,xsvals,matss,msing,matsm,
-     $        msing,worksvd,lwork,sworksvd,info)
-         xsvecs = CONJG(TRANSPOSE(matsm))
+         CALL zgetrf(slmpert,slmpert,matmm_s,slmpert,ipiv_s,info)
+         CALL zgetrs('N',slmpert,slmpert,matmm_s,slmpert,ipiv_s,
+     $        tempmm_s,slmpert,info)
+c        C_xe SVD in singcoup coord
+         matsm_s=MATMUL(singcoup_target(1,:,:),tempmm_s)
+         singcoupmat_s = matsm_s
+         lwork = 3*slmpert
+         worksvd_s = 0
+         sworksvd  = 0
+         CALL zgesvd('S','O',msing,slmpert,matsm_s,msing,svals_s,
+     $        matss,msing,matsm_s,msing,worksvd_s,lwork,sworksvd,info)
+         svecs_s=CONJG(TRANSPOSE(matsm_s))
+c        C_xb SVD (un-weighted field coupling) in singcoup coord
+         bcoupm = singcoup_target(1,:,:)
+         matsm_s = bcoupm
+         lwork = 3*slmpert
+         worksvd_s = 0
+         sworksvd  = 0
+         CALL zgesvd('S','O',msing,slmpert,matsm_s,
+     $        msing,bsvals,matss,msing,matsm_s,
+     $        msing,worksvd_s,lwork,sworksvd,info)
+         bsvecs = CONJG(TRANSPOSE(matsm_s))
+c        flux-to-field transform matrix in singcoup coordinate
+         ftob_s = 0
+         DO i=1,slmpert
+            temp_s = 0
+            temp_s(i) = 1.0_r8
+            CALL gpeq_weight(psilim,temp_s,
+     $           slmfac,slmpert,0)
+            ftob_s(:,i) = temp_s
+         ENDDO
+c        C_x SVD (flux coupling) in singcoup coord
+         xcoupm = MATMUL(singcoup_target(1,:,:),ftob_s)
+         matsm_s = xcoupm
+         lwork = 3*slmpert
+         worksvd_s = 0
+         sworksvd  = 0
+         CALL zgesvd('S','O',msing,slmpert,matsm_s,
+     $        msing,xsvals,matss,msing,matsm_s,
+     $        msing,worksvd_s,lwork,sworksvd,info)
+         xsvecs = CONJG(TRANSPOSE(matsm_s))
          IF(coil_flag)THEN
               ALLOCATE(coilcoupmat(msing,coil_num),
      $                 matcs(coil_num, msing))
@@ -6125,6 +6211,30 @@ c-----------------------------------------------------------------------
          foutmn=MATMUL(permeabmats(resp_index,:,:),finmn)
       ENDIF
 c-----------------------------------------------------------------------
+c     Express finmn (external flux) and foutmn (total flux) in
+c     singcoup_jac_type coordinates. Use gpeq_target_decomp which
+c     evaluates the field at uniform theta_target sample points and
+c     applies the appropriate Jacobian factor in the target coord,
+c     so the resulting Fourier coefficients have an L2 norm equal to
+c     the coord-invariant physical quantity (energy/A for Phi_xe,
+c     etc.).
+c-----------------------------------------------------------------------
+      CALL gpeq_target_decomp(psilim,finmn,1,1,finmn_s,
+     $    slmfac,slmpert,singcoup_power_r,singcoup_power_bp,
+     $    singcoup_power_b,singcoup_power_rc,singcoup_tmag_type)
+      CALL gpeq_target_decomp(psilim,finmn,1,0,phi_xb_s,
+     $    slmfac,slmpert,singcoup_power_r,singcoup_power_bp,
+     $    singcoup_power_b,singcoup_power_rc,singcoup_tmag_type)
+      CALL gpeq_target_decomp(psilim,finmn,1,2,phi_xe_s,
+     $    slmfac,slmpert,singcoup_power_r,singcoup_power_bp,
+     $    singcoup_power_b,singcoup_power_rc,singcoup_tmag_type)
+      CALL gpeq_target_decomp(psilim,foutmn,1,1,foutmn_s,
+     $    slmfac,slmpert,singcoup_power_r,singcoup_power_bp,
+     $    singcoup_power_b,singcoup_power_rc,singcoup_tmag_type)
+      CALL gpeq_target_decomp(psilim,foutmn,1,2,phi_e_s,
+     $    slmfac,slmpert,singcoup_power_r,singcoup_power_bp,
+     $    singcoup_power_b,singcoup_power_rc,singcoup_tmag_type)
+c-----------------------------------------------------------------------
 c     Write outputs
 c-----------------------------------------------------------------------
       IF(output .AND. netcdf_flag)THEN
@@ -6134,6 +6244,7 @@ c-----------------------------------------------------------------------
          ! references to pre-defined dimensions
          CALL check( nf90_inq_dimid(mncid,"i",idid) )
          CALL check( nf90_inq_dimid(mncid,"m",mdid) )
+         CALL check( nf90_inq_dimid(mncid,"m_singcoup_out",msodid) )
          CALL check( nf90_inq_dimid(mncid,"theta",tdid) )
          IF (singcoup_set) THEN
             CALL check( nf90_inq_dimid(mncid,"mode_C",sdid) )
@@ -6305,12 +6416,12 @@ c-----------------------------------------------------------------------
      $       "singular coupling modes"))
 
             CALL check( nf90_def_var(mncid,"C_xe",nf90_double,
-     $                  (/mdid,sdid,idid/),sc_id) )
+     $                  (/msodid,sdid,idid/),sc_id) )
             CALL check( nf90_put_att(mncid,sc_id,"long_name",
      $       "Energy normalized external field to singular field "//
      $       "coupling") )
             CALL check( nf90_def_var(mncid,"C_xe_eigenvector",
-     $                  nf90_double,(/mdid,sdid,idid/),sv_id) )
+     $                  nf90_double,(/msodid,sdid,idid/),sv_id) )
             CALL check( nf90_put_att(mncid,sv_id,"long_name",
      $       "Energy normalized external field to singular field "//
      $       "right-singular vectors") )
@@ -6334,13 +6445,13 @@ c-----------------------------------------------------------------------
      $       "Singular-coupling eigenmode total energy") )
 c           C_xb definitions (un-weighted field coupling)
             CALL check( nf90_def_var(mncid,"C_xb",
-     $         nf90_double,(/mdid,sdid,idid/),scb_id))
+     $         nf90_double,(/msodid,sdid,idid/),scb_id))
             CALL check( nf90_put_att(mncid,scb_id,
      $       "long_name","Un-weighted field to "//
      $       "singular field coupling") )
             CALL check( nf90_def_var(mncid,
      $         "C_xb_eigenvector",nf90_double,
-     $         (/mdid,sdid,idid/),svb_id) )
+     $         (/msodid,sdid,idid/),svb_id) )
             CALL check( nf90_put_att(mncid,svb_id,
      $       "long_name","Un-weighted field to "//
      $       "singular field right-singular "//
@@ -6354,13 +6465,13 @@ c           C_xb definitions (un-weighted field coupling)
      $       "values") )
 c           C_x definitions (flux coupling)
             CALL check( nf90_def_var(mncid,"C_x",
-     $         nf90_double,(/mdid,sdid,idid/),scx_id))
+     $         nf90_double,(/msodid,sdid,idid/),scx_id))
             CALL check( nf90_put_att(mncid,scx_id,
      $       "long_name","Flux to singular "//
      $       "field coupling") )
             CALL check( nf90_def_var(mncid,
      $         "C_x_eigenvector",nf90_double,
-     $         (/mdid,sdid,idid/),svx_id) )
+     $         (/msodid,sdid,idid/),svx_id) )
             CALL check( nf90_put_att(mncid,svx_id,
      $       "long_name","Flux to singular "//
      $       "field right-singular vectors") )
@@ -6373,29 +6484,29 @@ c           C_x definitions (flux coupling)
          ENDIF
 
          CALL check( nf90_def_var(mncid,"Phi_xe",nf90_double,
-     $               (/mdid,idid/),ex_id) )
+     $               (/msodid,idid/),ex_id) )
          CALL check( nf90_put_att(mncid,ex_id,"units","T") )
          CALL check( nf90_put_att(mncid,ex_id,"long_name",
      $    "Energy norm external field") )
          CALL check( nf90_def_var(mncid,"Phi_x",nf90_double,
-     $               (/mdid,idid/),fx_id) )
+     $               (/msodid,idid/),fx_id) )
          CALL check( nf90_put_att(mncid,fx_id,"units","Wb") )
          CALL check( nf90_put_att(mncid,fx_id,"long_name",
      $    "External flux") )
          CALL check( nf90_def_var(mncid,"Phi_xb",
-     $               nf90_double,(/mdid,idid/),fb_id) )
+     $               nf90_double,(/msodid,idid/),fb_id) )
          CALL check( nf90_put_att(mncid,fb_id,
      $    "units","T") )
          CALL check( nf90_put_att(mncid,fb_id,
      $    "long_name",
      $    "Un-weighted external field") )
          CALL check( nf90_def_var(mncid,"Phi_e",nf90_double,
-     $               (/mdid,idid/),et_id) )
+     $               (/msodid,idid/),et_id) )
          CALL check( nf90_put_att(mncid,et_id,"units","T") )
          CALL check( nf90_put_att(mncid,et_id,"long_name",
      $    "Energy norm total field") )
          CALL check( nf90_def_var(mncid,"Phi",nf90_double,
-     $               (/mdid,idid/),ft_id) )
+     $               (/msodid,idid/),ft_id) )
          CALL check( nf90_put_att(mncid,ft_id,"units","Wb") )
          CALL check( nf90_put_att(mncid,ft_id,"long_name",
      $    "Total flux") )
@@ -6532,30 +6643,31 @@ c           C_x definitions (flux coupling)
      $               AIMAG(pvecs)/),(/mpert,mpert,2/))) )
          CALL check( nf90_put_var(mncid,pe_id,pvals) )
          IF(singcoup_set) THEN
-            matms = TRANSPOSE(singcoupmat)
+c           C_xe / C_xb / C_x written in singcoup_jac_type coordinate
+            matms_s = TRANSPOSE(singcoupmat_s)
             CALL check( nf90_put_var(mncid,sc_id,RESHAPE(
-     $       (/REAL(matms),AIMAG(matms)/),(/mpert,msing,2/))))
+     $       (/REAL(matms_s),AIMAG(matms_s)/),(/slmpert,msing,2/))))
             CALL check( nf90_put_var(mncid,sv_id,RESHAPE(
-     $       (/REAL(svecs),AIMAG(svecs)/),(/mpert,msing,2/))))
-            CALL check( nf90_put_var(mncid,se_id,svals) )
+     $       (/REAL(svecs_s),AIMAG(svecs_s)/),(/slmpert,msing,2/))))
+            CALL check( nf90_put_var(mncid,se_id,svals_s) )
 c           C_xb writes
-            matms = TRANSPOSE(bcoupm)
+            matms_s = TRANSPOSE(bcoupm)
             CALL check(nf90_put_var(mncid,scb_id,
-     $       RESHAPE((/REAL(matms),AIMAG(matms)/),
-     $       (/mpert,msing,2/))))
+     $       RESHAPE((/REAL(matms_s),AIMAG(matms_s)/),
+     $       (/slmpert,msing,2/))))
             CALL check(nf90_put_var(mncid,svb_id,
      $       RESHAPE((/REAL(bsvecs),
-     $       AIMAG(bsvecs)/),(/mpert,msing,2/))))
+     $       AIMAG(bsvecs)/),(/slmpert,msing,2/))))
             CALL check(nf90_put_var(mncid,
      $       seb_id,bsvals))
 c           C_x writes
-            matms = TRANSPOSE(xcoupm)
+            matms_s = TRANSPOSE(xcoupm)
             CALL check(nf90_put_var(mncid,scx_id,
-     $       RESHAPE((/REAL(matms),AIMAG(matms)/),
-     $       (/mpert,msing,2/))))
+     $       RESHAPE((/REAL(matms_s),AIMAG(matms_s)/),
+     $       (/slmpert,msing,2/))))
             CALL check(nf90_put_var(mncid,svx_id,
      $       RESHAPE((/REAL(xsvecs),
-     $       AIMAG(xsvecs)/),(/mpert,msing,2/))))
+     $       AIMAG(xsvecs)/),(/slmpert,msing,2/))))
             CALL check(nf90_put_var(mncid,
      $       sex_id,xsvals))
          ENDIF
@@ -6625,12 +6737,11 @@ c           C_x writes
             CALL check( nf90_put_var(mncid,ps_id,ABS(matms)) )
          ENDIF
 
-         ! Energy normalized flux
-         temp = MATMUL(ftop,foutmn)
-         CALL check( nf90_put_var(mncid,et_id,RESHAPE((/REAL(temp),
-     $               AIMAG(temp)/),(/mpert,2/))) )
-         CALL check( nf90_put_var(mncid,ft_id,RESHAPE((/REAL(foutmn),
-     $               AIMAG(foutmn)/),(/mpert,2/))) )
+         ! Energy normalized flux in singcoup_jac_type basis
+         CALL check( nf90_put_var(mncid,et_id,RESHAPE((/REAL(phi_e_s),
+     $               AIMAG(phi_e_s)/),(/slmpert,2/))) )
+         CALL check( nf90_put_var(mncid,ft_id,RESHAPE((/REAL(foutmn_s),
+     $               AIMAG(foutmn_s)/),(/slmpert,2/))) )
          IF(fun_flag)THEN
            DO i=0,mthsurf
              CALL bicube_eval(rzphi,psilim,REAL(i,r8)/mthsurf,0)
@@ -6645,17 +6756,14 @@ c           C_x writes
            CALL check(nf90_put_var(mncid,ftf_id,RESHAPE((/REAL(tempfun),
      $         -helicity*AIMAG(tempfun)/),(/mthsurf+1,2/))) )
          ENDIF
-         temp = MATMUL(ftop,finmn)
-         CALL check( nf90_put_var(mncid,ex_id,RESHAPE((/REAL(temp),
-     $               AIMAG(temp)/),(/mpert,2/))) )
-         CALL check( nf90_put_var(mncid,fx_id,RESHAPE((/REAL(finmn),
-     $               AIMAG(finmn)/),(/mpert,2/))) )
-c        Phi_xb: convert flux to un-weighted field
-         temp = finmn
-         CALL gpeq_weight(psilim,temp,mfac,mpert,0)
+c        Phi_xe / Phi_x / Phi_xb in singcoup_jac_type basis
+         CALL check( nf90_put_var(mncid,ex_id,RESHAPE((/REAL(phi_xe_s),
+     $               AIMAG(phi_xe_s)/),(/slmpert,2/))) )
+         CALL check( nf90_put_var(mncid,fx_id,RESHAPE((/REAL(finmn_s),
+     $               AIMAG(finmn_s)/),(/slmpert,2/))) )
          CALL check(nf90_put_var(mncid,fb_id,
-     $     RESHAPE((/REAL(temp),AIMAG(temp)/),
-     $     (/mpert,2/))) )
+     $     RESHAPE((/REAL(phi_xb_s),AIMAG(phi_xb_s)/),
+     $     (/slmpert,2/))) )
          IF(fun_flag)THEN
            CALL iscdftb(mfac,mpert,tempfun,mthsurf,foutmn)
            tempfun = tempfun * EXP(ifac * nn* dphi)
@@ -6735,11 +6843,11 @@ c          Phi_xb_fun
                IF(singcoup_set .AND. (i<=msing))THEN
                  CALL iscdftb(mfac,mpert,sfuns(:,i),mthsurf,svecs(:,i))
                  sfuns(:,i) = sfuns(:,i) * EXP(ifac * nn * dphi)
-                 CALL iscdftb(mfac,mpert,
+                 CALL iscdftb(slmfac,slmpert,
      $             bsfuns(:,i),mthsurf,bsvecs(:,i))
                  bsfuns(:,i) = bsfuns(:,i)
      $             * EXP(ifac * nn * dphi)
-                 CALL iscdftb(mfac,mpert,
+                 CALL iscdftb(slmfac,slmpert,
      $             xsfuns(:,i),mthsurf,xsvecs(:,i))
                  xsfuns(:,i) = xsfuns(:,i)
      $             * EXP(ifac * nn * dphi)
@@ -6825,6 +6933,122 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_qrv
+c-----------------------------------------------------------------------
+c     subprogram 18b. gpout_angles.
+c     Write R(psi,theta_target) and z(psi,theta_target) for the five
+c     standard magnetic-coordinate poloidal angles (polar / hamada /
+c     pest / equal-arc / boozer) at every DCON psi_n point on the
+c     uniform DCON theta grid.  Mirrors gpdiag_angles' inversion logic
+c     but writes a 3D array into gpec_profile_output_n#.nc instead of
+c     ascii.  Plot iso-theta contours by fixing the theta index and
+c     varying psi_n.
+c-----------------------------------------------------------------------
+      SUBROUTINE gpout_angles
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER :: i,istep,itheta,iqty,p_id,t_id,c_id,r_id,z_id,th_id
+      INTEGER, PARAMETER :: ncoord = 5
+      REAL(r8) :: rfac_l,eta_l,bpfac,btfac,bfac,fac,jac_l,
+     $    psi_l,thd_l
+      REAL(r8), DIMENSION(0:mthsurf) :: thetas,thetai
+      REAL(r8), DIMENSION(0:mthsurf,ncoord) :: thtgt
+      REAL(r8), DIMENSION(ncoord,0:mthsurf,mstep) :: rs,zs,thgrid
+      REAL(r8), DIMENSION(2,2) :: w_l
+      TYPE(spline_type) :: spl
+c-----------------------------------------------------------------------
+c     loop over psi surfaces, build target-coord theta(theta_dcon),
+c     invert, evaluate R,z at uniform target theta.
+c-----------------------------------------------------------------------
+      IF(verbose) WRITE(*,*)
+     $    "Computing iso-theta R,z for the five magnetic coords"
+      DO istep=1,mstep
+         psi_l = psifac(istep)
+         CALL spline_alloc(spl,mthsurf,ncoord)
+         spl%xs = theta
+         CALL spline_eval(sq,psi_l,0)
+         DO itheta=0,mthsurf
+            CALL bicube_eval(rzphi,psi_l,theta(itheta),1)
+            rfac_l = SQRT(rzphi%f(1))
+            eta_l  = twopi*(theta(itheta)+rzphi%f(2))
+            jac_l  = rzphi%f(4)
+            r(itheta) = ro+rfac_l*COS(eta_l)
+            z(itheta) = zo+rfac_l*SIN(eta_l)
+            w_l(1,1) = (1+rzphi%fy(2))*twopi**2*rfac_l*r(itheta)/jac_l
+            w_l(1,2) = -rzphi%fy(1)*pi*r(itheta)/(rfac_l*jac_l)
+            bpfac = psio*SQRT(w_l(1,1)**2+w_l(1,2)**2)/r(itheta)
+            btfac = sq%f(1)/(twopi*r(itheta))
+            bfac  = SQRT(bpfac*bpfac+btfac*btfac)
+            fac = r(itheta)**power_r
+     $          /(bpfac**power_bp*bfac**power_b)
+            spl%fs(itheta,1) = fac*twopi*bpfac/rfac_l    ! polar
+            spl%fs(itheta,2) = fac                        ! hamada
+            spl%fs(itheta,3) = fac/r(itheta)**2           ! pest
+            spl%fs(itheta,4) = fac*bpfac                  ! equal-arc
+            spl%fs(itheta,5) = fac*bfac**2                ! boozer
+         ENDDO
+         CALL spline_fit(spl,"periodic")
+         CALL spline_int(spl)
+c        normalized cumulative integral = target theta(theta_dcon)
+         DO iqty=1,ncoord
+            thtgt(:,iqty) = spl%fsi(:,iqty)/spl%fsi(mthsurf,iqty)
+         ENDDO
+         CALL spline_dealloc(spl)
+c        invert: for each uniform target theta = theta(j),
+c        find dcon theta, then evaluate R,z there.
+         DO iqty=1,ncoord
+            thetas(:) = thtgt(:,iqty)
+            DO itheta=0,mthsurf
+               thetai(itheta) =
+     $              issect(mthsurf,theta(:),thetas,theta(itheta))
+               thd_l = thetai(itheta)
+               CALL bicube_eval(rzphi,psi_l,thd_l,0)
+               rfac_l = SQRT(rzphi%f(1))
+               eta_l  = twopi*(thd_l+rzphi%f(2))
+               rs(iqty,itheta,istep) = ro+rfac_l*COS(eta_l)
+               zs(iqty,itheta,istep) = zo+rfac_l*SIN(eta_l)
+               thgrid(iqty,itheta,istep) = theta(itheta)
+            ENDDO
+         ENDDO
+      ENDDO
+c-----------------------------------------------------------------------
+c     write to gpec_profile_output_n#.nc
+c-----------------------------------------------------------------------
+      CALL check( nf90_open(fncfile,nf90_write,fncid) )
+      CALL check( nf90_inq_dimid(fncid,"psi_n",p_id) )
+      CALL check( nf90_inq_dimid(fncid,"theta_dcon",t_id) )
+      CALL check( nf90_redef(fncid) )
+      CALL check( nf90_def_dim(fncid,"coord_angle",ncoord,c_id) )
+      CALL check( nf90_def_var(fncid,"coord_angle",nf90_int,c_id,th_id))
+      CALL check( nf90_put_att(fncid,th_id,"long_name",
+     $    "Magnetic coordinate index "//
+     $    "(1=polar, 2=hamada, 3=pest, 4=equalarc, 5=boozer)") )
+      CALL check( nf90_def_var(fncid,"R_angle",nf90_double,
+     $    (/c_id,t_id,p_id/),r_id) )
+      CALL check( nf90_put_att(fncid,r_id,"units","m") )
+      CALL check( nf90_put_att(fncid,r_id,"long_name",
+     $    "R at uniform target-coord theta on each psi surface. "//
+     $    "Iso-theta contour: R_angle(coord, j, :) traces "//
+     $    "constant theta_target = j/mthsurf across psi_n.") )
+      CALL check( nf90_def_var(fncid,"z_angle",nf90_double,
+     $    (/c_id,t_id,p_id/),z_id) )
+      CALL check( nf90_put_att(fncid,z_id,"units","m") )
+      CALL check( nf90_put_att(fncid,z_id,"long_name",
+     $    "z at uniform target-coord theta on each psi surface "//
+     $    "(see R_angle for indexing)") )
+      CALL check( nf90_put_att(fncid,nf90_global,
+     $    "coord_angle_names","polar,hamada,pest,equalarc,boozer") )
+      CALL check( nf90_enddef(fncid) )
+
+      CALL check( nf90_put_var(fncid,th_id,(/(i,i=1,ncoord)/)) )
+      CALL check( nf90_put_var(fncid,r_id,rs) )
+      CALL check( nf90_put_var(fncid,z_id,zs) )
+      CALL check( nf90_close(fncid) )
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpout_angles
 
 c-----------------------------------------------------------------------
 c     subprogram 19. gpout_init_netcdf.
@@ -6836,13 +7060,15 @@ c     declaration.
 c-----------------------------------------------------------------------
       INTEGER:: i,midid,mmdid,mcdid,mldid,modid,medid,mtdid,mjdid,mpdid,
      $   mivid,mmvid,mcvid,mlvid,movid,mevid,mtvid,mrvid,mjvid,mqvid,
-     $   mpvid,
-     $   fidid,fmdid,fpdid,ftdid,
+     $   mpvid,msodid,msovid,mtsvid,me2bvid,
+     $   fidid,fmdid,fpdid,ftdid,fmsodid,fmsovid,
      $   fivid,fmvid,fpvid,ftvid,frvid,frdid,fqvid,fq1vid,
      $   cidid,crdid,czdid,
      $   clvid,civid,crvid,czvid,
      $   id,fileids(3),ising
       INTEGER, DIMENSION(mpert) :: mmodes
+      REAL(r8), DIMENSION(0:mthsurf) :: thetas_singcoup_buf,
+     $    e2b_singcoup_buf
 c-----------------------------------------------------------------------
 c     set variables
 c-----------------------------------------------------------------------
@@ -6873,12 +7099,29 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(mncid,"m",nf90_int,mmdid,mmvid) )
       CALL check( nf90_def_dim(mncid,"m_out",lmpert, modid) )
       CALL check( nf90_def_var(mncid,"m_out",nf90_int,modid,movid) )
+      CALL check( nf90_def_dim(mncid,"m_singcoup_out",slmpert, msodid) )
+      CALL check( nf90_def_var(mncid,"m_singcoup_out",nf90_int,msodid,
+     $    msovid) )
       CALL check( nf90_def_dim(mncid,"m_prime",mpert,  mpdid) )
       CALL check( nf90_def_var(mncid,"m_prime",nf90_int,mpdid,mpvid) )
       CALL check( nf90_def_dim(mncid,"mode",mpert,   medid) )
       CALL check( nf90_def_var(mncid,"mode",nf90_int,medid,mevid))
       CALL check( nf90_def_dim(mncid,"theta",mthsurf+1,  mtdid) )
       CALL check( nf90_def_var(mncid,"theta",nf90_double,mtdid,mtvid) )
+      CALL check( nf90_def_var(mncid,"theta_singcoup_out",nf90_double,
+     $    mtdid,mtsvid) )
+      CALL check( nf90_put_att(mncid,mtsvid,"long_name",
+     $    "singcoup_jac_type theta evaluated at uniform DCON theta "//
+     $    "sample points (= theta_dcon when singcoup coord matches "//
+     $    "DCON; otherwise the target-coord poloidal angle)") )
+      CALL check( nf90_def_var(mncid,"singcoup_e_to_b_weight",
+     $    nf90_double,mtdid,me2bvid) )
+      CALL check( nf90_put_att(mncid,me2bvid,"long_name",
+     $    "Conversion weight at uniform DCON theta: physical field "//
+     $    "b = E / weight, where E is the energy-norm "//
+     $    "reconstruction (sum of slmfac coefficients evaluated at "//
+     $    "theta_singcoup_out). weight = sqrt(J_t|grad psi|_t / A) "//
+     $    "with the target-coord Jacobian.") )
       IF(msing>0)THEN
          CALL check( nf90_def_dim(mncid,"psi_n_rational", msing, mjdid))
          CALL check( nf90_def_var(mncid,"psi_n_rational", nf90_double,
@@ -6950,6 +7193,10 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(fncid,"i",nf90_int,fidid,fivid) )
       CALL check( nf90_def_dim(fncid,"m_out",lmpert, fmdid) )
       CALL check( nf90_def_var(fncid,"m_out",nf90_int,fmdid,fmvid) )
+      CALL check( nf90_def_dim(fncid,"m_singcoup_out",slmpert,
+     $    fmsodid) )
+      CALL check( nf90_def_var(fncid,"m_singcoup_out",nf90_int,
+     $    fmsodid,fmsovid) )
       CALL check( nf90_def_dim(fncid,"psi_n",mstep, fpdid) )
       CALL check( nf90_def_var(fncid,"psi_n",nf90_double,fpdid,fpvid) )
       CALL check( nf90_def_dim(fncid,"theta_dcon",mthsurf+1, ftdid) )
@@ -7008,8 +7255,19 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(mncid,mmvid,mfac) )
       CALL check( nf90_put_var(mncid,mpvid,mfac) )
       CALL check( nf90_put_var(mncid,movid,lmfac) )
+      CALL check( nf90_put_var(mncid,msovid,slmfac) )
       CALL check( nf90_put_var(mncid,mevid,mmodes) )
       CALL check( nf90_put_var(mncid,mtvid,theta) )
+c     theta_singcoup_out = target-coord theta at uniform DCON theta
+c     sample points (= cumulative integral of the target Jacobian
+c     density). Lets postprocessing reconstruct slmfac-target Fourier
+c     functions in physical (R,z) coordinates.
+      CALL gpeq_target_thetas(psilim,
+     $    singcoup_power_r,singcoup_power_bp,
+     $    singcoup_power_b,singcoup_power_rc,
+     $    thetas_singcoup_buf,e2b_singcoup_buf)
+      CALL check( nf90_put_var(mncid,mtsvid,thetas_singcoup_buf) )
+      CALL check( nf90_put_var(mncid,me2bvid,e2b_singcoup_buf) )
       IF(msing>0)THEN
          CALL check( nf90_put_var(mncid,mjvid,
      $      (/(singtype(i)%psifac,i=1,msing)/)) )
@@ -7024,6 +7282,7 @@ c-----------------------------------------------------------------------
       IF(debug_flag) PRINT *," - Putting coordinates in flux netcdfs"
       CALL check( nf90_put_var(fncid,fivid,(/0,1/)) )
       CALL check( nf90_put_var(fncid,fmvid,lmfac) )
+      CALL check( nf90_put_var(fncid,fmsovid,slmfac) )
       CALL check( nf90_put_var(fncid,fpvid,psifac(1:mstep)) )
       CALL check( nf90_put_var(fncid,ftvid,theta) )
       IF(msing>0)THEN

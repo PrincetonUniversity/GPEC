@@ -98,16 +98,30 @@ c-----------------------------------------------------------------------
           lmhigh=mlim_out
           lmpert=ABS(lmhigh)+ABS(lmlow)+1
       ENDIF
+c     range for the singular-coupling output coordinate
+      IF ((singcoup_mlim<MAX(ABS(mlow),ABS(mhigh))).OR.
+     $     ((singcoup_jac_type==jac_type).AND.
+     $      (singcoup_tmag_type==1))) THEN
+          slmlow = mlow
+          slmhigh = mhigh
+          slmpert = mpert
+      ELSE
+          slmlow=-singcoup_mlim
+          slmhigh=singcoup_mlim
+          slmpert=ABS(slmhigh)+ABS(slmlow)+1
+      ENDIF
       IF (mthsurf <=0) mthsurf=mthvac
       IF (mthsurf < 4*(2*MAX(ABS(mlow),mhigh)))
      $    mthsurf = 4*(2*MAX(ABS(mlow),mhigh)) ! 4 times the nyquist limit
       ALLOCATE(r(0:mthsurf),z(0:mthsurf),theta(0:mthsurf))
       ALLOCATE(mfac(mpert),singfac(mpert))
       ALLOCATE(lmfac(lmpert))
+      ALLOCATE(slmfac(slmpert))
       ALLOCATE(edge_mn(mpert),edge_fun(0:mthsurf))
       theta=(/(itheta,itheta=0,mthsurf)/)/REAL(mthsurf,r8)
       mfac=(/(m,m=mlow,mhigh)/)
       lmfac=(/(m,m=lmlow,lmhigh)/)
+      slmfac=(/(m,m=slmlow,slmhigh)/)
       IF (nn<10) THEN
          WRITE(UNIT=sn,FMT='(I1)')nn
          sn=ADJUSTL(sn)

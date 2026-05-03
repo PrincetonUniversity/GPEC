@@ -48,6 +48,9 @@
    jsurf_out=0              ! True(1) for area weighted outputs (only appends standard gpec_control output)
    tmag_out=1               ! True(1) for magnetic toroidal angle outputs (affects singcoup and singfld, appends gpec_control)
    mlim_out=64              ! Fourier decomposed outputs will span -mlim_out<=m<=mlim_out when jac_out/=jac_type or tmag_out/=tmag_in
+   singcoup_jac_type=""     ! Coordinate system for singular-coupling outputs (C_xe/C_xb/C_x SVDs, Phi_xe/Phi_x/Phi_xb, Phi_res*). Empty inherits jac_out. Lets you compare resonant coupling SVDs across coords without re-running DCON.
+   singcoup_tmag_type=-1    ! Toroidal angle convention for singcoup outputs. -1 inherits tmag_out
+   singcoup_mlim=-1         ! Half-range of poloidal m for singcoup decomposition. -1 inherits mlim_out (PEST/Boozer often need a larger range than Hamada to resolve)
 
    resp_flag=t              ! Output energy, reluctance, inductance, and permeability eigenvalues, eigenvectors, and matrices
    filter_flag=t            ! Outputs energy, reluctance, permeability, and (optionally) the singular-coupling eigenmodes on the control surface

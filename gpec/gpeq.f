@@ -975,6 +975,221 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_bcoords
 c-----------------------------------------------------------------------
+c     subprogram 11b. gpeq_target_decomp.
+c     Decompose a function given in mfac-DCON-theta into the
+c     slmfac-target-theta basis, applying a target-coord-aware
+c     Jacobian weighting in real space at uniform target-theta
+c     sample points. This is the proper construction for
+c     coordinate-invariant L2 norms of Phi_xe / Phi_res / etc.
+c
+c     Inputs:
+c       psi      : flux surface
+c       finmn    : input mfac-DCON Fourier coefficients (mpert)
+c       in_kind  : 0 = input is "field" b
+c                  1 = input is "flux" finmn (= b * J|grad psi| in
+c                      real space at theta_dcon).
+c       out_kind : 0 = output Phi_xb (un-weighted field b in
+c                      slmfac-target Fourier)
+c                  1 = output Phi_x (flux b * J_t|grad psi|_t in
+c                      slmfac-target Fourier)
+c                  2 = output Phi_xe (energy-norm field
+c                      b * sqrt(J_t|grad psi|_t / A) in slmfac-target
+c                      Fourier).
+c       amf, amp : slmfac mode array and count
+c       ri, bpi, bi, rci, ti : target coord powers (as in
+c                              gpeq_bcoords).
+c
+c     Output:
+c       fout(amp): slmfac-target Fourier coefficients
+c-----------------------------------------------------------------------
+      SUBROUTINE gpeq_target_decomp(psi,finmn,in_kind,out_kind,
+     $    fout,amf,amp,ri,bpi,bi,rci,ti)
+      INTEGER, INTENT(IN) :: in_kind,out_kind,amp,ri,bpi,bi,rci,ti
+      REAL(r8), INTENT(IN) :: psi
+      INTEGER, DIMENSION(amp), INTENT(IN) :: amf
+      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: finmn
+      COMPLEX(r8), DIMENSION(amp), INTENT(OUT) :: fout
+
+      INTEGER :: i,itheta
+      REAL(r8) :: thetai,jarea_t,dthetas_dtheta
+      REAL(r8), DIMENSION(0:mthsurf) :: delpsi,thetas_t,jacfac_t,dphi_t
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: ftnfun
+      COMPLEX(r8), DIMENSION(mpert) :: ftnmn_b
+      TYPE(spline_type) :: spl
+
+      IF(debug_flag) PRINT *, "Entering gpeq_target_decomp"
+
+c     Build target geometric quantities. We use a 3-column spline:
+c       fs(:,1) = thetas integrand (defines theta_target as fn of
+c                 theta_dcon)
+c       fs(:,2) = J_dcon|grad psi| at uniform theta_dcon (used to
+c                 build J_target|grad psi|_target at uniform
+c                 theta_target via the relation
+c                 J_t|grad psi|_t = J_d|grad psi|_d / d(theta_target)/d(theta_dcon))
+c       fs(:,3) = dphi (toroidal correction term)
+      CALL spline_eval(sq,psi,0)
+      CALL spline_alloc(spl,mthsurf,3)
+      spl%xs = theta
+      DO itheta=0,mthsurf
+         CALL bicube_eval(rzphi,psi,theta(itheta),1)
+         rfac = SQRT(rzphi%f(1))
+         eta  = twopi*(theta(itheta)+rzphi%f(2))
+         r(itheta) = ro+rfac*COS(eta)
+         z(itheta) = zo+rfac*SIN(eta)
+         jac = rzphi%f(4)
+         w(1,1) = (1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
+         w(1,2) = -rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
+         delpsi(itheta) = SQRT(w(1,1)**2+w(1,2)**2)
+         bpfac = psio*delpsi(itheta)/r(itheta)
+         btfac = sq%f(1)/(twopi*r(itheta))
+         bfac  = SQRT(bpfac*bpfac+btfac*btfac)
+         fac   = r(itheta)**power_r/(bpfac**power_bp*bfac**power_b)
+         spl%fs(itheta,1)=fac/(r(itheta)**ri*rfac**rci)*
+     $        bpfac**bpi*bfac**bi
+c        spl%fs(:,2) = J_dcon|grad psi| = jac * delpsi at theta_dcon.
+c        After the inverse map, divide by d(thetas)/d(theta_dcon) to
+c        get J_target|grad psi|_target at uniform target sample
+c        points (so Phi_xe = b * sqrt(J_t|grad psi|_t / A) gives a
+c        coord-invariant L2 norm = energy/A; Phi_x = b * J_t|grad
+c        psi|_t gives the proper flux representation).
+         spl%fs(itheta,2)=jac*delpsi(itheta)
+         IF (ti .EQ. 0) THEN
+            spl%fs(itheta,3) = rzphi%f(3)
+         ELSE
+            spl%fs(itheta,3) = 0.0_r8
+         ENDIF
+      ENDDO
+      CALL spline_fit(spl,"periodic")
+      CALL spline_int(spl)
+      thetas_t(:) = spl%fsi(:,1)/spl%fsi(mthsurf,1)
+      DO itheta=0,mthsurf
+         thetai = issect(mthsurf,theta(:),thetas_t(:),theta(itheta))
+         CALL spline_eval(spl,thetai,0)
+         dthetas_dtheta = spl%f(1)/spl%fsi(mthsurf,1)
+         IF (ABS(dthetas_dtheta) < 1.0e-30_r8) dthetas_dtheta=
+     $       1.0e-30_r8
+         jacfac_t(itheta) = spl%f(2)/dthetas_dtheta
+         dphi_t(itheta) = spl%f(3)
+      ENDDO
+c     Surface area at uniform target sampling. Should equal physical
+c     area (coord-invariant).
+      jarea_t = 0.0_r8
+      DO itheta=0,mthsurf-1
+         jarea_t = jarea_t + jacfac_t(itheta)/mthsurf
+      ENDDO
+      CALL spline_dealloc(spl)
+
+c     Get the field b at uniform theta_dcon from the input.
+      ftnmn_b = finmn
+      IF (in_kind == 1) THEN
+c        input was flux; convert to field.
+         CALL gpeq_weight(psi,ftnmn_b,mfac,mpert,0)
+      ENDIF
+
+c     Evaluate b at uniform theta_target sample points, with the
+c     toroidal correction applied (matches gpeq_bcoords convention).
+      DO itheta=0,mthsurf
+         thetai = issect(mthsurf,theta(:),thetas_t(:),theta(itheta))
+         ftnfun(itheta) = 0
+         DO i=1,mpert
+            ftnfun(itheta) = ftnfun(itheta) +
+     $           ftnmn_b(i)*EXP(ifac*twopi*mfac(i)*thetai)
+         ENDDO
+         IF (ti .EQ. 0) THEN
+            ftnfun(itheta) = ftnfun(itheta)*EXP(ifac*nn*dphi_t(itheta))
+         ELSE
+            ftnfun(itheta) = ftnfun(itheta)*
+     $           EXP(-twopi*ifac*nn*sq%f(4)*
+     $           (thetai-theta(itheta)))
+         ENDIF
+      ENDDO
+
+c     Apply the requested coord-aware weight and forward-FFT in slmfac.
+      SELECT CASE(out_kind)
+      CASE(0) ! Phi_xb = b
+c        no further weighting
+      CASE(1) ! Phi_x = b * J_t|grad psi|_t
+         ftnfun(:) = ftnfun(:)*jacfac_t(:)
+      CASE(2) ! Phi_xe = b * sqrt(J_t|grad psi|_t / A)
+         ftnfun(:) = ftnfun(:)*sqrt(jacfac_t(:)/jarea_t)
+      END SELECT
+      CALL iscdftf(amf,amp,ftnfun,mthsurf,fout)
+
+      IF(debug_flag) PRINT *, "->Leaving gpeq_target_decomp"
+      RETURN
+      END SUBROUTINE gpeq_target_decomp
+c-----------------------------------------------------------------------
+c     subprogram 11c. gpeq_target_thetas.
+c     Return the target-coord theta values evaluated at uniform DCON
+c     theta sample points on the given surface, plus the energy-norm
+c     conversion weight so that
+c         b(physical point i) = E(physical point i) / weight[i]
+c     where E is the energy-norm reconstruction (sum of slmfac
+c     coefficients evaluated at theta_target[i]). The weight is
+c     sqrt(J_target|grad psi|_target / A) at uniform DCON sampling
+c     (= sqrt(jac*delpsi / dthetas_dtheta / A)).
+c-----------------------------------------------------------------------
+      SUBROUTINE gpeq_target_thetas(psi,ri,bpi,bi,rci,
+     $    thetas_out,e2b_weight)
+      INTEGER, INTENT(IN) :: ri,bpi,bi,rci
+      REAL(r8), INTENT(IN) :: psi
+      REAL(r8), DIMENSION(0:mthsurf), INTENT(OUT) :: thetas_out,
+     $    e2b_weight
+
+      INTEGER :: itheta
+      REAL(r8) :: rfac_l,delpsi_l,dthetas_dtheta,jarea_t
+      REAL(r8), DIMENSION(0:mthsurf) :: jacfac_at_dcon,jdelpsi
+      TYPE(spline_type) :: spl
+
+      CALL spline_eval(sq,psi,0)
+      CALL spline_alloc(spl,mthsurf,1)
+      spl%xs = theta
+      DO itheta=0,mthsurf
+         CALL bicube_eval(rzphi,psi,theta(itheta),1)
+         rfac_l = SQRT(rzphi%f(1))
+         eta = twopi*(theta(itheta)+rzphi%f(2))
+         r(itheta) = ro+rfac_l*COS(eta)
+         z(itheta) = zo+rfac_l*SIN(eta)
+         jac = rzphi%f(4)
+         w(1,1) = (1+rzphi%fy(2))*twopi**2*rfac_l*r(itheta)/jac
+         w(1,2) = -rzphi%fy(1)*pi*r(itheta)/(rfac_l*jac)
+         delpsi_l = SQRT(w(1,1)**2+w(1,2)**2)
+         bpfac = psio*delpsi_l/r(itheta)
+         btfac = sq%f(1)/(twopi*r(itheta))
+         bfac  = SQRT(bpfac*bpfac+btfac*btfac)
+         fac   = r(itheta)**power_r/(bpfac**power_bp*bfac**power_b)
+         spl%fs(itheta,1) = fac/(r(itheta)**ri*rfac_l**rci)*
+     $        bpfac**bpi*bfac**bi
+         jdelpsi(itheta) = jac*delpsi_l
+      ENDDO
+      CALL spline_fit(spl,"periodic")
+      CALL spline_int(spl)
+      thetas_out(:) = spl%fsi(:,1)/spl%fsi(mthsurf,1)
+c     J_target|grad psi|_target at theta_dcon[itheta]:
+c       = J_dcon|grad psi|_dcon(theta_dcon[itheta]) /
+c         (d(theta_target)/d(theta_dcon)(theta_dcon[itheta]))
+      DO itheta=0,mthsurf
+         dthetas_dtheta = spl%fs(itheta,1)/spl%fsi(mthsurf,1)
+         IF (ABS(dthetas_dtheta) < 1.0e-30_r8) dthetas_dtheta=
+     $       1.0e-30_r8
+         jacfac_at_dcon(itheta) = jdelpsi(itheta)/dthetas_dtheta
+      ENDDO
+c     Surface area A is a physical (coord-invariant) scalar. Compute
+c     it via Riemann at uniform DCON sampling: A = (1/N) sum jac*delpsi.
+c     (Mean of jacfac_at_dcon at uniform DCON sampling is NOT A: it
+c     equals <J_target|grad psi|_target at non-uniform target sample
+c     points> which can differ from A by Cauchy-Schwarz.)
+      jarea_t = 0.0_r8
+      DO itheta=0,mthsurf-1
+         jarea_t = jarea_t + jdelpsi(itheta)/mthsurf
+      ENDDO
+      DO itheta=0,mthsurf
+         e2b_weight(itheta) = SQRT(jacfac_at_dcon(itheta)/jarea_t)
+      ENDDO
+      CALL spline_dealloc(spl)
+      RETURN
+      END SUBROUTINE gpeq_target_thetas
+c-----------------------------------------------------------------------
 c     subprogram 12. gpeq_bcoordsout.
 c     transform dcon to other coordinates. Assumes mpert,lmpert,jac_out
 c-----------------------------------------------------------------------

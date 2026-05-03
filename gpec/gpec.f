@@ -62,7 +62,9 @@ c-----------------------------------------------------------------------
       NAMELIST/gpec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
      $     singfld_flag,pmodb_flag,xbnormal_flag,rstep,jsurf_out,
      $     jac_out,power_bout,power_rout,power_bpout,power_rcout,
-     $     tmag_out,mlim_out,eqbrzphi_flag,brzphi_flag,xrzphi_flag,
+     $     tmag_out,mlim_out,
+     $     singcoup_jac_type,singcoup_tmag_type,singcoup_mlim,
+     $     eqbrzphi_flag,brzphi_flag,xrzphi_flag,
      $     vbrzphi_flag,vvbrzphi_flag,divzero_flag,dw_flag,opsi1,opsi2,
      $     bin_flag,bin_2d_flag,fun_flag,flux_flag,bwp_pest_flag,
      $     vsbrzphi_flag,ss_flag,arzphifun_flag,xbrzphifun_flag,
@@ -132,6 +134,9 @@ c-----------------------------------------------------------------------
       tmag_out=1
       mlim_out=64
       jac_out=""
+      singcoup_jac_type=""
+      singcoup_tmag_type=-1
+      singcoup_mlim=-1
       resp_flag=.TRUE.
       singcoup_flag=.FALSE.
       singfld_flag=.TRUE.
@@ -367,9 +372,56 @@ c-----------------------------------------------------------------------
          power_bout=0
          power_bpout=1
          power_rout=0
-         power_rcout=1         
+         power_rcout=1
       CASE("other")
       CASE DEFAULT
+      END SELECT
+c-----------------------------------------------------------------------
+c     resolve singular-coupling output coordinate. defaults inherit
+c     from jac_out / tmag_out / mlim_out so existing inputs are
+c     unchanged. when singcoup_jac_type is set, the singular-coupling
+c     SVDs and Phi_x*/Phi_res* outputs are produced in that coord
+c     without re-running DCON.
+c-----------------------------------------------------------------------
+      IF (singcoup_jac_type == "") singcoup_jac_type = jac_out
+      IF (singcoup_tmag_type < 0) singcoup_tmag_type = tmag_out
+      IF (singcoup_mlim   < 0) singcoup_mlim   = mlim_out
+      SELECT CASE(singcoup_jac_type)
+      CASE("hamada")
+         singcoup_power_b=0
+         singcoup_power_bp=0
+         singcoup_power_r=0
+         singcoup_power_rc=0
+      CASE("pest")
+         singcoup_power_b=0
+         singcoup_power_bp=0
+         singcoup_power_r=2
+         singcoup_power_rc=0
+      CASE("equal_arc")
+         singcoup_power_b=0
+         singcoup_power_bp=1
+         singcoup_power_r=0
+         singcoup_power_rc=0
+      CASE("boozer")
+         singcoup_power_b=2
+         singcoup_power_bp=0
+         singcoup_power_r=0
+         singcoup_power_rc=0
+      CASE("park")
+         singcoup_power_b=1
+         singcoup_power_bp=0
+         singcoup_power_r=0
+         singcoup_power_rc=0
+      CASE("polar")
+         singcoup_power_b=0
+         singcoup_power_bp=1
+         singcoup_power_r=0
+         singcoup_power_rc=1
+      CASE DEFAULT
+         singcoup_power_b=power_bout
+         singcoup_power_bp=power_bpout
+         singcoup_power_r=power_rout
+         singcoup_power_rc=power_rcout
       END SELECT
 c-----------------------------------------------------------------------
 c     set parameters from inputs.
@@ -586,8 +638,10 @@ c-----------------------------------------------------------------------
             PRINT *,"!! WARNING: no rationals for singcoup_flag"
             singcoup_flag = .FALSE.
          ELSE         
-            CALL gpout_singcoup(sing_spot,sing_npsi,power_rout,
-     $           power_bpout,power_bout,power_rcout,tmag_out)
+            CALL gpout_singcoup(sing_spot,sing_npsi,
+     $           singcoup_power_r,singcoup_power_bp,
+     $           singcoup_power_b,singcoup_power_rc,
+     $           singcoup_tmag_type)
          ENDIF
       ENDIF
 c-----------------------------------------------------------------------
@@ -725,6 +779,7 @@ c-----------------------------------------------------------------------
       ENDIF
       IF (angles_flag) THEN
          CALL gpdiag_angles
+         IF (netcdf_flag) CALL gpout_angles
       ENDIF
 
       IF (surfmode_flag) THEN

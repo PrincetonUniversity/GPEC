@@ -25,6 +25,10 @@ c-----------------------------------------------------------------------
      $     power_b,power_r,power_bp,jsurf_in,jsurf_out,mlim_out,
      $     power_bin,power_rin,power_bpin,power_rcin,tmag_in,
      $     power_bout,power_rout,power_bpout,power_rcout,tmag_out,
+     $     singcoup_tmag_type,singcoup_mlim,
+     $     singcoup_power_b,singcoup_power_r,
+     $     singcoup_power_bp,singcoup_power_rc,
+     $     slmlow,slmhigh,slmpert,
      $     nn,info,resp_index,rstep,resp,psixy,nmin,nmax,mmin,mmax,
      $     nche,nchr,nchz,rsing,rnqty,rnx,max_linesout,
      $     nr,nz,malias,ol,ou,osing
@@ -38,7 +42,8 @@ c-----------------------------------------------------------------------
 
       CHARACTER(2) :: sn,ss
       CHARACTER(10) :: date,time,zone
-      CHARACTER(16) :: jac_type,jac_in,jac_out,data_type
+      CHARACTER(16) :: jac_type,jac_in,jac_out,data_type,
+     $     singcoup_jac_type
       CHARACTER(128) :: ieqfile,idconfile,ivacuumfile,rdconfile,dcon_dir
 
       INTEGER, PARAMETER :: hmnum=128
@@ -53,7 +58,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: out_ahg2msc, vac_memory
 
       LOGICAL, DIMENSION(:), ALLOCATABLE :: sing_flag
-      INTEGER, DIMENSION(:), ALLOCATABLE :: fixstep,mfac,lmfac
+      INTEGER, DIMENSION(:), ALLOCATABLE :: fixstep,mfac,lmfac,slmfac
       INTEGER, DIMENSION(:,:), ALLOCATABLE :: permeabindex,gdl
 
       REAL(r8), DIMENSION(:), ALLOCATABLE :: psifac,rhofac,qfac,singfac,
@@ -147,6 +152,7 @@ c-----------------------------------------------------------------------
       DEALLOCATE(sing_flag,fixstep,mfac,psifac,rhofac,qfac,singfac,
      $     et,ep,ee,surfet,surfep,surfee,surfei,lmfac,r,z,theta,
      $     surf_indev,plas_indev,permeabev,edge_mn,edge_fun,chperr)
+      IF(ALLOCATED(slmfac)) DEALLOCATE(slmfac)
       DEALLOCATE(wt,chimats,chemats,chpmats,kapmats,kaxmats,flxmats,
      $     surf_indmats,surf_indevmats,plas_indmats,permeabmats,
      $     plas_indevmats,permeabevmats,chxmats,chwmats,
