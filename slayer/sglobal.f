@@ -9,7 +9,7 @@
      $     bin_unit,bin_2d_unit,input_unit,out4_unit
 
       REAL(r8) :: mr,nr
-      REAL(r8) :: Q_e,Q_i,pr,pe,c_beta,ds,tau
+      REAL(r8) :: Q_e,Q_i,pr,pe,c_beta,ds,tau,Kp
       REAL(r8) :: eta,visc,rho_s,lu,omega_e,omega_i,
      $            delta_n,layfac
       COMPLEX(r8) :: Q

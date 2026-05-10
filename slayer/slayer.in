@@ -22,17 +22,17 @@
     qval=2.0             ! q of resonant surface
     mu_i=2.0             ! ion mass ratio to proton ??
     zeff=2.0             ! plasma Z_effective
-    inpr=0.001          ! Prantdl number
-    inKp=0.000001          ! Prantdl number
+    inpr=1000.0             ! Prantdl number
+    inKp=0.0001          ! Prantdl number
     inpr_prof=10.0,10.0,10.0,10.0,10.0,10.0,10.0,10.0 ! Prandtl number profile
-    inpe=0.00000165             ! Electron viscosity (if > 0.0, Pe_flag=t will be overridden and this value used instead)
+    inpe=16.5             ! Electron viscosity (if > 0.0, Pe_flag=t will be overridden and this value used instead)
 
     !!! IF INPUT_FLAG & PARAMS_FLAG ARE FALSE, MANUALLY ENTER DIMENSIONLESS QUANTITIES @ RATIONAL SURFACE HERE
-    inQ=0.5             ! normalized ExB frequency
-    inQ_e=1.0            ! normalized electron diamagnetic frequency
-    inQ_i=-1.0           ! normalized ion diamagnetic frequency
+    inQ=0.0009             ! normalized ExB frequency
+    inQ_e=0.001            ! normalized electron diamagnetic frequency
+    inQ_i=-0.001           ! normalized ion diamagnetic frequency
     inc_beta=1.0         ! dimensionless measure of the plasma pressure
-    inds=20.0             ! normalized ion sound radius
+    inds=40.0             ! normalized ion sound radius
     intau=1.0            ! ion temperature divided by electron temperature
     Q0=4.0               ! unnecessary placeholder variable for inQ?
     delta_n_p=0          ! delta offset used for jxb calculations. Default is (1e-2,1e-2).

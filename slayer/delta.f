@@ -180,8 +180,8 @@ c-----------------------------------------------------------------------
       neq = 25
       itol = 4
       ALLOCATE(y(neq),dy(neq),pd(neq,neq),rtol(neq),atol(neq))
-      rtol = 1e-9
-      atol = 1e-9
+      rtol = 1e-12
+      atol = 1e-12
       itask = 2
       istate = 1
       istep = 1
@@ -271,8 +271,8 @@ c-----------------------------------------------------------------------
          xout=1e-9
          y=0.0
          dy=0.0
-         rtol = 1e-9
-         atol = 1e-9
+         rtol = 1e-12
+         atol = 1e-12
          rwork=0
          rwork(1)=1e-5
 
@@ -423,8 +423,8 @@ c-----------------------------------------------------------------------
       itol = 4
       ALLOCATE(y(neq),dy(neq),pd(neq,neq),rtol(neq),atol(neq)
      $        ,y1(7),dy1(7))
-      rtol = 1e-10
-      atol = 1e-10
+      rtol = 1e-15
+      atol = 1e-15
       itask = 2
       istate = 1
       mf = 21
@@ -459,7 +459,7 @@ c-----------------------------------------------------------------------
       !--------------------------------------------------
       DO WHILE (abs(Delta_new-Delta_old)/abs(Delta_new)>0.01)
          IF (riccati_out) THEN
-            xout=xout+1.0
+            xout=xout+0.1
          ELSE
             xout=xout+10.0
          ENDIF
@@ -472,6 +472,7 @@ c-----------------------------------------------------------------------
      $         mf,ipar)
          ENDDO        
          CALL Update_Delta_full(Delta_new,y,x,neq)
+         write(*,*) xout, Delta_new
          IF (verbose_delta) WRITE(*,*) xout, Delta_new
       END DO
       riccati_outcome=Delta_new
@@ -479,8 +480,8 @@ c-----------------------------------------------------------------------
       ! Solution reconstruction routine if riccati_out is true
       IF (riccati_out) THEN
          ! Fix Riccati matrix size
-         x_match=xout+4.0
-         nR = int(x_match)*1000
+         x_match=xout+100.15
+         nR = int(x_match)*10000
          ALLOCATE(RT(nR),Rmatrix(nR,neq))
          ind=1
          Rt=0
@@ -495,7 +496,7 @@ c-----------------------------------------------------------------------
          y=0.0
          dy=0.0
          DO WHILE (xout<x_match) 
-           xout=xout+1e-3
+           xout=xout+1e-5
            DO WHILE (x<xout)
               istep=istep+1
               CALL ZVODE(w_der_full,neq,y,x,xout,itol,rtol,atol,itask,
@@ -526,8 +527,8 @@ c-----------------------------------------------------------------------
          itol = 4
          ! If the reconstruction takes too long time, relax tolerance
          ! If the solutions show oscillation, tighten tolerance
-         rtol = 1e-8
-         atol = 1e-8
+         rtol = 1e-13
+         atol = 1e-13
 !         DO i = 1,14
 !           rtol(i) = 1.d-5
 !           atol(i) = 1.d-5
@@ -557,6 +558,10 @@ c-----------------------------------------------------------------------
          
          ! Initialize y1 at X=XM
          CALL Init_y1_full (neq, x, y, y1)
+         Delta_new=2.0/(y1(1)-x)
+         riccati_outcome=Delta_new
+         write(*,*) x, Delta_new
+         RWORK(6) = 1e-5
          OPEN(UNIT=out4_unit,FILE='riccati_config_profile.out'
      $         ,STATUS='UNKNOWN')
          DO WHILE (x>xout)
@@ -1272,14 +1277,14 @@ c-----------------------------------------------------------------------
       A(6,7)  = ifac*c_beta**2/ds**2*x
       A(6,10) = ifac*Q_e/ds**2
       A(6,11) = -ifac*Q/ds**2
-        A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
-     $          - 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
+      A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
+     $        - 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
 !      A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
 !     $          - 1.0/(1.0+tau)*c_beta**2/ds**2
-        A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
-     $          + 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
       A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
-     $        + 1.0/(1.0+tau)*c_beta**2/ds**2
+     $        + 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
+!      A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
+!     $        + 1.0/(1.0+tau)*c_beta**2/ds**2
       A(7,14) = 1.0/Pr
       A(8,2)  = 1.0
       A(9,1)  = -ifac/(1.0+tau)*((Q-Q_e)+(Q-Q_i)*Pe/Pr)
@@ -1346,12 +1351,12 @@ c-----------------------------------------------------------------------
       A(6,7)  = ifac*c_beta**2/ds**2*x
       A(6,10) = ifac*Q_e/ds**2
       A(6,11) = -ifac*Q/ds**2
-        A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
-     $          - 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
+      A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
+     $        - 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
 !      A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
 !     $        - 1.0/(1.0+tau)*c_beta**2/ds**2
-        A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
-     $          + 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
+      A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
+     $        + 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
 !      A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
 !     $        + 1.0/(1.0+tau)*c_beta**2/ds**2
       A(7,14) = 1.0/Pr
@@ -1681,11 +1686,11 @@ c-----------------------------------------------------------------------
       A(6,7)  = ifac*c_beta**2/ds**2*x
       A(6,10) = ifac*Q_e/ds**2
       A(6,11) = -ifac*Q/ds**2
-        A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
+      A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
      $          - 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
 !      A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
 !     $        - 1.0/(1.0+tau)*c_beta**2/ds**2
-        A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
+      A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
      $          + 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2)*Kp)/ds**2
 !      A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
 !     $        + 1.0/(1.0+tau)*c_beta**2/ds**2
@@ -1746,42 +1751,193 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(neq), INTENT(IN) :: y
       COMPLEX(r8), DIMENSION(neq), INTENT(OUT) :: y1
       INTEGER :: i,j,info
-      COMPLEX(r8), DIMENSION(7,7) :: R, B21, B22, B21B22R
-      COMPLEX(r8), DIMENSION(7) :: beta
+      REAL(r8) :: lambda
+      COMPLEX(r8), DIMENSION(4,7) :: Bcon1, Bcon2, Bcon, Bconn
+      COMPLEX(r8), DIMENSION(14,7) :: Bsql1, Bsql2, Bsql, Bsqln
+      REAL(r8), DIMENSION(7) :: scaler
+      COMPLEX(r8), DIMENSION(4) :: betacon, betaconn
+      COMPLEX(r8), DIMENSION(14) :: betasql, betasqln, weights
       COMPLEX(r8), PARAMETER :: ifac=(0,1)
-      INTEGER, DIMENSION(5):: ipiv
+      COMPLEX(r8), DIMENSION(7,7) :: R
 
       DO i=1,7
-        beta(i)=0.0
         DO j=1,7
-          B21(i,j)=0.0
-          B22(i,j)=0.0
-          R(i,j)=y(i+7*(j-1))
-          B21B22R(i,j)=0.0
+          R(j,i)=y(j+7*(i-1))
+        END DO
+        DO j=1,4
+          Bcon1(j,i)=0.0
+          Bcon2(j,i)=0.0
+        END DO
+        DO j=1,14
+          Bsql1(j,i)=0.0
+          Bsql2(j,i)=0.0
         END DO
       END DO
+      betacon=0.0
+      betasql=0.0
+      weights=1.0
 
-      beta(1)=1.0
-      B22(1,1)=1.0
-      B21(2,1)=Q-Q_e
-      B22(2,3)=-x
-      B22(2,4)=x
-      !B22(3,1)=Q-Q_e
-      !B22(3,3)=-1.0
-      !B22(3,4)=1.0
-      !B21(3,3)=-x
-      !B21(3,4)=x
-      B21(3,2)=1.0
-      B22(4,3)=-Q_e
-      B22(4,4)=Q
-      B22(5,5)=1.0
-      B22(6,6)=1.0
-      B21(7,7)=1.0
+      ! Asymptotic constraint
+!      betacon(1)=1.0
+!      betacon(4)=Q-Q_e
+!      Bcon2(1,1)=1.0
+!      Bcon1(2,1)=(Q-Q_e)
+!      Bcon2(2,3)=-x
+!      Bcon2(2,4)=x
+!      Bcon2(3,3)=-Q_e
+!      Bcon2(3,4)=Q
+!      Bcon2(4,3)=1.0
+!      Bcon2(4,4)=-1.0
+!      Bcon1(4,3)=x
+!      Bcon1(4,4)=-x
+!      !Bcon2(5,5)=1.0
+!      !Bcon1(6,7)=1.0
+!      !Bcon2(7,7)=1.0
 
-      B21B22R=B21+matmul(B22,R)
-      CALL zgetrf(7,7,B21B22R,7,ipiv,info)
-      CALL zgetrs('N',7,1,B21B22R,7,ipiv,beta,7,info)
-      y1=beta
+      ! Equation-based constraint
+      betacon(1)=1.0
+      Bcon2(1,1)=1.0
+      Bcon1(2,1)=ifac*(Q-Q_e)
+      Bcon1(2,2)=-1.0
+      Bcon2(2,3)=-ifac*x
+      Bcon2(2,4)=ifac*x
+      !Bcon1(2,1)=(Q-Q_e)+Pe/Pr*(Q-Q_i)
+      !Bcon1(2,2)=ifac*(1.0+Pe/Pr)
+      !Bcon2(2,3)=-(1.0+Pe/Pr)*x
+      !Bcon2(2,4)=(1.0-Pe/Pr*tau)*x
+      !Bcon1(2,7)=(1.0+tau)*Q*Pe/Pr
+      Bcon2(3,3)=Q_e
+      Bcon2(3,4)=-Q
+      Bcon1(3,2)=x*ds**2
+      Bcon1(3,7)=x*c_beta**2
+      Bcon2(3,5)=-(c_beta**2+(1.0-c_beta**2)*Kp)/(1.0+tau)
+      Bcon2(3,6)=(c_beta**2+(1.0-c_beta**2)*Kp)/(1.0+tau)
+      Bcon1(4,2)=x
+      Bcon2(4,5)=-(Q-Q_i)*tau*(c_beta**2+(1.0-c_beta**2)*Kp)
+      Bcon2(4,6)=-(Q-Q_i)*(c_beta**2+(1.0-c_beta**2)*Kp)
+!      Bcon1(3,2)=-ifac*x
+!      Bcon2(3,3)=-ifac*Q_e/ds**2
+!      Bcon2(3,4)=ifac*Q/ds**2
+!      Bcon1(3,7)=-ifac*c_beta**2/ds**2*x
+!      Bcon2(3,5)=(c_beta**2+(1.0-c_beta**2)*Kp)/(1.0+tau)/ds**2
+!      Bcon2(3,6)=-(c_beta**2+(1.0-c_beta**2)*Kp)/(1.0+tau)/ds**2
+!      Bcon2(4,3)=ifac*Q_e/ds**2
+!      Bcon2(4,4)=-ifac*Q/ds**2
+!      Bcon1(4,7)=ifac*c_beta**2/ds**2*x
+!      Bcon2(4,5)=-(c_beta**2+(1.0-c_beta**2)*Kp)/(1.0+tau)/ds**2 
+!     $          +ifac*tau/(1.0+tau)*(Q-Q_i)
+!      Bcon2(4,6)=(c_beta**2+(1-c_beta**2)*Kp)/(1.0+tau)/ds**2
+!     $          +ifac/(1.0+tau)*(Q-Q_i)
+      !Bcon1(5,1)=Q_e
+      !Bcon2(5,4)=-x
+      !Bcon1(5,7)=Q
+      !Bcon1(5,1)=ifac*(Q-Q_i)
+      !Bcon1(5,2)=-1.0
+      !Bcon2(5,3)=-ifac*x
+      !Bcon2(5,4)=-ifac*tau*x
+      !Bcon1(5,7)=ifac*Q*(1+tau)
+      Bcon=Bcon1+matmul(Bcon2,R)
+
+      lambda = 10.0
+!      betasql(10)=Q-Q_e
+      betasql(12)=Q
+      betasql(13)=Q_e
+      Bsql1(1,2)=1.0
+      Bsql2(2,2)=1.0/(Pe*ds**2/c_beta**2)
+      Bsql1(3,3)=-Q_e
+      Bsql1(3,4)=Q
+      Bsql2(4,5)=1.0
+      Bsql1(5,5)=1.0/Pe
+      Bsql2(6,6)=1.0
+      Bsql1(7,6)=1.0/Pr
+      Bsql1(8,7)=1000.0
+      Bsql2(9,7)=1000.0/Pr
+      Bsql1(10,1)=Q
+      Bsql2(10,3)=-x
+      Bsql1(11,1)=Q_e
+      Bsql2(11,4)=-x
+      Bsql1(12,3)=x
+      Bsql2(12,3)=1.0
+      Bsql1(13,4)=x
+      Bsql2(13,4)=1.0
+      Bsql1(14,1)=Q_e
+      Bsql2(14,4)=-x
+      Bsql1(14,7)=Q
+      !Bsql2(14,3)=-Q_e
+      !Bsql2(14,4)=Q
+      !Bsql1(14,7)=-3.0*Pr*1e3
+      !Bsql2(14,7)=x*1e3
+      Bsql1(8:,:)=Bsql1(8:,:)*lambda
+      Bsql2(8:,:)=Bsql2(8:,:)*lambda
+      betasql(8:)=betasql(8:)*lambda
+!      Bsql2(10,3)=lambda*1.0
+!      Bsql2(10,4)=-lambda*1.0
+!      Bsql1(10,3)=lambda*x
+!      Bsql1(10,4)=-lambda*x
+!      Bsql2(11,3)=-lambda*Q_e
+!      Bsql2(11,4)=lambda*Q
+!      Bsql1(12,1)=lambda*(Q-Q_e)
+!      Bsql2(12,3)=-lambda*x
+!      Bsql2(12,4)=lambda*x
+      Bsql=Bsql1+matmul(Bsql2,R)
+      !weights(1)=1/Pe*100000
+      !weights(7)=1/Pr
+      !weights(9)=1/Pr
+
+      ! row-wise normalization
+      do i=1,7
+         !scaler(i) = sqrt(sum(abs(Bcon(:,i))**2))
+         scaler(i) = sqrt(sum(abs(Bsql(:,i))**2))
+         if (scaler(i) > 1.0e-14) then
+            Bconn(:,i) = Bcon(:,i) / scaler(i)
+            Bsqln(:,i) = Bsql(:,i) / scaler(i)
+            !betaconn(i) = betacon(i) / scaler(i)
+            !betasqln(i) = betasql(i) / scaler(i)
+         else
+            scaler(i) = 1.0
+            Bconn(:,i) = Bcon(:,i)
+            Bsqln(:,i) = Bsql(:,i)
+            !betaconn(i) = betacon(i)
+            !betasqln(i) = betasql(i)
+         end if
+      end do
+
+!      ! coloumn-wise normalization
+!      do i=1,7
+!         !scaler(i) = sqrt(sum(abs(Bcon(:,i))**2))
+!         scaler(i) = sqrt(sum(abs(Bsql(i,:))**2))
+!         if (scaler(i) > 1.0e-14) then
+!            Bconn(i,:) = Bcon(i,:) / scaler(i)
+!            Bsqln(i,:) = Bsql(i,:) / scaler(i)
+!            betaconn(i) = betacon(i) / scaler(i)
+!            betasqln(i) = betasql(i) / scaler(i)
+!         else
+!            scaler(i) = 1.0
+!            Bconn(i,:) = Bcon(i,:)
+!            Bsqln(i,:) = Bsql(i,:)
+!            betaconn(i) = betacon(i)
+!            betasqln(i) = betasql(i)
+!         end if
+!      end do
+
+      write(*,*) 'Bconn norm is ', norm2(abs(Bconn))
+      write(*,*) 'Bsqln norm is ', norm2(abs(Bsqln))
+!      do i=1,9
+!         Bsqln(i,:) = Bsqln(i,:) * weights(i)
+!         betasql(i) = betasql(i) * weights(i)
+!      end do
+
+      lambda = 100.0*x
+!      CALL constrained_ls_socp_admm(Bsqln,Bconn,betasql,betacon,y1,
+!     $                        1.0e-8_r8,
+!     $                        1.0_r8,
+!     $                        100000,
+!     $                        1.0e-6_r8)
+      CALL constrained_ls_kkt(Bsqln,Bconn,betasql,betacon,y1)
+!      CALL soft_constrained_ls_svd(Bsqln,Bconn,betasql,betacon,y1, 
+!     $                             lambda)
+      y1 = y1 / scaler
+
       END
 
       subroutine get_yr2 (neq, x, y, dy, ipar)
@@ -1958,7 +2114,6 @@ c     Subroutine for riccati integration based on the full model.
 c     x (input)   : stretched variable
 c     y (input)   : riccati matrix in right region
 c     Delta_new (output)  : inner layer Delta
-c     Currently, documentation is not prepared.
 c-----------------------------------------------------------------------
       SUBROUTINE Update_Delta_full(Delta_new,y,x,neq)
 
@@ -1966,46 +2121,526 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: x
       COMPLEX(r8), DIMENSION(neq), INTENT(IN) :: y
       COMPLEX(r8), INTENT(OUT) :: Delta_new
-      INTEGER :: i,j,info
-      COMPLEX(r8), DIMENSION(7,7) :: R, B21, B22, B21B22R
-      COMPLEX(r8), DIMENSION(7) :: beta, y1
-      COMPLEX(r8), PARAMETER :: ifac=(0,1)
-      INTEGER, DIMENSION(7):: ipiv
+      COMPLEX(r8), DIMENSION(neq) :: y1
 
-      DO i=1,7
-        beta(i)=0.0
-        DO j=1,7
-          B21(i,j)=0.0
-          B22(i,j)=0.0
-          R(i,j)=y(i+7*(j-1))
-          B21B22R(i,j)=0.0
-        END DO
-      END DO
-
-      beta(1)=1.0
-      B22(1,1)=1.0
-      B21(2,1)=Q-Q_e
-      B22(2,3)=-x
-      B22(2,4)=x
-!      B22(3,1)=Q-Q_e
-!      B22(3,3)=-1.0
-!      B22(3,4)=1.0
-!      B21(3,3)=-x
-!      B21(3,4)=x
-      B21(3,2)=1.0
-      B22(4,3)=-Q_e
-      B22(4,4)=Q
-      B22(5,5)=1.0
-      B22(6,6)=1.0
-      B21(7,7)=1.0
-
-      B21B22R=B21+matmul(B22,R)
-      CALL zgetrf(7,7,B21B22R,7,ipiv,info)
-      CALL zgetrs('N',7,1,B21B22R,7,ipiv,beta,7,info)
-      y1=beta
+      CALL Init_y1_full (neq, x, y, y1)
       Delta_new=2.0/(y1(1)-x)
       RETURN
       END SUBROUTINE
+
+      subroutine constrained_ls_svd(B1, B2, beta1, beta2, y1)
+      implicit none
+    
+      !----------------------------------
+      ! input / output
+      !----------------------------------
+      complex(r8), intent(in)  :: B1(:,:), B2(:,:), beta1(:), beta2(:)
+      complex(r8), intent(out) :: y1(:)
+    
+      !----------------------------------
+      ! local variables
+      !----------------------------------
+      integer :: m1, m2, n
+      integer :: lda, ldu, ldvt, info, lwork
+      integer :: i, r
+    
+      complex(r8), allocatable :: U(:,:), VT(:,:), work(:)
+      complex(r8), allocatable :: Vn(:,:), yp(:), z(:), Bred_copy(:,:)
+      complex(r8), allocatable :: rhs(:), Bred(:,:), B2_copy(:,:)
+    
+      real(r8), allocatable :: S(:), rwork(:)
+    
+      !----------------------------------
+      ! dimensions
+      !----------------------------------
+      m1 = size(B1,1)
+      m2 = size(B2,1)
+      n  = size(B2,2)
+    
+      allocate(B2_copy(m2,n))
+      B2_copy = B2
+
+      !lda  = max(m2,n)
+      lda  = m2
+      ldu  = m2
+      ldvt = n
+    
+      !----------------------------------
+      ! SVD of B2
+      !----------------------------------
+      allocate(U(ldu,m2), VT(ldvt,n))
+      allocate(S(min(m2,n)))
+      allocate(rwork(5*min(m2,n)))
+    
+      lwork = -1
+      allocate(work(1))
+      call zgesvd('S','S', m2, n, B2_copy, lda, S, U, ldu, VT, ldvt,
+     $              work, lwork, rwork, info)
+    
+      lwork = int(real(work(1)))
+      deallocate(work)
+      allocate(work(lwork))
+      B2_copy = B2
+    
+      call zgesvd('S','S', m2, n, B2_copy, lda, S, U, ldu, VT, ldvt,
+     $              work, lwork, rwork, info)
+    
+      if (info /= 0) stop 'zgesvd failed on B2'
+    
+      !----------------------------------
+      ! rank determination
+      !----------------------------------
+      r = 0
+      do i = 1, size(S)
+         if (S(i) > 1.0e-14) r = r + 1
+      end do
+    
+      !----------------------------------
+      ! null space Vn
+      !----------------------------------
+      allocate(Vn(n, n-r))
+      !Vn = transpose(conjg(VT(r+1:n, :)))
+      do i = 1, n-r
+         Vn(:,i) = conjg(VT(r+i,:))
+      end do
+    
+      !----------------------------------
+      ! particular solution yp = B2^+ b2
+      !----------------------------------
+      allocate(yp(n))
+      yp = (0.0, 0.0)
+    
+      do i = 1, r
+         yp = yp + ( dot_product(conjg(U(:,i)), beta2) / S(i) ) *
+     $               conjg(VT(i,:))
+      end do
+    
+      !----------------------------------
+      ! reduced least squares
+      !----------------------------------
+      allocate(rhs(m1))
+      rhs = beta1 - matmul(B1, yp)
+    
+      allocate(Bred(m1, n-r))
+      Bred = matmul(B1, Vn)
+    
+      !----------------------------------
+      ! SVD of reduced system
+      !----------------------------------
+      allocate(Bred_copy(m1, n-r))
+      Bred_copy = Bred
+      deallocate(U, VT, S, rwork)
+      allocate(U(m1,m1), VT(n-r,n-r))
+      allocate(S(min(m1,n-r)))
+      allocate(rwork(5*min(m1,n-r)))
+    
+      lwork = -1
+      deallocate(work)
+      allocate(work(1))
+      call zgesvd('S','S', m1, n-r, Bred_copy, m1, S, U, m1, VT, n-r,
+     $              work, lwork, rwork, info)
+    
+      lwork = int(real(work(1)))
+      deallocate(work)
+      allocate(work(lwork))
+      Bred_copy = Bred
+    
+      call zgesvd('S','S', m1, n-r, Bred_copy, m1, S, U, m1, VT, n-r,
+     $              work, lwork, rwork, info)
+    
+      if (info /= 0) stop 'zgesvd failed on reduced system'
+    
+      !----------------------------------
+      ! solve for z
+      !----------------------------------
+      allocate(z(n-r))
+      z = (0.0, 0.0)
+    
+      do i = 1, size(S)
+         if (S(i) > 1.0e-14) then
+            z = z + ( dot_product(conjg(U(:,i)), rhs) / S(i) ) *
+     $               conjg(VT(i,:))
+         end if
+      end do
+    
+      !----------------------------------
+      ! final solution
+      !----------------------------------
+      y1 = yp + matmul(Vn, z)
+    
+      end subroutine constrained_ls_svd
+
+      subroutine soft_constrained_ls_svd(B1,B2,beta1,beta2,y1,lambda)
+      implicit none
+    
+      !----------------------------------
+      ! input / output
+      !----------------------------------
+      complex(r8), intent(in)  :: B1(:,:), B2(:,:), beta1(:), beta2(:)
+      real(r8), intent(in)     :: lambda  ! penalty parameter
+      complex(r8), intent(out) :: y1(:)
+    
+      !----------------------------------
+      ! local variables
+      !----------------------------------
+      integer :: m1, m2, n
+      integer :: lda, ldu, ldvt, info, lwork
+      integer :: i
+    
+      complex(r8), allocatable :: A_aug(:,:), b_aug(:)
+      complex(r8), allocatable :: U(:,:), VT(:,:), work(:)
+      complex(r8), allocatable :: A_aug_copy(:,:)
+    
+      real(r8), allocatable :: S(:), rwork(:)
+    
+      !----------------------------------
+      ! dimensions
+      !----------------------------------
+      m1 = size(B1,1)
+      m2 = size(B2,1)
+      n  = size(B2,2)
+    
+      !----------------------------------
+      ! Augmented system construction
+      ! Minimize: ||B1*y - beta1||^2 + lambda * ||B2*y - beta2||^2
+      ! 
+      ! This is equivalent to:
+      ! [ B1           ]     [ beta1 ]
+      ! [ sqrt(lambda)*B2 ] * y = [ sqrt(lambda)*beta2 ]
+      !----------------------------------
+      allocate(A_aug(m1+m2, n))
+      allocate(b_aug(m1+m2))
+    
+      ! Upper block: B1
+      A_aug(1:m1, :) = B1
+      b_aug(1:m1) = beta1
+    
+      ! Lower block: sqrt(lambda)*B2
+      A_aug(m1+1:m1+m2, :) = sqrt(lambda) * B2
+      b_aug(m1+1:m1+m2) = sqrt(lambda) * beta2
+    
+      write(*,*) 'Soft constraint: lambda =', lambda
+      write(*,*) 'Augmented system size:', m1+m2, 'x', n
+    
+      !----------------------------------
+      ! SVD of augmented system
+      !----------------------------------
+      allocate(A_aug_copy(m1+m2, n))
+      A_aug_copy = A_aug
+    
+      lda  = m1 + m2
+      ldu  = m1 + m2
+      ldvt = n
+    
+      allocate(U(ldu, m1+m2), VT(ldvt, n))
+      allocate(S(min(m1+m2, n)))
+      allocate(rwork(5*min(m1+m2, n)))
+    
+      ! Query optimal work size
+      lwork = -1
+      allocate(work(1))
+      call zgesvd('S','S', m1+m2, n, A_aug_copy, lda, S, U, ldu, VT, 
+     $              ldvt, work, lwork, rwork, info)
+    
+      lwork = int(real(work(1)))
+      deallocate(work)
+      allocate(work(lwork))
+    
+      ! Actual SVD computation
+      call zgesvd('S','S', m1+m2, n, A_aug, lda, S, U, ldu, VT, 
+     $              ldvt, work, lwork, rwork, info)
+    
+      if (info /= 0) stop 'zgesvd failed on augmented system'
+    
+      write(*,*) 'SVD completed successfully'
+      write(*,*) 'Singular values:', S
+    
+      !----------------------------------
+      ! Solve using pseudoinverse
+      ! y = A^+ * b_aug
+      !----------------------------------
+      y1 = (0.0, 0.0)
+    
+      do i = 1, size(S)
+         if (S(i) > 1.0e-12) then
+            y1 = y1 + ( dot_product(conjg(U(:,i)), b_aug) / S(i) ) *
+     $                   conjg(VT(i,:))
+         end if
+      end do
+    
+      !----------------------------------
+      ! Print residuals for diagnostics
+      !----------------------------------
+      write(*,*) 'Residual ||B1*y - beta1||:', 
+     $           sqrt(sum(abs(matmul(B1,y1) - beta1)**2))
+      write(*,*) 'Constraint ||B2*y - beta2||:', 
+     $           sqrt(sum(abs(matmul(B2,y1) - beta2)**2))
+    
+      end subroutine soft_constrained_ls_svd
+
+      subroutine constrained_ls_kkt(B1, B2, beta1, beta2, y1)
+      implicit none
+    
+      !----------------------------------
+      ! input / output
+      !----------------------------------
+      complex(r8), intent(in)  :: B1(:,:), B2(:,:), beta1(:), beta2(:)
+      complex(r8), intent(out) :: y1(:)
+    
+      !----------------------------------
+      ! local variables
+      !----------------------------------
+      integer :: m1, m2, n
+      integer :: i, j, kkt_size, info
+      integer, allocatable :: ipiv(:)
+    
+      complex(r8), allocatable :: KKT_matrix(:,:), KKT_rhs(:)
+      complex(r8), allocatable :: KKT_sol(:), lambda(:)
+      complex(r8), allocatable :: B1H(:,:), B2H(:,:)
+      complex(r8), allocatable :: B1HB1(:,:), B1H_beta1(:)
+    
+      !----------------------------------
+      ! dimensions
+      !----------------------------------
+      m1 = size(B1,1)  ! number of least squares equations
+      m2 = size(B2,1)  ! number of constraints
+      n  = size(B2,2)  ! number of unknowns
+    
+      !----------------------------------
+      ! Setup KKT system:
+      ! [ B1^H * B1    B2^H ] [ y1     ]   [ B1^H * beta1 ]
+      ! [ B2           0    ] [ lambda ] = [ beta2        ]
+      !----------------------------------
+      kkt_size = n + m2
+      allocate(KKT_matrix(kkt_size, kkt_size))
+      allocate(KKT_rhs(kkt_size))
+      allocate(KKT_sol(kkt_size))
+      allocate(ipiv(kkt_size))
+      
+      ! Compute B1^H (Hermitian transpose)
+      allocate(B1H(n, m1))
+      B1H = transpose(conjg(B1))
+      
+      ! Compute B2^H (Hermitian transpose)
+      allocate(B2H(n, m2))
+      B2H = transpose(conjg(B2))
+      
+      ! Compute B1^H * B1
+      allocate(B1HB1(n, n))
+      B1HB1 = matmul(B1H, B1)
+      
+      ! Compute B1^H * beta1
+      allocate(B1H_beta1(n))
+      B1H_beta1 = matmul(B1H, beta1)
+      
+      !----------------------------------
+      ! Assemble KKT matrix
+      !----------------------------------
+      KKT_matrix = (0.0d0, 0.0d0)
+      
+      ! Top-left block: B1^H * B1
+      KKT_matrix(1:n, 1:n) = B1HB1
+      
+      ! Top-right block: B2^H
+      KKT_matrix(1:n, n+1:kkt_size) = B2H
+      
+      ! Bottom-left block: B2
+      KKT_matrix(n+1:kkt_size, 1:n) = B2
+      
+      ! Bottom-right block: 0 (already initialized)
+      
+      !----------------------------------
+      ! Assemble KKT right-hand side
+      !----------------------------------
+      KKT_rhs = (0.0d0, 0.0d0)
+      KKT_rhs(1:n) = B1H_beta1
+      KKT_rhs(n+1:kkt_size) = beta2
+      
+      !----------------------------------
+      ! Solve KKT system using ZGESV (LU decomposition)
+      !----------------------------------
+      KKT_sol = KKT_rhs
+      
+      call zgesv(kkt_size, 1, KKT_matrix, kkt_size, ipiv, 
+     $           KKT_sol, kkt_size, info)
+      
+      if (info /= 0) then
+         write(*,*) 'Error: zgesv failed with info = ', info
+         stop 'KKT system solve failed'
+      end if
+      
+      !----------------------------------
+      ! Extract solution
+      !----------------------------------
+      y1 = KKT_sol(1:n)
+      
+      ! Optional: extract Lagrange multipliers if needed
+      allocate(lambda(m2))
+      lambda = KKT_sol(n+1:kkt_size)
+      
+      ! Clean up
+      deallocate(KKT_matrix, KKT_rhs, KKT_sol, ipiv)
+      deallocate(B1H, B2H, B1HB1, B1H_beta1, lambda)
+      
+      end subroutine constrained_ls_kkt
+
+      subroutine constrained_ls_socp_admm(B1, B2, beta1, beta2, y1,
+     $                                     mu_reg, rho, max_iter, tol)
+      implicit none
+      
+      !----------------------------------
+      ! ADMM for SOCP:
+      ! minimize    ||z||₂ + (μ/2)||y1||²₂
+      ! subject to  B1*y1 - beta1 = z
+      !             B2*y1 = beta2
+      !----------------------------------
+      
+      complex(r8), intent(in)  :: B1(:,:), B2(:,:), beta1(:), beta2(:)
+      real(r8), intent(in), optional :: mu_reg, rho, tol
+      integer, intent(in), optional :: max_iter
+      complex(r8), intent(out) :: y1(:)
+      
+      integer :: m1, m2, n, iter, max_it, info, i
+      real(r8) :: mu, rho_val, tol_val, primal_res, dual_res
+      real(r8) :: z_norm, z_norm_prev
+      
+      complex(r8), allocatable :: z(:), u(:), y1_prev(:)
+      complex(r8), allocatable :: KKT_matrix(:,:), KKT_rhs(:)
+      complex(r8), allocatable :: KKT_sol(:)
+      integer, allocatable :: ipiv(:)
+      
+      complex(r8), allocatable :: B1H(:,:), B2H(:,:)
+      complex(r8), allocatable :: Gram(:,:), temp(:)
+      complex(r8) :: mu_cmplx, rho_cmplx
+      
+      !----------------------------------
+      ! Parameters
+      !----------------------------------
+      mu = 0.0_r8
+      if (present(mu_reg)) mu = mu_reg
+      
+      rho_val = 1.0_r8
+      if (present(rho)) rho_val = rho
+      
+      tol_val = 1.0e-6_r8
+      if (present(tol)) tol_val = tol
+      
+      max_it = 100
+      if (present(max_iter)) max_it = max_iter
+      
+      mu_cmplx = cmplx(mu, 0.0_r8, kind=r8)
+      rho_cmplx = cmplx(rho_val, 0.0_r8, kind=r8)
+      
+      !----------------------------------
+      ! Dimensions
+      !----------------------------------
+      m1 = size(B1,1)
+      m2 = size(B2,1)
+      n  = size(B2,2)
+      
+      !----------------------------------
+      ! Initialize
+      !----------------------------------
+      allocate(z(m1), u(m1), y1_prev(n))
+      z = (0.0d0, 0.0d0)
+      u = (0.0d0, 0.0d0)
+      y1 = (0.0d0, 0.0d0)
+      
+      !----------------------------------
+      ! Pre-compute matrices for y1-update
+      ! [ B1^H*B1 + ρI + μI    B2^H ] [ y1     ]   [ B1^H*(z-u+beta1) ]
+      ! [ B2                   0    ] [ lambda ] = [ beta2            ]
+      !----------------------------------
+      
+      allocate(B1H(n, m1))
+      allocate(B2H(n, m2))
+      B1H = transpose(conjg(B1))
+      B2H = transpose(conjg(B2))
+      
+      allocate(Gram(n, n))
+      Gram = matmul(B1H, B1)
+      do i = 1, n
+         Gram(i,i) = Gram(i,i) + (rho_cmplx + mu_cmplx)
+      end do
+      
+      allocate(KKT_matrix(n+m2, n+m2))
+      allocate(KKT_rhs(n+m2))
+      allocate(KKT_sol(n+m2))
+      allocate(ipiv(n+m2))
+      allocate(temp(n))
+      
+      KKT_matrix = (0.0d0, 0.0d0)
+      KKT_matrix(1:n, 1:n) = Gram
+      KKT_matrix(1:n, n+1:n+m2) = B2H
+      KKT_matrix(n+1:n+m2, 1:n) = B2
+      
+      !----------------------------------
+      ! ADMM iterations
+      !----------------------------------
+      write(*,*) 'Starting ADMM iterations...'
+      
+      do iter = 1, max_it
+         y1_prev = y1
+         z_norm_prev = sqrt(sum(abs(z)**2))
+         
+         ! 1. y1-update (solve KKT system)
+         temp = matmul(B1H, z - u + beta1)
+         KKT_rhs(1:n) = temp
+         KKT_rhs(n+1:n+m2) = beta2
+         KKT_sol = KKT_rhs
+         
+         call zgesv(n+m2, 1, KKT_matrix, n+m2, ipiv,
+     $              KKT_sol, n+m2, info)
+         
+         if (info /= 0) then
+            write(*,*) 'ADMM y1-update failed at iter', iter
+            exit
+         end if
+         
+         y1 = KKT_sol(1:n)
+         
+         ! Reset KKT matrix for next iteration
+         KKT_matrix(1:n, 1:n) = Gram
+         KKT_matrix(1:n, n+1:n+m2) = B2H
+         KKT_matrix(n+1:n+m2, 1:n) = B2
+         
+         ! 2. z-update (soft thresholding / projection onto ℓ2 ball)
+         temp = matmul(B1, y1) - beta1 + u
+         z_norm = sqrt(sum(abs(temp)**2))
+         
+         if (z_norm > 1.0_r8/rho_val) then
+            z = (1.0_r8 - 1.0_r8/(rho_val*z_norm)) * temp
+         else
+            z = (0.0d0, 0.0d0)
+         end if
+         
+         ! 3. u-update (dual variable)
+         u = u + matmul(B1, y1) - beta1 - z
+         
+         ! Check convergence
+         primal_res = sqrt(sum(abs(matmul(B1,y1) - beta1 - z)**2))
+         dual_res = rho_val * sqrt(sum(abs(z - temp)**2))
+         
+         if (mod(iter, 10) == 0 .or. iter == 1) then
+            write(*,'(A,I4,A,ES10.3,A,ES10.3)') 
+     $         ' Iter ', iter, ': primal_res=', primal_res,
+     $         ', dual_res=', dual_res
+         end if
+         
+         if (primal_res < tol_val .and. dual_res < tol_val) then
+            write(*,*) 'ADMM converged at iteration', iter
+            exit
+         end if
+      end do
+      
+      if (iter >= max_it) then
+         write(*,*) 'Warning: ADMM reached max iterations'
+      end if
+      
+      deallocate(z, u, y1_prev, B1H, B2H, Gram)
+      deallocate(KKT_matrix, KKT_rhs, KKT_sol, ipiv, temp)
+      
+      end subroutine constrained_ls_socp_admm
 
 c-----------------------------------------------------------------------
 c     riccati integration with simplified version for test.
