@@ -472,7 +472,7 @@ c-----------------------------------------------------------------------
      $         mf,ipar)
          ENDDO        
          CALL Update_Delta_full(Delta_new,y,x,neq)
-         write(*,*) xout, Delta_new
+         !write(*,*) xout, Delta_new
          IF (verbose_delta) WRITE(*,*) xout, Delta_new
       END DO
       riccati_outcome=Delta_new
@@ -1920,8 +1920,8 @@ c-----------------------------------------------------------------------
 !         end if
 !      end do
 
-      write(*,*) 'Bconn norm is ', norm2(abs(Bconn))
-      write(*,*) 'Bsqln norm is ', norm2(abs(Bsqln))
+      !write(*,*) 'Bconn norm is ', norm2(abs(Bconn))
+      !write(*,*) 'Bsqln norm is ', norm2(abs(Bsqln))
 !      do i=1,9
 !         Bsqln(i,:) = Bsqln(i,:) * weights(i)
 !         betasql(i) = betasql(i) * weights(i)

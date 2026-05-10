@@ -39,6 +39,7 @@ c-----------------------------------------------------------------------
      $     arzphifun_flag,xbrzphifun_flag,pmodbmn_flag,xclebsch_flag,
      $     filter_flag,gal_flag,delpsi_flag,
      $     singthresh_callen_flag,singthresh_slayer_flag,singthresh_flag
+      LOGICAL :: gslayer_ion_screening_flag, gslayer_Pe_flag
       LOGICAL, DIMENSION(100) :: ss_flag
       COMPLEX(r8), DIMENSION(:), POINTER :: finmn,foutmn,xspmn,
      $     fxmn,fxfun
@@ -70,7 +71,8 @@ c-----------------------------------------------------------------------
      $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout,filter_flag,
      $     netcdf_flag,ascii_flag,singthresh_flag,
      $     singthresh_callen_flag,singthresh_slayer_flag,
-     $     singthresh_slayer_inpr,out_ahg2msc
+     $     singthresh_slayer_inpr,out_ahg2msc,
+     $     gslayer_ion_screening_flag,gslayer_Pe_flag
       NAMELIST/gpec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,jacfac_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
@@ -633,7 +635,8 @@ c-----------------------------------------------------------------------
             ENDIF
             CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi,
      $              singthresh_callen_flag,singthresh_slayer_flag,
-     $              singthresh_slayer_inpr)
+     $              singthresh_slayer_inpr,gslayer_ion_screening_flag,
+     $              gslayer_Pe_flag)
          ENDIF
       ENDIF
 
@@ -748,7 +751,8 @@ c-----------------------------------------------------------------------
          edge_flag=.TRUE.
          CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi,
      $           singthresh_callen_flag,singthresh_slayer_flag,
-     $           singthresh_slayer_inpr)
+     $           singthresh_slayer_inpr,gslayer_ion_screening_flag,
+     $              gslayer_Pe_flag)
       ENDIF
 
       IF (cas3d_flag) THEN
@@ -772,7 +776,8 @@ c-----------------------------------------------------------------------
          edge_flag=.TRUE.
          CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi,
      $           singthresh_callen_flag,singthresh_slayer_flag,
-     $           singthresh_slayer_inpr)
+     $           singthresh_slayer_inpr,gslayer_ion_screening_flag,
+     $              gslayer_Pe_flag)
          CALL gpdiag_xbcontra(mode,xspmn,0,0,2,0,1)
          CALL gpout_xbnormal(mode,xspmn,sing_spot,sing_npsi)
          CALL gpdiag_xbnobo(mode,xspmn,d3_flag)

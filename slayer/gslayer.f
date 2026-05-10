@@ -23,12 +23,14 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE gpec_slayer(n_e,t_e,n_i,t_i,zeff,omega,omega_e,
      $   omega_i,qval,sval,bt,rs,R0,mu_i,inpr,mms,nns,ascii_flag,
-     $     delta,psi0,jxb,omega_sol,br_th)
+     $     delta,psi0,jxb,omega_sol,br_th,gslayer_ion_screening_flag,
+     $     gslayer_Pe_flag)
 
       REAL(r8),INTENT(IN) :: n_e,t_e,n_i,t_i,omega,omega_e,omega_i,
      $     qval,sval,bt,rs,R0,zeff,inpr
       INTEGER, INTENT(IN) :: mms,nns,mu_i
       LOGICAL, INTENT(IN) :: ascii_flag
+      LOGICAL, INTENT(IN) :: gslayer_ion_screening_flag,gslayer_Pe_flag
       COMPLEX(r8),INTENT(OUT) :: delta,psi0
       REAL(r8),INTENT(OUT) :: jxb,omega_sol,br_th
    
@@ -44,9 +46,10 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: deltal
       CHARACTER(3) :: sn,sm
 
-      parflow_flag=.FALSE.
-      PeOhmOnly_flag=.TRUE.
-      riccati_out=.FALSE.
+      IonScreening_flag=gslayer_ion_screening_flag
+      Pe_flag=gslayer_Pe_flag
+
+      !riccati_out=.FALSE.
 
       mrs = real(mms,4)
       nrs = real(nns,4)
@@ -110,6 +113,10 @@ c-----------------------------------------------------------------------
       inds=ds
       intau=tau
       Q0=Q
+      IF (IonScreening_flag) THEN
+         inpe=0.0165*inpr
+         inK=inpr
+      ENDIF
 c-----------------------------------------------------------------------
 c     select riccati computation model
 c-----------------------------------------------------------------------

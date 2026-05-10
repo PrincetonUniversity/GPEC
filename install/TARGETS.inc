@@ -309,6 +309,7 @@ rmatch: v neededdeps $(RMATCH_OBJS) equil lsode
 # SLAYER
 SLAYER_LIBS = \
 	-llsode \
+        -lzvode \
 	-lequil \
 	$(MATHLIBS) \
 	$(NETCDFLIBS) \
@@ -317,7 +318,7 @@ SLAYER_LIBDIRS = \
 	-L$(LIBDIR) \
 	-L$(MATHDIR) \
 	-L$(NETCDFDIR)
-slayer: v neededdeps $(SLAYER_OBJS) lsode equil
+slayer: v neededdeps $(SLAYER_OBJS) lsode zvode equil
 	mkdir -p $(BINDIR)
 	rm -f ../slayer/slayer
 	$(FCSLAYER) -o ../slayer/slayer $(SLAYER_OBJS) $(SLAYER_LIBDIRS) $(SLAYER_LIBS) $(LDFLAGS)
@@ -386,6 +387,7 @@ GPEC_LIBS = \
 	-lvac \
 	-lharvest \
 	-lslayer \
+	-lzvode \
 	-lcoil \
 	$(MATHLIBS) \
 	$(NETCDFLIBS) \
@@ -394,7 +396,7 @@ GPEC_LIBDIRS = \
 	-L$(LIBDIR) \
 	-L$(MATHDIR) \
 	-L$(NETCDFDIR)
-gpec: v neededdeps $(GPEC_OBJS) pentrc lsode equil vacuum harvest slayer coil
+gpec: v neededdeps $(GPEC_OBJS) pentrc lsode equil vacuum harvest slayer zvode coil
 	mkdir -p $(BINDIR)
 	rm -f ../gpec/gpec
 	$(FCGPEC) -o ../gpec/gpec $(GPEC_OBJS) $(GPEC_LIBDIRS) $(GPEC_LIBS) $(LDFLAGS)
