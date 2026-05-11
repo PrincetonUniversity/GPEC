@@ -113,6 +113,9 @@ c-----------------------------------------------------------------------
       LOGICAL :: electron_flag = .FALSE.
       LOGICAL :: ion_flag = .TRUE.
       LOGICAL :: fkg_kmats_flag = .FALSE.
+      LOGICAL :: kin_write = .FALSE.
+      LOGICAL :: kin_read = .FALSE.
+      CHARACTER(256) :: kin_file = "kinmats_raw.bin"
       LOGICAL :: keq_out = .FALSE.
       LOGICAL :: theta_out = .FALSE.
       LOGICAL :: xlmda_out = .FALSE.

@@ -906,15 +906,17 @@ c-----------------------------------------------------------------------
       LOGICAL, OPTIONAL :: writein
       INTEGER, OPTIONAL :: methodin
 
-      LOGICAL :: output
+      LOGICAL :: output, file_exists
       INTEGER :: ipsi,ipert,l,i,j,iindex,method = 0
+      INTEGER :: mpsi_f, mpert_f, nn_f
       CHARACTER(1) :: ft
       INTEGER, DIMENSION(mpert) :: mfac
       REAL(r8) :: ileft,psifac,chi1,plim(2)
       COMPLEX(r8) :: tphi
       COMPLEX(r8), DIMENSION(mpert,mpert,6) :: kwmat,kwmat_l,
      $     ktmat,ktmat_l
-      COMPLEX(r8), DIMENSION(:,:,:,:,:), ALLOCATABLE :: kwmatls, ktmatls
+      COMPLEX(r8), DIMENSION(:,:,:,:,:), ALLOCATABLE :: kwmatls,
+     $     ktmatls
 c-----------------------------------------------------------------------
 c     declarations for diagnostics.
 c-----------------------------------------------------------------------
@@ -966,10 +968,12 @@ c-----------------------------------------------------------------------
          CALL program_stop("Kinetic calculations require "//
      $                "passing_flag and/or trapped_flag")
       ENDIF
-      ALLOCATE(kwmatls(mpert,mpert,6,0:mpsi,-nl:nl),
-     $         ktmatls(mpert,mpert,6,0:mpsi,-nl:nl))
-      kwmatls(:,:,:,:,:)=0
-      ktmatls(:,:,:,:,:)=0
+      IF(.NOT. kin_read)THEN
+         ALLOCATE(kwmatls(mpert,mpert,6,0:mpsi,-nl:nl),
+     $            ktmatls(mpert,mpert,6,0:mpsi,-nl:nl))
+         kwmatls(:,:,:,:,:)=0
+         ktmatls(:,:,:,:,:)=0
+      ENDIF
 c-----------------------------------------------------------------------
 c     Original approach using eqgrid loop to calculate kinetic matrices
 c-----------------------------------------------------------------------
@@ -1029,8 +1033,46 @@ c-----------------------------------------------------------------------
          ENDDO
 
 c-----------------------------------------------------------------------
+c     Open cache file for reading or writing raw kinetic matrices
+c-----------------------------------------------------------------------
+         IF(kin_read)THEN
+            INQUIRE(FILE=TRIM(kin_file),
+     $           EXIST=file_exists)
+            IF(.NOT. file_exists)THEN
+               CALL program_stop(
+     $              "kin_read=T but "
+     $              //TRIM(kin_file)
+     $              //" not found")
+            ENDIF
+            WRITE(*,*) " Reading raw kinetic"
+     $           //" matrices from "
+     $           //TRIM(kin_file)
+            CALL bin_open(bin_unit,
+     $           TRIM(kin_file),
+     $           "OLD","REWIND","none")
+            READ(bin_unit) mpsi_f,mpert_f,nn_f
+            IF(mpsi_f /= mpsi .OR.
+     $           mpert_f /= mpert .OR.
+     $           nn_f /= nn)THEN
+               CALL bin_close(bin_unit)
+               CALL program_stop(
+     $              TRIM(kin_file)
+     $              //" dimensions do not"
+     $              //" match current run")
+            ENDIF
+         ELSEIF(kin_write)THEN
+            WRITE(*,*) " Will write raw "
+     $           //"kinetic matrices to "
+     $           //TRIM(kin_file)
+            CALL bin_open(bin_unit,
+     $           TRIM(kin_file),
+     $           "UNKNOWN","REWIND","none")
+            WRITE(bin_unit) mpsi, mpert, nn
+         ENDIF
+c-----------------------------------------------------------------------
 c     Parallel calls of expensive kinetic calculations for each psi,ell
 c-----------------------------------------------------------------------
+         IF(.NOT. kin_read)THEN
          idone = 0
          CALL SYSTEM_CLOCK(COUNT_RATE=cr)
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,8) DEFAULT(NONE) COLLAPSE(2)
@@ -1098,20 +1140,28 @@ c!!!!!!...from dcon_interface.f90
             ENDDO
          ENDDO
 !$OMP END PARALLEL DO
-
+         ENDIF
 c-----------------------------------------------------------------------
-c     Now go back totypical serial psi operations
+c     Now go back to typical serial psi operations
 c-----------------------------------------------------------------------
          DO ipsi=0,mpsi
             psifac=rzphi%xs(ipsi)
 
-            ! collect all the ell for a given psi from the collapsed parallel calcs
             kwmat = 0
             ktmat = 0
-            DO l=-nl,nl
-               kwmat = kwmat + kwmatls(:,:,:,ipsi,l)
-               ktmat = ktmat + ktmatls(:,:,:,ipsi,l)
-            ENDDO
+            IF(kin_read)THEN
+               READ(bin_unit) kwmat
+               READ(bin_unit) ktmat
+            ELSE
+               DO l=-nl,nl
+                  kwmat = kwmat + kwmatls(:,:,:,ipsi,l)
+                  ktmat = ktmat + ktmatls(:,:,:,ipsi,l)
+               ENDDO
+            ENDIF
+            IF(kin_write)THEN
+               WRITE(bin_unit) kwmat
+               WRITE(bin_unit) ktmat
+            ENDIF
 
             ! apply normalizations and hypertangent smoothing for core
             IF (ktanh_flag) THEN
@@ -1272,7 +1322,10 @@ c-----------------------------------------------------------------------
                ENDDO
             ENDDO
          ENDDO
-         DEALLOCATE(kwmatls, ktmatls)  ! these are really big, get rid of them asap
+         IF(kin_read .OR. kin_write)
+     $        CALL bin_close(bin_unit)
+         IF(ALLOCATED(kwmatls))
+     $        DEALLOCATE(kwmatls, ktmatls)
 c-----------------------------------------------------------------------
 c     fit splines
 c-----------------------------------------------------------------------
@@ -1301,54 +1354,116 @@ c-----------------------------------------------------------------------
             CALL cspline_alloc(ktmats(i),mpsi,mpert**2)
             kwmats(i)%xs=rzphi%xs
             ktmats(i)%xs=rzphi%xs
-         ENDDO         
+         ENDDO
+         IF(kin_read)THEN
+            INQUIRE(FILE=TRIM(kin_file),
+     $           EXIST=file_exists)
+            IF(.NOT. file_exists)THEN
+               CALL program_stop(
+     $              "kin_read=T but "
+     $              //TRIM(kin_file)
+     $              //" not found")
+            ENDIF
+            WRITE(*,*) " Reading raw kinetic"
+     $           //" matrices from "
+     $           //TRIM(kin_file)
+            CALL bin_open(bin_unit,
+     $           TRIM(kin_file),
+     $           "OLD","REWIND","none")
+            READ(bin_unit) mpsi_f,mpert_f,nn_f
+            IF(mpsi_f /= mpsi .OR.
+     $           mpert_f /= mpert .OR.
+     $           nn_f /= nn)THEN
+               CALL bin_close(bin_unit)
+               CALL program_stop(
+     $              TRIM(kin_file)
+     $              //" dimensions do not"
+     $              //" match current run")
+            ENDIF
+         ELSEIF(kin_write)THEN
+            WRITE(*,*) " Will write raw "
+     $           //"kinetic matrices to "
+     $           //TRIM(kin_file)
+            CALL bin_open(bin_unit,
+     $           TRIM(kin_file),
+     $           "UNKNOWN","REWIND","none")
+            WRITE(bin_unit) mpsi, mpert, nn
+         ENDIF
          DO ipsi=0,mpsi
-            iindex = FLOOR(REAL(ipsi+1,r8)/FLOOR((mpsi+1)/10.0))*10
-            ileft = REAL(ipsi+1,r8)/FLOOR((mpsi+1)/10.0)*10-iindex
-            IF ((ipsi /= 0) .AND. (ileft == 0) .AND. verbose)
-     $           WRITE(*,*)"  ...",iindex,"% of kinetic computations"
+            iindex = FLOOR(REAL(ipsi+1,r8)
+     $           /FLOOR((mpsi+1)/10.0))*10
+            ileft = REAL(ipsi+1,r8)
+     $           /FLOOR((mpsi+1)/10.0)*10-iindex
+            IF ((ipsi /= 0) .AND. (ileft == 0)
+     $           .AND. verbose)
+     $           WRITE(*,*)"  ...",iindex,
+     $           "% of kinetic computations"
             kwmat = 0
             ktmat = 0
             psifac=rzphi%xs(ipsi)
-            ! get matrices for all ell at this one psi
-            IF (ion_flag) THEN
-               DO l=-nl,nl
-                  kwmat_l = 0
-                  ktmat_l = 0
-                  call tpsi(tphi,psifac,nn,l,zi,mi,wdfac,divxfac,
-     $                 .FALSE.,ft//"wmm",op_wmats=kwmat_l)
-                  kwmat = kwmat+kwmat_l
-                  call tpsi(tphi,psifac,nn,l,zi,mi,wdfac,divxfac,
-     $                 .FALSE.,ft//"tmm",op_wmats=ktmat_l)
-                  ktmat = ktmat+ktmat_l
-               ENDDO
+            IF(kin_read)THEN
+               READ(bin_unit) kwmat
+               READ(bin_unit) ktmat
+            ELSE
+               IF (ion_flag) THEN
+                  DO l=-nl,nl
+                     kwmat_l = 0
+                     ktmat_l = 0
+                     call tpsi(tphi,psifac,nn,l,
+     $                    zi,mi,wdfac,divxfac,
+     $                    .FALSE.,ft//"wmm",
+     $                    op_wmats=kwmat_l)
+                     kwmat = kwmat+kwmat_l
+                     call tpsi(tphi,psifac,nn,l,
+     $                    zi,mi,wdfac,divxfac,
+     $                    .FALSE.,ft//"tmm",
+     $                    op_wmats=ktmat_l)
+                     ktmat = ktmat+ktmat_l
+                  ENDDO
+               ENDIF
+               IF (electron_flag) THEN
+                  DO l=-nl,nl
+                     kwmat_l = 0
+                     ktmat_l = 0
+                     call tpsi(tphi,psifac,nn,l,
+     $                    zi,mi,wdfac,divxfac,
+     $                    .TRUE.,ft//"wmm",
+     $                    op_wmats=kwmat_l)
+                     kwmat = kwmat+kwmat_l
+                     call tpsi(tphi,psifac,nn,l,
+     $                    zi,mi,wdfac,divxfac,
+     $                    .TRUE.,ft//"tmm",
+     $                    op_wmats=ktmat_l)
+                     ktmat = ktmat+ktmat_l
+                  ENDDO
+               ENDIF
+               IF(kin_write)THEN
+                  WRITE(bin_unit) kwmat
+                  WRITE(bin_unit) ktmat
+               ENDIF
             ENDIF
-            IF (electron_flag) THEN
-               DO l=-nl,nl
-                  kwmat_l = 0
-                  ktmat_l = 0
-                  call tpsi(tphi,psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
-     $                 ft//"wmm",op_wmats=kwmat_l)
-                  kwmat = kwmat+kwmat_l
-                  call tpsi(tphi,psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
-     $                 ft//"tmm",op_wmats=ktmat_l)
-                  ktmat = ktmat+ktmat_l
-               ENDDO
-            ENDIF
-            ! apply normalizations and hypertangent smoothing for core
+            ! apply normalizations
             IF (ktanh_flag) THEN
-               kwmat=kinfac1*kwmat*(1+tanh((psifac-ktc)*ktw))
-               ktmat=kinfac2*ktmat*(1+tanh((psifac-ktc)*ktw))
+               kwmat=kinfac1*kwmat
+     $              *(1+tanh((psifac-ktc)*ktw))
+               ktmat=kinfac2*ktmat
+     $              *(1+tanh((psifac-ktc)*ktw))
             ELSE
                kwmat=kinfac1*kwmat
                ktmat=kinfac2*ktmat
             ENDIF
             ! store to splines
             DO i=1,6
-               kwmats(i)%fs(ipsi,:)=RESHAPE(kwmat(:,:,i),(/mpert**2/))
-               ktmats(i)%fs(ipsi,:)=RESHAPE(ktmat(:,:,i),(/mpert**2/))
+               kwmats(i)%fs(ipsi,:)=
+     $              RESHAPE(kwmat(:,:,i),
+     $              (/mpert**2/))
+               ktmats(i)%fs(ipsi,:)=
+     $              RESHAPE(ktmat(:,:,i),
+     $              (/mpert**2/))
             ENDDO
          ENDDO
+         IF(kin_read .OR. kin_write)
+     $        CALL bin_close(bin_unit)
          DO i=1,6
             CALL cspline_fit(kwmats(i),"extrap")
             CALL cspline_fit(ktmats(i),"extrap")
@@ -1357,6 +1472,10 @@ c-----------------------------------------------------------------------
 c     Use built in PENTRC spline integration options to form matrixes
 c-----------------------------------------------------------------------
       ELSEIF(method==2)THEN
+         IF(kin_read .OR. kin_write)
+     $      WRITE(*,*) " WARNING: kin_read/"
+     $      //"kin_write not supported for"
+     $      //" kingridtype=2"
          WRITE(*,*) " Kinetic energy calculation using MXM euler "//
      $        "lagrange matrix on equilibrium grid"
          tphi = tintgrl_grid('equil',plim,nn,nl,zi,mi,wdfac,divxfac,
@@ -1400,6 +1519,10 @@ c     Use built in PENTRC LSODE integration options to form matrixes
 c      -> Grid determined by T & dW from flat xi spectrum
 c-----------------------------------------------------------------------
       ELSEIF(method==3)THEN
+         IF(kin_read .OR. kin_write)
+     $      WRITE(*,*) " WARNING: kin_read/"
+     $      //"kin_write not supported for"
+     $      //" kingridtype=3"
          WRITE(*,*) " Kinetic energy calculation using MXM euler "//
      $      "lagrange matrix"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,.FALSE.,
@@ -1443,6 +1566,10 @@ c     Use built in PENTRC LSODE integration options to form matrixes
 c      -> Grid determined by norm of EL matrices
 c-----------------------------------------------------------------------
       ELSEIF(method==4)THEN
+         IF(kin_read .OR. kin_write)
+     $      WRITE(*,*) " WARNING: kin_read/"
+     $      //"kin_write not supported for"
+     $      //" kingridtype=4"
          WRITE(*,*) " Kinetic MXM euler lagrange energy matrix norm "
      $      //"calculation"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,.FALSE.,

@@ -32,6 +32,9 @@
     ktw = 50.0           ! Parameter activated by ktanh_flag: width of hyper-tangential functions (default: 50.0)
     ion_flag = t         ! Include ion dW_k when kin_flag is true (summed with electron contribution if electron_flag true)
     electron_flag = f    ! Include electron dW_k when kin_flag is true (summed with ion contribution if ion_flag true)
+    kin_write = f        ! Write raw (unscaled) kinetic matrices to kin_file (default: false)
+    kin_read = f         ! Read raw kinetic matrices from kin_file, skipping expensive computation (default: false)
+    kin_file = "kinmats_raw.bin" ! Path to kinetic matrix cache file (default: kinmats_raw.bin)
     dcon_kin_threads=0   ! Parallel calculations of the kinetic matrix components (parallel execution of mpsi*(2*nl+1) calculations where mpsi is set in equil.in and nl in pentrc.in). Setting to <= 0 uses OMP_NUM_THREADS env variable.
 
     tol_nr=1e-6          ! Relative tolerance of dynamic integration steps away from rationals

@@ -19,8 +19,8 @@
 
     kin_flag = t         ! Kinetic EL equation (default: false)
     con_flag = t         ! Continue integration through layers (default: false)
-    kinfac1 = 1.0        ! Scale factor for energy contribution (default : 1.0)
-    kinfac2 = 1.0        ! Scale factor for torque contribution (default : 1.0)
+    kinfac1 = 0.10        ! Scale factor for energy contribution (default : 1.0)
+    kinfac2 = 0.10        ! Scale factor for torque contribution (default : 1.0)
     kingridtype = 0      ! Regular grid method (default : 0)
     passing_flag = t     ! Includes passing particle effects in kinetic EL equation (default: false)
     trapped_flag = t     ! Includes trapped particle effects in kinetic EL equation  (default: true)
@@ -29,6 +29,9 @@
     ktw = 50.0           ! Parameter activated by ktanh_flag: width of hyper-tangential functions (default: 50.0)
     ion_flag = t         ! Include ion dW_k when kin_flag is true (summed with electron contribution if electron_flag true)
     electron_flag = f    ! Include electron dW_k when kin_flag is true (summed with ion contribution if ion_flag true)
+    kin_write = f        ! Write raw (unscaled) kinetic matrices to kin_file (default: false)
+    kin_read = f         ! Read raw kinetic matrices from kin_file, skipping expensive computation (default: false)
+    kin_file = "kinmats_raw.bin" ! Path to kinetic matrix cache file (default: kinmats_raw.bin)
 	dcon_kin_threads=9   ! Parallel calculations of the kinetic matrix components (parallel execution of mpsi*(2*nl+1) calculations where mpsi is set in equil.in and nl in pentrc.in). Setting to <= 0 uses OMP_NUM_THREADS env variable.
 
     tol_nr=1e-6          ! Relative tolerance of dynamic integration steps away from rationals

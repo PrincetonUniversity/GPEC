@@ -57,6 +57,7 @@ c-----------------------------------------------------------------------
      $     termbycross_flag,qhigh,kin_flag,con_flag,kinfac1,kinfac2,
      $     kingridtype,ktanh_flag,passing_flag,trapped_flag,
      $     ion_flag,electron_flag,ktc,ktw,qlow,
+     $     kin_write,kin_read,kin_file,
      $     use_classic_splines,reform_eq_with_psilim,
      $     psiedge,nperq_edge,wv_farwall_flag,
      $     dcon_kin_threads,parallel_threads
