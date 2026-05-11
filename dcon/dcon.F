@@ -106,6 +106,12 @@ c No OpenMP so the following line will appear in source code
 #endif
       delta_mhigh=delta_mhigh*2
       use_classic_splines_for_dcon = use_classic_splines
+      
+      IF(nn .EQ. 0)THEN
+         WRITE(*,*)"ERROR: nn must be set to a positive integer."
+         CALL program_stop("nn must be a positive integer.")
+      ENDIF
+
 c-----------------------------------------------------------------------
 c     open output files, read, process, and diagnose equilibrium.
 c-----------------------------------------------------------------------

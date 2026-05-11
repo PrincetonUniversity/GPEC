@@ -37,4 +37,4 @@ extern void label(float *xlim, FloatSc xscale, FloatSc xoffset,
 	  float *ylim, FloatSc yscale, FloatSc yoffset, CURVE_SET *cp);
 extern int load_single_label(CURVE_SET *cp, char *string);
 extern int rand_label(int);
-
+void toggle_markersize(CURVE_SET *cp1);
