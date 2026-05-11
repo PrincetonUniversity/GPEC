@@ -69,18 +69,12 @@ extern float *buf;
 #include "xinit.h"
 #include "xedit.h"
 #include "setcolor.h"
+#include "binread.h"
 
 extern void postscript(char *);	/* near heap problem, try elim .h's*/
 extern float get_world(int, int, XRectangle, float, float, float, float,
 		       float*, float*);
 extern int nearest_M_value(float, float, CURVE_SET *, char *, double *);
-
-extern void tell_buffer();
-extern void tell_array();
-extern int new_nvect(CURVE_SET *, char);
-extern void toggle_markersize(CURVE_SET *);
-extern void redraw_dialog();
-extern void get_world_coordinates(int, int, double *, double *, char *);
 
 #ifdef USE_MENU
 #include "device.h"

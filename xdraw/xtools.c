@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #if !defined(__MACH__)
-#include <stdlib.h>
+#include <malloc.h>
 #endif
 #include <string.h>
 #include <fcntl.h>
