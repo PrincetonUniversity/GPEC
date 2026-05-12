@@ -881,8 +881,9 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE ode_step
 
-      INTEGER :: ipert,isol,ieq,jac,errloc(3)
+      INTEGER :: ipert,isol,ieq,jac,errloc(3),is_idx
       REAL(r8) :: singfac,rtol,atol0,tol,dt,errmax,ewtmax
+      REAL(r8) :: singfac_ideal,q1
       REAL(r8), PARAMETER :: dpsimax=1e-3,dpsimin=1e-5,dpsifac=2e-2
       COMPLEX(r8) :: err(mpert,msol,2),ewt(mpert,msol,2)
 
@@ -912,6 +913,29 @@ c-----------------------------------------------------------------------
       ENDIF
       rtol=tol
 c-----------------------------------------------------------------------
+c     ideal-style singfac for max_step gating; always defined from the
+c     sing array, so the bound fires near integer-q rationals even when
+c     kin_flag=t and the kinetic singularity finder didn't populate
+c     kinsing (e.g. at high kinfac where the system is stabilized).
+c     Refresh q and q1=dq/dpsi at current psifac since module-level q
+c     is only updated inside sing_der by LSODE and may be one trial-
+c     step stale here.
+c-----------------------------------------------------------------------
+      CALL spline_eval(sq,psifac,1)
+      q=sq%f(4)
+      q1=sq%f1(4)
+      singfac_ideal=HUGE(singfac_ideal)
+      DO is_idx=1,msing
+         singfac_ideal=MIN(singfac_ideal,ABS(sing(is_idx)%m-nn*q))
+      ENDDO
+c-----------------------------------------------------------------------
+c     bound max step size near rationals via TCRIT (rwork(1)). This
+c     LSODE implementation only consults HMAX (rwork(6)) at init, so
+c     we instead shrink TCRIT to psifac + dpsi_max. With itask=5,
+c     LSODE is guaranteed not to step past TCRIT. max_step_r is in
+c     q-space; convert to psi via dpsi = dq/|q1|.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
 c     compute absolute tolerances.
 c-----------------------------------------------------------------------
       DO ieq=1,2
@@ -931,10 +955,14 @@ c-----------------------------------------------------------------------
          ENDDO
          psiout=sq%xs(ix)
          psiout=MIN(psiout,psimax)
-         rwork(1)=psiout
       ELSE
          psiout=psimax
       ENDIF
+      IF(max_step_r>0 .AND. singfac_ideal<max_step_r_band)THEN
+         psiout=MIN(psiout,
+     $              psifac+max_step_r/MAX(ABS(q1),1e-30_r8))
+      ENDIF
+      rwork(1)=psiout
 c-----------------------------------------------------------------------
 c     advance differential equations.
 c-----------------------------------------------------------------------

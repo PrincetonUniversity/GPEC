@@ -74,7 +74,8 @@ c-----------------------------------------------------------------------
      $     bin_sol_max,euler_stride=1,mthvac=480,ksing=-1,delta_mlow=0,
      $     delta_mhigh=0,delta_mband=0,out_sol_min,out_sol_max
       REAL(r8) :: thmax0=1,ucrit=1e4,tol_r=1e-5,tol_nr=1e-5,
-     $     crossover=1e-2,sing_start=0,mthsurf0=1
+     $     crossover=1e-2,sing_start=0,mthsurf0=1,max_step_r=0,
+     $     max_step_r_band=5e-2
 
       TYPE(spline_type) :: locstab
 
