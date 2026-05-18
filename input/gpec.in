@@ -85,7 +85,8 @@
    out_ahg2msc=f            ! Output deprecated ahg2msc.out files. This is used to communicate with vacuum, but is now done through memory.
 
    verbose=t                ! Print run log to terminal
-   recon_flag=f             ! Calculate each contribution of destabilizing term and effective perturbed field [Bernstein, Handbook of Plasma Physics, 1983]
+   recon_flag=f             ! Calculate each contribution of destabilizing term and effective perturbed field [Bernstein, Handbook of Plasma Physics, 1983].
+                            ! For DCON eigenmode reconstruction set coil_flag=f, mode_flag=t, choose mode as needed, and keep reg_flag=f.
 /
 &GPEC_DIAGNOSE
    timeit=f                 ! Print timer splits for major subroutines
