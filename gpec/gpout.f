@@ -79,7 +79,7 @@ c-----------------------------------------------------------------------
      $   fldflxmat                                  ! convert power normalized field to area normalized flux (i.e. increase by sqrt(A_m)/sqrt(A) weighting)
 
       CONTAINS
-      
+
       !-----------------------------------------------------------------
       function str(k,fmt)
       !-----------------------------------------------------------------
@@ -6879,10 +6879,10 @@ c-----------------------------------------------------------------------
       
       INTEGER :: ipsi, itheta, ipert, ushear_fun, ucurv, uk, ucveri,
      $     uk_sigma, ucw_fun, ucw_mn, ucv_fun, ucv_mn, ucv2_fun,
-     $     ucv2_mn, u_int
+     $     ucv2_mn, u_int, u_log
       REAL(r8) :: psi, eta, rfac
       REAL(r8), DIMENSION(0:mthsurf) :: rvals, zvals
-      REAL(r8) :: epf_int
+      REAL(r8) :: epf_int, epf_p_int, epf_t_int, epf_z_int
       COMPLEX(r8) :: dst_int
       COMPLEX(r8), DIMENSION(mpert) :: curv_mn, 
      $     term_mn
@@ -6896,11 +6896,17 @@ c-----------------------------------------------------------------------
       CHARACTER(128) :: k_file, k_sigma_file
       CHARACTER(128) :: cw_fun_file, cw_mn_file, cv_fun_file, cv_mn_file
       CHARACTER(128) :: cv2_fun_file, cv2_mn_file, int_file
-      REAL(r8), DIMENSION(0:mpsi) :: epf_psi, epf_cumsum
-      COMPLEX(r8), DIMENSION(0:mpsi) :: dst_psi_k, dst_cumsum_k
-      REAL(r8) :: epf_int_total
-      COMPLEX(r8) :: dst_int_total_k, dw_raw_k
-      REAL(r8) :: psi_min, psi_max, dpsi, dpsi_local
+      REAL(r8) :: dpsi_local
+      INTEGER :: istep
+      REAL(r8) :: psi_prev, psi_curr, epf_prev, epf_curr
+      REAL(r8) :: epf_p_prev, epf_t_prev, epf_z_prev
+      REAL(r8) :: epf_p_curr, epf_t_curr, epf_z_curr
+      REAL(r8) :: epf_int_total_hr, epf_p_total_hr,
+     $     epf_t_total_hr, epf_z_total_hr, dcon_fac
+      COMPLEX(r8) :: dst_prev, dst_curr, dst1_prev, dst2_prev,
+     $     dst3_prev, dst1_curr, dst2_curr, dst3_curr,
+     $     dst_int_total_k_hr, dst1_total_hr, dst2_total_hr,
+     $     dst3_total_hr, dw_raw_k_hr, dw_dcon_k_hr, dw_cum
       
 c     Diagnostic variables for C vector comparison
       INTEGER :: ipsi_mid, itheta_mid, ipert_diag, m1
@@ -6952,6 +6958,7 @@ c-----------------------------------------------------------------------
       ucv2_fun = 90
       ucv2_mn = 91
       u_int = 92
+      u_log = 93
 
       OPEN(UNIT=ushear_fun, FILE=shear_fun_file, STATUS="UNKNOWN")
       OPEN(UNIT=ucurv, FILE=curv_file, STATUS="UNKNOWN")
@@ -6976,7 +6983,7 @@ c-----------------------------------------------------------------------
      $     "T1_re","T2_re","T3_re"
       WRITE(uk_sigma,'(8(1x,a16))')
      $     "psi","theta","r","z","sigma_re","jdotb_re",
-     $     "bsig2_re","sigjdotb_re"
+     $     "mu0_bsig2_re","mu0_sigjdotb"
       WRITE(ucw_fun,'(10(1x,a16))')
      $     "psi","theta","r","z","cwp_re","cwp_im",
      $     "cwt_re","cwt_im","cwz_re","cwz_im"
@@ -6995,28 +7002,25 @@ c-----------------------------------------------------------------------
       WRITE(ucv2_mn,'(8(1x,a16))')
      $     "psi","m","cv2p_re","cv2p_im","cv2t_re","cv2t_im",
      $     "cv2z_re","cv2z_im"
-      WRITE(u_int,'(7(1x,a16))')
-     $     "psi","epf_int","dst_k_re","dst_k_im",
-     $     "epf_cumsum","dst_k_c_re","dst_k_c_im"
+      WRITE(u_int,'(15(1x,a16))')
+     $     "psi","c2_mu0","k_xin2_re","k_xin2_im",
+     $     "c2_mu0_sum","k_xin2_c_re","k_xin2_c_im",
+     $     "dw_c_re","dw_c_im","c2_psi","c2_theta","c2_zeta",
+     $     "k1_xin2_re","k2_xin2_re","k3_xin2_re"
 c-----------------------------------------------------------------------
 c     main loop over all psi levels.
 c     compute gpeq reconstruction diagnostics at each psi.
 c-----------------------------------------------------------------------
+      CALL idcon_build(mode, xspmn)
       CALL gpeq_alloc
-      epf_int_total = 0.0_r8
-      dst_int_total_k = CMPLX(0.0_r8, 0.0_r8, r8)
-      epf_cumsum = 0.0_r8
-      dst_cumsum_k = CMPLX(0.0_r8, 0.0_r8, r8)
       
       DO ipsi = 0, mpsi
          psi = rzphi%xs(ipsi)
+         IF (psi > psilim) EXIT
 
-c        Compute surface-integrated EPF and DST terms for this psi.
-c        Store in arrays for psi integration later.
+c        Compute the J|C|^2/mu0 state once so C fields below use
+c        the current psi.
          CALL gpeq_epf(psi, epf_int)
-         CALL gpeq_dst(psi, dst_int)
-         epf_psi(ipsi) = epf_int
-         dst_psi_k(ipsi) = dst_int
 
 c        Reconstruct detailed K diagnostics for output.
          CALL gpeq_K(psi, K_fun, K_term1, K_term2, K_term3,
@@ -7047,7 +7051,7 @@ c        Store spatial values with coordinates.
             WRITE(uk_sigma,'(8(es17.8e3))') psi, theta(itheta),
      $           rvals(itheta), zvals(itheta), sigma_vals(itheta),
      $           jdotb_vals(itheta), K_term2(itheta),
-     $           sigma_vals(itheta) * jdotb_vals(itheta)
+     $           mu0 * sigma_vals(itheta) * jdotb_vals(itheta)
          ENDDO
          WRITE(ushear_fun,*)
          WRITE(ucurv,*)
@@ -7055,7 +7059,7 @@ c        Store spatial values with coordinates.
          WRITE(uk,*)
          WRITE(uk_sigma,*)
          
-c        Reconstruct C fields from the already computed EPF state.
+c        Reconstruct C fields from the already computed C state.
          CALL iscdftb(mfac, mpert, cw_fun(:,1), mthsurf, cwp_mn)
          CALL iscdftb(mfac, mpert, cw_fun(:,2), mthsurf, cwt_mn)
          CALL iscdftb(mfac, mpert, cw_fun(:,3), mthsurf, cwz_mn)
@@ -7102,60 +7106,159 @@ c        Reconstruct C fields from the already computed EPF state.
       ENDDO
       
 c-----------------------------------------------------------------------
-c     perform psi integration using trapezoidal rule.
-c     integrate: ∫dpsi epf(psi), ∫dpsi dst_k(psi)
+c     Perform the energy check on the DCON solution grid.  Do not use
+c     rzphi%xs for this comparison; it is a coarse geometry grid.
 c-----------------------------------------------------------------------
-      psi_min = rzphi%xs(0)
-      psi_max = rzphi%xs(mpsi)
-      dpsi = (psi_max - psi_min) / REAL(mpsi, r8)
-      
-      epf_int_total = 0.0_r8
-      dst_int_total_k = CMPLX(0.0_r8, 0.0_r8, r8)
-      epf_cumsum(0) = 0.0_r8
-      dst_cumsum_k(0) = CMPLX(0.0_r8, 0.0_r8, r8)
-      
-      DO ipsi = 0, mpsi-1
-         dpsi_local = rzphi%xs(ipsi+1) - rzphi%xs(ipsi)
-         epf_int_total = epf_int_total + 
-     $        (epf_psi(ipsi) + epf_psi(ipsi+1)) * dpsi_local / 2.0_r8
-         dst_int_total_k = dst_int_total_k +
-     $        (dst_psi_k(ipsi) + dst_psi_k(ipsi+1)) * dpsi_local
-     $        / 2.0_r8
-         epf_cumsum(ipsi+1) = epf_int_total
-         dst_cumsum_k(ipsi+1) = dst_int_total_k
+      dcon_fac = (mu0*2.0_r8) / psio**2 / (chi1*1.0e-3_r8)**2
+      epf_int_total_hr = 0.0_r8
+      epf_p_total_hr = 0.0_r8
+      epf_t_total_hr = 0.0_r8
+      epf_z_total_hr = 0.0_r8
+      dst_int_total_k_hr = CMPLX(0.0_r8, 0.0_r8, r8)
+      dst1_total_hr = CMPLX(0.0_r8, 0.0_r8, r8)
+      dst2_total_hr = CMPLX(0.0_r8, 0.0_r8, r8)
+      dst3_total_hr = CMPLX(0.0_r8, 0.0_r8, r8)
+      psi_prev = MAX(psifac(0), rzphi%xs(0))
+      CALL gpeq_epf(psi_prev, epf_prev, epf_p_prev, epf_t_prev,
+     $     epf_z_prev)
+      CALL gpeq_dst(psi_prev, dst_prev, dst1_prev, dst2_prev,
+     $     dst3_prev)
+      WRITE(u_int,'(a)') "c  psifac-grid integration results"
+      WRITE(u_int,'(a)') "c  C2/mu0 = int J |C|^2 / mu0"
+      WRITE(u_int,'(a)') "c  Kxin2  = int J K |xi_n|^2"
+      WRITE(u_int,'(a)') "c  dW_gpec(K) = 0.5 * (C2/mu0 - Kxin2)"
+      dw_cum = CMPLX(0.0_r8, 0.0_r8, r8)
+      WRITE(u_int,'(15(es17.8e3))') psi_prev, epf_prev,
+     $     REAL(dst_prev), AIMAG(dst_prev), epf_int_total_hr,
+     $     REAL(dst_int_total_k_hr), AIMAG(dst_int_total_k_hr),
+     $     REAL(dw_cum), AIMAG(dw_cum), epf_p_prev, epf_t_prev,
+     $     epf_z_prev, REAL(dst1_prev), REAL(dst2_prev),
+     $     REAL(dst3_prev)
+      DO istep = 0, mstep-1
+         psi_curr = psifac(istep+1)
+         IF (psi_curr < rzphi%xs(0)) CYCLE
+         IF (psi_curr > rzphi%xs(mpsi)) EXIT
+         CALL gpeq_epf(psi_curr, epf_curr, epf_p_curr,
+     $        epf_t_curr, epf_z_curr)
+         CALL gpeq_dst(psi_curr, dst_curr, dst1_curr, dst2_curr,
+     $        dst3_curr)
+         dpsi_local = psi_curr - psi_prev
+         epf_int_total_hr = epf_int_total_hr +
+     $        (epf_prev + epf_curr) * dpsi_local / 2.0_r8
+         epf_p_total_hr = epf_p_total_hr +
+     $        (epf_p_prev + epf_p_curr) * dpsi_local / 2.0_r8
+         epf_t_total_hr = epf_t_total_hr +
+     $        (epf_t_prev + epf_t_curr) * dpsi_local / 2.0_r8
+         epf_z_total_hr = epf_z_total_hr +
+     $        (epf_z_prev + epf_z_curr) * dpsi_local / 2.0_r8
+         dst_int_total_k_hr = dst_int_total_k_hr +
+     $        (dst_prev + dst_curr) * dpsi_local / 2.0_r8
+         dst1_total_hr = dst1_total_hr +
+     $        (dst1_prev + dst1_curr) * dpsi_local / 2.0_r8
+         dst2_total_hr = dst2_total_hr +
+     $        (dst2_prev + dst2_curr) * dpsi_local / 2.0_r8
+         dst3_total_hr = dst3_total_hr +
+     $        (dst3_prev + dst3_curr) * dpsi_local / 2.0_r8
+         psi_prev = psi_curr
+         epf_prev = epf_curr
+         epf_p_prev = epf_p_curr
+         epf_t_prev = epf_t_curr
+         epf_z_prev = epf_z_curr
+         dst_prev = dst_curr
+         dst1_prev = dst1_curr
+         dst2_prev = dst2_curr
+         dst3_prev = dst3_curr
+         dw_cum = 0.5_r8 *
+     $        (CMPLX(epf_int_total_hr, 0.0_r8, r8) -
+     $        dst_int_total_k_hr)
+         WRITE(u_int,'(15(es17.8e3))') psi_curr, epf_curr,
+     $        REAL(dst_curr), AIMAG(dst_curr), epf_int_total_hr,
+     $        REAL(dst_int_total_k_hr), AIMAG(dst_int_total_k_hr),
+     $        REAL(dw_cum), AIMAG(dw_cum), epf_p_curr, epf_t_curr,
+     $        epf_z_curr, REAL(dst1_curr), REAL(dst2_curr),
+     $        REAL(dst3_curr)
       ENDDO
+      dw_raw_k_hr = 0.5_r8 *
+     $     (CMPLX(epf_int_total_hr, 0.0_r8, r8) - dst_int_total_k_hr)
+      dw_dcon_k_hr = dw_raw_k_hr * dcon_fac
 
-      DO ipsi = 0, mpsi
-         WRITE(u_int,'(7(es17.8e3))') rzphi%xs(ipsi), epf_psi(ipsi),
-     $        REAL(dst_psi_k(ipsi)), AIMAG(dst_psi_k(ipsi)),
-     $        epf_cumsum(ipsi), REAL(dst_cumsum_k(ipsi)),
-     $        AIMAG(dst_cumsum_k(ipsi))
-      ENDDO
       WRITE(u_int,*)
-      
-c     Write integration results
-      WRITE(u_int,'(a)') "c  Psi integration results (Trapezoidal rule)"
-      WRITE(u_int,'(a)') "c  psi_min, psi_max, nominal_dpsi"
-      WRITE(u_int,'(3(es17.8e3))') psi_min, psi_max, dpsi
-      dw_raw_k = 0.5_r8 *
-     $     (CMPLX(epf_int_total, 0.0_r8, r8) - dst_int_total_k)
+      WRITE(u_int,'(a)') "c  Final psifac-grid integration results:"
+      WRITE(u_int,'(3(es17.8e3))') epf_int_total_hr,
+     $     REAL(dst_int_total_k_hr), AIMAG(dst_int_total_k_hr)
+      WRITE(u_int,'(a)') "c  Final C2 component totals:"
+      WRITE(u_int,'(3(es17.8e3))') epf_p_total_hr,
+     $     epf_t_total_hr, epf_z_total_hr
+      WRITE(u_int,'(a)') "c  Final K component totals:"
+      WRITE(u_int,'(3(es17.8e3))') REAL(dst1_total_hr),
+     $     REAL(dst2_total_hr), REAL(dst3_total_hr)
+      WRITE(u_int,'(a)') "c  dW_gpec(K)"
+      WRITE(u_int,'(2(es17.8e3))') REAL(dw_raw_k_hr),
+     $     AIMAG(dw_raw_k_hr)
+      WRITE(u_int,'(a)') "c  dW_dcon(K), normalized from dW_gpec(K)"
+      WRITE(u_int,'(2(es17.8e3))') REAL(dw_dcon_k_hr),
+     $     AIMAG(dw_dcon_k_hr)
 
-      WRITE(u_int,'(a)') "c  Integration results:"
-      WRITE(u_int,'(3(es17.8e3))') epf_int_total, REAL(dst_int_total_k),
-     $     AIMAG(dst_int_total_k)
-      WRITE(u_int,'(a)') "c  deltaW = 0.5 * (EPF - DST)"
-      WRITE(u_int,'(a)') "c  raw_deltaW(K)"
-      WRITE(u_int,'(2(es17.8e3))') REAL(dw_raw_k), AIMAG(dw_raw_k)
-
-      WRITE(*,'(a)') "GPEC_RECON integration totals:"
-      WRITE(*,'(a,es17.8e3)') "  EPF      = ", epf_int_total
-      WRITE(*,'(a,2es17.8e3)') "  DST(K)   = ",
-     $     REAL(dst_int_total_k), AIMAG(dst_int_total_k)
-      WRITE(*,'(a,2es17.8e3)') "  dW_raw(K)= ",
-     $     REAL(dw_raw_k), AIMAG(dw_raw_k)
+      WRITE(*,'(a)') "GPEC_RECON final psifac-grid dW terms:"
+      WRITE(*,'(a,es17.8e3)') "  int_J_C2_over_mu0 = ",
+     $     epf_int_total_hr
+      WRITE(*,'(a,2es17.8e3)') "  int_J_K_xin2      = ",
+     $     REAL(dst_int_total_k_hr), AIMAG(dst_int_total_k_hr)
+      WRITE(*,'(a,2es17.8e3)') "  dW_gpec(K)        = ",
+     $     REAL(dw_raw_k_hr), AIMAG(dw_raw_k_hr)
+      WRITE(*,'(a,2es17.8e3)') "  dW_dcon(K)        = ",
+     $     REAL(dw_dcon_k_hr), AIMAG(dw_dcon_k_hr)
+      WRITE(*,'(a)') "GPEC_RECON C2 component totals:"
+      WRITE(*,'(a,es17.8e3)') "  C2_psi/mu0        = ",
+     $     epf_p_total_hr
+      WRITE(*,'(a,es17.8e3)') "  C2_theta/mu0      = ",
+     $     epf_t_total_hr
+      WRITE(*,'(a,es17.8e3)') "  C2_zeta/mu0       = ",
+     $     epf_z_total_hr
+      WRITE(*,'(a)') "GPEC_RECON K component totals:"
+      WRITE(*,'(a,2es17.8e3)') "  K1_xin2           = ",
+     $     REAL(dst1_total_hr), AIMAG(dst1_total_hr)
+      WRITE(*,'(a,2es17.8e3)') "  K2_xin2           = ",
+     $     REAL(dst2_total_hr), AIMAG(dst2_total_hr)
+      WRITE(*,'(a,2es17.8e3)') "  K3_xin2           = ",
+     $     REAL(dst3_total_hr), AIMAG(dst3_total_hr)
       WRITE(*,*) "GPEC ep(1):", REAL(ep(1))
       WRITE(*,*) "DCON plasma1-equivalent:", REAL(ep(1))*(mu0*2.0) /
      $     psio**2 / (chi1*1e-3)**2
+
+      OPEN(UNIT=u_log, FILE="gpec.log", STATUS="UNKNOWN",
+     $     POSITION="APPEND")
+      WRITE(u_log,'(a)') "GPEC_RECON final results:"
+      WRITE(u_log,'(a,I8)') "  mode = ", mode
+      WRITE(u_log,'(a,L1)') "  reg_flag = ", reg_flag
+      WRITE(u_log,'(a)') "  psifac-grid dW terms:"
+      WRITE(u_log,'(a,es17.8e3)') "    int_J_C2_over_mu0 = ",
+     $     epf_int_total_hr
+      WRITE(u_log,'(a,2es17.8e3)') "    int_J_K_xin2      = ",
+     $     REAL(dst_int_total_k_hr), AIMAG(dst_int_total_k_hr)
+      WRITE(u_log,'(a,2es17.8e3)') "    dW_gpec(K)        = ",
+     $     REAL(dw_raw_k_hr), AIMAG(dw_raw_k_hr)
+      WRITE(u_log,'(a,2es17.8e3)') "    dW_dcon(K)        = ",
+     $     REAL(dw_dcon_k_hr), AIMAG(dw_dcon_k_hr)
+      WRITE(u_log,'(a)') "  C2 component totals:"
+      WRITE(u_log,'(a,es17.8e3)') "    C2_psi/mu0        = ",
+     $     epf_p_total_hr
+      WRITE(u_log,'(a,es17.8e3)') "    C2_theta/mu0      = ",
+     $     epf_t_total_hr
+      WRITE(u_log,'(a,es17.8e3)') "    C2_zeta/mu0       = ",
+     $     epf_z_total_hr
+      WRITE(u_log,'(a)') "  K component totals:"
+      WRITE(u_log,'(a,2es17.8e3)') "    K1_xin2           = ",
+     $     REAL(dst1_total_hr), AIMAG(dst1_total_hr)
+      WRITE(u_log,'(a,2es17.8e3)') "    K2_xin2           = ",
+     $     REAL(dst2_total_hr), AIMAG(dst2_total_hr)
+      WRITE(u_log,'(a,2es17.8e3)') "    K3_xin2           = ",
+     $     REAL(dst3_total_hr), AIMAG(dst3_total_hr)
+      WRITE(u_log,'(a,es17.8e3)') "  GPEC ep(1) = ", REAL(ep(1))
+      WRITE(u_log,'(a,es17.8e3)') "  DCON plasma1-equivalent = ",
+     $     REAL(ep(1))*(mu0*2.0) / psio**2 / (chi1*1e-3)**2
+      WRITE(u_log,*)
+      CLOSE(u_log)
       
       CALL gpeq_dealloc
       CLOSE(ushear_fun)
