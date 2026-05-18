@@ -158,10 +158,10 @@ c-----------------------------------------------------------------------
       ENDIF
 
       ! Identify the threshold from the maximum of the balance parameter
-      index=MAXLOC(bal)
+      index=MAXLOC(bal,MASK=bal==bal)
       Q_sol=inQs(index(1))
       omega_sol=inQs(index(1))/Qconv
-      br_th=sqrt(MAXVAL(bal)/lu*(sval**2.0/2.0))
+      br_th=sqrt(MAXVAL(bal,MASK=bal==bal)/lu*(sval**2.0/2.0))
       DEALLOCATE(inQs,deltal,jxbl,bal)
 
       RETURN
