@@ -26,12 +26,19 @@
 
 \section{Definition of covariant and contravariant basis}
 The dcon context will be in black and \color{blue}the reference\cite{chance1992mhd} would be in blue. 
-\color{black}\subsection{Covariant basis}
+\color{black}\subsection{Jacobian-scaled basis $(\vec{v}_i = \vec{e}_i/\mathcal{J})$}
+
+The $\vec{v}_i$ are \emph{not} the true covariant tangent basis $\vec{e}_i \equiv \partial\vec{r}/\partial q^i$, but rather its Jacobian-scaled counterpart:
+\begin{equation}
+    \vec{v}_i = \frac{\vec{e}_i}{\mathcal{J}}, \qquad
+    \mathcal{J}^{-1} \equiv \vec{\nabla}\psi\cdot(\vec{\nabla}\theta\times\vec{\nabla}\zeta).
+\end{equation}
+Explicitly,
 \begin{equation}
     \begin{aligned}
     \vec{v}_1 &= \vec{\nabla}\theta \times \vec{\nabla}\zeta, &
     \vec{v}_2 &= \vec{\nabla}\zeta \times \vec{\nabla}\psi, &
-    \vec{v}_3 &= \vec{\nabla}\psi \times \vec{\nabla}\theta, 
+    \vec{v}_3 &= \vec{\nabla}\psi \times \vec{\nabla}\theta.
     \end{aligned}
 \end{equation}
 
@@ -47,7 +54,7 @@ The dcon context will be in black and \color{blue}the reference\cite{chance1992m
 \begin{aligned}
 v_{11} &= \vec{v}_1 \cdot \hat{e}_1 = \frac{1}{2r\mathcal{J}}\frac{\partial r^2}{\partial \psi}, \\[6pt]
 v_{12} &= \vec{v}_1 \cdot \hat{e}_2 = \frac{2\pi r}{\mathcal{J}}\frac{\partial \eta}{\partial \psi}, \\[6pt]
-v_{13} &= \vec{v}_1 \cdot \hat{e}_3 = \frac{R}{\mathcal{J}}\frac{\partial \phi}{\partial \psi}, , \\[6pt]
+v_{13} &= \vec{v}_1 \cdot \hat{e}_3 = \frac{R}{\mathcal{J}}\frac{\partial \phi}{\partial \psi}, \\[6pt]
 \end{aligned}
 \end{equation}
 
@@ -68,7 +75,7 @@ v_{33} &= \vec{v}_3 \cdot \hat{e}_3 = \frac{R}{\mathcal{J}}\frac{\partial \phi}{
 \end{equation}
 
 
-\subsubsection{Contravariant basis}
+\subsection{Contravariant basis}
 \begin{equation}
 \begin{aligned}
 \vec{w}_1 &= \vec{\nabla}\psi, &
@@ -169,9 +176,8 @@ In reference \cite{chance1992mhd}, $2 \pi \psi$ is poloidal flux
   \mathbf{B}_p \cdot d\mathbf{S}
 \end{equation}
 
-In DCON, $\psi_{dcon}$, $\theta_{dcon}$, $\zeta_{dcon}$ are all normalized in [0,1]. $\chi_{dcon}$ representing the poloidal flux function and $\alpha_{dcon}$ for SFL angle. Also to scale the actual poloidal flux $\chi\prime_{dcon}$ is used.($\chi\prime_{dcon} = 2\pi(ssibry-ssimag)$)
-
-\begin{align}
+\color{red}In DCON, $\psi_{dcon}$, $\theta_{dcon}$, $\zeta_{dcon}$ are all normalized in [0,1]. $\chi_{dcon}$ representing the poloidal flux function and $\alpha_{dcon}$ for SFL angle. Also to scale the actual poloidal flux $\chi\prime_{dcon}$ is used.($\chi\prime_{dcon} = 2\pi(ssibry-ssimag)$)
+\color{black}\begin{align}
 \mathbf{B} &= \nabla \chi_{dcon} \times \nabla \alpha_{dcon}\\
 %
 &= \chi\prime_{dcon} \nabla \psi_{dcon} \times \nabla \alpha_{dcon}\\
@@ -189,7 +195,7 @@ In DCON, $\psi_{dcon}$, $\theta_{dcon}$, $\zeta_{dcon}$ are all normalized in [0
     \alpha_{dcon} = \color{blue} {- \alpha / 2 \pi} \color{black}= q(\psi)\theta - \zeta 
 \end{equation}
 \begin{equation}
-g(\psi) \leftrightarrow (toroidal field functions) \leftrightarrow f_{dcon}
+g(\psi) \leftrightarrow \text{(toroidal field functions)} \leftrightarrow f_{dcon}
 \end{equation}
 
 In the following, the blue-side variable $\psi$ is Chance's flux
@@ -233,7 +239,7 @@ Therefore
 
 \begin{equation}
     \begin{aligned}
-    B 
+    \mathbf{B}
     &= \chi\prime \nabla \psi \times (q\nabla \theta - \nabla \zeta) = \chi\prime q \vec{v}_3 + \chi\prime \vec{v}_2 \\
     &= \mathcal{J}(B^\psi \vec{v}_1 + B^\theta \vec{v}_2 + B^\zeta \vec{v}_3) \\
     &= (B_\psi \vec{w}_1 + B_\theta \vec{w}_2 + B_\zeta \vec{w}_3) 
@@ -252,7 +258,7 @@ Therefore
 B^\theta &\equiv \vec{B}\cdot \vec{w}_2 = \frac{\chi'}{\mathcal{J}},
 \qquad
 B^\zeta \equiv \vec{B}\cdot \vec{w}_3 = \frac{q\,\chi'}{\mathcal{J}}, \\[4pt]
-\vec{B} \times \vec{w}_\psi
+\vec{B} \times \vec{w}_1
 &= \frac{1}{\mathcal{J}}\Big( B^\zeta\,\vec{v}_2 - B^\theta\,\vec{v}_3 \Big)
 = \frac{1}{\mathcal{J}}\left(\frac{q\,\chi'}{\mathcal{J}}\,\vec{v}_2 - \frac{\chi'}{\mathcal{J}}\,\vec{v}_3\right) \\
 &= \frac{\chi'}{\mathcal{J}^{2}}\Big( q\,\vec{v}_2 - \vec{v}_3 \Big),
@@ -267,12 +273,23 @@ B^\zeta \equiv \vec{B}\cdot \vec{w}_3 = \frac{q\,\chi'}{\mathcal{J}}, \\[4pt]
 
 \subsection{Metric Tensor and Index Operations}
 
-Given the definitions of the basis vectors where $\vec{v}_i = \vec{\nabla}\theta \times \vec{\nabla}\zeta$ (requiring the Jacobian $\mathcal{J}$ for physical dimensions) and $\vec{w}_i = \vec{\nabla}\psi$ (representing the dual basis directly), the metric tensors for lowering and raising indices are derived as follows.
+Throughout this section we adopt the following conventions for expanding $\vec{B}$:
+\begin{equation}
+    \vec{B} = \mathcal{J}\,B^j\,\vec{v}_j = B^j\,\vec{e}_j
+    \qquad\text{(contravariant expansion)},
+\end{equation}
+\begin{equation}
+    \vec{B} = B_j\,\vec{w}_j = B_j\,\vec{e}^j
+    \qquad\text{(covariant expansion)},
+\end{equation}
+where the contravariant components satisfy $B^i = \vec{B}\cdot\vec{w}_i$ and the covariant components satisfy $B_i = \vec{B}\cdot\vec{e}_i$.
+These are consistent because $\vec{B}\cdot\vec{w}_i = \mathcal{J}B^j\vec{v}_j\cdot\vec{w}_i = \mathcal{J}B^j\,\delta_{ji}/\mathcal{J} = B^i$.
 
 \subsubsection{Lowering Operator ($B^j \to B_i$)}
-To transform contravariant components $B^j$ into covariant components $B_i$, we utilize the relation between the physical basis $\vec{e}_i$ and the defined basis $\vec{v}_i$, where $\vec{e}_i = \mathcal{J}\vec{v}_i$.
+To transform contravariant components $B^j$ into covariant components $B_i$, we use the true covariant tangent basis $\vec{e}_i = \mathcal{J}\vec{v}_i$.
+Since $B_i \equiv \vec{B}\cdot\vec{e}_i$ and $\vec{B} = \mathcal{J}B^j\vec{v}_j$:
 
-Using the definition $\vec{B} = \mathcal{J} B^j \vec{v}_j$ and taking the dot product with $\vec{e}_i$:
+Using the definition $\vec{B} = \mathcal{J} B^j \vec{v}_j$ and taking the dot product with $\vec{e}_i = \mathcal{J}\vec{v}_i$:
 \begin{equation}
     \begin{aligned}
     B_i &= \vec{B} \cdot \vec{e}_i \\
@@ -286,7 +303,7 @@ Thus, the covariant metric tensor $g_{ij}$ must include the square of the Jacobi
 \end{equation}
 
 \subsubsection{Raising Operator ($B_j \to B^i$)}
-To transform covariant components $B_j$ into contravariant components $B^i$, we use the gradient basis $\vec{w}_i$, which corresponds to the dual basis $\vec{e}^i$ (i.e., $\vec{e}^i = \vec{w}_i$).
+To transform covariant components $B_j$ into contravariant components $B^i$, we use the gradient basis $\vec{w}_i$, which corresponds to the dual basis $\vec{e}^i$ (i.e., $\vec{e}^1 = \vec{w}_1 = \vec{\nabla}\psi$, etc.).
 
 Using the definition $\vec{B} = B_j \vec{w}_j$ and taking the dot product with $\vec{w}_i$:
 \begin{equation}
@@ -342,8 +359,7 @@ q\bigl({\vec{\nabla}} \psi \cdot {\vec{\nabla}} \theta \bigr)
 \Bigr]
 \]
 
-\section{Energy principle\cite{RevModPhys.76.1071}\cite{Park2009Ideal}} 
-
+\section{Energy principle\cite{RevModPhys.76.1071}\cite{Park2009Ideal}}
 \begin{align}
 \delta W_p &= \frac{1}{2\mu_0} \int d\tau_p 
 \Big\{ |\mathbf{Q}|^2 - \mathbf{j} \cdot \, \mathbf{Q} \times \boldsymbol{\xi}^* 
@@ -369,220 +385,182 @@ q\bigl({\vec{\nabla}} \psi \cdot {\vec{\nabla}} \theta \bigr)
 \end{align}
 
 The derivation of (35) could be found in \cite{RevModPhys.76.1071} and the original derivation of (36) is in \cite{Bernstein1983}.
-The K term in (37) is defined in \cite{chance1992mhd}. 
+The K term in (37) is defined in \cite{chance1992mhd}.
 
+\subsection{Transformation of $\delta W_F$ into the Bernstein form (modified SI/DCON units)}
 
+We follow the derivation of \cite{Bernstein1983}, while keeping the present SI/DCON conventions.
+Throughout this subsection, we employ the following definitions:
 \begin{equation}
-\sigma = \frac{\mathbf{j} \cdot \mathbf{B}}{B^2}, \hat{\mathbf n}=\frac{\nabla\psi}{|\nabla\psi|}, \mathbf Q \equiv \nabla\times(\boldsymbol{\xi}\times\mathbf B) (\delta\mathbf B = \mathbf Q)
+\sigma \equiv \frac{\mathbf{j}\cdot\mathbf{B}}{B^2}, \qquad
+\mathbf Q \equiv \nabla\times(\boldsymbol{\xi}\times\mathbf B), \qquad
+\mu_0\mathbf j = \nabla\times\mathbf B,
+\end{equation}
+\begin{equation}
+\hat{\mathbf n}\equiv \frac{\nabla\psi}{|\nabla\psi|}, \qquad
+\xi_n \equiv \hat{\mathbf n}\cdot\boldsymbol{\xi}, \qquad
+\delta\mathbf B = \mathbf Q,
+\end{equation}
+with \(p=p(\psi)\).
+
+We begin from
+\begin{equation}
+2\mu_0 \delta W_F
+=
+\int d^3r\left\{
+|\mathbf Q|^2
++\mu_0\gamma p\,|\nabla\cdot\boldsymbol{\xi}|^2
++\mu_0(\nabla\cdot\boldsymbol{\xi})^*\,\boldsymbol{\xi}\cdot\nabla p
++(\boldsymbol{\xi}^*\times\mathbf Q)\cdot(\nabla\times\mathbf B)
+\right\}.
 \end{equation}
 
-\subsection{Transformation of $\delta W_F$ in \cite{Bernstein1983}(Modified units)}
-In this section, we will see how (34) changes to (36). It follows the derivation in \cite{Bernstein1983}, but since the unit and normalization are different, we need to adjust the expressions accordingly. 
-If we define $\xi$ as follows:
+Since $\mathbf{B}$, $\nabla p$, and $\nabla\times\mathbf{B}$ are mutually orthogonal (satisfying $\mathbf{B}\cdot\nabla p = (\nabla\times\mathbf{B})\cdot\nabla p = \mathbf{B}\cdot(\nabla\times\mathbf{B})=0$), they form an orthogonal basis. We thus introduce
 \begin{equation}
-\boldsymbol{\xi}=a\,\nabla p + b\,\nabla\times\mathbf{B} + c\,\mathbf{B}
+\boldsymbol{\xi}
+=
+a\,\nabla p + b\,\nabla\times\mathbf B + c\,\mathbf B.
 \end{equation}
-then, the following relations hold:
+Since \(p=p(\psi)\),
 \begin{equation}
-\boldsymbol{\xi}\times\mathbf{B}
-= -a\,\mathbf{B}\times\nabla p + \mu_0 b\,\nabla p
+\nabla p = p'(\psi)\nabla\psi = p'(\psi)|\nabla\psi|\,\hat{\mathbf n},
+\qquad
+\xi_n = \hat{\mathbf n}\cdot\boldsymbol{\xi} = a\,p'(\psi)|\nabla\psi|,
 \end{equation}
+so that
 \begin{equation}
-\boldsymbol{\xi}\times(\nabla\times\mathbf{B})
-= -a\,(\nabla\times\mathbf{B})\times\nabla p - \mu_0 c\,\nabla p
+a\,\nabla p = \xi_n\,\hat{\mathbf n}.
 \end{equation}
-\begin{equation}
-\mathbf{Q} = \nabla\times(\boldsymbol{\xi}\times\mathbf{B}) = \nabla\times\bigl(-a\,\mathbf{B}\times\nabla p + \mu_0 b\,\nabla p\bigr)
-\end{equation}
-
-Gauss's theorem, and the boundary condition $\mathbf{n}\cdot\mathbf{B}=0$,
-one finds
+Also, because \(\mathbf B\cdot\nabla p=0\) and \((\nabla\times\mathbf B)\cdot\nabla p=0\),
 \begin{align}
-2\mu_0 W_F
-& = \int d^3r\Bigl\{ \mu_0\gamma p(\nabla\cdot\boldsymbol{\xi})^2 
-+ |\mathbf{Q}|^2 \nonumber + (\mu_0 \nabla \cdot \boldsymbol{\xi})^* \boldsymbol{\xi} \cdot \nabla p  \nonumber
-+ \boldsymbol{\xi} \times \mathbf{Q} \cdot \nabla \times \mathbf{B}
-\Bigr\}\\
-& = \int d^3r\Bigl\{\mu_0\gamma p(\nabla\cdot\boldsymbol{\xi})^2
-+ \bigl[\nabla\times\bigl(-a\,\mathbf{B}\times\nabla p + \mu_0 b\,\nabla p\bigr)\bigr]^2
+\boldsymbol{\xi}\times\mathbf B
+&=
+-a\,\mathbf B\times\nabla p
++b\,(\nabla\times\mathbf B)\times\mathbf B
+=
+-a\,\mathbf B\times\nabla p+\mu_0 b\,\nabla p, \\
+\boldsymbol{\xi}\times(\nabla\times\mathbf B)
+&=
+-a\,(\nabla\times\mathbf B)\times\nabla p
++c\,\mathbf B\times(\nabla\times\mathbf B)
+=
+-a\,(\nabla\times\mathbf B)\times\nabla p-\mu_0 c\,\nabla p.
+\end{align}
+Hence
+\begin{equation}
+\mathbf Q
+=
+\nabla\times\bigl(-a\,\mathbf B\times\nabla p+\mu_0 b\,\nabla p\bigr).
+\end{equation}
+
+Substituting $\boldsymbol{\xi} = a\,\nabla p + b\,\nabla\times\mathbf B + c\,\mathbf B$:
+\begin{align}
+\nabla\cdot\boldsymbol{\xi} &= a\nabla^2 p, \quad \boldsymbol{\xi}\cdot\nabla p = a(\nabla p)^2.
+\end{align}
+By the product rule:
+\begin{equation}
+a(\nabla p)^2\nabla\cdot(b\nabla\times\mathbf B+c\mathbf B) = \nabla\cdot\Bigl[a(\nabla p)^2(b\nabla\times\mathbf B+c\mathbf B)\Bigr] - (b\nabla\times\mathbf B+c\mathbf B)\cdot\nabla\bigl[a(\nabla p)^2\bigr].
+\end{equation}
+On flux surfaces the divergence vanishes, giving
+\begin{align}
+a(\nabla p)^2\nabla\cdot\bigl(b\nabla\times\mathbf B+c\mathbf B\bigr)
+&=
+-\bigl(b\nabla\times\mathbf B+c\mathbf B\bigr)\cdot\nabla\!\bigl[a(\nabla p)^2\bigr]
 \nonumber\\
-&+ \mu_0 a(\nabla p)^2\nabla\cdot\bigl(a\nabla p + b\nabla\times\mathbf{B}+c\mathbf{B}\bigr)
+&\quad
++\nabla\cdot\!\Bigl[a(\nabla p)^2\bigl(b\nabla\times\mathbf B+c\mathbf B\bigr)\Bigr].
+\end{align}
+For a volume bounded by flux surfaces, \(\hat{\mathbf n}\cdot\mathbf B=0\) and \(\hat{\mathbf n}\cdot(\nabla\times\mathbf B)=0\), so the surface integral of the divergence term vanishes. Using also \(\nabla\cdot\mathbf B=0\) and \(\nabla\cdot(\nabla\times\mathbf B)=0\), one obtains
+\begin{align}
+2\mu_0 \delta W_F
+=
+\int d^3r\Bigl\{
+&\mu_0\gamma p\,|\nabla\cdot\boldsymbol{\xi}|^2
++\Bigl|\mathbf Q+a(\nabla\times\mathbf B)\times\nabla p\Bigr|^2
 \nonumber\\
-&+ \bigl[a(\nabla\times\mathbf{B})\times\nabla p + \mu_0 c\,\nabla p\bigr]\cdot
-\nabla\times\bigl(-a\,\mathbf{B}\times\nabla p + \mu_0 b\,\nabla p\bigr)
+&\quad
+-a^2\Bigl|(\nabla\times\mathbf B)\times\nabla p\Bigr|^2
++a(\nabla\times\mathbf B)\times\nabla p\cdot\nabla\times(a\,\mathbf B\times\nabla p)
+\nonumber\\
+&\quad
++\mu_0 a(\nabla p)^2\nabla\cdot(a\nabla p)
 \Bigr\}.
 \end{align}
-Since,
-\begin{equation}
-a(\nabla p)^2\nabla\cdot\bigl(b\nabla\times\mathbf{B}+c\mathbf{B}\bigr)+ \bigl(b\nabla\times\mathbf{B}+c\mathbf{B}\bigr)\cdot\nabla\!\Bigl[a(\nabla p)^2\Bigr]
-=\nabla\cdot\Bigl[a(\nabla p)^2\bigl(b\nabla\times\mathbf{B}+c\mathbf{B}\bigr)\Bigr]
-\end{equation}
-So,
+
+Using $\mu_0\nabla p = (\nabla\times\mathbf B)\times\mathbf B$ and $\hat{\mathbf n}\cdot\mathbf B=0$, the three terms (L485--489) combine to:
 \begin{align}
-a(\nabla p)^2\nabla\cdot\bigl(b\nabla\times\mathbf{B}+c\mathbf{B}\bigr)
-&= -\bigl(b\nabla\times\mathbf{B}+c\mathbf{B}\bigr)\cdot\nabla\!\Bigl[a(\nabla p)^2\Bigr]
-+\nabla\cdot\Bigl[a(\nabla p)^2\bigl(b\nabla\times\mathbf{B}+c\mathbf{B}\bigr)\Bigr]\\
-&= -b\,\nabla\cdot\Bigl[a(\nabla p)^2\Bigr](\nabla\times\mathbf{B})-c\,\nabla\cdot\Bigl[a(\nabla p)^2\Bigr]\mathbf{B}\nonumber\\
-&+\nabla\cdot\Bigl[ac(\nabla p)^2\mathbf{B}\Bigr]+\nabla\cdot\big[ab(\nabla p)^2(\nabla\times B)\big]\\
-&=-b\,(\nabla\times\mathbf B)\cdot\nabla\big[a(\nabla p)^2\big]
-+\nabla\cdot\big[ab(\nabla p)^2(\nabla\times B)\big]\nonumber\\
-&- c\,\mathbf B\cdot\nabla\big[a(\nabla p)^2\big]+\nabla\cdot\big[ac(\nabla p)^2\mathbf B\big]\\
-&=\nabla\cdot\Bigl[ac(\nabla p)^2\mathbf{B}\Bigr]
- + a(\nabla\times\mathbf{B})\times(\nabla p)\cdot\nabla\times(b\nabla p)+ c(\nabla p)\cdot\nabla\times(a\mathbf{B}\times\nabla p)
+&-a^2\Bigl|(\nabla\times\mathbf B)\times\nabla p\Bigr|^2 +a(\nabla\times\mathbf B)\times\nabla p\cdot\nabla\times(a\,\mathbf B\times\nabla p) +\mu_0 a(\nabla p)^2\nabla\cdot(a\nabla p) \nonumber\\
+&= a^2(\nabla p)^2 \Bigl[-|\nabla\times\mathbf B|^2 +(\nabla\times\mathbf B)\times\hat{\mathbf n}\cdot\Bigl((\hat{\mathbf n}\cdot\nabla)\mathbf B-(\mathbf B\cdot\nabla)\hat{\mathbf n}\Bigr)\Bigr].
 \end{align}
 
-Using (47) to eliminate the divergence term involving $b,c$ gives
-\begin{align}
-2\mu_0 W_F
-= \int d^3r\Bigl\{
-&\mu_0\gamma p(\nabla\cdot\boldsymbol{\xi})^2
-+ \bigl[\nabla\times\bigl(-a\,\mathbf{B}\times\nabla p + \mu_0 b\,\nabla p\bigr)\bigr]^2+\mu_0a(\nabla p)^2\nabla\cdot(a\nabla p)\nonumber\\
-& +\cancel{\nabla\cdot\Bigl[ac(\nabla p)^2\mathbf{B}\Bigr]}+ \mu_0 a(\nabla\times\mathbf{B})\times(\nabla p)\cdot\nabla\times(b\nabla p)+ \mu_0 c(\nabla p)\cdot\nabla\times(a\mathbf{B}\times\nabla p)\nonumber\\
-&+ \bigl[a(\nabla\times\mathbf{B})\times\nabla p + \mu_0 c\,\nabla p\bigr]\cdot
-\nabla\times\bigl(-a\,\mathbf{B}\times\nabla p + \mu_0 b\,\nabla p\bigr)\Bigr\}\\
-= \int d^3r\Bigl\{
-&\mu_0\gamma p(\nabla\cdot\boldsymbol{\xi})^2
-+ \bigl[\nabla\times\bigl(-a\,\mathbf{B}\times\nabla p + \mu_0 b\,\nabla p\bigr)\bigr]^2+ \mu_0 a(\nabla p)^2\nabla\cdot(a\nabla p)
-+\cancel{\mu_0 c(\nabla p)\cdot \mu_0 (\nabla \times (b\nabla p))}\nonumber\\
-&+ 2\mu_0 a(\nabla\times\mathbf{B})\times(\nabla p)\cdot\nabla\times(b\nabla p) 
-- a(\nabla \times \mathbf{B}) \times \nabla p \cdot \nabla\times(a\mathbf{B}\times\nabla p)\Bigr\}\\
-= \int d^3r\Bigl\{
-&\mu_0\gamma p(\nabla\cdot\boldsymbol{\xi})^2
-+ \bigl[\nabla\times\bigl(-a\,\mathbf{B}\times\nabla p + \mu_0 b\,\nabla p\bigr)
-      + a(\nabla\times\mathbf{B})\times\nabla p\bigr]^2
-\nonumber\\
-&+ a(\nabla\times\mathbf{B})\times(\nabla p)\cdot\nabla\times(a\mathbf{B}\times\nabla p)
-- a^2\bigl[(\nabla\times\mathbf{B})\times\nabla p\bigr]^2
-+ \mu_0 a(\nabla p)^2\nabla\cdot(a\nabla p)
-\Bigr\}
-\end{align}
-
-Then, $\mu_0\nabla p=(\nabla\times\mathbf{B})\times\mathbf{B}$,
-\begin{align}
-&-a^2\bigl[(\nabla\times\mathbf{B})\times\nabla p\bigr]^2
-+ a(\nabla\times\mathbf{B})\times(\nabla p)\cdot\nabla\times(a\mathbf{B}\times\nabla p)
-+ \mu_0 a(\nabla p)^2\nabla\cdot(a\nabla p)
-\nonumber\\
-&= -a^2(\nabla\times\mathbf{B})^2(\nabla p)^2
-+ a^2(\nabla\times\mathbf{B})\times(\nabla p)\cdot\nabla\times(\mathbf{B}\times\nabla p)
-\nonumber\\
-&\quad + a(\nabla\times\mathbf{B})\times(\nabla p)\cdot(\nabla a)\times(\mathbf{B}\times\nabla p)
-+ \mu_0 a^2(\nabla p)^2\nabla^2 p
-+ \mu_0 a(\nabla p)^2(\nabla a)\cdot\nabla p
-\nonumber\\
-&= -a^2(\nabla\times\mathbf{B})^2(\nabla p)^2
-+ a^2(\nabla\times\mathbf{B})\times(\nabla p)\cdot\Bigl[(\nabla p)\cdot\nabla\mathbf{B}
-- \mathbf{B}\cdot\nabla\nabla p + \mathbf{B}\nabla^2 p\Bigr]
-\nonumber\\
-&\quad + a(\nabla\times\mathbf{B})\times(\nabla p)\cdot\Bigl[\mathbf{B}(\nabla a)\cdot\nabla p
-- (\nabla p)\,\mathbf{B}\cdot\nabla a\Bigr]
-+ \mu_0 a^2(\nabla p)^2\nabla^2 p
-+ \mu_0 a(\nabla p)^2(\nabla a)\cdot\nabla p
-\nonumber\\
-&= a^2(\nabla p)^2\Bigl[-(\nabla\times\mathbf{B})^2
-+ (\nabla\times\mathbf{B})\times\mathbf{n}\cdot(\mathbf{n}\cdot\nabla\mathbf{B}
-- \mathbf{B}\cdot\nabla\mathbf{n})\Bigr].
-\end{align}
-
-Since $\nabla\cdot\mathbf{B}=0$, it follows that
+Now, since \(\hat{\mathbf n}\cdot\mathbf B=0\),
 \begin{equation}
-0=\nabla(\mathbf{n}\cdot\mathbf{B})
-=\mathbf{n}\cdot\nabla\mathbf{B}+\mathbf{B}\cdot\nabla\mathbf{n}
-+\mathbf{n}\times(\nabla\times\mathbf{B})+\mathbf{B}\times(\nabla\times\mathbf{n}),
+0=\nabla(\hat{\mathbf n}\cdot\mathbf B)
+=
+(\hat{\mathbf n}\cdot\nabla)\mathbf B
++(\mathbf B\cdot\nabla)\hat{\mathbf n}
++\hat{\mathbf n}\times(\nabla\times\mathbf B)
++\mathbf B\times(\nabla\times\hat{\mathbf n}).
 \end{equation}
-whence
-\begin{align}
-&-(\nabla\times\mathbf{B})^2
-+(\nabla\times\mathbf{B})\times\mathbf{n}\cdot\bigl[\mathbf{n}\cdot\nabla\mathbf{B}
--\mathbf{B}\cdot\nabla\mathbf{n}\bigr]
-\nonumber\\
-&=-(\nabla\times\mathbf{B})^2
-+(\nabla\times\mathbf{B})\times\mathbf{n}\cdot\bigl[-2\mathbf{B}\cdot\nabla\mathbf{n}
--\mathbf{n}\times(\nabla\times\mathbf{B})-\mathbf{B}\times(\nabla\times\mathbf{n})\bigr]
-\nonumber\\
-&=-(\nabla\times\mathbf{B})^2+\bigl[\mathbf{n}\times(\nabla\times\mathbf{B})\bigr]^2
--2(\nabla\times\mathbf{B})\times\mathbf{n}\cdot(\mathbf{B}\cdot\nabla\mathbf{n})
-\nonumber\\
-&\quad -(\nabla\times\mathbf{B})\cdot\mathbf{B}\,\mathbf{n}\cdot\nabla\times\mathbf{n}
--(\nabla\times\mathbf{B})\cdot(\nabla\times\mathbf{n})\,\mathbf{n}\cdot\mathbf{B}
-\nonumber\\
-&=-2(\nabla\times\mathbf{B})\times\mathbf{n}\cdot(\mathbf{B}\cdot\nabla\mathbf{n}).
-\end{align}
-
-Since $\mu_0\nabla p=(\nabla\times\mathbf{B})\times\mathbf{B}$, it follows that
-$\mathbf{n}\cdot\nabla\times\mathbf{B}=0$, whence
+Moreover,
 \begin{equation}
-\bigl[\mathbf{n}\times(\nabla\times\mathbf{B})\bigr]^2
-=\mathbf{n}^2(\nabla\times\mathbf{B})^2-(\mathbf{n}\cdot\nabla\times\mathbf{B})^2
-=(\nabla\times\mathbf{B})^2.
+(\nabla\times\mathbf B)\cdot\hat{\mathbf n}=0,
+\end{equation}
+and, since \(\hat{\mathbf n}=\lambda\nabla\psi\) with \(\lambda=|\nabla\psi|^{-1}\),
+\begin{equation}
+\nabla\times\hat{\mathbf n}
+=
+\nabla\lambda\times\nabla\psi,
+\qquad
+\hat{\mathbf n}\cdot(\nabla\times\hat{\mathbf n})=0.
+\end{equation}
+Therefore,
+\begin{equation}
+-|\nabla\times\mathbf B|^2
++(\nabla\times\mathbf B)\times\hat{\mathbf n}\cdot
+\Bigl((\hat{\mathbf n}\cdot\nabla)\mathbf B-(\mathbf B\cdot\nabla)\hat{\mathbf n}\Bigr)
+=
+-2\,(\nabla\times\mathbf B)\times\hat{\mathbf n}\cdot(\mathbf B\cdot\nabla\hat{\mathbf n}).
 \end{equation}
 
-Also, since $\mathbf{n}$ is a unit normal to the surfaces $p=\text{const}$, for any area
-contained in such a surface, Stokes' theorem gives
+Using \(a\nabla p=\xi_n\hat{\mathbf n}\) and \(\mu_0\mathbf j=\nabla\times\mathbf B\), we finally obtain
 \begin{equation}
-\int d^2r\,\mathbf{n}\cdot\nabla\times\mathbf{n}
-=\oint d\mathbf{r}\cdot\mathbf{n}=0,
+2\mu_0 \delta W_F
+=
+\int d^3r\left\{
+\Bigl|\mathbf Q+\xi_n(\mu_0\mathbf j\times\hat{\mathbf n})\Bigr|^2
++\mu_0\gamma p\,|\nabla\cdot\boldsymbol{\xi}|^2
+-2\,|\xi_n|^2\,(\mu_0\mathbf j\times\hat{\mathbf n})\cdot(\mathbf B\cdot\nabla\hat{\mathbf n})
+\right\}.
 \end{equation}
-and since the surface is arbitrary, $\mathbf{n}\cdot\nabla\times\mathbf{n}=0$.
-
-Thus one can write,
+Defining
 \begin{equation}
-2\mu_0 W_F
-=\int_I d^3r\Bigl\{
-\mu_0\gamma p(\nabla\cdot\boldsymbol{\xi})^2
-+\bigl[\mathbf{Q}+(\nabla\times\mathbf{B})\times\mathbf{n}\,(\mathbf{n}\cdot\boldsymbol{\xi})\bigr]^2
--2(\mathbf{n}\cdot\boldsymbol{\xi})^2\,(\nabla\times\mathbf{B})\times\mathbf{n}\cdot(\mathbf{B}\cdot\nabla\mathbf{n})
-\Bigr\}.
+K \equiv 2\,(\mathbf j\times\hat{\mathbf n})\cdot(\mathbf B\cdot\nabla\hat{\mathbf n}),
+\end{equation}
+the Bernstein form becomes
+\begin{equation}
+\delta W_F
+=
+\frac{1}{2\mu_0}\int d^3r\left\{
+\Bigl|\mathbf Q+\xi_n(\mu_0\mathbf j\times\hat{\mathbf n})\Bigr|^2
++\mu_0\gamma p\,|\nabla\cdot\boldsymbol{\xi}|^2
+-\mu_0 K\,|\xi_n|^2
+\right\}.
 \end{equation}
 
-% If desired, replace curl B by current density j:
-% \nabla\times\mathbf{B} = \mu_0\mathbf{j}, so the equilibrium is \nabla p=\mathbf{j}\times\mathbf{B}.
-% \begin{align}
-%     K &= 2(\mathbf{j} \times \hat{n}) \cdot (\mathbf{B} \cdot \nabla) \hat{n} \\
-%     &=\frac{2}{|\nabla \psi|^2}(\mathbf{j} \times \nabla \psi) \cdot (\mathbf{B} \cdot \nabla) \nabla \psi \\
-%     &=-(\frac{\mathbf{j} \cdot \mathbf{B}}{B^2})\mathbf{B} \times \nabla \psi\, \cdot\, (\nabla \times \frac{\mathbf{B} \times \nabla \psi}{|\nabla \psi|^2}) + \mathbf{j} \cdot \mathbf{B} + 2p'|\nabla \psi|^2 \kappa \cdot \nabla \psi \\
-%     &=\frac{2}{|\nabla \chi|^2}(\mathbf{j} \times \nabla \psi) \cdot (\mathbf{B} \cdot \nabla) \nabla \chi   
-% \end{align}
 \subsection{Derivation of $K$ with explicit $\mu_0$}
-
-% We define
-% \begin{equation}
-% \hat{\mathbf n} \equiv \frac{\nabla\psi}{|\nabla\psi|},
-% \qquad
-% \mathbf j \equiv \frac{\nabla\times\mathbf B}{\mu_0},
-% \qquad
-% \nabla p = p'(\psi)\nabla\psi,
-% \qquad
-% \sigma \equiv \frac{\mathbf j\cdot\mathbf B}{B^2},
-% \end{equation}
-% \begin{equation}
-% \mathbf b \equiv \frac{\mathbf B}{B},
-% \qquad
-% \boldsymbol{\kappa}\equiv (\mathbf b\cdot\nabla)\mathbf b,
-% \qquad
-% \kappa_\psi \equiv \boldsymbol{\kappa}\cdot\nabla\psi.
-% \end{equation}
 
 We start from
 \begin{equation}
 \color{blue} K \equiv 2(\mathbf j\times \hat{\mathbf n})\cdot(\mathbf B\cdot\nabla)\hat{\mathbf n}.
 \end{equation}
-
 Since
-\color{blue}\begin{equation}
-(\mathbf B\cdot\nabla)\hat{\mathbf n}
-=
-(\mathbf B\cdot\nabla)\left(\frac{\nabla\psi}{|\nabla\psi|}\right)
-=
-\frac{(\mathbf B\cdot\nabla)\nabla\psi}{|\nabla\psi|}
-+
-\nabla\psi\,(\mathbf B\cdot\nabla)\left(\frac{1}{|\nabla\psi|}\right),
-\end{equation}
-\color{blue}\begin{equation}
+\color{blue}\begin{align}
+(\mathbf B\cdot\nabla)\hat{\mathbf n} &= (\mathbf B\cdot\nabla)\left(\frac{\nabla\psi}{|\nabla\psi|}\right),
 (\mathbf j\times \hat{\mathbf n})\cdot \nabla\psi = 0,
-\end{equation}
+\end{align}
 \color{black}
-we obtain
+we have
 \begin{equation}
 \color{blue}K
 \equiv 2(\mathbf j\times \hat{\mathbf n})\cdot(\mathbf B\cdot\nabla)\hat{\mathbf n}
@@ -591,64 +569,17 @@ we obtain
 (\mathbf j\times\nabla\psi)\cdot(\mathbf B\cdot\nabla)\nabla\psi.
 \end{equation}
 
-Now use $\mathbf B\cdot\nabla\psi=0$. Then
+Now use $\mathbf B\cdot\nabla\psi=0$:
 \begin{equation}
-0=\nabla(\mathbf B\cdot\nabla\psi)
-=
-(\mathbf B\cdot\nabla)\nabla\psi
-+
-(\nabla\psi\cdot\nabla)\mathbf B
-+
-\nabla\psi\times(\nabla\times\mathbf B),
+0=\nabla(\mathbf B\cdot\nabla\psi) = (\mathbf B\cdot\nabla)\nabla\psi + (\nabla\psi\cdot\nabla)\mathbf B + \nabla\psi\times(\nabla\times\mathbf B),
 \end{equation}
-\begin{equation}
-(\mathbf B\cdot\nabla)\nabla\psi
-=
--(\nabla\psi\cdot\nabla)\mathbf B
--\mu_0\,\nabla\psi\times\mathbf j.
-\end{equation}
-
-Substituting this into $K$ gives
+thus
 \color{blue}\begin{align}
-K
-&=
--\frac{2}{|\nabla\psi|^2}
-(\mathbf j\times\nabla\psi)\cdot
-\Big[(\nabla\psi\cdot\nabla)\mathbf B+\mu_0\,\nabla\psi\times\mathbf j\Big]
-\\
-&=
--\frac{2}{|\nabla\psi|^2}
-(\mathbf j\times\nabla\psi)\cdot(\nabla\psi\cdot\nabla)\mathbf B
-+\frac{2\mu_0}{|\nabla\psi|^2}\,|\mathbf j\times\nabla\psi|^2.
+K &= 2\mu_0 j^2 - \frac{2}{|\nabla\psi|^2}(\mathbf j\times\nabla\psi)\cdot(\nabla\psi\cdot\nabla)\mathbf B.
 \end{align}
-
 \color{black}
-Because
-\begin{equation}
-0=\mathbf j\cdot\nabla p = p'\,\mathbf j\cdot\nabla\psi, \mathbf j\cdot\nabla\psi=0
-\end{equation}
-\begin{equation}
-|\mathbf j\times\nabla\psi|^2 = j^2 |\nabla\psi|^2.
-\end{equation}
-Thus,
-\begin{equation}
-\color{blue}K
-=
-2\mu_0 j^2
--\frac{2}{|\nabla\psi|^2}
-(\mathbf j\times\nabla\psi)\cdot(\nabla\psi\cdot\nabla)\mathbf B.
-\end{equation}
 
-Now decompose the current as
-\begin{equation}
-\mathbf j = \mathbf j_{\parallel}+\mathbf j_{\perp},
-\qquad
-\mathbf j_{\parallel}=\sigma \mathbf B,
-\qquad
-\mathbf j_{\perp}=\frac{\mathbf B\times\nabla p}{B^2}
-=\frac{p'}{B^2}\mathbf B\times\nabla\psi.
-\end{equation}
-Then
+Decompose $\mathbf j = \sigma\mathbf B + \frac{p'}{B^2}\mathbf B\times\nabla\psi \equiv \mathbf j_{\parallel}+\mathbf j_{\perp}$:
 \begin{equation}
 \color{blue}K = K_{\parallel}+K_{\perp},
 \end{equation}
@@ -668,304 +599,154 @@ K_{\perp}
 
 \color{black}
 \paragraph{1. Perpendicular part $K_{\perp}$}
-Using
+With $\mathbf j_{\perp}=\frac{p'}{B^2}\mathbf B\times\nabla\psi$:
 \begin{equation}
-\mathbf j_{\perp}=\frac{p'}{B^2}\mathbf B\times\nabla\psi,
+j_{\perp}^{2} = \frac{p'^{\,2}}{B^{2}}|\nabla\psi|^{2},
 \end{equation}
-we obtain
-\begin{align}
-K_{\perp}
-&=
-\frac{2\mu_0 p'^2 |\nabla\psi|^2}{B^2}
--\frac{2p'}{B^2|\nabla\psi|^2}
-\Big[(\mathbf B\times\nabla\psi)\times\nabla\psi\Big]
-\cdot(\nabla\psi\cdot\nabla)\mathbf B.
-\end{align}
-
-Now,
+where $\mathbf B\cdot\nabla\psi=0$. Also,
 \begin{equation}
-(\mathbf B\times\nabla\psi)\times\nabla\psi
-=
-\nabla\psi(\mathbf B\cdot\nabla\psi)-\mathbf B|\nabla\psi|^2
-=
--\mathbf B|\nabla\psi|^2,
-\end{equation}
-since $\mathbf B\cdot\nabla\psi=0$. Hence
-\begin{align}
-K_{\perp}
-&=
-\frac{2\mu_0 p'^2 |\nabla\psi|^2}{B^2}
-+\frac{2p'}{B^2}\,\mathbf B\cdot(\nabla\psi\cdot\nabla)\mathbf B
-\\
-&=
-\frac{2p'}{B^2}
-\left[
-\mu_0\,\nabla p\cdot\nabla\psi
-+\mathbf B\cdot(\nabla\psi\cdot\nabla)\mathbf B
-\right]
-\\
-&=
-\frac{2p'}{B^2}
-\left[
-\mu_0\,(\mathbf j\times\mathbf B)\cdot\nabla\psi
-+\mathbf B\cdot(\nabla\psi\cdot\nabla)\mathbf B
-\right]
-\\
-&=
-\frac{2p'}{B^2}\,
-\mathbf B\cdot
-\left[
-(\nabla\psi\cdot\nabla)\mathbf B+\mu_0\,\nabla\psi\times\mathbf j
-\right].
-\end{align}
-
-Using
-\begin{equation}
-(\nabla\psi\cdot\nabla)\mathbf B+\mu_0\,\nabla\psi\times\mathbf j
-=
--(\mathbf B\cdot\nabla)\nabla\psi,
-\end{equation}
-we get
-\begin{equation}
-K_{\perp}
-=
--\frac{2p'}{B^2}\,\mathbf B\cdot(\mathbf B\cdot\nabla)\nabla\psi.
-\end{equation}
-
-Also,
-\begin{equation}
-0=(\mathbf B\cdot\nabla)(\mathbf B\cdot\nabla\psi)
-=
-((\mathbf B\cdot\nabla)\mathbf B)\cdot\nabla\psi
-+
-\mathbf B\cdot(\mathbf B\cdot\nabla)\nabla\psi,
-\end{equation}
-so that
-\begin{equation}
-\mathbf B\cdot(\mathbf B\cdot\nabla)\nabla\psi
-=
--((\mathbf B\cdot\nabla)\mathbf B)\cdot\nabla\psi.
-\end{equation}
-Therefore,
-\begin{equation}
-K_{\perp}
-=
-\frac{2p'}{B^2}
-\big((\mathbf B\cdot\nabla)\mathbf B\big)\cdot\nabla\psi.
-\end{equation}
-
-Finally, with $\mathbf B=B\mathbf b$,
-\begin{equation}
-(\mathbf B\cdot\nabla)\mathbf B
-=
-B^2(\mathbf b\cdot\nabla)\mathbf b
-+
-B(\mathbf b\cdot\nabla B)\mathbf b,
-\end{equation}
-and since $\mathbf b\cdot\nabla\psi=0$,
-\begin{equation}
-\big((\mathbf B\cdot\nabla)\mathbf B\big)\cdot\nabla\psi
-=
-B^2\,\boldsymbol{\kappa}\cdot\nabla\psi
-=
-B^2\kappa_\psi.
-\end{equation}
-Thus,
-\begin{equation}
-\boxed{
-K_{\perp}=2p'\kappa_\psi
-}.
-\end{equation}
-
-\paragraph{2. Parallel part $K_{\parallel}$}
-Since $\mathbf j_{\parallel}=\sigma\mathbf B$,
-\begin{equation}
-K_{\parallel}
-=
-2\mu_0\sigma^2B^2
--\frac{2\sigma}{|\nabla\psi|^2}
-(\mathbf B\times\nabla\psi)\cdot(\nabla\psi\cdot\nabla)\mathbf B.
-\end{equation}
-
-Now use the vector identity
-\begin{equation}
-\nabla\times(\mathbf B\times\nabla\psi)
-=
-\mathbf B\nabla^2\psi
-+
-(\nabla\psi\cdot\nabla)\mathbf B
--
-(\mathbf B\cdot\nabla)\nabla\psi.
-\end{equation}
-Substituting
-\begin{equation}
-(\mathbf B\cdot\nabla)\nabla\psi
-=
--(\nabla\psi\cdot\nabla)\mathbf B
--\mu_0\,\nabla\psi\times\mathbf j,
-\end{equation}
-we obtain
-\begin{equation}
-\nabla\times(\mathbf B\times\nabla\psi)
-=
-\mathbf B\nabla^2\psi
-+
-2(\nabla\psi\cdot\nabla)\mathbf B
-+
-\mu_0\,\nabla\psi\times\mathbf j.
-\end{equation}
-
-Taking the dot product with $\mathbf B\times\nabla\psi$ gives
-\begin{equation}
-(\mathbf B\times\nabla\psi)\cdot\nabla\times(\mathbf B\times\nabla\psi)
-=
-2(\mathbf B\times\nabla\psi)\cdot(\nabla\psi\cdot\nabla)\mathbf B
-+
-\mu_0\,(\mathbf B\times\nabla\psi)\cdot(\nabla\psi\times\mathbf j),
-\end{equation}
-because
-\begin{equation}
-(\mathbf B\times\nabla\psi)\cdot\mathbf B = 0.
+\mathbf j_{\perp}\times\nabla\psi = -\frac{p'}{B^{2}}\mathbf B|\nabla\psi|^{2}.
 \end{equation}
 Hence
+\begin{equation}
+K_{\perp} = \frac{2\mu_{0}p'^{\,2}}{B^{2}}|\nabla\psi|^{2} + \frac{2p'}{B^{2}}\mathbf B\cdot(\nabla\psi\cdot\nabla)\mathbf B.
+\end{equation}
+
+To simplify, use $0=\nabla(\mathbf B\cdot\nabla\psi) = (\mathbf B\cdot\nabla)\nabla\psi + (\nabla\psi\cdot\nabla)\mathbf B + \nabla\psi\times(\nabla\times\mathbf B)$.
+Dotting with $\mathbf B$ and using $\nabla\times\mathbf B=\mu_{0}\mathbf j$:
+\begin{equation}
+\mathbf B\cdot(\nabla\psi\cdot\nabla)\mathbf B = -\mathbf B\cdot(\mathbf B\cdot\nabla)\nabla\psi - \mu_{0}\mathbf B\cdot(\nabla\psi\times\mathbf j).
+\end{equation}
+From $(\mathbf B\cdot\nabla)(\mathbf B\cdot\nabla\psi)=0$:
+\begin{equation}
+\mathbf B\cdot(\mathbf B\cdot\nabla)\nabla\psi = -((\mathbf B\cdot\nabla)\mathbf B)\cdot\nabla\psi.
+\end{equation}
+From equilibrium $\mathbf j\times\mathbf B=p'\nabla\psi$:
+\begin{equation}
+\mathbf B\cdot(\nabla\psi\times\mathbf j) = p'|\nabla\psi|^{2}.
+\end{equation}
+Therefore
+\begin{equation}
+\mathbf B\cdot(\nabla\psi\cdot\nabla)\mathbf B = ((\mathbf B\cdot\nabla)\mathbf B)\cdot\nabla\psi - \mu_{0}p'|\nabla\psi|^{2}.
+\end{equation}
+
+Substituting:
 \begin{align}
-K_{\parallel}
-&=
-2\mu_0\sigma^2B^2
--
-\frac{\sigma}{|\nabla\psi|^2}
-(\mathbf B\times\nabla\psi)\cdot\nabla\times(\mathbf B\times\nabla\psi)
-+
-\frac{\mu_0\sigma}{|\nabla\psi|^2}
-(\mathbf B\times\nabla\psi)\cdot(\nabla\psi\times\mathbf j).
+K_{\perp} &= \frac{2\mu_{0}p'^{\,2}}{B^{2}}|\nabla\psi|^{2} + \frac{2p'}{B^{2}}\left[((\mathbf B\cdot\nabla)\mathbf B)\cdot\nabla\psi - \mu_{0}p'|\nabla\psi|^{2}\right] \\
+&= \frac{2p'}{B^{2}}((\mathbf B\cdot\nabla)\mathbf B)\cdot\nabla\psi.
 \end{align}
 
-Now,
+With $\mathbf B=B\mathbf b$ and $\mathbf b\cdot\nabla\psi=0$:
 \begin{equation}
-(\mathbf B\times\nabla\psi)\cdot(\nabla\psi\times\mathbf j)
-=
-(\mathbf B\cdot\nabla\psi)(\nabla\psi\cdot\mathbf j)
--
-(\mathbf B\cdot\mathbf j)|\nabla\psi|^2
-=
--\sigma B^2|\nabla\psi|^2,
+((\mathbf B\cdot\nabla)\mathbf B)\cdot\nabla\psi = B^2\,\boldsymbol{\kappa}\cdot\nabla\psi = B^2\kappa_\psi.
 \end{equation}
-so
+Thus, $\boxed{K_{\perp}=2p'\kappa_\psi}$.
+
+\paragraph{2. Parallel part $K_{\parallel}$}
+With $\mathbf j_{\parallel}=\sigma\mathbf B$:
 \begin{equation}
-K_{\parallel}
-=
-\mu_0\sigma^2B^2
--
-\frac{\sigma}{|\nabla\psi|^2}
-(\mathbf B\times\nabla\psi)\cdot\nabla\times(\mathbf B\times\nabla\psi).
+K_{\parallel} = 2\mu_0\sigma^2B^2 - \frac{2\sigma}{|\nabla\psi|^2}(\mathbf B\times\nabla\psi)\cdot(\nabla\psi\cdot\nabla)\mathbf B.
 \end{equation}
 
-Define the shear quantity
+Define $\mathbf A \equiv \mathbf B\times\nabla\psi$. Using
 \begin{equation}
-S
-\equiv
--
-\frac{\mathbf B\times\nabla\psi}{|\nabla\psi|^2}
-\cdot
-\nabla\times\left(
-\frac{\mathbf B\times\nabla\psi}{|\nabla\psi|^2}
-\right).
+\nabla\times(\mathbf B\times\nabla\psi) = \mathbf B\nabla^2\psi + (\nabla\psi\cdot\nabla)\mathbf B - (\mathbf B\cdot\nabla)\nabla\psi,
 \end{equation}
-Also,
+and from $0=\nabla(\mathbf B\cdot\nabla\psi) = (\mathbf B\cdot\nabla)\nabla\psi + (\nabla\psi\cdot\nabla)\mathbf B + \nabla\psi\times(\nabla\times\mathbf B)$ with $\nabla\times\mathbf B=\mu_0\mathbf j$:
 \begin{equation}
-(\mathbf B\times\nabla\psi)\cdot
-\left[
-\nabla\left(\frac{1}{|\nabla\psi|^2}\right)
-\times
-(\mathbf B\times\nabla\psi)
-\right]
-=0,
+(\mathbf B\cdot\nabla)\nabla\psi = -(\nabla\psi\cdot\nabla)\mathbf B - \mu_0\nabla\psi\times\mathbf j.
 \end{equation}
-and therefore
+Therefore
 \begin{equation}
-\frac{1}{|\nabla\psi|^2}
-(\mathbf B\times\nabla\psi)\cdot\nabla\times(\mathbf B\times\nabla\psi)
-=
-(\mathbf B\times\nabla\psi)\cdot
-\nabla\times\left(
-\frac{\mathbf B\times\nabla\psi}{|\nabla\psi|^2}
-\right).
+\nabla\times(\mathbf B\times\nabla\psi) = \mathbf B\nabla^2\psi + 2(\nabla\psi\cdot\nabla)\mathbf B + \mu_0\nabla\psi\times\mathbf j.
 \end{equation}
-Thus,
+
+Dotting with $\mathbf A=\mathbf B\times\nabla\psi$ (note: $\mathbf A\cdot\mathbf B=0$):
 \begin{equation}
-\boxed{
-K_{\parallel}
-=
-|\nabla\psi|^2 \sigma S + \mu_0\sigma^2B^2
-}.
+\mathbf A\cdot\nabla\times(\mathbf B\times\nabla\psi) = 2\mathbf A\cdot(\nabla\psi\cdot\nabla)\mathbf B + \mu_0\mathbf A\cdot(\nabla\psi\times\mathbf j),
+\end{equation}
+giving
+\begin{equation}
+\mathbf A\cdot(\nabla\psi\cdot\nabla)\mathbf B = \frac{1}{2}\left[\mathbf A\cdot\nabla\times(\mathbf B\times\nabla\psi) - \mu_0\mathbf A\cdot(\nabla\psi\times\mathbf j)\right].
+\end{equation}
+
+Substituting into $K_{\parallel}$:
+\begin{equation}
+K_{\parallel} = 2\mu_0\sigma^2B^2 - \frac{\sigma}{|\nabla\psi|^2}\mathbf A\cdot\nabla\times(\mathbf B\times\nabla\psi) + \frac{\mu_0\sigma}{|\nabla\psi|^2}\mathbf A\cdot(\nabla\psi\times\mathbf j).
+\end{equation}
+
+For the last term, using the vector identity $(\mathbf a\times\mathbf b)\cdot(\mathbf c\times\mathbf d) = (\mathbf a\cdot\mathbf c)(\mathbf b\cdot\mathbf d) - (\mathbf a\cdot\mathbf d)(\mathbf b\cdot\mathbf c)$:
+\begin{equation}
+(\mathbf B\times\nabla\psi)\cdot(\nabla\psi\times\mathbf j) = (\mathbf B\cdot\nabla\psi)(\nabla\psi\cdot\mathbf j) - (\mathbf B\cdot\mathbf j)|\nabla\psi|^2 = -\sigma B^2|\nabla\psi|^2,
+\end{equation}
+where $\mathbf B\cdot\nabla\psi=0$ and $\mathbf B\cdot\mathbf j=\sigma B^2$ were used. Therefore
+\begin{align}
+K_{\parallel} &= 2\mu_0\sigma^2B^2 - \frac{\sigma}{|\nabla\psi|^2}(\mathbf B\times\nabla\psi)\cdot\nabla\times(\mathbf B\times\nabla\psi) - \mu_0\sigma^2B^2 \\
+&= \mu_0\sigma^2B^2 - \frac{\sigma}{|\nabla\psi|^2}(\mathbf B\times\nabla\psi)\cdot\nabla\times(\mathbf B\times\nabla\psi).
+\end{align}
+
+Define
+\begin{equation}
+S \equiv -\frac{\mathbf B\times\nabla\psi}{|\nabla\psi|^2}\cdot\nabla\times\left(\frac{\mathbf B\times\nabla\psi}{|\nabla\psi|^2}\right),
+\end{equation}
+which is equivalent to $S = -\frac{1}{|\nabla\psi|^2}(\mathbf B\times\nabla\psi)\cdot\nabla\times(\mathbf B\times\nabla\psi)$ by the product rule for curl.
+Thus
+\begin{equation}
+\boxed{K_{\parallel} = \mu_0\sigma^2B^2 + \sigma|\nabla\psi|^2 S}.
 \end{equation}
 
 \paragraph{3. Final expression}
-Combining the two pieces,
 \begin{equation}
 \boxed{
-K
-=
-K_{\parallel}+K_{\perp}
-=
-|\nabla\psi|^2 \sigma S
-+\mu_0\sigma^2B^2
-+2p'\kappa_\psi
-}.
+K = |\nabla\psi|^2 \sigma S + \mu_0\sigma^2B^2 + 2p'\kappa_\psi
+}
 \end{equation}
 
-Therefore it is convenient to define
-\begin{equation}
-K_{\rm shear}\equiv |\nabla\psi|^2 \sigma S,
-\qquad
-K_\sigma\equiv \mu_0\sigma^2B^2,
-\qquad
-K_{p\kappa}\equiv 2p'\kappa_\psi,
-\end{equation}
-so that
-\begin{equation}
-K = K_{\rm shear}+K_\sigma+K_{p\kappa}. \quad (\hat{\mathbf n} \equiv \frac{\nabla\psi}{|\nabla\psi|},
-\sigma \equiv \frac{\mathbf j\cdot\mathbf B}{B^2},
-\mathbf b \equiv \frac{\mathbf B}{B},
-\boldsymbol{\kappa}\equiv (\mathbf b\cdot\nabla)\mathbf b,
-\kappa_\psi \equiv \boldsymbol{\kappa}\cdot\nabla\psi.)
-\end{equation}
+\subsection{Expression of $K$ in DCON coordinates}
 
-\subsection{Bernstein $K$ in DCON coordinates}
-
-We use the convention
+Following the Bernstein formulation from §3.1-3.2, the energy principle yields
+\color{blue}
 \begin{equation}
-K
-=
-|\nabla\psi|^2 \sigma S
-+\mu_0 \sigma^2 B^2
-+2p'\kappa_\psi,
-\qquad
-\sigma \equiv \frac{\mathbf j\cdot\mathbf B}{B^2},
-\qquad
+K = |\nabla\psi|^2 \sigma S + \mu_0 \sigma^2 B^2 + 2p'\kappa_\psi, \quad
+\sigma \equiv \frac{\mathbf j\cdot\mathbf B}{B^2}, \quad
 \mathbf j \equiv \frac{\nabla\times\mathbf B}{\mu_0}.
 \end{equation}
+\color{black}
+In §3.2, this expression was obtained in a general flux-coordinate form.  We now rewrite
+it so that each ingredient can be evaluated directly from the DCON equilibrium data.  From
+this point on, $\psi$ denotes the DCON normalized flux coordinate, $\psi\in[0,1]$, and
+$p' \equiv dp/d\psi$ is the derivative with respect to this normalized flux label.
 
-In DCON straight-field-line coordinates $(\psi,\theta,\zeta)$, we write
+In DCON coordinates $(\psi,\theta,\zeta)$,
 \begin{equation}
-\mathbf B
-=
-\nabla\chi \times \nabla\alpha
-=
-\chi'(\psi)\,\nabla\psi\times\nabla\alpha,
-\qquad
-\alpha \equiv q(\psi)\theta-\zeta,
-\qquad
-\chi' \equiv \frac{d\chi}{d\psi}.
+\mathbf B = \chi'(\psi)\,\nabla\psi\times\nabla\alpha, \quad
+\alpha \equiv q(\psi)\theta-\zeta, \quad
+\chi' \equiv \frac{d\chi}{d\psi}, \quad
+\mathcal J^{-1} \equiv \nabla\psi\cdot(\nabla\theta\times\nabla\zeta).
 \end{equation}
 
-The Jacobian is defined by
+We use the contravariant metric elements
 \begin{equation}
-\mathcal J^{-1}
-\equiv
-\nabla\psi\cdot(\nabla\theta\times\nabla\zeta),
+g^{ij}\equiv \nabla q^i\cdot\nabla q^j,
+\qquad
+(q^1,q^2,q^3) \equiv (\psi,\theta,\zeta),
 \end{equation}
-so that the parallel gradient operator becomes
+with in particular
+\begin{equation}
+g^{\psi\psi}\equiv \nabla\psi\cdot\nabla\psi, \quad
+g^{\psi\theta}\equiv \nabla\psi\cdot\nabla\theta, \quad
+g^{\psi\zeta}\equiv \nabla\psi\cdot\nabla\zeta.
+\end{equation}
+The combinations involving $\alpha=q\theta-\zeta$ are
+\begin{equation}
+g^{\psi\alpha}\equiv \nabla\psi\cdot\nabla\alpha
+= q\,g^{\psi\theta}-g^{\psi\zeta},
+\end{equation}
+\begin{equation}
+g^{\alpha\alpha}\equiv \nabla\alpha\cdot\nabla\alpha
+= q^2 g^{\theta\theta}-2q\,g^{\theta\zeta}+g^{\zeta\zeta}.
+\end{equation}
+Accordingly, the parallel derivative operator becomes
 \begin{equation}
 \mathbf B\cdot\nabla
 =
@@ -974,32 +755,40 @@ so that the parallel gradient operator becomes
 \frac{\partial}{\partial\theta}
 +
 q\frac{\partial}{\partial\zeta}
-\right).
+\right),
 \end{equation}
-
-We also define the contravariant metric elements
+and the field strength is written as
 \begin{equation}
-g^{\psi\psi}\equiv \nabla\psi\cdot\nabla\psi,
-\qquad
-g^{\psi\theta}\equiv \nabla\psi\cdot\nabla\theta,
-\qquad
-g^{\psi\zeta}\equiv \nabla\psi\cdot\nabla\zeta.
+\boxed{
+B^2
+=
+\chi'^2|\nabla\psi\times\nabla\alpha|^2
+=
+\chi'^2\left(g^{\psi\psi}g^{\alpha\alpha}-(g^{\psi\alpha})^2\right).
+}
 \end{equation}
+These relations provide the DCON input form used below for the explicit evaluation of
+$S$, $\xi_\psi$, $\kappa_\psi$, and finally $K$.
 
-\subsection{Expression of $S$ in DCON coordinates}
+\subsubsection{Shear parameter $S$ in DCON}
 
-We define
+\color{blue}
+For any flux label $\lambda$, the shear parameter associated with that label is
 \begin{equation}
-S
+S_{\lambda}
 \equiv
 -\,
-\frac{\mathbf B\times\nabla\psi}{|\nabla\psi|^2}
+\frac{\mathbf B\times\nabla\lambda}{|\nabla\lambda|^2}
 \cdot
 \nabla\times
 \left(
-\frac{\mathbf B\times\nabla\psi}{|\nabla\psi|^2}
-\right).
+\frac{\mathbf B\times\nabla\lambda}{|\nabla\lambda|^2}
+\right),
 \end{equation}
+and the shear contribution to $K$ is $|\nabla\lambda|^2\sigma S_{\lambda}$.
+
+\color{black}
+In this subsection we take $\lambda=\psi$, where $\psi$ is the DCON normalized flux label.
 
 Introduce
 \begin{equation}
@@ -1054,7 +843,7 @@ since $\nabla\times\nabla\alpha=0$ and $\nabla\times\nabla\psi=0$.
 Now, because $\nabla\chi' \parallel \nabla\psi$, the first term vanishes when contracted
 with $\boldsymbol{\Lambda}_\psi$, so
 \begin{align}
-S
+S_{\psi}
 &=
 -\boldsymbol{\Lambda}_\psi\cdot(\nabla\times\boldsymbol{\Lambda}_\psi)
 \\
@@ -1075,7 +864,7 @@ S
 Therefore,
 \begin{equation}
 \boxed{
-S
+S_{\psi}
 =
 \chi'\,\mathbf B\cdot\nabla
 \left(
@@ -1083,6 +872,8 @@ S
 \right).
 }
 \end{equation}
+Here $S_{\psi}$ denotes the shear parameter associated with the DCON normalized flux
+label $\psi$, not the $\chi/(2\pi)$-based shear used in the GPEC note.
 
 Next,
 \begin{align}
@@ -1120,7 +911,7 @@ q\frac{\partial}{\partial\zeta}
 \end{equation}
 we obtain
 \begin{align}
-S
+S_{\psi}
 &=
 \frac{\chi'^2}{\mathcal J}
 \frac{\partial}{\partial\theta}
@@ -1143,10 +934,58 @@ q'
 \right].
 }
 \end{align}
+Therefore, in DCON coordinates the shear contribution to $K$ is written as
+\begin{equation}
+\boxed{
+K_{\mathrm{shear}}^{DCON}
+=
+g^{\psi\psi}\sigma S_{\psi}
+=
+g^{\psi\psi}\sigma
+\frac{\chi'^2}{\mathcal J}
+\left[
+q'
++
+\frac{\partial}{\partial\theta}
+\left(
+\frac{q\,g^{\psi\theta}-g^{\psi\zeta}}{g^{\psi\psi}}
+\right)
+\right].
+}
+\end{equation}
 
-\subsection{Normal displacement $\xi_\psi$ in DCON coordinates}
+\noindent\textbf{Relation to the GPEC note.}
+If one instead uses the flux label
+\begin{equation}
+\lambda = \frac{\chi}{2\pi} = \frac{\chi'}{2\pi}\psi,
+\end{equation}
+then
+\begin{equation}
+S_{\lambda}
+=
+\left(\frac{2\pi}{\chi'}\right)^2 S_{\psi}
+=
+\frac{(2\pi)^2}{\mathcal J}
+\left[
+q'
++
+\frac{\partial}{\partial\theta}
+\left(
+\frac{q\,g^{\psi\theta}-g^{\psi\zeta}}{g^{\psi\psi}}
+\right)
+\right].
+\end{equation}
+This is the shear normalization used in the GPEC note.  The first term of $K$ is the
+same only when the corresponding gradient factor is used consistently:
+\begin{equation}
+\left|\nabla\left(\frac{\chi}{2\pi}\right)\right|^2\sigma S_{\lambda}
+=
+g^{\psi\psi}\sigma S_{\psi}.
+\end{equation}
 
-We define the normal displacement variable by
+\subsubsection{Normal displacement $\xi_\psi$}
+
+In DCON coordinates, the flux-normal displacement variable is
 \begin{equation}
 \xi_\psi
 \equiv
@@ -1168,6 +1007,8 @@ Therefore,
 \frac{\xi_\psi}{|\nabla\psi|}.
 }
 \end{equation}
+The variable $\xi_\psi$ itself depends on the chosen flux label, but the ratio
+$\xi_\psi/|\nabla\psi|$ does not.
 
 Using the DCON Fourier convention,
 \begin{equation}
@@ -1189,29 +1030,53 @@ e^{2\pi i(m\theta-n\zeta)}.
 }
 \end{equation}
 
-For the quadratic form in the energy principle, it is more precise to write
+For the quadratic form in the energy principle, the magnitude squared is:
 \begin{equation}
 \boxed{
 (\boldsymbol{\xi}_\perp\cdot\hat{\mathbf n})
 (\boldsymbol{\xi}_\perp\cdot\hat{\mathbf n})^*
 =
-\frac{\xi_\psi\xi_\psi^*}{|\nabla\psi|^2}.
+\frac{\xi_\psi(\xi_\psi)^*}{g^{\psi\psi}},
+\qquad
+g^{\psi\psi}=|\nabla\psi|^2.
 }
 \end{equation}
-If one restricts to a real displacement, the complex conjugation may be dropped at the end.
-
-\subsection{Expression of $\kappa_\psi$ in DCON coordinates}
-
-We define
+Since $\xi_\psi$ is represented as a complex Fourier expansion, the product with its
+complex conjugate gives the magnitude squared.  Therefore the Bernstein scalar term is
+evaluated in DCON as
 \begin{equation}
-\kappa_\psi
+\boxed{
+K\left|\boldsymbol{\xi}_\perp\cdot\hat{\mathbf n}\right|^2
+=
+\frac{K}{g^{\psi\psi}}|\xi_\psi|^2.
+}
+\end{equation}
+
+\subsubsection{Curvature $\kappa_\psi$}
+
+\color{blue}
+For any flux label $\lambda$, define
+\begin{equation}
+\kappa_\lambda
 \equiv
-\boldsymbol{\kappa}\cdot\nabla\psi,
+\boldsymbol{\kappa}\cdot\nabla\lambda,
 \qquad
 \boldsymbol{\kappa}\equiv(\mathbf b\cdot\nabla)\mathbf b,
 \qquad
 \mathbf b\equiv\frac{\mathbf B}{B}.
 \end{equation}
+This is the magnetic-field-line curvature projected along the chosen flux-gradient
+direction.
+
+\color{black}
+In DCON coordinates we take $\lambda=\psi$, so
+\begin{equation}
+\kappa_\psi\equiv\boldsymbol{\kappa}\cdot\nabla\psi,
+\qquad
+p'\equiv\frac{dp}{d\psi}.
+\end{equation}
+Both $p'$ and $\kappa_\psi$ depend on this flux-label normalization, while their product
+$p'\kappa_\psi$ is the invariant pressure-curvature combination entering $K$.
 
 Using the equilibrium force balance
 \begin{equation}
@@ -1296,22 +1161,26 @@ Equivalently,
 \right].
 }
 \end{equation}
+Here $B^2$, $\partial B^2/\partial\psi$, and $\partial B^2/\partial\theta$ are evaluated
+from the DCON field-strength expression in §3.3.1.
 
-\subsection{Final DCON expression for $K$}
+\subsubsection{Final expression}
 
+\color{black}
 Combining the DCON expressions above, we obtain
 \begin{equation}
 \boxed{
-K
+K_{DCON}
 =
-g^{\psi\psi}\sigma S_\psi
+g^{\psi\psi}\sigma S_{\psi}
 +\mu_0\sigma^2B^2
 +2p'\kappa_\psi.
 }
 \end{equation}
-That is,
+Here each flux-label dependent quantity is evaluated with the DCON normalized coordinate
+$\psi$.  Explicitly:
 \begin{align}
-K(\psi,\theta)
+K_{DCON}(\psi,\theta)
 &=
 g^{\psi\psi}\sigma
 \frac{\chi'^2}{\mathcal J}
@@ -1335,308 +1204,6 @@ q'
 \frac{1}{2}\frac{\partial B^2}{\partial\theta}g^{\psi\theta}
 \right].
 \end{align}
-% \subsection{Normalization of S between Chance and DCON coordinates}
-% \noindent Blue symbols denote Chance variables and black symbols denote DCON variables; the subscripts are omitted in this subsection.
-
-% In Chance's formulation, the magnetic shear scalar \(S\) is defined as
-% \begin{equation}
-% \color{blue} 
-% S
-% = -\,\frac{\mathbf{B}\times\nabla\psi}{|\nabla\psi|^2}
-% \cdot
-% \left(
-% \nabla\times
-% \frac{\mathbf{B}\times\nabla\psi}{|\nabla\psi|^2}
-% \right).
-% \end{equation}
-
-% Using the DCON normalization of the flux coordinate,
-% \begin{equation}
-% {\color{blue}\psi}
-% = \frac{\chi^\prime}{2\pi}\,
-% \psi,
-% \qquad
-% {\color{blue}\nabla \psi}
-% = \frac{\chi^\prime}{2\pi}\, \nabla \psi,
-% \end{equation}
-% we can rewrite each factor in terms of DCON variables.
-
-% Hence, the normalized cross term becomes
-% \begin{equation}
-% \frac{{\color{blue}\mathbf{B}\times\nabla\psi}}{{\color{blue}|\nabla\psi|^2}}
-% = \frac{2\pi}{\chi^\prime}\,
-% \frac{\mathbf{B}\times\nabla\psi}{|\nabla\psi|^2}.
-% \end{equation}
-
-% Substituting this back into the original definition of \(S\), we find
-% \begin{align}
-% {\color{blue}S}
-% &= -\left(\frac{2\pi}{\chi^\prime}\right)^2
-% \frac{\mathbf{B}\times\nabla\psi}{|\nabla\psi|^2}
-% \cdot
-% \left[
-% \nabla\times
-% \frac{\mathbf{B}\times\nabla\psi}{|\nabla\psi|^2}
-% \right]\\
-% &= \left(\frac{2\pi}{\chi^\prime}\right)^2
-% \underbrace{\left[
-% -\,\frac{\mathbf{B}\times\nabla\psi}{|\nabla\psi|^2}
-% \cdot
-% \left(
-% \nabla\times
-% \frac{\mathbf{B}\times\nabla\psi}{|\nabla\psi|^2}
-% \right)\right]}_{S}\\
-% &= -\,(2\pi)^2 \frac{\mathbf{B}\times\nabla\chi_{dcon}}{|\nabla\chi_{dcon}|^2}
-% \cdot
-% \left(
-% \nabla\times
-% \frac{\mathbf{B}\times\nabla\chi_{dcon}}{|\nabla\chi_{dcon}|^2}
-% \right)
-% \end{align}
-
-% Therefore, the final relation between the two shear definitions is
-% \begin{equation}
-% \boxed{
-% {\color{blue}S}
-% = \left(\frac{2\pi}{\chi^\prime}\right)^2
-% S
-% = c^{-2} S,
-% \qquad
-% S
-% = \left(\frac{\chi^\prime}{2\pi}\right)^2
-% {\color{blue}S}.
-% }
-% \end{equation}
-
-% Below this point in this subsection, \(S\) denotes the DCON quantity.
-
-% \begin{align}
-% \boldsymbol{\Lambda}
-% &\equiv \frac{\mathbf{B} \times \nabla \chi_{dcon}}{|\nabla \chi_{dcon}|^2}
-% = \frac{(\nabla \chi_{dcon} \times \nabla \alpha) \times \nabla \chi_{dcon}}{|\nabla \chi_{dcon}|^2} \\[4pt]
-% &= \nabla \alpha
-% - \frac{(\nabla \chi_{dcon} \cdot \nabla \alpha)}{|\nabla \chi_{dcon}|^2}\, \nabla \chi_{dcon}.
-% \end{align}
-
-% The curl becomes ($\alpha\, \text{represents}\, \alpha_{dcon}$ below this point)
-% \begin{align}
-% \nabla \times \boldsymbol{\Lambda}
-% &= -\,\nabla \times
-% \left[
-% \frac{(\nabla \chi_{dcon} \cdot \nabla \alpha)}{|\nabla \chi_{dcon}|^2}\, \nabla \chi_{dcon}
-% \right] \\[4pt]
-% &= -\,\nabla \left(\frac{\nabla \chi_{dcon} \cdot \nabla \alpha}{|\nabla \chi_{dcon}|^2}\right)
-% \times \nabla \chi_{dcon},
-% \end{align}
-
-% since $\nabla \times \nabla = 0$. The magnetic shear:
-
-% \begin{align}
-% {\color{blue}S}
-% &= - (2\pi)^2\, \boldsymbol{\Lambda} \cdot (\nabla \times \boldsymbol{\Lambda}) \\[4pt]
-% &= - (2\pi)^2
-% \left[
-% \nabla \alpha
-% - \frac{(\nabla \chi_{dcon} \cdot \nabla \alpha)}{|\nabla \chi_{dcon}|^2}\, \nabla \chi_{dcon}
-% \right]
-% \cdot
-% \left[
-% \nabla \left(\frac{\nabla \chi_{dcon} \cdot \nabla \alpha}{|\nabla \chi_{dcon}|^2}\right)
-% \times \nabla \chi_{dcon}
-% \right] \\[6pt]
-% &= (2\pi)^2\, \nabla \alpha \cdot
-% \left[
-% \nabla \left(\frac{\nabla \chi_{dcon} \cdot \nabla \alpha}{|\nabla \chi_{dcon}|^2}\right)
-% \times \nabla \chi_{dcon}
-% \right] \\[6pt]
-% &= (2\pi)^2\, (\nabla \chi_{dcon} \times \nabla \alpha) \cdot
-% \nabla \left(\frac{\nabla \chi_{dcon} \cdot \nabla \alpha}{|\nabla \chi_{dcon}|^2}\right) \\[6pt]
-% &= (2\pi)^2\, \mathbf{B} \cdot
-% \nabla \left(\frac{\nabla \chi_{dcon} \cdot \nabla \alpha}{|\nabla \chi_{dcon}|^2}\right)\\
-% &= \frac{(2\pi)^2}{\chi\prime_{dcon}}\, \mathbf{B} \cdot \nabla (\frac{\nabla \psi \cdot \nabla \alpha}{\nabla\psi \cdot \nabla\psi})
-% \end{align}
-
-
-% The parallel gradient operator is:
-% \begin{equation}
-% \mathbf{B} \cdot \nabla
-% = B^{\theta} \frac{\partial}{\partial \theta}
-% + B^{\zeta} \frac{\partial}{\partial \zeta}
-% = \frac{\chi'}{\mathcal{J}}
-% \left(
-% \frac{\partial}{\partial \theta}
-% + q \frac{\partial}{\partial \zeta}
-% \right).
-% \end{equation}
-
-% Also note
-% \begin{align}
-% \nabla \psi \cdot \nabla \alpha
-% &= \nabla \psi \cdot \nabla \big(q(\psi)\theta - \zeta\big)
-% = q'(\nabla \psi \cdot \nabla \psi)\theta
-% + \nabla \psi \cdot \big(q \nabla \theta - \nabla \zeta\big).
-% \end{align}
-
-% Since $\partial / \partial \zeta = 0$ for a tokamak, one obtains:
-% \begin{align}
-% {\color{blue}S}
-% &= \frac{(2\pi)^2}{\mathcal{J}}
-% \frac{\partial}{\partial \theta}
-% \left[
-% q' \theta
-% + \frac{q(\nabla \psi \cdot \nabla \theta)
-% - (\nabla \psi \cdot \nabla \zeta)}
-% {(\nabla \psi \cdot \nabla \psi)}
-% \right] \\[6pt]
-% &= \frac{(2\pi)^2}{\mathcal{J}}
-% \left[
-% q'
-% + \frac{\partial}{\partial \theta}
-% \left(
-% \frac{q(\nabla \psi \cdot \nabla \theta)
-% - (\nabla \psi \cdot \nabla \zeta)}
-% {(\nabla \psi \cdot \nabla \psi)}
-% \right)
-% \right].
-% \end{align}
-
-% \subsection{$\xi^{\psi}$ in DCON berstein caculation}
-
-% \begin{align}
-% \boxed{
-% \boldsymbol{\xi}_\perp \cdot \hat{n}
-% = \frac{\boldsymbol{\xi} \cdot \nabla \psi}{|\nabla \psi|}
-% = \frac{\xi^\psi}{|\nabla \psi|},
-% }
-% \qquad
-% \boxed{
-% (\boldsymbol{\xi}_\perp \cdot \hat{n})^2
-% = \frac{(\xi^\psi)^2}{|\nabla \psi|^2}.
-% }
-% \end{align}
-
-% \begin{equation}
-% \boxed{
-% \boldsymbol{\xi}_\perp \cdot \hat{n}
-% = \frac{1}{|\nabla \psi|}
-% \sum_{m,n} v_{m,n}(\psi)\, e^{2\pi i(m\theta - n\zeta)}.
-% }
-% \end{equation}
-
-% \subsection{$\boldsymbol{\kappa}$ in DCON berstein caculation}
-% \noindent Blue symbols denote Chance variables and black symbols denote DCON variables; the subscripts are omitted in this subsection.
-% \begin{align}
-% \kappa^\psi &\equiv \boldsymbol{\kappa} \cdot \nabla \psi.
-% \end{align}
-
-% \begin{align}
-% B^2 \boldsymbol{\kappa}
-% = \mu_0 \nabla p + \nabla_\perp \frac{B^2}{2},
-% \end{align}
-% \begin{align}
-% \nabla p &= p' \nabla \psi,
-% \nabla \frac{B^2}{2}
-% = \frac{1}{2}\frac{\partial B^2}{\partial \psi}\nabla \psi
-% + \frac{1}{2}\frac{\partial B^2}{\partial \theta}\nabla \theta,
-% \end{align}
-% \begin{align}
-% B^2 \kappa^\psi
-% \!=
-% \mu_0 p' (\nabla \psi \cdot \nabla \psi)
-% + \frac{1}{2}\frac{\partial B^2}{\partial \psi}
-% (\nabla \psi \cdot \nabla \psi)
-% + \frac{1}{2}\frac{\partial B^2}{\partial \theta}
-% (\nabla \psi \cdot \nabla \theta).
-% \end{align}
-% \begin{align}
-% \boxed{
-% \kappa^\psi
-% = \frac{1}{B^2}
-% \left[
-% \mu_0 p' (\nabla \psi \cdot \nabla \psi)
-% + \frac{1}{2}\frac{\partial B^2}{\partial \psi}
-% (\nabla \psi \cdot \nabla \psi)
-% + \frac{1}{2}\frac{\partial B^2}{\partial \theta}
-% (\nabla \psi \cdot \nabla \theta)
-% \right]
-% }
-% \end{align}
-% or equivalently
-% \begin{align}
-% \boxed{
-% \kappa^\psi
-% = \frac{|\nabla \psi|^2}{B^2}
-% \left[
-% \mu_0 p'
-% + \frac{1}{2}\frac{\partial B^2}{\partial \psi}
-% + \frac{1}{2}\frac{\partial B^2}{\partial \theta}
-% \frac{\nabla \psi \cdot \nabla \theta}{|\nabla \psi|^2}
-% \right].
-% }
-% \end{align}
-
-% \begin{align}
-% {\color{blue}\psi}= c\,\psi,
-% \qquad
-% c \equiv \frac{\chi'}{2\pi}.
-% \end{align}
-% \begin{align}
-% {\color{blue}\nabla \psi}&= c\,\nabla \psi, \\
-% {\color{blue}|\nabla \psi|^2}&= c^2 |\nabla \psi|^2, \\
-% \frac{\partial B^2}{\partial {\color{blue}\psi}}
-% &= \frac{1}{c}\frac{\partial B^2}{\partial \psi}, \\
-% {\color{blue}p'}
-% &= \frac{dp}{d{\color{blue}\psi}}
-% = \frac{1}{c} p'.
-% \end{align}
-% \begin{align}
-% {\color{blue}\kappa^\psi}
-% &=
-% \frac{{\color{blue}|\nabla \psi|^2}}{B^2}
-% \left[
-% \mu_0 {\color{blue}p'}
-% + \frac{1}{2}\frac{\partial B^2}{\partial {\color{blue}\psi}}
-% + \frac{1}{2}\frac{\partial B^2}{\partial \theta}
-% \frac{{\color{blue}\nabla \psi \cdot \nabla \theta}}
-% {{\color{blue}|\nabla \psi|^2}}
-% \right] \\
-% &=
-% \frac{c^2 |\nabla \psi|^2}{B^2}
-% \left[
-% \frac{1}{c}\mu_0 p'
-% + \frac{1}{2c}\frac{\partial B^2}{\partial \psi}
-% + \frac{1}{2}\frac{\partial B^2}{\partial \theta}
-% \frac{c\,\nabla \psi \cdot \nabla \theta}
-% {c^2 |\nabla \psi|^2}
-% \right] \\
-% &=
-% c\,\frac{|\nabla \psi|^2}{B^2}
-% \left[
-% \mu_0 p'
-% + \frac{1}{2}\frac{\partial B^2}{\partial \psi}
-% + \frac{1}{2}\frac{\partial B^2}{\partial \theta}
-% \frac{\nabla \psi \cdot \nabla \theta}
-% {|\nabla \psi|^2}
-% \right].
-% \end{align}
-% \begin{align}
-% \boxed{
-% \kappa^\psi
-% \equiv
-% \boldsymbol{\kappa}\cdot\nabla \psi
-% = \frac{|\nabla \psi|^2}{B^2}
-% \left[
-% \mu_0 p'
-% + \frac{1}{2}\frac{\partial B^2}{\partial \psi}
-% + \frac{1}{2}\frac{\partial B^2}{\partial \theta}
-% \frac{\nabla \psi \cdot \nabla \theta}
-% {|\nabla \psi|^2}
-% \right],
-% }
-% \end{align}
-% \begin{align}
-% {\color{blue}\kappa^\psi}= c\,\kappa^\psi.
-% \end{align}
 
 \section{Reconstruction of energy principle variables in DCON}
 
@@ -1652,13 +1219,13 @@ q'
     \chi'' \nabla \zeta \times \nabla \psi
     + (q\chi')' \nabla \psi \times \nabla \theta
 \right)\xi_\psi \\
-&+\frac{\xi_\psi}{|\nabla \psi|^2} [
-j^\theta
+&+\frac{\mathcal J\xi_\psi}{|\nabla \psi|^2} [
+\mu_0j^\theta
 \big(
 \nabla\psi(\nabla\zeta\cdot\nabla\psi)
 -
 \nabla\zeta|\nabla\psi|^2
-\big)+j^\zeta
+\big)+\mu_0j^\zeta
 \big(
 \nabla\theta|\nabla\psi|^2
 -
@@ -1669,50 +1236,54 @@ j^\theta
 \end{equation}
 
 \subsection{Reconstruction v1}
-
 \begin{align}
-\xi^\psi = \sum_{m}^{} \sum_{n}^{} v_{m,n}(\psi) \cdot \exp 2\pi i(m\theta -n\zeta) \\
-\xi^s = \sum_{m}^{} \sum_{n}^{} u_{m,n}(\psi) \cdot \exp 2\pi i(m\theta -n\zeta)
+\xi_\psi = \sum_{m}^{} \sum_{n}^{} v_{m,n}(\psi) \cdot \exp 2\pi i(m\theta -n\zeta) \\
+\xi_s = \sum_{m}^{} \sum_{n}^{} u_{m,n}(\psi) \cdot \exp 2\pi i(m\theta -n\zeta)
 \end{align}
-And if you see the 331 line in ideal.f of MATCH, it constructs all the eigenvectors in variable v.
-\begin{equation}
-v_{m,n}(\psi)
-= v(:,1,mstep)
-\end{equation}
-\begin{equation}
-v_{m,n}^\prime(\psi)
-= v(:,3,mstep)
-\end{equation}
-\begin{equation}
-u_{m,n}(\psi)
-= v(:,4,mstep)
-\end{equation}
-\medskip
-\noindent\rule{\linewidth}{0.4pt}
+Here $\xi_\psi\equiv\vec\xi\cdot\nabla\psi$ is the normal displacement amplitude used by DCON, and $\xi_s$ is the surface displacement variable.
 \begin{align}
 \vec{Q} &= \mathcal{J} (Q^{\psi} \nabla \theta \times \nabla \zeta + Q^{\theta} \nabla \zeta \times \nabla \psi + Q^{\zeta} \nabla \psi \times \nabla \theta) &= \mathcal{J} ( Q^{\psi} \vec{v_1} + Q^{\theta} \vec{v_2} + Q^{\zeta} \vec{v_3}) \\
 &= Q_1 \nabla \psi + Q_2 \nabla \theta + Q_3 \nabla \zeta
 \end{align}
 
 \begin{equation}
-Q^{\psi} = \frac{\chi^\prime}{\mathcal{J}} (\frac{\partial}{\partial \theta} + q \frac{\partial}{\partial \zeta} )\xi^\psi = \frac{\chi^\prime}{\mathcal{J}} \sum_{m}^{} \sum_{n}^{} v_{m,n}(\psi) \cdot \exp 2 \pi i(m\theta -n\zeta)\cdot 2 \pi i (m-nq) 
+Q^{\psi} = \frac{\chi^\prime}{\mathcal{J}} (\frac{\partial}{\partial \theta} + q \frac{\partial}{\partial \zeta} )\xi_\psi = \frac{\chi^\prime}{\mathcal{J}} \sum_{m}^{} \sum_{n}^{} v_{m,n}(\psi) \cdot \exp 2 \pi i(m\theta -n\zeta)\cdot 2 \pi i (m-nq)
 \end{equation}
 
 \begin{align}
-Q^{\theta} &= - \frac{1}{\mathcal{J}} \frac{\partial}{\partial \psi}(\chi ^ \prime \xi ^\psi) + \frac{1}{\mathcal{J}} \frac{\partial \xi^s}{\partial \zeta} \\
-&= - \frac{1}{\mathcal{J}} \sum_{m}^{} \sum_{n}^{} \left(\chi ^ \prime \frac{\partial}{\partial \psi}(v_{m,n}(\psi)) + 2\pi i n u_{m,n}(\psi) \right) \cdot \exp 2\pi i(m\theta -n\zeta)
+Q^{\theta} &= - \frac{1}{\mathcal{J}} \frac{\partial}{\partial \psi}(\chi ^ \prime \xi_\psi) + \frac{1}{\mathcal{J}} \frac{\partial \xi_s}{\partial \zeta} \\
+&= - \frac{1}{\mathcal{J}} \sum_{m}^{} \sum_{n}^{} \left(\chi ^ \prime \frac{\partial}{\partial \psi}(v_{m,n}(\psi)) + \chi^{\prime\prime}v_{m,n}(\psi) + 2\pi i n u_{m,n}(\psi) \right) \cdot \exp 2\pi i(m\theta -n\zeta)
 \end{align}
 
 \begin{align}
 Q^{\zeta}
-&= - \frac{1}{\mathcal{J}} \frac{\partial}{\partial \psi} (\chi^\prime q \xi^\psi)
-   -\frac{1}{\mathcal{J}} \frac{\partial \xi^s}{\partial \theta} \\
+&= - \frac{1}{\mathcal{J}} \frac{\partial}{\partial \psi} (\chi^\prime q \xi_\psi)
+   -\frac{1}{\mathcal{J}} \frac{\partial \xi_s}{\partial \theta} \\
 &= - \frac{1}{\mathcal{J}} \sum_{m} \sum_{n}
    \left( \chi ^ \prime q \frac{\partial v_{m,n}(\psi)}{\partial \psi}
-   + \chi^\prime q^\prime v_{m,n}(\psi)
+   + (\chi^{\prime\prime}q+\chi^\prime q^\prime) v_{m,n}(\psi)
    + 2\pi i m u_{m,n}(\psi) \right)
    \exp\!\bigl(2 \pi i(m\theta - n\zeta)\bigr).
 \end{align}
+
+\paragraph{Implementation note on \texttt{reg\_flag}.}
+The formulas above are the unregularized Bernstein reconstruction.  In
+\texttt{gpeq\_sol} and \texttt{gpeq\_c}, the code may instead use modified
+tangential quantities when \texttt{reg\_flag=.true.}.  The modification replaces
+the radial derivative and surface variable entering the tangential upper
+components by
+\begin{equation}
+x_{\psi}' \longrightarrow x_{\psi}'\,
+\frac{(m-nq)^2}{(m-nq)^2+\texttt{reg\_spot}^2},
+\qquad
+x_s \longrightarrow x_s^{\mathrm{mod}},
+\end{equation}
+and then forms \texttt{bmt\_mn} and \texttt{bmz\_mn} from these modified
+quantities.  Therefore, if \texttt{reg\_flag=.false.}, \texttt{bmt\_mn=bwt\_mn}
+and \texttt{bmz\_mn=bwz\_mn}, so the code follows the expressions above.  If
+\texttt{reg\_flag=.true.}, the v1 diagnostic is a regularized reconstruction
+near rational surfaces \(m-nq=0\), not the strictly unregularized Bernstein
+formula.
 
 Then the current vector can be reconstructed by the Grad-Shafranov equation:
 \begin{align}
@@ -1733,23 +1304,54 @@ Now we can reconstruct the cross term in the energy principle:
 \begin{aligned}
 C^\psi   &= \vec{C}\cdot\nabla\psi   = Q^\psi 
 &\qquad
-C_1 &= Q_1 + \frac{\mathcal{J}\xi^\psi}{|\nabla\psi|^2}
+C_1 &= Q_1 + \frac{\mathcal{J}\xi_\psi}{|\nabla\psi|^2}
 \bigl[ \mu_0 j^\theta (\nabla\psi\cdot\nabla\zeta)
 - \mu_0 j^\zeta (\nabla\psi\cdot\nabla\theta) \bigr] \\
-C^\theta &= \vec{C}\cdot\nabla\theta = Q^\theta + \xi^\psi \frac{1}{|\nabla\psi|^2 \mathcal{J}}(\mu_0j^\theta g_{23} + \mu_0j^\zeta g_{33})
+C^\theta &= \vec{C}\cdot\nabla\theta = Q^\theta + \xi_\psi \frac{1}{|\nabla\psi|^2 \mathcal{J}}(\mu_0j^\theta g_{23} + \mu_0j^\zeta g_{33})
 &\qquad
-C_2 &= Q_2 + \mathcal{J}\xi^\psi \mu_0 j^\zeta \\
-C^\zeta  &= \vec{C}\cdot\nabla\zeta  = Q^\zeta - \xi^\psi \frac{1}{|\nabla\psi|^2 \mathcal{J}}(\mu_0j^\theta g_{22} + \mu_0j^\zeta g_{23})
+C_2 &= Q_2 + \mathcal{J}\xi_\psi \mu_0 j^\zeta \\
+C^\zeta  &= \vec{C}\cdot\nabla\zeta  = Q^\zeta - \xi_\psi \frac{1}{|\nabla\psi|^2 \mathcal{J}}(\mu_0j^\theta g_{22} + \mu_0j^\zeta g_{23})
 &\qquad
-C_3 &= Q_3 - \mathcal{J}\xi^\psi \mu_0 j^\theta
+C_3 &= Q_3 - \mathcal{J}\xi_\psi \mu_0 j^\theta
+\end{aligned}
+\end{equation}
+
+For direct reconstruction on the $(\psi,\theta)$ grid, the energy density is closed by the metric contraction
+\begin{equation}
+|\vec C|^2
+=
+g_{ij}C^{i*}C^j
+=
+C_i^*C^i,
+\qquad
+C_i=g_{ij}C^j,
+\qquad
+i,j\in\{\psi,\theta,\zeta\}.
+\end{equation}
+Equivalently,
+\begin{equation}
+\begin{aligned}
+|\vec C|^2
+&=
+g_{\psi\psi}|C^\psi|^2
++g_{\theta\theta}|C^\theta|^2
++g_{\zeta\zeta}|C^\zeta|^2 \\
+&\quad
++2\operatorname{Re}\!\left[
+g_{\psi\theta}C^{\psi*}C^\theta
++g_{\psi\zeta}C^{\psi*}C^\zeta
++g_{\theta\zeta}C^{\theta*}C^\zeta
+\right].
 \end{aligned}
 \end{equation}
 
 \subsection{Reconstruction $\boldsymbol{v2}$ : Matrix representation of $\delta W$}
-In this part, we will reconstruct the first term in $\delta W$ in the matrix form.
+In this part, we show that the reconstructed Bernstein form can be written in the same radial matrix structure as the DCON/Newcomb formulation.
 \begin{equation}
-\boxed{\;\mathcal{J}\,(\vec v_i\cdot\vec v_j)=\frac{g_{ij}}{\mathcal{J}}\;}
+\boxed{\;\vec v_i\cdot\vec v_j=\frac{g_{ij}}{\mathcal{J}^2}\;}
 \end{equation}
+Here $g_{ij}$ denotes the true covariant metric used in the previous sections.
+The DCON matrix coefficients use the Fourier projection of $\vec v_i\cdot\vec v_j$, not of $g_{ij}$ itself.
 
 \begin{equation}
 \boxed{
@@ -1763,11 +1365,121 @@ F(\psi,\theta)
 
 \begin{equation}
 \boxed{
-(G_{ij})_{mm'} \equiv \left\langle \frac{g_{ij}}{\mathcal{J}} \right\rangle_{mm'}
+(G_{ij})_{mm'} \equiv \left\langle \frac{g_{ij}}{\mathcal{J}^2} \right\rangle_{mm'}
 }
 \end{equation}
-where $G_{ij}$ is the matrix representation of the metric tensor in the Fourier space.
-First we focus on the first term in $\delta W$. If we change each terms in $\vec{C}$ as follows:
+where $G_{ij}$ is the DCON matrix representation of $\vec v_i\cdot\vec v_j$ in Fourier space.
+
+The reconstructed Bernstein form is written in the DCON/Newcomb radial matrix
+form as
+\begin{equation}
+\boxed{
+\begin{aligned}
+2\mu_0\delta W
+&=
+\int d\psi\,
+\Big[
+\Xi_s^\dagger \mathbf A \Xi_s
++\Xi_s^\dagger(\mathbf B\Xi_\psi' + \mathbf C\Xi_\psi)
++(\Xi_\psi^{\prime\dagger}\mathbf B^\dagger+\Xi_\psi^\dagger\mathbf C^\dagger)\Xi_s \\
+&\qquad
++\Xi_\psi^{\prime\dagger}\mathbf D\Xi_\psi'
++\Xi_\psi^{\prime\dagger}\mathbf E\Xi_\psi
++\Xi_\psi^\dagger\mathbf E^\dagger\Xi_\psi'
++\Xi_\psi^\dagger\mathbf H\Xi_\psi
+\Big].
+\end{aligned}
+}
+\end{equation}
+Here
+\begin{equation}
+\Xi_s\equiv\{u_m\},
+\qquad
+\Xi_\psi\equiv\{v_m\},
+\qquad
+\mathbf M_{mm'}=m\delta_{mm'},
+\qquad
+\mathbf Q_{mm'}=(m-nq)\delta_{mm'}.
+\end{equation}
+We also use
+\begin{equation}
+\mathbf J\equiv\langle 1\rangle,
+\qquad
+\mathbf J'\equiv\left\langle \frac{\mathcal J'}{\mathcal J}\right\rangle,
+\qquad
+\mathbf I_{mm'}=\delta_{mm'}.
+\end{equation}
+With the DCON-normalized flux scale $v'\leftrightarrow\chi'$ and $P'\leftrightarrow\mu_0p'$, the coefficient matrices are
+\begin{equation}
+\boxed{
+\begin{aligned}
+\mathbf A
+&=(2\pi)^2
+\left[
+n(n\mathbf G_{22}+\mathbf G_{23}\mathbf M)
++\mathbf M(n\mathbf G_{23}+\mathbf G_{33}\mathbf M)
+\right],\\
+\mathbf B
+&=-2\pi i\chi'
+\left[
+n(\mathbf G_{22}+q\mathbf G_{23})
++\mathbf M(\mathbf G_{23}+q\mathbf G_{33})
+\right],\\
+\mathbf C
+&=-2\pi i
+\left[
+\chi''(n\mathbf G_{22}+\mathbf M\mathbf G_{23})
++(q\chi')'(n\mathbf G_{23}+\mathbf M\mathbf G_{33})
+\right] \\
+&\quad
+-(2\pi)^2\chi'(n\mathbf G_{12}+\mathbf M\mathbf G_{31})\mathbf Q
++2\pi i
+\left(
+2\pi f'\mathbf Q
+-n\frac{\mu_0p'}{\chi'}\mathbf J
+\right),\\
+\mathbf D
+&=\chi'^2
+\left[
+(\mathbf G_{22}+q\mathbf G_{23})
++q(\mathbf G_{23}+q\mathbf G_{33})
+\right],\\
+\mathbf E
+&=\chi'
+\left[
+\chi''(\mathbf G_{22}+q\mathbf G_{23})
++(q\chi')'(\mathbf G_{23}+q\mathbf G_{33})
+\right] \\
+&\quad
+-2\pi i\chi'^2(\mathbf G_{12}+q\mathbf G_{31})\mathbf Q
++\mu_0p'\mathbf J,\\
+\mathbf H
+&=
+\chi''
+\left[
+\chi''\mathbf G_{22}+(q\chi')'\mathbf G_{23}
+\right]
++(q\chi')'
+\left[
+\chi''\mathbf G_{23}+(q\chi')'\mathbf G_{33}
+\right] \\
+&\quad
++2\pi i\chi'
+\left[
+\chi''(\mathbf M\mathbf G_{12}-\mathbf G_{12}\mathbf M)
++(q\chi')'(\mathbf M\mathbf G_{31}-\mathbf G_{31}\mathbf M)
+\right] \\
+&\quad
++(2\pi\chi')^2\mathbf Q\mathbf G_{11}\mathbf Q
++\left[
+\mu_0p'\left(\frac{\chi''}{\chi'}\mathbf J+\mathbf J'\right)
+-2\pi f'q'\chi'\mathbf I
+\right].
+\end{aligned}
+}
+\end{equation}
+
+Decompose the $\vec C$ term as
 \begin{equation}
 \begin{aligned}
 &\mathbf X \equiv \nabla \xi_s \times \nabla \psi,\\
@@ -1785,12 +1497,123 @@ First we focus on the first term in $\delta W$. If we change each terms in $\vec
 \end{aligned}
 \end{equation}
 
+\noindent Define
+\begin{equation}
+\mathbf Q_0\equiv \mathbf X+\mathbf Y+\mathbf Z+\mathbf U,
+\qquad
+\vec C=\mathbf Q_0+\mathbf V .
+\end{equation}
+Then the Bernstein part of the energy is
+\begin{equation}
+\begin{aligned}
+\int d^3x\left(|\vec C|^2-\mu_0K\frac{|\xi_\psi|^2}{|\nabla\psi|^2}\right)
+&=
+\int d\psi d\theta d\zeta\,\mathcal J
+\Big[
+|\mathbf Q_0|^2
++\mathbf Q_0^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf Q_0 \\
+&\qquad
++|\mathbf V|^2
+-\mu_0K\frac{|\xi_\psi|^2}{|\nabla\psi|^2}
+\Big].
+\end{aligned}
+\end{equation}
+Using \(e_m\equiv e^{2\pi i(m\theta-n\zeta)}\), the four $\mathbf Q_0$ pieces are
+\begin{equation}
+\begin{aligned}
+\mathbf X
+&=
+-2\pi i\sum_m u_m e_m\,(n\vec v_2+m\vec v_3),\\
+\mathbf Y
+&=
+2\pi i\chi'\sum_m (m-nq)v_m e_m\,\vec v_1,\\
+\mathbf Z
+&=
+-\chi'\sum_m v_m' e_m\,(\vec v_2+q\vec v_3),\\
+\mathbf U
+&=
+-\sum_m v_m e_m\,
+\left[\chi''\vec v_2+(q\chi')'\vec v_3\right].
+\end{aligned}
+\end{equation}
+Therefore each bilinear product has a fixed matrix block:
+\begin{equation}
+\begin{array}{c|c|c}
+\text{product} & \text{radial amplitudes} & \text{matrix block} \\ \hline
+\mathbf X^*\!\cdot\mathbf X & \Xi_s^\dagger\Xi_s & \mathbf A\\
+\mathbf X^*\!\cdot\mathbf Z+\mathbf Z^*\!\cdot\mathbf X
+& \Xi_s^\dagger\Xi_\psi' + \Xi_\psi^{\prime\dagger}\Xi_s & \mathbf B\\
+\mathbf X^*\!\cdot(\mathbf Y+\mathbf U+\mathbf V)
++(\mathbf Y+\mathbf U+\mathbf V)^*\!\cdot\mathbf X
+& \Xi_s^\dagger\Xi_\psi + \Xi_\psi^\dagger\Xi_s & \mathbf C\\
+\mathbf Z^*\!\cdot\mathbf Z & \Xi_\psi^{\prime\dagger}\Xi_\psi' & \mathbf D\\
+\mathbf Z^*\!\cdot(\mathbf Y+\mathbf U+\mathbf V)
++(\mathbf Y+\mathbf U+\mathbf V)^*\!\cdot\mathbf Z
+& \Xi_\psi^{\prime\dagger}\Xi_\psi + \Xi_\psi^\dagger\Xi_\psi' & \mathbf E\\
+\mathbf Y,\mathbf U,\mathbf V,K\ \text{pure terms}
+& \Xi_\psi^\dagger\Xi_\psi & \mathbf H .
+\end{array}
+\end{equation}
+Concretely, every entry is obtained by expanding the product in Fourier modes and using
+\begin{equation}
+\int_0^1 d\theta\,
+\mathcal J\,e^{2\pi i(m'-m)\theta}
+(\vec v_i\cdot\vec v_j)
+=
+(G_{ij})_{mm'}.
+\end{equation}
+Equivalently, if
+\begin{equation}
+\mathbf P=\sum_m p_m e_m P_m^i\vec v_i,
+\qquad
+\mathbf R=\sum_{m'} r_{m'} e_{m'} R_{m'}^j\vec v_j,
+\end{equation}
+then
+\begin{equation}
+\boxed{
+\int_0^1 d\theta\,\mathcal J\,\mathbf P^*\cdot\mathbf R
+=
+\sum_{m,m'}p_m^*
+\left[
+\sum_{i,j} (P_m^i)^*(G_{ij})_{mm'}R_{m'}^j
+\right]r_{m'} .
+}
+\end{equation}
+This is the actual route from the real-space Bernstein expression to the radial matrix form.  The factors \(m\) and \(m-nq\) are then written as the diagonal matrices \(\mathbf M\) and \(\mathbf Q\).
+For instance,
+\begin{equation}
+\begin{aligned}
+\int d\theta\,\mathcal J\,\mathbf X^*\cdot\mathbf X
+&=
+\Xi_s^\dagger
+(2\pi)^2
+\left[
+n^2\mathbf G_{22}
+{}+n\mathbf G_{23}\mathbf M
+{}+n\mathbf M\mathbf G_{23}
+{}+\mathbf M\mathbf G_{33}\mathbf M
+\right]\Xi_s,\\
+\int d\theta\,\mathcal J\,\mathbf X^*\cdot\mathbf Z
+&=
+\Xi_s^\dagger
+\left\{
+-2\pi i\chi'
+\left[
+n(\mathbf G_{22}+q\mathbf G_{23})
+{}+\mathbf M(\mathbf G_{23}+q\mathbf G_{33})
+\right]
+\right\}
+\Xi_\psi'.
+\end{aligned}
+\end{equation}
+The same projection rule gives \(\mathbf C_1,\mathbf C_2,\mathbf D,\mathbf E_1,\mathbf E_2,\mathbf H_1,\mathbf H_2,\mathbf H_3\) below.  The only nontrivial part is the current term \(\mathbf V\), because its pure-\(\Xi_\psi\) pieces must be recombined with the scalar Bernstein term involving \(K\).
+
 \begin{equation}
 \begin{aligned}
 2\mu_0\delta W_{\mathrm{term1}} & = \int d\psi d\theta d\zeta \mathcal{J} [|\vec{C}|^2]\\
-&= \int d\psi d\theta d\zeta \mathcal{J}\{ |\mathbf Q|^2+
-\left[(\mathbf X+\mathbf Y+\mathbf Z+\mathbf U)\cdot\mathbf V^* + \mathbf V \cdot (\mathbf X+\mathbf Y+\mathbf Z+\mathbf U)^*
-\right]+|\mathbf V|^2\} 
+&= \int d\psi d\theta d\zeta \mathcal{J}\{ |\mathbf Q_0|^2+
+\left[\mathbf Q_0\cdot\mathbf V^* + \mathbf V \cdot \mathbf Q_0^*
+\right]+|\mathbf V|^2\} .
 \end{aligned}
 \end{equation}
 
@@ -1882,9 +1705,9 @@ g_{12}g_{33}-g_{31}g_{23}
 }
 \end{equation}
 
-\paragraph{Matrix representation1}
+\paragraph{Blocks from \(\mathbf Q_0^*\cdot\mathbf Q_0\)}
 
-Only the final block forms already derived in \cite{10.1063/1.4958328} are listed here:
+Applying the projection rule above to the products that do not contain \(\mathbf V\) gives the following blocks:
 \begin{equation}
 |\mathbf X|^2 \leadsto \Xi_s^\dagger \mathbf A \Xi_s,
 \qquad
@@ -1909,7 +1732,7 @@ Only the final block forms already derived in \cite{10.1063/1.4958328} are liste
 \leadsto
 \Xi_s^\dagger \mathbf C_2 \Xi_\psi + \Xi_\psi^\dagger \mathbf C_2^\dagger \Xi_s,
 \qquad
-\mathbf C_2=-2\pi \left[\chi''(n\mathbf G_{22}+\mathbf M \mathbf G_{23})+(q\chi')'(n\mathbf G_{23}+\mathbf M \mathbf G_{33})\right].
+\mathbf C_2=-2\pi i \left[\chi''(n\mathbf G_{22}+\mathbf M \mathbf G_{23})+(q\chi')'(n\mathbf G_{23}+\mathbf M \mathbf G_{33})\right].
 \end{equation}
 \begin{equation}
 |\mathbf Y|^2 \leadsto \Xi_\psi^\dagger \mathbf H_1 \Xi_\psi,
@@ -1964,12 +1787,21 @@ Finally,
 \right]
 \end{equation}
 
-\paragraph{Matrix representation2}
-The term $\mathbf X^* \cdot \mathbf V + \mathbf V^* \cdot \mathbf X$ can be written in matrix form as
+\paragraph{Bernstein-current correction terms}
+
+The vector $\mathbf V$ is not an additional physical term.  It appears only because the Bernstein form rewrites the original current--pressure contribution into
+\[
+\vec C=\vec Q+\frac{\xi_\psi}{|\nabla\psi|^2}\mu_0\vec j\times\nabla\psi
+=\mathbf X+\mathbf Y+\mathbf Z+\mathbf U+\mathbf V.
+\]
+Therefore the $\mathbf V$-dependent pieces from $|\vec C|^2$ must be combined with the scalar term
+$-\mu_0K|\xi_\psi|^2/|\nabla\psi|^2$.  After this recombination, the same $\mathbf C$, $\mathbf E$, and $\mathbf H$ blocks in the DCON matrix form are obtained.
+
+The cross term $\mathbf X^* \cdot \mathbf V + \mathbf V^* \cdot \mathbf X$ produces the current part of the $\mathbf C$ block:
 \[
 \Xi_s^\dagger \mathbf C_3 \Xi_\psi + \Xi_\psi^\dagger \mathbf C_3^\dagger \Xi_s,
 \]
-where $\mathbf C_3$ is the corresponding cross-block matrix:
+where $\mathbf C_3$ is obtained as follows.
 
 \begin{align}
 \nabla \xi_s
@@ -2117,12 +1949,7 @@ n\frac{\mu_0 p'}{\chi'}\mathbf J
 \noindent\rule{\linewidth}{0.4pt}
 \medskip
 
-% Thus the missing $\mathbf X$--$\mathbf V$ contribution is exactly the matrix $\mathbf C_3$ appearing in the full coefficient matrix
-% \begin{equation}
-% \mathbf C=\mathbf C_1+\mathbf C_2+\mathbf C_3 .
-% \end{equation}
-
-The $\mathbf Z$--$\mathbf V$ block has the form
+Next, the $\mathbf Z$--$\mathbf V$ block produces the pressure part of the $\mathbf E$ block:
 \[
 \Xi_\psi^{\prime\dagger}\mathbf E_3 \Xi_\psi + \Xi_\psi^\dagger \mathbf E_3^\dagger \Xi_\psi^\prime.
 \]
@@ -2179,10 +2006,10 @@ v_m^{\prime *}v_{m'}\,e^{2\pi i(m'-m)\theta}
 \noindent\rule{\linewidth}{0.4pt}
 \medskip
 
-The term $\mathbf Y^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf Y$ is also a pure-$\Xi_\psi$ contribution, so after Fourier projection it takes the form
-\[
-\Xi_\psi^\dagger \mathbf H_{YV} \Xi_\psi.
-\]
+The term $\mathbf Y^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf Y$ is also a
+pure-$\Xi_\psi$ contribution, but it is not closed as an independent DCON
+block.  It must be combined with the other pure scalar current--pressure terms
+before the final $\mathbf H_4$ block is obtained.
 
 \begin{align}
 \mathbf Y
@@ -2356,11 +2183,11 @@ q(\nabla\psi\cdot\nabla\theta)-(\nabla\psi\cdot\nabla\zeta)
 \right].
 \end{align}
 
-Using the DCON expression for the magnetic shear,
+Using the DCON-normalized shear parameter,
 \begin{equation}
-S
+S_\psi
 =
-\frac{(2\pi)^2}{\mathcal J}
+\frac{\chi'^2}{\mathcal J}
 \left[
 q'
 +
@@ -2385,14 +2212,14 @@ q(\nabla\psi\cdot\nabla\theta)-(\nabla\psi\cdot\nabla\zeta)
 }
 \right]
 =
-\frac{\mathcal J}{(2\pi)^2}S-q'.
+\frac{\mathcal J}{\chi'^2}S_\psi-q'.
 \end{equation}
 
 Hence
 \begin{align}
 \partial_\theta\mathcal F
 &=
-\frac{f'}{2\pi}\,\mathcal J\,S
+\frac{2\pi f'}{\chi'^2}\,\mathcal J\,S_\psi
 -
 2\pi f'q'
 +
@@ -2403,53 +2230,20 @@ Hence
 \right].
 \end{align}
 
-At this point we use the standard coordinate identity
+The last derivative,
 \begin{equation}
-\boxed{
 \partial_\theta
-\left(
+\left[
 \mathcal J\frac{\nabla\psi\cdot\nabla\theta}{|\nabla\psi|^2}
-\right)
-=
--\mathcal J',
-}
+\right],
 \end{equation}
-where the prime on $\mathcal J$ denotes $\partial/\partial\psi$.
-
-Therefore
-\begin{align}
-\int d\theta\,d\zeta\;\mathcal J(\mathbf Y^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf Y)
-&=
--\int d\theta\,d\zeta\;|\xi_\psi|^2
-\left[
-\frac{f'}{2\pi}\chi'\mathcal J S
--
-2\pi f'q'\chi'
--
-\mu_0p'\mathcal J'
-\right].
-\end{align}
-
-\begin{equation}
-\boxed{
-\begin{aligned}
-\mathbf Y^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf Y
-&\leadsto\;
-\Xi_\psi^\dagger \mathbf H_{YV}\Xi_\psi, \\
-(\mathbf H_{YV})_{mm'}
-&\equiv
-\int_0^1 d\theta\;
-e^{2\pi i(m'-m)\theta}
-\left[
--\frac{f'}{2\pi}\chi'\mathcal J S
-+
-2\pi f'q'\chi'
-+
-\mu_0p'\mathcal J'
-\right].
-\end{aligned}
-}
-\end{equation}
+is not a general coordinate identity and is not reduced here as a standalone
+matrix block.  Therefore
+$\mathbf Y^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf Y$ is kept as an
+intermediate pure-$\Xi_\psi$ Bernstein scalar term.  The closed DCON block is
+obtained only after this term is combined below with
+$\mathbf U^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf U$, $|\mathbf V|^2$, and
+the scalar $-\mu_0K|\xi_\psi|^2/|\nabla\psi|^2$ contribution.
 
 \medskip
 \noindent\rule{\linewidth}{0.4pt}
@@ -2678,7 +2472,7 @@ one finds
 \begin{equation}
 \frac{|\mu_0\mathbf j\times\nabla\psi|^2}{|\nabla\psi|^2}
 =
-\sigma\,(\mu_0\mathbf j\cdot\mathbf B)
+\mu_0\sigma\,(\mu_0\mathbf j\cdot\mathbf B)
 +
 \frac{(\mu_0p')^2}{B^2}|\nabla\psi|^2.
 \end{equation}
@@ -2689,7 +2483,7 @@ Hence
 =
 |\xi_\psi|^2
 \left[
-\frac{\sigma\,(\mu_0\mathbf j\cdot\mathbf B)}{|\nabla\psi|^2}
+\frac{\mu_0\sigma\,(\mu_0\mathbf j\cdot\mathbf B)}{|\nabla\psi|^2}
 +
 \frac{(\mu_0p')^2}{B^2}
 \right].
@@ -2706,7 +2500,7 @@ Hence
 (\mathbf H_V)_{mm'}
 &\equiv
 \left\langle
-\frac{\sigma\,(\mu_0\mathbf j\cdot\mathbf B)}{|\nabla\psi|^2}
+\frac{\mu_0\sigma\,(\mu_0\mathbf j\cdot\mathbf B)}{|\nabla\psi|^2}
 +
 \frac{(\mu_0p')^2}{B^2}
 \right\rangle_{mm'}.
@@ -2716,109 +2510,75 @@ Hence
 
 \medskip
 \noindent\rule{\linewidth}{0.4pt}
-\medskip
-
-\paragraph{Adding the Bernstein scalar term $-K|\xi_\psi|^2/|\nabla\psi|^2$.}
-
-From the earlier derivation in this note,
-\begin{equation}
-K
-=
-|\nabla\psi|^2\sigma S
-+
-\sigma\,\mathbf j\cdot\mathbf B
-+
-2p'\,\boldsymbol{\kappa}\cdot\nabla\psi.
-\end{equation}
-Therefore
-\begin{equation}
--\frac{K}{|\nabla\psi|^2}|\xi_\psi|^2
-=
--|\xi_\psi|^2
-\left[
-\sigma S
-+
-\frac{\sigma\,\mathbf j\cdot\mathbf B}{|\nabla\psi|^2}
-+
-\frac{2p'\,\boldsymbol{\kappa}\cdot\nabla\psi}{|\nabla\psi|^2}
-\right].
-\end{equation}
-
-Now combine the four remaining scalar contributions:
-\begin{equation}
-\mathcal J(\mathbf Y^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf Y)
-+
-\mathcal J(\mathbf U^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf U)
-+
-\mathcal J|\mathbf V|^2
--
-\mathcal J\frac{K}{|\nabla\psi|^2}|\xi_\psi|^2.
-\end{equation}
-
-At this stage the cancellations are as follows:
-
-\begin{enumerate}
-\item
-The term
-\(
-\displaystyle
-\frac{\sigma\,\mathbf j\cdot\mathbf B}{|\nabla\psi|^2}|\xi_\psi|^2
-\)
-coming from $|\mathbf V|^2$ cancels exactly the same term coming from $-K|\xi_\psi|^2/|\nabla\psi|^2$.
-
-\item
-The oscillatory shear term from $\mathbf Y^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf Y$ combines with the $|\nabla\psi|^2\sigma S$ part of $K$ through
-\begin{equation}
-S
-=
-\frac{(2\pi)^2}{\mathcal J}
-\left[
-q'
-+
-\partial_\theta
-\left(
-\frac{
-q(\nabla\psi\cdot\nabla\theta)-(\nabla\psi\cdot\nabla\zeta)
-}{
-|\nabla\psi|^2
-}
-\right)
-\right].
-\end{equation}
-The non-oscillatory remainder is the $q'$ contribution.
-
-\item
-The pressure-curvature term from $-K|\xi_\psi|^2/|\nabla\psi|^2$ combines with the pressure part of $|\mathbf V|^2$ and the pressure part of $\mathbf U^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf U$ to give the remaining
-\(
-\mu_0p'(\mathcal J\chi''/\chi'+\mathcal J')
-\)
-piece.
-\end{enumerate}
-
-After these cancellations, the total scalar contribution reduces to
+\paragraph{The scalar current--pressure block.}
+The reduction to a radial matrix is automatic once the integrand is a
+bilinear form in the Fourier amplitudes
+\((\Xi_s,\Xi_\psi,\Xi_\psi')\).  What is not automatic is the equality between
+the expanded Bernstein \(\mathbf V\)-sector and the compact DCON
+current--pressure block.  Using the energy-principle transformation proved in
+the previous section, the required sesquilinear identity is
 \begin{equation}
 \mathcal J
 \left[
-(\mathbf Y^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf Y)
-+
-(\mathbf U^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf U)
-+
-|\mathbf V|^2
--
-\frac{K}{|\nabla\psi|^2}|\xi_\psi|^2
+\mathbf Q_0^*\!\cdot\mathbf V+\mathbf V^*\!\cdot\mathbf Q_0
++|\mathbf V|^2
+-\mu_0K\frac{|\xi_\psi|^2}{|\nabla\psi|^2}
 \right]
-=
+\equiv
+\mathcal I_{\mathrm{cp}},
+\end{equation}
+up to the periodic surface-divergence terms that integrate to zero.  Therefore
+the compact DCON matrices follow from the equivalent DCON current--pressure
+density below.  A term-by-term reduction of the separate Bernstein pieces is
+not sufficient.
+
+The separate pure-\(\Xi_\psi\) terms
+\(\mathbf Y^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf Y\),
+\(\mathbf U^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf U\),
+\(|\mathbf V|^2\), and
+\(-\mu_0K|\xi_\psi|^2/|\nabla\psi|^2\)
+are intermediate Bernstein pieces.  For a closed derivation of their sum, use the DCON current--pressure density
+\begin{equation}
+\begin{aligned}
+\mathcal I_{\mathrm{cp}}
+&=
+\xi_\psi\,\mathbf J\cdot\nabla\xi_s
+-\xi_s\,\mathbf J\cdot\nabla\xi_\psi
++\left[J_\theta(q\chi')'-J_\zeta\chi''\right]|\xi_\psi|^2
++\frac{P'}{\mathcal J}\left(\mathcal J|\xi_\psi|^2\right)' ,
+\end{aligned}
+\end{equation}
+where \(\mathbf J=\nabla\times\mathbf B=\mu_0\mathbf j\) and \(P'=\mu_0p'\).  The first two terms give the already derived \(\mathbf C_3\).  The remaining two terms determine \(\mathbf E_3\) and \(\mathbf H_4\):
+\begin{equation}
+\begin{aligned}
+\mathcal J\left[J_\theta(q\chi')'-J_\zeta\chi''\right]|\xi_\psi|^2
+&=
 |\xi_\psi|^2
 \left[
-\mu_0p'
-\left(
-\mathcal J\frac{\chi''}{\chi'}+\mathcal J'
-\right)
--
-2\pi f'q'\chi'
-\right].
+-2\pi f'q'\chi'
++\mu_0p'\mathcal J\frac{\chi''}{\chi'}
+\right],\\
+\mu_0p'\left(\mathcal J|\xi_\psi|^2\right)'
+&=
+\mu_0p'\mathcal J'
+|\xi_\psi|^2
++\mu_0p'\mathcal J
+\left(\xi_\psi^{\prime *}\xi_\psi+\xi_\psi^*\xi_\psi'\right).
+\end{aligned}
 \end{equation}
-
+Therefore
+\begin{equation}
+\boxed{
+\begin{aligned}
+\mathbf Z^*\!\cdot\mathbf V+\mathbf V^*\!\cdot\mathbf Z
+&\leadsto
+\Xi_\psi^{\prime\dagger}\mathbf E_3\Xi_\psi
++\Xi_\psi^\dagger\mathbf E_3^\dagger\Xi_\psi',\\
+\mathbf E_3&=\mu_0p'\mathbf J,
+\end{aligned}
+}
+\end{equation}
+and
 \begin{equation}
 \boxed{
 \begin{aligned}
@@ -2828,12 +2588,12 @@ After these cancellations, the total scalar contribution reduces to
 +
 |\mathbf V|^2
 -
-\frac{K}{|\nabla\psi|^2}|\xi_\psi|^2 
+\mu_0\frac{K}{|\nabla\psi|^2}|\xi_\psi|^2
 &\leadsto\;
-\Xi_\psi^\dagger \mathbf H_{\mathrm{add}} \Xi_\psi, \\
+\Xi_\psi^\dagger \mathbf H_4 \Xi_\psi, \\
 \qquad
-\mathbf H_{\mathrm{add}}
-&= 
+\mathbf H_4
+&=
 \mu_0p'
 \left(
 \frac{\chi''}{\chi'}\mathbf J+\mathbf J'
@@ -2844,53 +2604,50 @@ After these cancellations, the total scalar contribution reduces to
 }
 \end{equation}
 
-\paragraph{Final missing pieces.}
-
-Therefore the missing $V$-dependent matrices are
+The complete term-to-matrix assignment is therefore
 \begin{equation}
 \boxed{
 \begin{aligned}
-\mathbf C_3
-&=
-2\pi i\left(
-2\pi f'\mathbf Q
--n\frac{\mu_0p'}{\chi'}\mathbf J
-\right).
+\mathbf A &: \quad \mathbf X^*\!\cdot\mathbf X,\\
+\mathbf B &: \quad \mathbf X^*\!\cdot\mathbf Z,\\
+\mathbf C &: \quad
+\mathbf X^*\!\cdot\mathbf Y\to\mathbf C_1,\quad
+\mathbf X^*\!\cdot\mathbf U\to\mathbf C_2,\quad
+\mathbf X^*\!\cdot\mathbf V\to\mathbf C_3,\\
+\mathbf D &: \quad \mathbf Z^*\!\cdot\mathbf Z,\\
+\mathbf E &: \quad
+\mathbf Z^*\!\cdot\mathbf Y\to\mathbf E_1,\quad
+\mathbf Z^*\!\cdot\mathbf U\to\mathbf E_2,\quad
+\mathbf Z^*\!\cdot\mathbf V\to\mathbf E_3,\\
+\mathbf H &: \quad
+\mathbf Y^*\!\cdot\mathbf Y\to\mathbf H_1,\quad
+\mathbf Y^*\!\cdot\mathbf U+\mathbf U^*\!\cdot\mathbf Y\to\mathbf H_2,\quad
+\mathbf U^*\!\cdot\mathbf U\to\mathbf H_3,\\
+&\quad
+\mathbf Y^*\!\cdot\mathbf V+\mathbf V^*\!\cdot\mathbf Y
++\mathbf U^*\!\cdot\mathbf V+\mathbf V^*\!\cdot\mathbf U
++|\mathbf V|^2
+-\mu_0K\frac{|\xi_\psi|^2}{|\nabla\psi|^2}
+\to\mathbf H_4 .
 \end{aligned}
 }
 \end{equation}
-\begin{equation}
-\boxed{
-\mathbf E_3=\mu_0p'\mathbf J.
-}
-\end{equation}
-and
-\begin{equation}
-\boxed{
-\begin{aligned}
-\mathbf H_{\mathrm{add}}
-&=
-\mu_0p'
-\left(
-\frac{\chi''}{\chi'}\mathbf J+\mathbf J'
-\right) \\
-&\qquad
--2\pi f'q'\chi' \mathbf I.
-\end{aligned}
-}
-\end{equation}
-
-Thus the total matrices become
+Thus the final coefficient matrices are
 \begin{equation}
 \boxed{
 \begin{aligned}
 \mathbf C&=\mathbf C_1+\mathbf C_2+\mathbf C_3, \\
 \mathbf E&=\mathbf E_1+\mathbf E_2+\mathbf E_3, \\
-\mathbf H&=\mathbf H_1+\mathbf H_2+\mathbf H_3+\mathbf H_{\mathrm{add}}.
+\mathbf H&=\mathbf H_1+\mathbf H_2+\mathbf H_3+\mathbf H_4.
 \end{aligned}
 }
 \end{equation}
-which is exactly the Glasser Appendix A6 result.
+Subject to the same boundary and reduced-compressional assumptions stated
+above, this is the DCON-normalized version of the matrix structure in
+Eq.~(35) of \texttt{dcon.tex}.  Thus the Bernstein form and the original DCON
+current--pressure form lead to the same radial matrix functional; the
+$\mathbf V$-dependent pieces are intermediate cancellation/recombination
+terms, not extra physics.
 \section{Variable Naming Convention and Mathematical Symbols}
 
 This section summarizes the implementation of C and Q vectors with proper tensor transformations between contravariant and covariant representations.
@@ -2936,9 +2693,12 @@ where $\mathcal{J}$ is the Jacobian, $g_{ij}$ is the metric tensor at MODE index
 \hline
 \textbf{Variable} & \textbf{Symbol/Definition} \\
 \hline
-\texttt{cvp\_tmp, cvp\_fun} & $C_\psi^{\text{metric}} = g_{ij}C^j$ (metric contraction) \\
-\texttt{cvt\_tmp, cvt\_fun} & $C_\theta^{\text{metric}} = g_{ij}C^j$ (metric contraction) \\
-\texttt{cvz\_tmp, cvz\_fun} & $C_\zeta^{\text{metric}} = g_{ij}C^j$ (metric contraction) \\
+\texttt{cvp\_tmp, cvp\_fun} & $C_\psi$ reconstructed directly from $Q_\psi+(\xi\cdot\hat n)(\mu_0\mathbf j\times\hat n)_\psi$ \\
+\texttt{cvt\_tmp, cvt\_fun} & $C_\theta$ reconstructed directly from $Q_\theta+\mathcal J\xi_\psi\mu_0j^\zeta$ \\
+\texttt{cvz\_tmp, cvz\_fun} & $C_\zeta$ reconstructed directly from $Q_\zeta-\mathcal J\xi_\psi\mu_0j^\theta$ \\
+\texttt{c2vp\_mn, cv2p\_fun} & $g_{\psi j}C^j$ from metric lowering of the reconstructed upper components \\
+\texttt{c2vt\_mn, cv2t\_fun} & $g_{\theta j}C^j$ from metric lowering of the reconstructed upper components \\
+\texttt{c2vz\_mn, cv2z\_fun} & $g_{\zeta j}C^j$ from metric lowering of the reconstructed upper components \\
 \hline
 \end{tabular}
 \end{table}
