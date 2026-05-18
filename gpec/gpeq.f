@@ -935,16 +935,18 @@ c        \int dtheta dzeta J |C|^2 / mu0
 c
 c     and return the theta/zeta integrated value for one psi.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpeq_epf(psi, epf_int)
+      SUBROUTINE gpeq_epf(psi, epf_int, epf_p, epf_t, epf_z)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psi
       REAL(r8), INTENT(OUT) :: epf_int
+      REAL(r8), OPTIONAL, INTENT(OUT) :: epf_p, epf_t, epf_z
       INTEGER :: itheta
       COMPLEX(r8), DIMENSION(0:mthsurf) :: cwp_fun, cwt_fun, cwz_fun
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: cv2p_fun, cv2t_fun, cv2z_fun
-      COMPLEX(r8) :: epf_theta
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: cvp_fun, cvt_fun, cvz_fun
+      REAL(r8) :: epf_psi_int, epf_theta_int, epf_zeta_int
+      REAL(r8) :: epf_fac
       
       IF(debug_flag) PRINT *, "Entering gpeq_epf"
 c-----------------------------------------------------------------------
@@ -959,20 +961,29 @@ c-----------------------------------------------------------------------
       CALL iscdftb(mfac, mpert, cwp_fun,  mthsurf, cwp_mn)
       CALL iscdftb(mfac, mpert, cwt_fun,  mthsurf, cwt_mn)
       CALL iscdftb(mfac, mpert, cwz_fun,  mthsurf, cwz_mn)
-      CALL iscdftb(mfac, mpert, cv2p_fun, mthsurf, c2vp_mn)
-      CALL iscdftb(mfac, mpert, cv2t_fun, mthsurf, c2vt_mn)
-      CALL iscdftb(mfac, mpert, cv2z_fun, mthsurf, c2vz_mn)
+      CALL iscdftb(mfac, mpert, cvp_fun, mthsurf, cvp_mn)
+      CALL iscdftb(mfac, mpert, cvt_fun, mthsurf, cvt_mn)
+      CALL iscdftb(mfac, mpert, cvz_fun, mthsurf, cvz_mn)
 
       epf_int = 0.0_r8
+      epf_psi_int = 0.0_r8
+      epf_theta_int = 0.0_r8
+      epf_zeta_int = 0.0_r8
       DO itheta = 0, mthsurf-1
          CALL bicube_eval(rzphi, psi, theta(itheta), 0)
          jac = rzphi%f(4)
-         epf_theta = CONJG(cwp_fun(itheta)/jac) * cv2p_fun(itheta) +
-     $        CONJG(cwt_fun(itheta)/jac) * cv2t_fun(itheta) +
-     $        CONJG(cwz_fun(itheta)/jac) * cv2z_fun(itheta)
-         epf_int = epf_int + REAL(epf_theta, r8) /
-     $        (mu0 * REAL(mthsurf, r8)) * jac
+         epf_fac = jac / (mu0 * REAL(mthsurf, r8))
+         epf_psi_int = epf_psi_int + epf_fac *
+     $        REAL(CONJG(cwp_fun(itheta)/jac) * cvp_fun(itheta), r8)
+         epf_theta_int = epf_theta_int + epf_fac *
+     $        REAL(CONJG(cwt_fun(itheta)/jac) * cvt_fun(itheta), r8)
+         epf_zeta_int = epf_zeta_int + epf_fac *
+     $        REAL(CONJG(cwz_fun(itheta)/jac) * cvz_fun(itheta), r8)
       ENDDO
+      epf_int = epf_psi_int + epf_theta_int + epf_zeta_int
+      IF (PRESENT(epf_p)) epf_p = epf_psi_int
+      IF (PRESENT(epf_t)) epf_t = epf_theta_int
+      IF (PRESENT(epf_z)) epf_z = epf_zeta_int
 
       IF(debug_flag) PRINT *, "->Leaving gpeq_epf"
 c-----------------------------------------------------------------------
@@ -988,11 +999,15 @@ c        \int dtheta dzeta J * K * xi_n^2
 c
 c     and return the theta/zeta integrated value for one psi.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpeq_dst(psi, dst_int)
+      SUBROUTINE gpeq_dst(psi, dst_int, dst_t1, dst_t2, dst_t3)
       REAL(r8), INTENT(IN) :: psi
       COMPLEX(r8), INTENT(OUT) :: dst_int
+      COMPLEX(r8), OPTIONAL, INTENT(OUT) :: dst_t1, dst_t2, dst_t3
       INTEGER :: itheta
       COMPLEX(r8), DIMENSION(0:mthsurf) :: K_fun, xno_fun
+      REAL(r8), DIMENSION(0:mthsurf) :: K_term1, K_term2, K_term3
+      REAL(r8) :: xin2_fac
+      COMPLEX(r8) :: dst1_int, dst2_int, dst3_int
 
 c-----------------------------------------------------------------------
 c     DST(psi) = \int dtheta dzeta J * K * xi_n^2
@@ -1001,16 +1016,28 @@ c-----------------------------------------------------------------------
       CALL gpeq_contra(psi)
       CALL gpeq_cova(psi)
       CALL gpeq_normal(psi)
-      CALL gpeq_K(psi, K_fun)
+      CALL gpeq_K(psi, K_fun, K_term1, K_term2, K_term3)
       CALL iscdftb(mfac, mpert, xno_fun, mthsurf, xno_mn)
       dst_int = CMPLX(0.0_r8, 0.0_r8, r8)
+      dst1_int = CMPLX(0.0_r8, 0.0_r8, r8)
+      dst2_int = CMPLX(0.0_r8, 0.0_r8, r8)
+      dst3_int = CMPLX(0.0_r8, 0.0_r8, r8)
       DO itheta = 0, mthsurf-1
          CALL bicube_eval(rzphi, psi, theta(itheta), 0)
          jac = rzphi%f(4)
-         dst_int = dst_int +
-     $        jac* K_fun(itheta) *
-     $        ABS(xno_fun(itheta))**2 / REAL(mthsurf, r8)
+         xin2_fac = jac * ABS(xno_fun(itheta))**2 /
+     $        REAL(mthsurf, r8)
+         dst1_int = dst1_int + CMPLX(K_term1(itheta) * xin2_fac,
+     $        0.0_r8, r8)
+         dst2_int = dst2_int + CMPLX(K_term2(itheta) * xin2_fac,
+     $        0.0_r8, r8)
+         dst3_int = dst3_int + CMPLX(K_term3(itheta) * xin2_fac,
+     $        0.0_r8, r8)
       ENDDO
+      dst_int = dst1_int + dst2_int + dst3_int
+      IF (PRESENT(dst_t1)) dst_t1 = dst1_int
+      IF (PRESENT(dst_t2)) dst_t2 = dst2_int
+      IF (PRESENT(dst_t3)) dst_t3 = dst3_int
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -1040,11 +1067,11 @@ c-----------------------------------------------------------------------
 
 c-----------------------------------------------------------------------
 c     Allocate spline for shear_temp with 5 components:
-c     1: covariant numerator term
+c     1: legacy covariant numerator term
 c     2: (q*dpdt - dpdz) numerator
 c     3: g_psi_g_psi denominator
-c     4: contravariant denominator (v21^2 + v22^2)*r^2
-c     5: covariant shear (component 1 / component 4)
+c     4: legacy covariant denominator
+c     5: DCON shear geometry term (component 2 / component 3)
 c-----------------------------------------------------------------------
       CALL spline_alloc(shear_temp, mthsurf, 5)
       shear_temp%xs = theta(0:mthsurf)
@@ -1104,7 +1131,7 @@ c        Contravariant dot products: dpdp = ∇ψ·∇ψ, etc.
 
 
          shear_temp%fs(itheta, 5) = 
-     $           shear_temp%fs(itheta, 1) / shear_temp%fs(itheta, 4)
+     $           shear_temp%fs(itheta, 2) / shear_temp%fs(itheta, 3)
 
       ENDDO
 c-----------------------------------------------------------------------
@@ -1112,8 +1139,8 @@ c     Step 2: Fit spline to compute derivatives.
 c-----------------------------------------------------------------------
       CALL spline_fit(shear_temp, "periodic")
 c-----------------------------------------------------------------------
-c     Step 3: Compute shear_fun = (2π²/J)*(q' + ∂shear_temp/∂θ)
-c     Compare covariant and contravariant approaches.
+c     Step 3: Compute shear_fun = (chi1^2/J)*(q' + d shear_temp/d theta)
+c     with shear_temp = (q*g^psi_theta - g^psi_zeta)/g^psi_psi.
 c-----------------------------------------------------------------------
       DO itheta = 0, mthsurf
          theta_val = theta(itheta)
@@ -1207,7 +1234,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     subprogram 13. gpeq_K.
 c     compute Bernstein K quantity (stability indicator).
-c     K = |∇ψ_dcon|^2 * σ * S_dcon + B^2 * σ^2 + 2 P' * κ^psi
+c     K = |∇ψ_dcon|^2 * σ * S_dcon
+c       + mu0 * B^2 * σ^2 + 2 p' * κ^psi
 c     Uses pre-computed metric from idcon_metric
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_K(psi, K_fun, K_term1, K_term2, K_term3,
@@ -1290,7 +1318,7 @@ c     j·B and σ = (j·B)/B²
 c     Term1: |∇ψ_dcon|^2 * σ * S_dcon
          K_t1(itheta) = (delpsi**2) * sigma * REAL(shear_fun(itheta))
 
-c     Term2: B^2 * σ^2
+c     Term2: mu0 * B^2 * σ^2
          K_t2(itheta) = bsq_val * sigma**2 * mu0
 
 c     Term3: 2 p' * κ^psi
