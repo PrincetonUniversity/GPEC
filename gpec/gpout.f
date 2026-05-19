@@ -7307,15 +7307,6 @@ c-----------------------------------------------------------------------
       WRITE(u_int,'(2(es17.8e3))') REAL(dw_dcon_k_hr),
      $     AIMAG(dw_dcon_k_hr)
 
-      WRITE(*,'(a)') "GPEC_RECON final psifac-grid dW terms:"
-      WRITE(*,'(a,es17.8e3)') "  int_J_C2_over_mu0 = ",
-     $     epf_int_total_hr
-      WRITE(*,'(a,2es17.8e3)') "  int_J_K_xin2      = ",
-     $     REAL(dst_int_total_k_hr), AIMAG(dst_int_total_k_hr)
-      WRITE(*,'(a,2es17.8e3)') "  dW_gpec(K)        = ",
-     $     REAL(dw_raw_k_hr), AIMAG(dw_raw_k_hr)
-      WRITE(*,'(a,2es17.8e3)') "  dW_dcon(K)        = ",
-     $     REAL(dw_dcon_k_hr), AIMAG(dw_dcon_k_hr)
       WRITE(*,'(a)') "GPEC_RECON C2 component totals:"
       WRITE(*,'(a,es17.8e3)') "  C2_psi/mu0        = ",
      $     epf_p_total_hr
@@ -7324,12 +7315,25 @@ c-----------------------------------------------------------------------
       WRITE(*,'(a,es17.8e3)') "  C2_zeta/mu0       = ",
      $     epf_z_total_hr
       WRITE(*,'(a)') "GPEC_RECON K component totals:"
-      WRITE(*,'(a,2es17.8e3)') "  K1_xin2           = ",
-     $     REAL(dst1_total_hr), AIMAG(dst1_total_hr)
-      WRITE(*,'(a,2es17.8e3)') "  K2_xin2           = ",
-     $     REAL(dst2_total_hr), AIMAG(dst2_total_hr)
-      WRITE(*,'(a,2es17.8e3)') "  K3_xin2           = ",
-     $     REAL(dst3_total_hr), AIMAG(dst3_total_hr)
+      WRITE(*,'(a,es17.8e3)') "  K1_xin2           = ",
+     $     REAL(dst1_total_hr)
+      WRITE(*,'(a,es17.8e3)') "  K2_xin2           = ",
+     $     REAL(dst2_total_hr)
+      WRITE(*,'(a,es17.8e3)') "  K3_xin2           = ",
+     $     REAL(dst3_total_hr)
+      WRITE(*,'(a)') "GPEC_RECON final psifac-grid dW terms:"
+      WRITE(*,'(a,es17.8e3)') "  int_J_C2_over_mu0    = ",
+     $     epf_int_total_hr
+      WRITE(*,'(a,es17.8e3)') "  int_J_K_xin2         = ",
+     $     REAL(dst_int_total_k_hr)
+      WRITE(*,'(a,es17.8e3)') "  dW_p(recon)          = ",
+     $     REAL(dw_raw_k_hr)
+      WRITE(*,'(a,es17.8e3)') "  dW_p(recon-normalize)= ",
+     $     REAL(dw_dcon_k_hr)
+      WRITE(*,'(a,a,a,es17.8e3)') "GPEC ep(", TRIM(smode), "):",
+     $     ep_selected
+      WRITE(*,'(a,a,a,es17.8e3)') "DCON ep(", TRIM(smode), "):",
+     $     ep_selected*(mu0*2.0) / psio**2 / (chi1*1e-3)**2
       IF (cveri_flag) THEN
          cveri_stat = "PASS"
          IF (cveri_count > 0) THEN
@@ -7338,30 +7342,17 @@ c-----------------------------------------------------------------------
             cveri_stat = "SKIP"
          ENDIF
          IF (cveri_max > cveri_tol) cveri_stat = "WARN"
-         WRITE(*,'(a,a,a,es17.8e3,a,es17.8e3,a,es17.8e3)') 
-     $        "C verify (curl C).grad(psi)=0: ",
-     $        TRIM(cveri_stat), " max=",
-     $        cveri_max, " rms=", cveri_rms, " tol=", cveri_tol
+         WRITE(*,'(a,a)') "GPEC_RECON C verify: ", TRIM(cveri_stat)
+         WRITE(*,'(a,es17.8e3)') "  max = ", cveri_max
+         WRITE(*,'(a,es17.8e3)') "  rms = ", cveri_rms
+         WRITE(*,'(a,es17.8e3)') "  tol = ", cveri_tol
       ENDIF
-      WRITE(*,'(a,a,a,es17.8e3)') "GPEC ep(", TRIM(smode), "):",
-     $     ep_selected
-      WRITE(*,'(a,a,a,es17.8e3)') "DCON ep(", TRIM(smode), "):",
-     $     ep_selected*(mu0*2.0) / psio**2 / (chi1*1e-3)**2
 
       OPEN(UNIT=u_log, FILE="gpec.log", STATUS="UNKNOWN",
      $     POSITION="APPEND")
       WRITE(u_log,'(a)') "GPEC_RECON final results:"
       WRITE(u_log,'(a,I8)') "  mode = ", mode
       WRITE(u_log,'(a,L1)') "  reg_flag = ", reg_flag
-      WRITE(u_log,'(a)') "  psifac-grid dW terms:"
-      WRITE(u_log,'(a,es17.8e3)') "    int_J_C2_over_mu0 = ",
-     $     epf_int_total_hr
-      WRITE(u_log,'(a,2es17.8e3)') "    int_J_K_xin2      = ",
-     $     REAL(dst_int_total_k_hr), AIMAG(dst_int_total_k_hr)
-      WRITE(u_log,'(a,2es17.8e3)') "    dW_gpec(K)        = ",
-     $     REAL(dw_raw_k_hr), AIMAG(dw_raw_k_hr)
-      WRITE(u_log,'(a,2es17.8e3)') "    dW_dcon(K)        = ",
-     $     REAL(dw_dcon_k_hr), AIMAG(dw_dcon_k_hr)
       WRITE(u_log,'(a)') "  C2 component totals:"
       WRITE(u_log,'(a,es17.8e3)') "    C2_psi/mu0        = ",
      $     epf_p_total_hr
@@ -7370,22 +7361,31 @@ c-----------------------------------------------------------------------
       WRITE(u_log,'(a,es17.8e3)') "    C2_zeta/mu0       = ",
      $     epf_z_total_hr
       WRITE(u_log,'(a)') "  K component totals:"
-      WRITE(u_log,'(a,2es17.8e3)') "    K1_xin2           = ",
-     $     REAL(dst1_total_hr), AIMAG(dst1_total_hr)
-      WRITE(u_log,'(a,2es17.8e3)') "    K2_xin2           = ",
-     $     REAL(dst2_total_hr), AIMAG(dst2_total_hr)
-      WRITE(u_log,'(a,2es17.8e3)') "    K3_xin2           = ",
-     $     REAL(dst3_total_hr), AIMAG(dst3_total_hr)
-      IF (cveri_flag) THEN
-         WRITE(u_log,'(a,a,a,es17.8e3,a,es17.8e3,a,es17.8e3)') 
-     $        "  C verify (curl C).grad(psi)=0: ",
-     $        TRIM(cveri_stat), " max=",
-     $        cveri_max, " rms=", cveri_rms, " tol=", cveri_tol
-      ENDIF
+      WRITE(u_log,'(a,es17.8e3)') "    K1_xin2           = ",
+     $     REAL(dst1_total_hr)
+      WRITE(u_log,'(a,es17.8e3)') "    K2_xin2           = ",
+     $     REAL(dst2_total_hr)
+      WRITE(u_log,'(a,es17.8e3)') "    K3_xin2           = ",
+     $     REAL(dst3_total_hr)
+      WRITE(u_log,'(a)') "  psifac-grid dW terms:"
+      WRITE(u_log,'(a,es17.8e3)') "    int_J_C2_over_mu0    = ",
+     $     epf_int_total_hr
+      WRITE(u_log,'(a,es17.8e3)') "    int_J_K_xin2         = ",
+     $     REAL(dst_int_total_k_hr)
+      WRITE(u_log,'(a,es17.8e3)') "    dW_p(recon)          = ",
+     $     REAL(dw_raw_k_hr)
+      WRITE(u_log,'(a,es17.8e3)') "    dW_p(recon-normalize)= ",
+     $     REAL(dw_dcon_k_hr)
       WRITE(u_log,'(a,a,a,es17.8e3)') "  GPEC ep(", TRIM(smode),
      $     ") = ", ep_selected
       WRITE(u_log,'(a,a,a,es17.8e3)') "  DCON ep(", TRIM(smode),
      $     ") = ", ep_selected*(mu0*2.0) / psio**2 / (chi1*1e-3)**2
+      IF (cveri_flag) THEN
+         WRITE(u_log,'(a,a)') "  C verify: ", TRIM(cveri_stat)
+         WRITE(u_log,'(a,es17.8e3)') "    max = ", cveri_max
+         WRITE(u_log,'(a,es17.8e3)') "    rms = ", cveri_rms
+         WRITE(u_log,'(a,es17.8e3)') "    tol = ", cveri_tol
+      ENDIF
       WRITE(u_log,*)
       CLOSE(u_log)
       
