@@ -7311,10 +7311,10 @@ c-----------------------------------------------------------------------
      $     REAL(dst2_total_hr), AIMAG(dst2_total_hr)
       WRITE(*,'(a,2es17.8e3)') "  K3_xin2           = ",
      $     REAL(dst3_total_hr), AIMAG(dst3_total_hr)
-      WRITE(*,'(a,I8,a,es17.8e3)') "GPEC ep(", ep_index, "):",
+      WRITE(*,'(a,a,a,es17.8e3)') "GPEC ep(", TRIM(smode), "):",
      $     ep_selected
-      WRITE(*,*) "DCON plasma1-equivalent:", ep_selected*(mu0*2.0) /
-     $     psio**2 / (chi1*1e-3)**2
+      WRITE(*,'(a,a,a,es17.8e3)') "DCON ep(", TRIM(smode), "):",
+     $     ep_selected*(mu0*2.0) / psio**2 / (chi1*1e-3)**2
 
       OPEN(UNIT=u_log, FILE="gpec.log", STATUS="UNKNOWN",
      $     POSITION="APPEND")
@@ -7344,10 +7344,10 @@ c-----------------------------------------------------------------------
      $     REAL(dst2_total_hr), AIMAG(dst2_total_hr)
       WRITE(u_log,'(a,2es17.8e3)') "    K3_xin2           = ",
      $     REAL(dst3_total_hr), AIMAG(dst3_total_hr)
-      WRITE(u_log,'(a,I8,a,es17.8e3)') "  GPEC ep(", ep_index,
+      WRITE(u_log,'(a,a,a,es17.8e3)') "  GPEC ep(", TRIM(smode),
      $     ") = ", ep_selected
-      WRITE(u_log,'(a,es17.8e3)') "  DCON plasma1-equivalent = ",
-     $     ep_selected*(mu0*2.0) / psio**2 / (chi1*1e-3)**2
+      WRITE(u_log,'(a,a,a,es17.8e3)') "  DCON ep(", TRIM(smode),
+     $     ") = ", ep_selected*(mu0*2.0) / psio**2 / (chi1*1e-3)**2
       WRITE(u_log,*)
       CLOSE(u_log)
       
