@@ -36,6 +36,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE gpout_mod
       USE netcdf
+      USE gpglobal_mod, ONLY : recon_out
       USE gpresp_mod
       USE gpvacuum_mod
       USE gpdiag_mod
@@ -6933,12 +6934,14 @@ c     Diagnostic variables for C vector comparison
       IF(verbose) WRITE(*,*)"__________________________________________"
 
 c-----------------------------------------------------------------------
-c     allocate bicubes for shear, curvature, K (placeholder allocation).
-c     actual bicube population should be done at each psi in gpeq.
+c     allocate bicubes for shear, curvature, K only when the recon
+c     output tables are requested.
 c-----------------------------------------------------------------------
-      ALLOCATE(gpout_shear)
-      ALLOCATE(gpout_curvature)
-      ALLOCATE(gpout_k)
+      IF (recon_out) THEN
+         ALLOCATE(gpout_shear)
+         ALLOCATE(gpout_curvature)
+         ALLOCATE(gpout_k)
+      ENDIF
 
       WRITE(smode,'(I8)') mode
       smode = ADJUSTL(smode)
@@ -6969,55 +6972,57 @@ c-----------------------------------------------------------------------
       u_int = 92
       u_log = 93
 
-      OPEN(UNIT=ushear_fun, FILE=shear_fun_file, STATUS="UNKNOWN")
-      OPEN(UNIT=ucurv, FILE=curv_file, STATUS="UNKNOWN")
-      IF (cveri_flag) THEN
-         OPEN(UNIT=ucveri, FILE=cveri_file, STATUS="UNKNOWN")
+      IF (recon_out) THEN
+         OPEN(UNIT=ushear_fun, FILE=shear_fun_file, STATUS="UNKNOWN")
+         OPEN(UNIT=ucurv, FILE=curv_file, STATUS="UNKNOWN")
+         IF (cveri_flag) THEN
+            OPEN(UNIT=ucveri, FILE=cveri_file, STATUS="UNKNOWN")
+         ENDIF
+         OPEN(UNIT=uk, FILE=k_file, STATUS="UNKNOWN")
+         OPEN(UNIT=uk_sigma, FILE=k_sigma_file, STATUS="UNKNOWN")
+         CALL ascii_open(ucw_fun, cw_fun_file, "UNKNOWN")
+         CALL ascii_open(ucw_mn, cw_mn_file, "UNKNOWN")
+         CALL ascii_open(ucv_fun, cv_fun_file, "UNKNOWN")
+         CALL ascii_open(ucv_mn, cv_mn_file, "UNKNOWN")
+         CALL ascii_open(ucv2_fun, cv2_fun_file, "UNKNOWN")
+         CALL ascii_open(ucv2_mn, cv2_mn_file, "UNKNOWN")
+         OPEN(UNIT=u_int, FILE=int_file, STATUS="UNKNOWN")
+         WRITE(ushear_fun,'(6(1x,a16))')
+     $        "psi","theta","r","z","shear_re","shear_im"
+         WRITE(ucurv,'(6(1x,a16))')
+     $        "psi","theta","r","z","curv_re","curv_im"
+         IF (cveri_flag) WRITE(ucveri,'(6(1x,a16))')
+     $        "psi","theta","r","z","cveri_re","cveri_im"
+         WRITE(uk,'(9(1x,a16))')
+     $        "psi","theta","r","z","K_re","K_im",
+     $        "T1_re","T2_re","T3_re"
+         WRITE(uk_sigma,'(8(1x,a16))')
+     $        "psi","theta","r","z","sigma_re","jdotb_re",
+     $        "mu0_bsig2_re","mu0_sigjdotb"
+         WRITE(ucw_fun,'(10(1x,a16))')
+     $        "psi","theta","r","z","cwp_re","cwp_im",
+     $        "cwt_re","cwt_im","cwz_re","cwz_im"
+         WRITE(ucw_mn,'(8(1x,a16))')
+     $        "psi","m","cwp_re","cwp_im","cwt_re","cwt_im",
+     $        "cwz_re","cwz_im"
+         WRITE(ucv_fun,'(10(1x,a16))')
+     $        "psi","theta","r","z","cvp_re","cvp_im",
+     $        "cvt_re","cvt_im","cvz_re","cvz_im"
+         WRITE(ucv_mn,'(8(1x,a16))')
+     $        "psi","m","cvp_re","cvp_im","cvt_re","cvt_im",
+     $        "cvz_re","cvz_im"
+         WRITE(ucv2_fun,'(10(1x,a16))')
+     $        "psi","theta","r","z","cv2p_re","cv2p_im",
+     $        "cv2t_re","cv2t_im","cv2z_re","cv2z_im"
+         WRITE(ucv2_mn,'(8(1x,a16))')
+     $        "psi","m","cv2p_re","cv2p_im","cv2t_re","cv2t_im",
+     $        "cv2z_re","cv2z_im"
+         WRITE(u_int,'(15(1x,a16))')
+     $        "psi","c2_mu0","k_xin2_re","k_xin2_im",
+     $        "c2_mu0_sum","k_xin2_c_re","k_xin2_c_im",
+     $        "dw_c_re","dw_c_im","c2_psi","c2_theta","c2_zeta",
+     $        "k1_xin2_re","k2_xin2_re","k3_xin2_re"
       ENDIF
-      OPEN(UNIT=uk, FILE=k_file, STATUS="UNKNOWN")
-      OPEN(UNIT=uk_sigma, FILE=k_sigma_file, STATUS="UNKNOWN")
-      CALL ascii_open(ucw_fun, cw_fun_file, "UNKNOWN")
-      CALL ascii_open(ucw_mn, cw_mn_file, "UNKNOWN")
-      CALL ascii_open(ucv_fun, cv_fun_file, "UNKNOWN")
-      CALL ascii_open(ucv_mn, cv_mn_file, "UNKNOWN")
-      CALL ascii_open(ucv2_fun, cv2_fun_file, "UNKNOWN")
-      CALL ascii_open(ucv2_mn, cv2_mn_file, "UNKNOWN")
-      OPEN(UNIT=u_int, FILE=int_file, STATUS="UNKNOWN")
-      WRITE(ushear_fun,'(6(1x,a16))')
-     $     "psi","theta","r","z","shear_re","shear_im"
-      WRITE(ucurv,'(6(1x,a16))')
-     $     "psi","theta","r","z","curv_re","curv_im"
-      IF (cveri_flag) WRITE(ucveri,'(6(1x,a16))')
-     $     "psi","theta","r","z","cveri_re","cveri_im"
-      WRITE(uk,'(9(1x,a16))')
-     $     "psi","theta","r","z","K_re","K_im",
-     $     "T1_re","T2_re","T3_re"
-      WRITE(uk_sigma,'(8(1x,a16))')
-     $     "psi","theta","r","z","sigma_re","jdotb_re",
-     $     "mu0_bsig2_re","mu0_sigjdotb"
-      WRITE(ucw_fun,'(10(1x,a16))')
-     $     "psi","theta","r","z","cwp_re","cwp_im",
-     $     "cwt_re","cwt_im","cwz_re","cwz_im"
-      WRITE(ucw_mn,'(8(1x,a16))')
-     $     "psi","m","cwp_re","cwp_im","cwt_re","cwt_im",
-     $     "cwz_re","cwz_im"
-      WRITE(ucv_fun,'(10(1x,a16))')
-     $     "psi","theta","r","z","cvp_re","cvp_im",
-     $     "cvt_re","cvt_im","cvz_re","cvz_im"
-      WRITE(ucv_mn,'(8(1x,a16))')
-     $     "psi","m","cvp_re","cvp_im","cvt_re","cvt_im",
-     $     "cvz_re","cvz_im"
-      WRITE(ucv2_fun,'(10(1x,a16))')
-     $     "psi","theta","r","z","cv2p_re","cv2p_im",
-     $     "cv2t_re","cv2t_im","cv2z_re","cv2z_im"
-      WRITE(ucv2_mn,'(8(1x,a16))')
-     $     "psi","m","cv2p_re","cv2p_im","cv2t_re","cv2t_im",
-     $     "cv2z_re","cv2z_im"
-      WRITE(u_int,'(15(1x,a16))')
-     $     "psi","c2_mu0","k_xin2_re","k_xin2_im",
-     $     "c2_mu0_sum","k_xin2_c_re","k_xin2_c_im",
-     $     "dw_c_re","dw_c_im","c2_psi","c2_theta","c2_zeta",
-     $     "k1_xin2_re","k2_xin2_re","k3_xin2_re"
       ep_index = 1
       IF (mode_flag) ep_index = mode
       IF (ep_index < 1 .OR. ep_index > mpert) THEN
@@ -7041,98 +7046,117 @@ c-----------------------------------------------------------------------
          IF (psi > psilim) EXIT
 
 c        Compute the J|C|^2/mu0 state once so C fields below use
-c        the current psi.
+c        the current psi. This keeps the psi-local reconstruction path
+c        identical to the original logic.
          CALL gpeq_epf(psi, epf_int)
 
-c        Reconstruct detailed K diagnostics for output.
+c        Reconstruct detailed K diagnostics for output. Keep this on
+c        the original path so recon terminal totals remain unchanged.
          CALL gpeq_K(psi, K_fun, K_term1, K_term2, K_term3,
      $        sigma_vals, jdotb_vals, shear_fun, curv_fun)
-c        Verify (curl C).grad(psi)=0 using the flux-coordinate form
-c           (d_theta C_zeta - d_zeta C_theta) / J
-         IF (cveri_flag) CALL gpeq_cveri(psi, cveri_fun)
-
-c        Store spatial values with coordinates.
-         DO itheta = 0, mthsurf
-            CALL bicube_eval(rzphi, psi, theta(itheta), 1)
-            rfac = SQRT(rzphi%f(1))
-            eta = twopi*(theta(itheta) + rzphi%f(2))
-            rvals(itheta) = ro + rfac*COS(eta)
-            zvals(itheta) = zo + rfac*SIN(eta)
-
-            WRITE(ushear_fun,'(6(es17.8e3))') psi, theta(itheta),
-     $           rvals(itheta), zvals(itheta), REAL(shear_fun(itheta)),
-     $           AIMAG(shear_fun(itheta))
-            WRITE(ucurv,'(6(es17.8e3))') psi, theta(itheta),
-     $           rvals(itheta), zvals(itheta), REAL(curv_fun(itheta)),
-     $           AIMAG(curv_fun(itheta))
-            IF (cveri_flag) WRITE(ucveri,'(6(es17.8e3))') psi,
-     $           theta(itheta), rvals(itheta), zvals(itheta),
-     $           REAL(cveri_fun(itheta)), AIMAG(cveri_fun(itheta))
-            IF (cveri_flag) THEN
+c        Verify (curl C).grad(psi)=0 using the same psi-local C state
+c        already prepared by gpeq_epf. This avoids rebuilding the
+c        full equilibrium/C reconstruction a second time at each psi.
+         IF (cveri_flag) THEN
+            DO ipert = 1, mpert
+               curv_mn(ipert) = twopi * ifac * mfac(ipert)
+     $              * cvz_mn(ipert)
+               term_mn(ipert) = curv_mn(ipert) +
+     $              twopi * ifac * nn * cvt_mn(ipert)
+            ENDDO
+            CALL iscdftb(mfac, mpert, cveri_fun, mthsurf, term_mn)
+            DO itheta = 0, mthsurf
+               CALL bicube_eval(rzphi, psi, theta(itheta), 0)
+               jac = rzphi%f(4)
+               cveri_fun(itheta) = cveri_fun(itheta) / jac
                cveri_abs = ABS(cveri_fun(itheta))
                cveri_max = MAX(cveri_max, cveri_abs)
                cveri_sumsq = cveri_sumsq + cveri_abs**2
                cveri_count = cveri_count + 1
-            ENDIF
-            WRITE(uk,'(9(es17.8e3))') psi, theta(itheta),
-     $           rvals(itheta), zvals(itheta), REAL(K_fun(itheta)),
-     $           AIMAG(K_fun(itheta)), K_term1(itheta), K_term2(itheta),
-     $           K_term3(itheta)
-            WRITE(uk_sigma,'(8(es17.8e3))') psi, theta(itheta),
-     $           rvals(itheta), zvals(itheta), sigma_vals(itheta),
-     $           jdotb_vals(itheta), K_term2(itheta),
-     $           mu0 * sigma_vals(itheta) * jdotb_vals(itheta)
-         ENDDO
-         WRITE(ushear_fun,*)
-         WRITE(ucurv,*)
-         IF (cveri_flag) WRITE(ucveri,*)
-         WRITE(uk,*)
-         WRITE(uk_sigma,*)
+            ENDDO
+         ENDIF
+
+         IF (recon_out) THEN
+c           Store spatial values with coordinates only when recon file
+c           output is requested.
+            DO itheta = 0, mthsurf
+               CALL bicube_eval(rzphi, psi, theta(itheta), 1)
+               rfac = SQRT(rzphi%f(1))
+               eta = twopi*(theta(itheta) + rzphi%f(2))
+               rvals(itheta) = ro + rfac*COS(eta)
+               zvals(itheta) = zo + rfac*SIN(eta)
+
+               WRITE(ushear_fun,'(6(es17.8e3))') psi, theta(itheta),
+     $              rvals(itheta), zvals(itheta),
+     $              REAL(shear_fun(itheta)), AIMAG(shear_fun(itheta))
+               WRITE(ucurv,'(6(es17.8e3))') psi, theta(itheta),
+     $              rvals(itheta), zvals(itheta),
+     $              REAL(curv_fun(itheta)),
+     $              AIMAG(curv_fun(itheta))
+               IF (cveri_flag) WRITE(ucveri,'(6(es17.8e3))') psi,
+     $              theta(itheta), rvals(itheta), zvals(itheta),
+     $              REAL(cveri_fun(itheta)), AIMAG(cveri_fun(itheta))
+               WRITE(uk,'(9(es17.8e3))') psi, theta(itheta),
+     $              rvals(itheta), zvals(itheta), REAL(K_fun(itheta)),
+     $              AIMAG(K_fun(itheta)), K_term1(itheta),
+     $              K_term2(itheta), K_term3(itheta)
+               WRITE(uk_sigma,'(8(es17.8e3))') psi, theta(itheta),
+     $              rvals(itheta), zvals(itheta), sigma_vals(itheta),
+     $              jdotb_vals(itheta), K_term2(itheta),
+     $              mu0 * sigma_vals(itheta) * jdotb_vals(itheta)
+            ENDDO
+            WRITE(ushear_fun,*)
+            WRITE(ucurv,*)
+            IF (cveri_flag) WRITE(ucveri,*)
+            WRITE(uk,*)
+            WRITE(uk_sigma,*)
          
-c        Reconstruct C fields from the already computed C state.
-         CALL iscdftb(mfac, mpert, cw_fun(:,1), mthsurf, cwp_mn)
-         CALL iscdftb(mfac, mpert, cw_fun(:,2), mthsurf, cwt_mn)
-         CALL iscdftb(mfac, mpert, cw_fun(:,3), mthsurf, cwz_mn)
-         CALL iscdftb(mfac, mpert, cv_fun(:,1), mthsurf, cvp_mn)
-         CALL iscdftb(mfac, mpert, cv_fun(:,2), mthsurf, cvt_mn)
-         CALL iscdftb(mfac, mpert, cv_fun(:,3), mthsurf, cvz_mn)
-         CALL iscdftb(mfac, mpert, cv2_fun(:,1), mthsurf, c2vp_mn)
-         CALL iscdftb(mfac, mpert, cv2_fun(:,2), mthsurf, c2vt_mn)
-         CALL iscdftb(mfac, mpert, cv2_fun(:,3), mthsurf, c2vz_mn)
-         DO itheta = 0, mthsurf
-            WRITE(ucw_fun,'(10(es17.8e3))') psi, theta(itheta),
-     $           rvals(itheta), zvals(itheta), REAL(cw_fun(itheta,1)),
-     $           AIMAG(cw_fun(itheta,1)), REAL(cw_fun(itheta,2)),
-     $           AIMAG(cw_fun(itheta,2)), REAL(cw_fun(itheta,3)),
-     $           AIMAG(cw_fun(itheta,3))
-            WRITE(ucv_fun,'(10(es17.8e3))') psi, theta(itheta),
-     $           rvals(itheta), zvals(itheta), REAL(cv_fun(itheta,1)),
-     $           AIMAG(cv_fun(itheta,1)), REAL(cv_fun(itheta,2)),
-     $           AIMAG(cv_fun(itheta,2)), REAL(cv_fun(itheta,3)),
-     $           AIMAG(cv_fun(itheta,3))
-            WRITE(ucv2_fun,'(10(es17.8e3))') psi, theta(itheta),
-     $           rvals(itheta), zvals(itheta),
-     $           REAL(cv2_fun(itheta,1)), AIMAG(cv2_fun(itheta,1)),
-     $           REAL(cv2_fun(itheta,2)), AIMAG(cv2_fun(itheta,2)),
-     $           REAL(cv2_fun(itheta,3)), AIMAG(cv2_fun(itheta,3))
-         ENDDO
-         DO ipert = 1, mpert
-            WRITE(ucw_mn,'(1x,es17.8e3,1x,I8,6(es17.8e3))') psi,
-     $           mfac(ipert), cwp_mn(ipert), cwt_mn(ipert),
-     $           cwz_mn(ipert)
-            WRITE(ucv_mn,'(1x,es17.8e3,1x,I8,6(es17.8e3))') psi,
-     $           mfac(ipert), cvp_mn(ipert), cvt_mn(ipert),
-     $           cvz_mn(ipert)
-            WRITE(ucv2_mn,'(1x,es17.8e3,1x,I8,6(es17.8e3))') psi,
-     $           mfac(ipert), c2vp_mn(ipert), c2vt_mn(ipert),
-     $           c2vz_mn(ipert)
-         ENDDO
-         WRITE(ucw_fun,*)
-         WRITE(ucw_mn,*)
-         WRITE(ucv_fun,*)
-         WRITE(ucv_mn,*)
-         WRITE(ucv2_fun,*)
-         WRITE(ucv2_mn,*)
+c           Reconstruct C fields from the already computed C state only
+c           for recon output tables.
+            CALL iscdftb(mfac, mpert, cw_fun(:,1), mthsurf, cwp_mn)
+            CALL iscdftb(mfac, mpert, cw_fun(:,2), mthsurf, cwt_mn)
+            CALL iscdftb(mfac, mpert, cw_fun(:,3), mthsurf, cwz_mn)
+            CALL iscdftb(mfac, mpert, cv_fun(:,1), mthsurf, cvp_mn)
+            CALL iscdftb(mfac, mpert, cv_fun(:,2), mthsurf, cvt_mn)
+            CALL iscdftb(mfac, mpert, cv_fun(:,3), mthsurf, cvz_mn)
+            CALL iscdftb(mfac, mpert, cv2_fun(:,1), mthsurf, c2vp_mn)
+            CALL iscdftb(mfac, mpert, cv2_fun(:,2), mthsurf, c2vt_mn)
+            CALL iscdftb(mfac, mpert, cv2_fun(:,3), mthsurf, c2vz_mn)
+            DO itheta = 0, mthsurf
+               WRITE(ucw_fun,'(10(es17.8e3))') psi, theta(itheta),
+     $              rvals(itheta), zvals(itheta),
+     $              REAL(cw_fun(itheta,1)), AIMAG(cw_fun(itheta,1)),
+     $              REAL(cw_fun(itheta,2)), AIMAG(cw_fun(itheta,2)),
+     $              REAL(cw_fun(itheta,3)), AIMAG(cw_fun(itheta,3))
+               WRITE(ucv_fun,'(10(es17.8e3))') psi, theta(itheta),
+     $              rvals(itheta), zvals(itheta),
+     $              REAL(cv_fun(itheta,1)), AIMAG(cv_fun(itheta,1)),
+     $              REAL(cv_fun(itheta,2)), AIMAG(cv_fun(itheta,2)),
+     $              REAL(cv_fun(itheta,3)), AIMAG(cv_fun(itheta,3))
+               WRITE(ucv2_fun,'(10(es17.8e3))') psi, theta(itheta),
+     $              rvals(itheta), zvals(itheta),
+     $              REAL(cv2_fun(itheta,1)), AIMAG(cv2_fun(itheta,1)),
+     $              REAL(cv2_fun(itheta,2)), AIMAG(cv2_fun(itheta,2)),
+     $              REAL(cv2_fun(itheta,3)), AIMAG(cv2_fun(itheta,3))
+            ENDDO
+            DO ipert = 1, mpert
+               WRITE(ucw_mn,'(1x,es17.8e3,1x,I8,6(es17.8e3))') psi,
+     $              mfac(ipert), cwp_mn(ipert), cwt_mn(ipert),
+     $              cwz_mn(ipert)
+               WRITE(ucv_mn,'(1x,es17.8e3,1x,I8,6(es17.8e3))') psi,
+     $              mfac(ipert), cvp_mn(ipert), cvt_mn(ipert),
+     $              cvz_mn(ipert)
+               WRITE(ucv2_mn,'(1x,es17.8e3,1x,I8,6(es17.8e3))') psi,
+     $              mfac(ipert), c2vp_mn(ipert), c2vt_mn(ipert),
+     $              c2vz_mn(ipert)
+            ENDDO
+            WRITE(ucw_fun,*)
+            WRITE(ucw_mn,*)
+            WRITE(ucv_fun,*)
+            WRITE(ucv_mn,*)
+            WRITE(ucv2_fun,*)
+            WRITE(ucv2_mn,*)
+         ENDIF
       ENDDO
       
 c-----------------------------------------------------------------------
@@ -7153,11 +7177,13 @@ c-----------------------------------------------------------------------
      $     epf_z_prev)
       CALL gpeq_dst(psi_prev, dst_prev, dst1_prev, dst2_prev,
      $     dst3_prev)
-      WRITE(u_int,'(a)') "c  psifac-grid integration results"
-      WRITE(u_int,'(a)') "c  C2/mu0 = int J |C|^2 / mu0"
-      WRITE(u_int,'(a)') "c  Kxin2  = int J K |xi_n|^2"
-      WRITE(u_int,'(a)') "c  dW_gpec(K) = 0.5 * (C2/mu0 - Kxin2)"
-      WRITE(u_int,'(a,a)') "c  recon_int = ", TRIM(recon_int)
+      IF (recon_out) THEN
+         WRITE(u_int,'(a)') "c  psifac-grid integration results"
+         WRITE(u_int,'(a)') "c  C2/mu0 = int J |C|^2 / mu0"
+         WRITE(u_int,'(a)') "c  Kxin2  = int J K |xi_n|^2"
+         WRITE(u_int,'(a)') "c  dW_gpec(K) = 0.5 * (C2/mu0 - Kxin2)"
+         WRITE(u_int,'(a,a)') "c  recon_int = ", TRIM(recon_int)
+      ENDIF
       nint_pts = 1
       DO istep = 0, mstep-1
          psi_curr = psifac(istep+1)
@@ -7228,12 +7254,12 @@ c-----------------------------------------------------------------------
             dw_cum = 0.5_r8 *
      $         (CMPLX(epf_int_total_hr, 0.0_r8, r8) -
      $         dst_int_total_k_hr)
-            WRITE(u_int,'(15(es17.8e3))') psi_int_pts(iint),
-     $         epf_vals(iint), REAL(dst_vals(iint)),
-     $         AIMAG(dst_vals(iint)), epf_int_total_hr,
-     $         REAL(dst_int_total_k_hr), AIMAG(dst_int_total_k_hr),
-     $         REAL(dw_cum), AIMAG(dw_cum), epf_p_vals(iint),
-     $         epf_t_vals(iint), epf_z_vals(iint),
+            IF (recon_out) WRITE(u_int,'(15(es17.8e3))')
+     $         psi_int_pts(iint), epf_vals(iint),
+     $         REAL(dst_vals(iint)), AIMAG(dst_vals(iint)),
+     $         epf_int_total_hr, REAL(dst_int_total_k_hr),
+     $         AIMAG(dst_int_total_k_hr), REAL(dw_cum), AIMAG(dw_cum),
+     $         epf_p_vals(iint), epf_t_vals(iint), epf_z_vals(iint),
      $         REAL(dst1_vals(iint)), REAL(dst2_vals(iint)),
      $         REAL(dst3_vals(iint))
          ENDDO
@@ -7241,8 +7267,9 @@ c-----------------------------------------------------------------------
          CALL cspline_dealloc(recon_dst_spl)
       ELSE
          dw_cum = CMPLX(0.0_r8, 0.0_r8, r8)
-         WRITE(u_int,'(15(es17.8e3))') psi_int_pts(1), epf_vals(1),
-     $      REAL(dst_vals(1)), AIMAG(dst_vals(1)), epf_int_total_hr,
+         IF (recon_out) WRITE(u_int,'(15(es17.8e3))')
+     $      psi_int_pts(1), epf_vals(1), REAL(dst_vals(1)),
+     $      AIMAG(dst_vals(1)), epf_int_total_hr,
      $      REAL(dst_int_total_k_hr), AIMAG(dst_int_total_k_hr),
      $      REAL(dw_cum), AIMAG(dw_cum), epf_p_vals(1), epf_t_vals(1),
      $      epf_z_vals(1), REAL(dst1_vals(1)), REAL(dst2_vals(1)),
@@ -7274,12 +7301,12 @@ c-----------------------------------------------------------------------
             dw_cum = 0.5_r8 *
      $         (CMPLX(epf_int_total_hr, 0.0_r8, r8) -
      $         dst_int_total_k_hr)
-            WRITE(u_int,'(15(es17.8e3))') psi_int_pts(iint),
-     $         epf_vals(iint), REAL(dst_vals(iint)),
-     $         AIMAG(dst_vals(iint)), epf_int_total_hr,
-     $         REAL(dst_int_total_k_hr), AIMAG(dst_int_total_k_hr),
-     $         REAL(dw_cum), AIMAG(dw_cum), epf_p_vals(iint),
-     $         epf_t_vals(iint), epf_z_vals(iint),
+            IF (recon_out) WRITE(u_int,'(15(es17.8e3))')
+     $         psi_int_pts(iint), epf_vals(iint),
+     $         REAL(dst_vals(iint)), AIMAG(dst_vals(iint)),
+     $         epf_int_total_hr, REAL(dst_int_total_k_hr),
+     $         AIMAG(dst_int_total_k_hr), REAL(dw_cum), AIMAG(dw_cum),
+     $         epf_p_vals(iint), epf_t_vals(iint), epf_z_vals(iint),
      $         REAL(dst1_vals(iint)), REAL(dst2_vals(iint)),
      $         REAL(dst3_vals(iint))
          ENDDO
@@ -7290,22 +7317,24 @@ c-----------------------------------------------------------------------
      $     (CMPLX(epf_int_total_hr, 0.0_r8, r8) - dst_int_total_k_hr)
       dw_dcon_k_hr = dw_raw_k_hr * dcon_fac
 
-      WRITE(u_int,*)
-      WRITE(u_int,'(a)') "c  Final psifac-grid integration results:"
-      WRITE(u_int,'(3(es17.8e3))') epf_int_total_hr,
-     $     REAL(dst_int_total_k_hr), AIMAG(dst_int_total_k_hr)
-      WRITE(u_int,'(a)') "c  Final C2 component totals:"
-      WRITE(u_int,'(3(es17.8e3))') epf_p_total_hr,
-     $     epf_t_total_hr, epf_z_total_hr
-      WRITE(u_int,'(a)') "c  Final K component totals:"
-      WRITE(u_int,'(3(es17.8e3))') REAL(dst1_total_hr),
-     $     REAL(dst2_total_hr), REAL(dst3_total_hr)
-      WRITE(u_int,'(a)') "c  dW_gpec(K)"
-      WRITE(u_int,'(2(es17.8e3))') REAL(dw_raw_k_hr),
-     $     AIMAG(dw_raw_k_hr)
-      WRITE(u_int,'(a)') "c  dW_dcon(K), normalized from dW_gpec(K)"
-      WRITE(u_int,'(2(es17.8e3))') REAL(dw_dcon_k_hr),
-     $     AIMAG(dw_dcon_k_hr)
+      IF (recon_out) THEN
+         WRITE(u_int,*)
+         WRITE(u_int,'(a)') "c  Final psifac-grid integration results:"
+         WRITE(u_int,'(3(es17.8e3))') epf_int_total_hr,
+     $        REAL(dst_int_total_k_hr), AIMAG(dst_int_total_k_hr)
+         WRITE(u_int,'(a)') "c  Final C2 component totals:"
+         WRITE(u_int,'(3(es17.8e3))') epf_p_total_hr,
+     $        epf_t_total_hr, epf_z_total_hr
+         WRITE(u_int,'(a)') "c  Final K component totals:"
+         WRITE(u_int,'(3(es17.8e3))') REAL(dst1_total_hr),
+     $        REAL(dst2_total_hr), REAL(dst3_total_hr)
+         WRITE(u_int,'(a)') "c  dW_gpec(K)"
+         WRITE(u_int,'(2(es17.8e3))') REAL(dw_raw_k_hr),
+     $        AIMAG(dw_raw_k_hr)
+         WRITE(u_int,'(a)') "c  dW_dcon(K), normalized from dW_gpec(K)"
+         WRITE(u_int,'(2(es17.8e3))') REAL(dw_dcon_k_hr),
+     $        AIMAG(dw_dcon_k_hr)
+      ENDIF
 
       WRITE(*,'(a)') "GPEC_RECON C2 component totals:"
       WRITE(*,'(a,es17.8e3)') "  C2_psi/mu0        = ",
@@ -7348,60 +7377,64 @@ c-----------------------------------------------------------------------
          WRITE(*,'(a,es17.8e3)') "  tol = ", cveri_tol
       ENDIF
 
-      OPEN(UNIT=u_log, FILE="gpec.log", STATUS="UNKNOWN",
-     $     POSITION="APPEND")
-      WRITE(u_log,'(a)') "GPEC_RECON final results:"
-      WRITE(u_log,'(a,I8)') "  mode = ", mode
-      WRITE(u_log,'(a,L1)') "  reg_flag = ", reg_flag
-      WRITE(u_log,'(a)') "  C2 component totals:"
-      WRITE(u_log,'(a,es17.8e3)') "    C2_psi/mu0        = ",
-     $     epf_p_total_hr
-      WRITE(u_log,'(a,es17.8e3)') "    C2_theta/mu0      = ",
-     $     epf_t_total_hr
-      WRITE(u_log,'(a,es17.8e3)') "    C2_zeta/mu0       = ",
-     $     epf_z_total_hr
-      WRITE(u_log,'(a)') "  K component totals:"
-      WRITE(u_log,'(a,es17.8e3)') "    K1_xin2           = ",
-     $     REAL(dst1_total_hr)
-      WRITE(u_log,'(a,es17.8e3)') "    K2_xin2           = ",
-     $     REAL(dst2_total_hr)
-      WRITE(u_log,'(a,es17.8e3)') "    K3_xin2           = ",
-     $     REAL(dst3_total_hr)
-      WRITE(u_log,'(a)') "  psifac-grid dW terms:"
-      WRITE(u_log,'(a,es17.8e3)') "    int_J_C2_over_mu0    = ",
-     $     epf_int_total_hr
-      WRITE(u_log,'(a,es17.8e3)') "    int_J_K_xin2         = ",
-     $     REAL(dst_int_total_k_hr)
-      WRITE(u_log,'(a,es17.8e3)') "    dW_p(recon)          = ",
-     $     REAL(dw_raw_k_hr)
-      WRITE(u_log,'(a,es17.8e3)') "    dW_p(recon-normalize)= ",
-     $     REAL(dw_dcon_k_hr)
-      WRITE(u_log,'(a,a,a,es17.8e3)') "  GPEC ep(", TRIM(smode),
-     $     ") = ", ep_selected
-      WRITE(u_log,'(a,a,a,es17.8e3)') "  DCON ep(", TRIM(smode),
-     $     ") = ", ep_selected*(mu0*2.0) / psio**2 / (chi1*1e-3)**2
-      IF (cveri_flag) THEN
-         WRITE(u_log,'(a,a)') "  C verify: ", TRIM(cveri_stat)
-         WRITE(u_log,'(a,es17.8e3)') "    max = ", cveri_max
-         WRITE(u_log,'(a,es17.8e3)') "    rms = ", cveri_rms
-         WRITE(u_log,'(a,es17.8e3)') "    tol = ", cveri_tol
+      IF (recon_out) THEN
+         OPEN(UNIT=u_log, FILE="gpec.log", STATUS="UNKNOWN",
+     $        POSITION="APPEND")
+         WRITE(u_log,'(a)') "GPEC_RECON final results:"
+         WRITE(u_log,'(a,I8)') "  mode = ", mode
+         WRITE(u_log,'(a,L1)') "  reg_flag = ", reg_flag
+         WRITE(u_log,'(a)') "  C2 component totals:"
+         WRITE(u_log,'(a,es17.8e3)') "    C2_psi/mu0        = ",
+     $        epf_p_total_hr
+         WRITE(u_log,'(a,es17.8e3)') "    C2_theta/mu0      = ",
+     $        epf_t_total_hr
+         WRITE(u_log,'(a,es17.8e3)') "    C2_zeta/mu0       = ",
+     $        epf_z_total_hr
+         WRITE(u_log,'(a)') "  K component totals:"
+         WRITE(u_log,'(a,es17.8e3)') "    K1_xin2           = ",
+     $        REAL(dst1_total_hr)
+         WRITE(u_log,'(a,es17.8e3)') "    K2_xin2           = ",
+     $        REAL(dst2_total_hr)
+         WRITE(u_log,'(a,es17.8e3)') "    K3_xin2           = ",
+     $        REAL(dst3_total_hr)
+         WRITE(u_log,'(a)') "  psifac-grid dW terms:"
+         WRITE(u_log,'(a,es17.8e3)') "    int_J_C2_over_mu0    = ",
+     $        epf_int_total_hr
+         WRITE(u_log,'(a,es17.8e3)') "    int_J_K_xin2         = ",
+     $        REAL(dst_int_total_k_hr)
+         WRITE(u_log,'(a,es17.8e3)') "    dW_p(recon)          = ",
+     $        REAL(dw_raw_k_hr)
+         WRITE(u_log,'(a,es17.8e3)') "    dW_p(recon-normalize)= ",
+     $        REAL(dw_dcon_k_hr)
+         WRITE(u_log,'(a,a,a,es17.8e3)') "  GPEC ep(", TRIM(smode),
+     $        ") = ", ep_selected
+         WRITE(u_log,'(a,a,a,es17.8e3)') "  DCON ep(", TRIM(smode),
+     $        ") = ", ep_selected*(mu0*2.0) / psio**2 / (chi1*1e-3)**2
+         IF (cveri_flag) THEN
+            WRITE(u_log,'(a,a)') "  C verify: ", TRIM(cveri_stat)
+            WRITE(u_log,'(a,es17.8e3)') "    max = ", cveri_max
+            WRITE(u_log,'(a,es17.8e3)') "    rms = ", cveri_rms
+            WRITE(u_log,'(a,es17.8e3)') "    tol = ", cveri_tol
+         ENDIF
+         WRITE(u_log,*)
+         CLOSE(u_log)
       ENDIF
-      WRITE(u_log,*)
-      CLOSE(u_log)
       
       CALL gpeq_dealloc
-      CLOSE(ushear_fun)
-      CLOSE(ucurv)
-      IF (cveri_flag) CLOSE(ucveri)
-      CLOSE(uk)
-      CLOSE(uk_sigma)
-      CLOSE(u_int)
-      CALL ascii_close(ucw_fun)
-      CALL ascii_close(ucw_mn)
-      CALL ascii_close(ucv_fun)
-      CALL ascii_close(ucv_mn)
-      CALL ascii_close(ucv2_fun)
-      CALL ascii_close(ucv2_mn)
+      IF (recon_out) THEN
+         CLOSE(ushear_fun)
+         CLOSE(ucurv)
+         IF (cveri_flag) CLOSE(ucveri)
+         CLOSE(uk)
+         CLOSE(uk_sigma)
+         CLOSE(u_int)
+         CALL ascii_close(ucw_fun)
+         CALL ascii_close(ucw_mn)
+         CALL ascii_close(ucv_fun)
+         CALL ascii_close(ucv_mn)
+         CALL ascii_close(ucv2_fun)
+         CALL ascii_close(ucv2_mn)
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
