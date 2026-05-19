@@ -6903,6 +6903,8 @@ c-----------------------------------------------------------------------
       REAL(r8) :: epf_p_curr, epf_t_curr, epf_z_curr
       REAL(r8) :: epf_int_total_hr, epf_p_total_hr,
      $     epf_t_total_hr, epf_z_total_hr, dcon_fac
+      REAL(r8) :: cveri_abs, cveri_max, cveri_rms, cveri_sumsq,
+     $     cveri_tol
       COMPLEX(r8) :: dst_prev, dst_curr, dst1_prev, dst2_prev,
      $     dst3_prev, dst1_curr, dst2_curr, dst3_curr,
      $     dst_int_total_k_hr, dst1_total_hr, dst2_total_hr,
@@ -6912,6 +6914,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: dst_vals, dst1_vals,
      $     dst2_vals, dst3_vals
       TYPE(cspline_type) :: recon_epf_spl, recon_dst_spl
+      INTEGER :: cveri_count
+      CHARACTER(4) :: cveri_stat
       
 c     Diagnostic variables for C vector comparison
       INTEGER :: ipsi_mid, itheta_mid, ipert_diag, m1
@@ -6967,7 +6971,9 @@ c-----------------------------------------------------------------------
 
       OPEN(UNIT=ushear_fun, FILE=shear_fun_file, STATUS="UNKNOWN")
       OPEN(UNIT=ucurv, FILE=curv_file, STATUS="UNKNOWN")
-      OPEN(UNIT=ucveri, FILE=cveri_file, STATUS="UNKNOWN")
+      IF (cveri_flag) THEN
+         OPEN(UNIT=ucveri, FILE=cveri_file, STATUS="UNKNOWN")
+      ENDIF
       OPEN(UNIT=uk, FILE=k_file, STATUS="UNKNOWN")
       OPEN(UNIT=uk_sigma, FILE=k_sigma_file, STATUS="UNKNOWN")
       CALL ascii_open(ucw_fun, cw_fun_file, "UNKNOWN")
@@ -6981,7 +6987,7 @@ c-----------------------------------------------------------------------
      $     "psi","theta","r","z","shear_re","shear_im"
       WRITE(ucurv,'(6(1x,a16))')
      $     "psi","theta","r","z","curv_re","curv_im"
-      WRITE(ucveri,'(6(1x,a16))')
+      IF (cveri_flag) WRITE(ucveri,'(6(1x,a16))')
      $     "psi","theta","r","z","cveri_re","cveri_im"
       WRITE(uk,'(9(1x,a16))')
      $     "psi","theta","r","z","K_re","K_im",
@@ -7018,6 +7024,11 @@ c-----------------------------------------------------------------------
          CALL gpec_stop("gpout_recon selected mode is out of range")
       ENDIF
       ep_selected = REAL(ep(ep_index))
+      cveri_max = 0.0_r8
+      cveri_rms = 0.0_r8
+      cveri_sumsq = 0.0_r8
+      cveri_tol = 1.0e-10_r8
+      cveri_count = 0
 c-----------------------------------------------------------------------
 c     main loop over all psi levels.
 c     compute gpeq reconstruction diagnostics at each psi.
@@ -7036,7 +7047,7 @@ c        the current psi.
 c        Reconstruct detailed K diagnostics for output.
          CALL gpeq_K(psi, K_fun, K_term1, K_term2, K_term3,
      $        sigma_vals, jdotb_vals, shear_fun, curv_fun)
-         CALL gpeq_cveri(psi, cveri_fun)
+         IF (cveri_flag) CALL gpeq_cveri(psi, cveri_fun)
 
 c        Store spatial values with coordinates.
          DO itheta = 0, mthsurf
@@ -7052,9 +7063,15 @@ c        Store spatial values with coordinates.
             WRITE(ucurv,'(6(es17.8e3))') psi, theta(itheta),
      $           rvals(itheta), zvals(itheta), REAL(curv_fun(itheta)),
      $           AIMAG(curv_fun(itheta))
-            WRITE(ucveri,'(6(es17.8e3))') psi, theta(itheta),
-     $           rvals(itheta), zvals(itheta), REAL(cveri_fun(itheta)),
-     $           AIMAG(cveri_fun(itheta))
+            IF (cveri_flag) WRITE(ucveri,'(6(es17.8e3))') psi,
+     $           theta(itheta), rvals(itheta), zvals(itheta),
+     $           REAL(cveri_fun(itheta)), AIMAG(cveri_fun(itheta))
+            IF (cveri_flag) THEN
+               cveri_abs = ABS(cveri_fun(itheta))
+               cveri_max = MAX(cveri_max, cveri_abs)
+               cveri_sumsq = cveri_sumsq + cveri_abs**2
+               cveri_count = cveri_count + 1
+            ENDIF
             WRITE(uk,'(9(es17.8e3))') psi, theta(itheta),
      $           rvals(itheta), zvals(itheta), REAL(K_fun(itheta)),
      $           AIMAG(K_fun(itheta)), K_term1(itheta), K_term2(itheta),
@@ -7066,7 +7083,7 @@ c        Store spatial values with coordinates.
          ENDDO
          WRITE(ushear_fun,*)
          WRITE(ucurv,*)
-         WRITE(ucveri,*)
+         IF (cveri_flag) WRITE(ucveri,*)
          WRITE(uk,*)
          WRITE(uk_sigma,*)
          
@@ -7311,6 +7328,18 @@ c-----------------------------------------------------------------------
      $     REAL(dst2_total_hr), AIMAG(dst2_total_hr)
       WRITE(*,'(a,2es17.8e3)') "  K3_xin2           = ",
      $     REAL(dst3_total_hr), AIMAG(dst3_total_hr)
+      IF (cveri_flag) THEN
+         cveri_stat = "PASS"
+         IF (cveri_count > 0) THEN
+            cveri_rms = SQRT(cveri_sumsq / REAL(cveri_count, r8))
+         ELSE
+            cveri_stat = "SKIP"
+         ENDIF
+         IF (cveri_max > cveri_tol) cveri_stat = "WARN"
+         WRITE(*,'(a,a,a,es17.8e3,a,es17.8e3,a,es17.8e3)') 
+     $        "C verify Eq(99): ", TRIM(cveri_stat), " max=",
+     $        cveri_max, " rms=", cveri_rms, " tol=", cveri_tol
+      ENDIF
       WRITE(*,'(a,a,a,es17.8e3)') "GPEC ep(", TRIM(smode), "):",
      $     ep_selected
       WRITE(*,'(a,a,a,es17.8e3)') "DCON ep(", TRIM(smode), "):",
@@ -7344,6 +7373,11 @@ c-----------------------------------------------------------------------
      $     REAL(dst2_total_hr), AIMAG(dst2_total_hr)
       WRITE(u_log,'(a,2es17.8e3)') "    K3_xin2           = ",
      $     REAL(dst3_total_hr), AIMAG(dst3_total_hr)
+      IF (cveri_flag) THEN
+         WRITE(u_log,'(a,a,a,es17.8e3,a,es17.8e3,a,es17.8e3)') 
+     $        "  C verify Eq(99): ", TRIM(cveri_stat), " max=",
+     $        cveri_max, " rms=", cveri_rms, " tol=", cveri_tol
+      ENDIF
       WRITE(u_log,'(a,a,a,es17.8e3)') "  GPEC ep(", TRIM(smode),
      $     ") = ", ep_selected
       WRITE(u_log,'(a,a,a,es17.8e3)') "  DCON ep(", TRIM(smode),
@@ -7354,7 +7388,7 @@ c-----------------------------------------------------------------------
       CALL gpeq_dealloc
       CLOSE(ushear_fun)
       CLOSE(ucurv)
-      CLOSE(ucveri)
+      IF (cveri_flag) CLOSE(ucveri)
       CLOSE(uk)
       CLOSE(uk_sigma)
       CLOSE(u_int)
