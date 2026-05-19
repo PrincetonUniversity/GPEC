@@ -86,7 +86,8 @@
 
    verbose=t                ! Print run log to terminal
    recon_flag=f             ! Calculate each contribution of destabilizing term and effective perturbed field [Bernstein, Handbook of Plasma Physics, 1983].
-   cveri_flag=f             ! Under recon_flag, verify (curl C).grad(psi)=0 and write gpec_recon_cveri_sol*.out.
+   cveri_flag=f             ! Under recon_flag, verify (curl C).grad(psi-)=0 and write gpec_recon_cveri_sol*.out.
+   recon_out=t              ! Under recon_flag, write recon diagnostic files and gpec.log entries. If false, keep terminal summary only.
    recon_int="spline"       ! recon_flag radial integration on psifac grid. Options: "spline" or "trapezoid".
                             ! For DCON eigenmode reconstruction set coil_flag=f, mode_flag=t, choose mode as needed, and keep reg_flag=f.
 /
