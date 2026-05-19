@@ -7047,6 +7047,8 @@ c        the current psi.
 c        Reconstruct detailed K diagnostics for output.
          CALL gpeq_K(psi, K_fun, K_term1, K_term2, K_term3,
      $        sigma_vals, jdotb_vals, shear_fun, curv_fun)
+c        Verify (curl C).grad(psi)=0 using the flux-coordinate form
+c           (d_theta C_zeta - d_zeta C_theta) / J
          IF (cveri_flag) CALL gpeq_cveri(psi, cveri_fun)
 
 c        Store spatial values with coordinates.
@@ -7337,7 +7339,8 @@ c-----------------------------------------------------------------------
          ENDIF
          IF (cveri_max > cveri_tol) cveri_stat = "WARN"
          WRITE(*,'(a,a,a,es17.8e3,a,es17.8e3,a,es17.8e3)') 
-     $        "C verify Eq(99): ", TRIM(cveri_stat), " max=",
+     $        "C verify (curl C).grad(psi)=0: ",
+     $        TRIM(cveri_stat), " max=",
      $        cveri_max, " rms=", cveri_rms, " tol=", cveri_tol
       ENDIF
       WRITE(*,'(a,a,a,es17.8e3)') "GPEC ep(", TRIM(smode), "):",
@@ -7375,7 +7378,8 @@ c-----------------------------------------------------------------------
      $     REAL(dst3_total_hr), AIMAG(dst3_total_hr)
       IF (cveri_flag) THEN
          WRITE(u_log,'(a,a,a,es17.8e3,a,es17.8e3,a,es17.8e3)') 
-     $        "  C verify Eq(99): ", TRIM(cveri_stat), " max=",
+     $        "  C verify (curl C).grad(psi)=0: ",
+     $        TRIM(cveri_stat), " max=",
      $        cveri_max, " rms=", cveri_rms, " tol=", cveri_tol
       ENDIF
       WRITE(u_log,'(a,a,a,es17.8e3)') "  GPEC ep(", TRIM(smode),
