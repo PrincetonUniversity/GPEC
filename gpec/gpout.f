@@ -6897,8 +6897,8 @@ c-----------------------------------------------------------------------
       CHARACTER(128) :: cw_fun_file, cw_mn_file, cv_fun_file, cv_mn_file
       CHARACTER(128) :: cv2_fun_file, cv2_mn_file, int_file
       REAL(r8) :: dpsi_local
-      INTEGER :: istep, nint_pts, iint
-      REAL(r8) :: psi_prev, psi_curr, epf_prev, epf_curr
+      INTEGER :: istep, nint_pts, iint, ep_index
+      REAL(r8) :: psi_prev, psi_curr, epf_prev, epf_curr, ep_selected
       REAL(r8) :: epf_p_prev, epf_t_prev, epf_z_prev
       REAL(r8) :: epf_p_curr, epf_t_curr, epf_z_curr
       REAL(r8) :: epf_int_total_hr, epf_p_total_hr,
@@ -7012,6 +7012,12 @@ c-----------------------------------------------------------------------
      $     "c2_mu0_sum","k_xin2_c_re","k_xin2_c_im",
      $     "dw_c_re","dw_c_im","c2_psi","c2_theta","c2_zeta",
      $     "k1_xin2_re","k2_xin2_re","k3_xin2_re"
+      ep_index = 1
+      IF (mode_flag) ep_index = mode
+      IF (ep_index < 1 .OR. ep_index > mpert) THEN
+         CALL gpec_stop("gpout_recon selected mode is out of range")
+      ENDIF
+      ep_selected = REAL(ep(ep_index))
 c-----------------------------------------------------------------------
 c     main loop over all psi levels.
 c     compute gpeq reconstruction diagnostics at each psi.
@@ -7305,8 +7311,9 @@ c-----------------------------------------------------------------------
      $     REAL(dst2_total_hr), AIMAG(dst2_total_hr)
       WRITE(*,'(a,2es17.8e3)') "  K3_xin2           = ",
      $     REAL(dst3_total_hr), AIMAG(dst3_total_hr)
-      WRITE(*,*) "GPEC ep(1):", REAL(ep(1))
-      WRITE(*,*) "DCON plasma1-equivalent:", REAL(ep(1))*(mu0*2.0) /
+      WRITE(*,'(a,I8,a,es17.8e3)') "GPEC ep(", ep_index, "):",
+     $     ep_selected
+      WRITE(*,*) "DCON plasma1-equivalent:", ep_selected*(mu0*2.0) /
      $     psio**2 / (chi1*1e-3)**2
 
       OPEN(UNIT=u_log, FILE="gpec.log", STATUS="UNKNOWN",
@@ -7337,9 +7344,10 @@ c-----------------------------------------------------------------------
      $     REAL(dst2_total_hr), AIMAG(dst2_total_hr)
       WRITE(u_log,'(a,2es17.8e3)') "    K3_xin2           = ",
      $     REAL(dst3_total_hr), AIMAG(dst3_total_hr)
-      WRITE(u_log,'(a,es17.8e3)') "  GPEC ep(1) = ", REAL(ep(1))
+      WRITE(u_log,'(a,I8,a,es17.8e3)') "  GPEC ep(", ep_index,
+     $     ") = ", ep_selected
       WRITE(u_log,'(a,es17.8e3)') "  DCON plasma1-equivalent = ",
-     $     REAL(ep(1))*(mu0*2.0) / psio**2 / (chi1*1e-3)**2
+     $     ep_selected*(mu0*2.0) / psio**2 / (chi1*1e-3)**2
       WRITE(u_log,*)
       CLOSE(u_log)
       
