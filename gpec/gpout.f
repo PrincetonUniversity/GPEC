@@ -6897,7 +6897,7 @@ c-----------------------------------------------------------------------
       CHARACTER(128) :: cw_fun_file, cw_mn_file, cv_fun_file, cv_mn_file
       CHARACTER(128) :: cv2_fun_file, cv2_mn_file, int_file
       REAL(r8) :: dpsi_local
-      INTEGER :: istep
+      INTEGER :: istep, nint_pts, iint
       REAL(r8) :: psi_prev, psi_curr, epf_prev, epf_curr
       REAL(r8) :: epf_p_prev, epf_t_prev, epf_z_prev
       REAL(r8) :: epf_p_curr, epf_t_curr, epf_z_curr
@@ -6907,6 +6907,11 @@ c-----------------------------------------------------------------------
      $     dst3_prev, dst1_curr, dst2_curr, dst3_curr,
      $     dst_int_total_k_hr, dst1_total_hr, dst2_total_hr,
      $     dst3_total_hr, dw_raw_k_hr, dw_dcon_k_hr, dw_cum
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: psi_int_pts, epf_vals,
+     $     epf_p_vals, epf_t_vals, epf_z_vals
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: dst_vals, dst1_vals,
+     $     dst2_vals, dst3_vals
+      TYPE(cspline_type) :: recon_epf_spl, recon_dst_spl
       
 c     Diagnostic variables for C vector comparison
       INTEGER :: ipsi_mid, itheta_mid, ipert_diag, m1
@@ -7127,13 +7132,29 @@ c-----------------------------------------------------------------------
       WRITE(u_int,'(a)') "c  C2/mu0 = int J |C|^2 / mu0"
       WRITE(u_int,'(a)') "c  Kxin2  = int J K |xi_n|^2"
       WRITE(u_int,'(a)') "c  dW_gpec(K) = 0.5 * (C2/mu0 - Kxin2)"
-      dw_cum = CMPLX(0.0_r8, 0.0_r8, r8)
-      WRITE(u_int,'(15(es17.8e3))') psi_prev, epf_prev,
-     $     REAL(dst_prev), AIMAG(dst_prev), epf_int_total_hr,
-     $     REAL(dst_int_total_k_hr), AIMAG(dst_int_total_k_hr),
-     $     REAL(dw_cum), AIMAG(dw_cum), epf_p_prev, epf_t_prev,
-     $     epf_z_prev, REAL(dst1_prev), REAL(dst2_prev),
-     $     REAL(dst3_prev)
+      WRITE(u_int,'(a,a)') "c  recon_int = ", TRIM(recon_int)
+      nint_pts = 1
+      DO istep = 0, mstep-1
+         psi_curr = psifac(istep+1)
+         IF (psi_curr < rzphi%xs(0)) CYCLE
+         IF (psi_curr > rzphi%xs(mpsi)) EXIT
+         nint_pts = nint_pts + 1
+      ENDDO
+      ALLOCATE(psi_int_pts(nint_pts), epf_vals(nint_pts),
+     $   epf_p_vals(nint_pts), epf_t_vals(nint_pts),
+     $   epf_z_vals(nint_pts), dst_vals(nint_pts),
+     $   dst1_vals(nint_pts), dst2_vals(nint_pts),
+     $   dst3_vals(nint_pts))
+      psi_int_pts(1) = psi_prev
+      epf_vals(1) = epf_prev
+      epf_p_vals(1) = epf_p_prev
+      epf_t_vals(1) = epf_t_prev
+      epf_z_vals(1) = epf_z_prev
+      dst_vals(1) = dst_prev
+      dst1_vals(1) = dst1_prev
+      dst2_vals(1) = dst2_prev
+      dst3_vals(1) = dst3_prev
+      iint = 1
       DO istep = 0, mstep-1
          psi_curr = psifac(istep+1)
          IF (psi_curr < rzphi%xs(0)) CYCLE
@@ -7142,42 +7163,104 @@ c-----------------------------------------------------------------------
      $        epf_t_curr, epf_z_curr)
          CALL gpeq_dst(psi_curr, dst_curr, dst1_curr, dst2_curr,
      $        dst3_curr)
-         dpsi_local = psi_curr - psi_prev
-         epf_int_total_hr = epf_int_total_hr +
-     $        (epf_prev + epf_curr) * dpsi_local / 2.0_r8
-         epf_p_total_hr = epf_p_total_hr +
-     $        (epf_p_prev + epf_p_curr) * dpsi_local / 2.0_r8
-         epf_t_total_hr = epf_t_total_hr +
-     $        (epf_t_prev + epf_t_curr) * dpsi_local / 2.0_r8
-         epf_z_total_hr = epf_z_total_hr +
-     $        (epf_z_prev + epf_z_curr) * dpsi_local / 2.0_r8
-         dst_int_total_k_hr = dst_int_total_k_hr +
-     $        (dst_prev + dst_curr) * dpsi_local / 2.0_r8
-         dst1_total_hr = dst1_total_hr +
-     $        (dst1_prev + dst1_curr) * dpsi_local / 2.0_r8
-         dst2_total_hr = dst2_total_hr +
-     $        (dst2_prev + dst2_curr) * dpsi_local / 2.0_r8
-         dst3_total_hr = dst3_total_hr +
-     $        (dst3_prev + dst3_curr) * dpsi_local / 2.0_r8
-         psi_prev = psi_curr
-         epf_prev = epf_curr
-         epf_p_prev = epf_p_curr
-         epf_t_prev = epf_t_curr
-         epf_z_prev = epf_z_curr
-         dst_prev = dst_curr
-         dst1_prev = dst1_curr
-         dst2_prev = dst2_curr
-         dst3_prev = dst3_curr
-         dw_cum = 0.5_r8 *
-     $        (CMPLX(epf_int_total_hr, 0.0_r8, r8) -
-     $        dst_int_total_k_hr)
-         WRITE(u_int,'(15(es17.8e3))') psi_curr, epf_curr,
-     $        REAL(dst_curr), AIMAG(dst_curr), epf_int_total_hr,
-     $        REAL(dst_int_total_k_hr), AIMAG(dst_int_total_k_hr),
-     $        REAL(dw_cum), AIMAG(dw_cum), epf_p_curr, epf_t_curr,
-     $        epf_z_curr, REAL(dst1_curr), REAL(dst2_curr),
-     $        REAL(dst3_curr)
+         iint = iint + 1
+         psi_int_pts(iint) = psi_curr
+         epf_vals(iint) = epf_curr
+         epf_p_vals(iint) = epf_p_curr
+         epf_t_vals(iint) = epf_t_curr
+         epf_z_vals(iint) = epf_z_curr
+         dst_vals(iint) = dst_curr
+         dst1_vals(iint) = dst1_curr
+         dst2_vals(iint) = dst2_curr
+         dst3_vals(iint) = dst3_curr
       ENDDO
+      IF (TRIM(recon_int) == "spline" .AND. nint_pts > 1) THEN
+         CALL cspline_alloc(recon_epf_spl, nint_pts-1, 4)
+         CALL cspline_alloc(recon_dst_spl, nint_pts-1, 4)
+         recon_epf_spl%xs = psi_int_pts
+         recon_dst_spl%xs = psi_int_pts
+         recon_epf_spl%fs(:,1) = CMPLX(epf_vals, 0.0_r8, r8)
+         recon_epf_spl%fs(:,2) = CMPLX(epf_p_vals, 0.0_r8, r8)
+         recon_epf_spl%fs(:,3) = CMPLX(epf_t_vals, 0.0_r8, r8)
+         recon_epf_spl%fs(:,4) = CMPLX(epf_z_vals, 0.0_r8, r8)
+         recon_dst_spl%fs(:,1) = dst_vals
+         recon_dst_spl%fs(:,2) = dst1_vals
+         recon_dst_spl%fs(:,3) = dst2_vals
+         recon_dst_spl%fs(:,4) = dst3_vals
+         CALL cspline_fit(recon_epf_spl, "extrap")
+         CALL cspline_fit(recon_dst_spl, "extrap")
+         CALL cspline_int(recon_epf_spl)
+         CALL cspline_int(recon_dst_spl)
+         DO iint = 1, nint_pts
+            epf_int_total_hr = REAL(recon_epf_spl%fsi(iint-1,1))
+            epf_p_total_hr = REAL(recon_epf_spl%fsi(iint-1,2))
+            epf_t_total_hr = REAL(recon_epf_spl%fsi(iint-1,3))
+            epf_z_total_hr = REAL(recon_epf_spl%fsi(iint-1,4))
+            dst_int_total_k_hr = recon_dst_spl%fsi(iint-1,1)
+            dst1_total_hr = recon_dst_spl%fsi(iint-1,2)
+            dst2_total_hr = recon_dst_spl%fsi(iint-1,3)
+            dst3_total_hr = recon_dst_spl%fsi(iint-1,4)
+            dw_cum = 0.5_r8 *
+     $         (CMPLX(epf_int_total_hr, 0.0_r8, r8) -
+     $         dst_int_total_k_hr)
+            WRITE(u_int,'(15(es17.8e3))') psi_int_pts(iint),
+     $         epf_vals(iint), REAL(dst_vals(iint)),
+     $         AIMAG(dst_vals(iint)), epf_int_total_hr,
+     $         REAL(dst_int_total_k_hr), AIMAG(dst_int_total_k_hr),
+     $         REAL(dw_cum), AIMAG(dw_cum), epf_p_vals(iint),
+     $         epf_t_vals(iint), epf_z_vals(iint),
+     $         REAL(dst1_vals(iint)), REAL(dst2_vals(iint)),
+     $         REAL(dst3_vals(iint))
+         ENDDO
+         CALL cspline_dealloc(recon_epf_spl)
+         CALL cspline_dealloc(recon_dst_spl)
+      ELSE
+         dw_cum = CMPLX(0.0_r8, 0.0_r8, r8)
+         WRITE(u_int,'(15(es17.8e3))') psi_int_pts(1), epf_vals(1),
+     $      REAL(dst_vals(1)), AIMAG(dst_vals(1)), epf_int_total_hr,
+     $      REAL(dst_int_total_k_hr), AIMAG(dst_int_total_k_hr),
+     $      REAL(dw_cum), AIMAG(dw_cum), epf_p_vals(1), epf_t_vals(1),
+     $      epf_z_vals(1), REAL(dst1_vals(1)), REAL(dst2_vals(1)),
+     $      REAL(dst3_vals(1))
+         DO iint = 2, nint_pts
+            dpsi_local = psi_int_pts(iint) - psi_int_pts(iint-1)
+            epf_int_total_hr = epf_int_total_hr +
+     $         (epf_vals(iint-1) + epf_vals(iint)) * dpsi_local / 2.0_r8
+            epf_p_total_hr = epf_p_total_hr +
+     $         (epf_p_vals(iint-1) + epf_p_vals(iint)) * dpsi_local
+     $         / 2.0_r8
+            epf_t_total_hr = epf_t_total_hr +
+     $         (epf_t_vals(iint-1) + epf_t_vals(iint)) * dpsi_local
+     $         / 2.0_r8
+            epf_z_total_hr = epf_z_total_hr +
+     $         (epf_z_vals(iint-1) + epf_z_vals(iint)) * dpsi_local
+     $         / 2.0_r8
+            dst_int_total_k_hr = dst_int_total_k_hr +
+     $         (dst_vals(iint-1) + dst_vals(iint)) * dpsi_local / 2.0_r8
+            dst1_total_hr = dst1_total_hr +
+     $         (dst1_vals(iint-1) + dst1_vals(iint)) *
+     $         dpsi_local / 2.0_r8
+            dst2_total_hr = dst2_total_hr +
+     $         (dst2_vals(iint-1) + dst2_vals(iint)) *
+     $         dpsi_local / 2.0_r8
+            dst3_total_hr = dst3_total_hr +
+     $         (dst3_vals(iint-1) + dst3_vals(iint)) *
+     $         dpsi_local / 2.0_r8
+            dw_cum = 0.5_r8 *
+     $         (CMPLX(epf_int_total_hr, 0.0_r8, r8) -
+     $         dst_int_total_k_hr)
+            WRITE(u_int,'(15(es17.8e3))') psi_int_pts(iint),
+     $         epf_vals(iint), REAL(dst_vals(iint)),
+     $         AIMAG(dst_vals(iint)), epf_int_total_hr,
+     $         REAL(dst_int_total_k_hr), AIMAG(dst_int_total_k_hr),
+     $         REAL(dw_cum), AIMAG(dw_cum), epf_p_vals(iint),
+     $         epf_t_vals(iint), epf_z_vals(iint),
+     $         REAL(dst1_vals(iint)), REAL(dst2_vals(iint)),
+     $         REAL(dst3_vals(iint))
+         ENDDO
+      ENDIF
+      DEALLOCATE(psi_int_pts, epf_vals, epf_p_vals, epf_t_vals,
+     $   epf_z_vals, dst_vals, dst1_vals, dst2_vals, dst3_vals)
       dw_raw_k_hr = 0.5_r8 *
      $     (CMPLX(epf_int_total_hr, 0.0_r8, r8) - dst_int_total_k_hr)
       dw_dcon_k_hr = dw_raw_k_hr * dcon_fac

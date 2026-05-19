@@ -70,7 +70,7 @@ c-----------------------------------------------------------------------
      $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout,filter_flag,
      $     netcdf_flag,ascii_flag,singthresh_flag,
      $     singthresh_callen_flag,singthresh_slayer_flag,
-     $     singthresh_slayer_inpr,out_ahg2msc,recon_flag
+     $     singthresh_slayer_inpr,out_ahg2msc,recon_flag,recon_int
       NAMELIST/gpec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,jacfac_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
@@ -195,6 +195,7 @@ c-----------------------------------------------------------------------
       eigm_flag=.FALSE.
       mutual_test_flag=.FALSE.
       recon_flag=.FALSE.
+      recon_int="spline"
 
       majr=10.0
       minr=1.0
@@ -225,6 +226,12 @@ c-----------------------------------------------------------------------
       READ(in_unit,NML=gpec_output)
       READ(in_unit,NML=gpec_diagnose)
       CALL ascii_close(in_unit)
+      SELECT CASE(TRIM(recon_int))
+      CASE("spline","trapezoid")
+      CASE DEFAULT
+         CALL gpec_stop("gpec_output recon_int must be spline or "//
+     $        "trapezoid")
+      END SELECT
       galsol%gal_flag=gal_flag
       IF(timeit) CALL gpec_timer(0)
 
@@ -837,4 +844,3 @@ c-----------------------------------------------------------------------
       CALL gpec_dealloc
       CALL gpec_stop("Normal termination.")
       END PROGRAM gpec_main
-
