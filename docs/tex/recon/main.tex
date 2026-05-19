@@ -1316,6 +1316,35 @@ C_3 &= Q_3 - \mathcal{J}\xi_\psi \mu_0 j^\theta
 \end{aligned}
 \end{equation}
 
+With this definition, the reconstructed $\vec C$ should satisfy the identity
+\begin{equation}
+(\nabla\times \vec C)\cdot \nabla \psi
+=
+\nabla\cdot\left(\vec C\times \nabla \psi\right)
+=0,
+\end{equation}
+which is the relation referred to in the code as the \texttt{C verify}
+check; see also the discussion of the Bernstein energy-principle form in
+\cite{RevModPhys.76.1071}. The verification target is therefore the vanishing of
+$ (\nabla\times \vec C)\cdot \nabla \psi $, or equivalently
+$ \nabla\cdot(\vec C\times \nabla \psi) $.  In the code, this same quantity
+is evaluated through its flux-coordinate form
+\begin{equation}
+(\nabla\times \vec C)\cdot \nabla \psi
+=
+\frac{1}{\mathcal{J}}
+\left(
+\frac{\partial C_\zeta}{\partial \theta}
+-
+\frac{\partial C_\theta}{\partial \zeta}
+\right).
+\end{equation}
+Here $C_\theta$ and $C_\zeta$ are the covariant components in
+$\vec C = C_\psi \nabla\psi + C_\theta \nabla\theta + C_\zeta \nabla\zeta$.
+Therefore the present verification tests whether the reconstructed covariant
+components satisfy this cancellation to numerical roundoff on each
+reconstructed flux surface.
+
 For direct reconstruction on the $(\psi,\theta)$ grid, the energy density is closed by the metric contraction
 \begin{equation}
 |\vec C|^2
