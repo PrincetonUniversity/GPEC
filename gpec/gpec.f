@@ -72,7 +72,7 @@ c-----------------------------------------------------------------------
      $     netcdf_flag,ascii_flag,singthresh_flag,
      $     singthresh_callen_flag,singthresh_slayer_flag,
      $     singthresh_slayer_inpr,out_ahg2msc,recon_flag,recon_int,
-     $     cveri_flag,recon_out
+     $     cveri_flag,recon_out,recon_flag2
       NAMELIST/gpec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,jacfac_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
@@ -197,6 +197,7 @@ c-----------------------------------------------------------------------
       eigm_flag=.FALSE.
       mutual_test_flag=.FALSE.
       recon_flag=.FALSE.
+      recon_flag2=.FALSE.
       recon_int="spline"
       cveri_flag=.FALSE.
       recon_out=.TRUE.
@@ -692,6 +693,9 @@ c-----------------------------------------------------------------------
       IF (recon_flag) THEN
          CALL gpout_recon(mode,xspmn)
       ENDIF      
+      IF (recon_flag2) THEN
+         CALL gpout_recon2(mode,xspmn)
+      ENDIF
 c-----------------------------------------------------------------------
 c     diagnose.
 c-----------------------------------------------------------------------
