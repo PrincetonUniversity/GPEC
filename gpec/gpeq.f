@@ -928,6 +928,140 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_cveri
 c-----------------------------------------------------------------------
+c     subprogram 9d. gpeq_firstform.
+c     evaluate the first-form plasma energy density components on one
+c     flux surface with gamma term omitted:
+c
+c        |Q|^2 / mu0
+c        j . (Q x xi*) / mu0
+c        (div xi)* (xi . grad p)
+c
+c     Here xi.grad p is evaluated directly as p'(psi) xi^psi, and
+c     div xi is evaluated directly from the Jacobian-weighted
+c     contravariant displacement:
+c
+c        div xi = 1/J [ d(J xi^psi)/dpsi
+c                      + d(J xi^theta)/dtheta
+c                      + d(J xi^zeta)/dzeta ].
+c-----------------------------------------------------------------------
+      SUBROUTINE gpeq_firstform(psi, q2_int, jqx_int, pdiv_int,
+     $     total_int, q2_fun, jqx_fun, pdiv_fun, total_fun)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      REAL(r8), INTENT(IN) :: psi
+      REAL(r8), INTENT(OUT) :: q2_int
+      COMPLEX(r8), INTENT(OUT) :: jqx_int, pdiv_int, total_int
+      COMPLEX(r8), DIMENSION(0:mthsurf), OPTIONAL, INTENT(OUT) ::
+     $     q2_fun, jqx_fun, pdiv_fun, total_fun
+
+      INTEGER :: itheta
+      REAL(r8) :: f1raw, p1
+      REAL(r8) :: q2_density
+      REAL(r8) :: mu0jtheta, mu0jzeta
+      COMPLEX(r8) :: jqx_density, total_density, pdiv_density
+      COMPLEX(r8) :: det_term, divxi_density, xigradp_density
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: xsp_fun, xmp1_fun
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun, xmt_fun, xmz_fun
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: bwp_fun, bmt_fun, bmz_fun
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: bvp_fun, bvt_fun, bvz_fun
+      TYPE(cspline_type) :: divspl
+
+      IF(debug_flag) PRINT *, "Entering gpeq_firstform"
+c-----------------------------------------------------------------------
+c     prepare psi-local perturbed equilibrium quantities.
+c-----------------------------------------------------------------------
+      CALL gpeq_sol(psi)
+      CALL gpeq_contra(psi)
+      CALL gpeq_cova(psi)
+
+      CALL spline_eval(sq, psi, 1)
+      f1raw = sq%f1(1)
+      p1 = sq%f1(2) / mu0
+
+      CALL iscdftb(mfac, mpert, xsp_fun, mthsurf, xsp_mn)
+      CALL iscdftb(mfac, mpert, xmp1_fun, mthsurf, xmp1_mn)
+      CALL iscdftb(mfac, mpert, xwp_fun, mthsurf, xwp_mn)
+      CALL iscdftb(mfac, mpert, xmt_fun, mthsurf, xmt_mn)
+      CALL iscdftb(mfac, mpert, xmz_fun, mthsurf, xmz_mn)
+      CALL iscdftb(mfac, mpert, bwp_fun, mthsurf, bwp_mn)
+      CALL iscdftb(mfac, mpert, bmt_fun, mthsurf, bmt_mn)
+      CALL iscdftb(mfac, mpert, bmz_fun, mthsurf, bmz_mn)
+      CALL iscdftb(mfac, mpert, bvp_fun, mthsurf, bvp_mn)
+      CALL iscdftb(mfac, mpert, bvt_fun, mthsurf, bvt_mn)
+      CALL iscdftb(mfac, mpert, bvz_fun, mthsurf, bvz_mn)
+
+      CALL cspline_alloc(divspl, mthsurf, 2)
+      divspl%xs = theta
+      DO itheta = 0, mthsurf
+         divspl%fs(itheta,1) = xmt_fun(itheta)
+         divspl%fs(itheta,2) = xmz_fun(itheta)
+      ENDDO
+      CALL cspline_fit(divspl, "periodic")
+
+      q2_int = 0.0_r8
+      jqx_int = CMPLX(0.0_r8, 0.0_r8, r8)
+      pdiv_int = CMPLX(0.0_r8, 0.0_r8, r8)
+      total_int = CMPLX(0.0_r8, 0.0_r8, r8)
+
+      DO itheta = 0, mthsurf
+         CALL bicube_eval(rzphi, psi, theta(itheta), 1)
+         CALL cspline_eval(divspl, theta(itheta), 1)
+         jac = rzphi%f(4)
+         jac1 = rzphi%fx(4)
+
+c        pointwise contravariant current components: mu0 j^theta,
+c        mu0 j^zeta.  These match the definitions already used in gpeq_c.
+         mu0jtheta = -f1raw / jac
+         mu0jzeta = -mu0 * p1 / chi1 - sq%f(4) * f1raw / jac
+
+         q2_density = REAL(CONJG(bwp_fun(itheta)) * bvp_fun(itheta) +
+     $        CONJG(bmt_fun(itheta)) * bvt_fun(itheta) +
+     $        CONJG(bmz_fun(itheta)) * bvz_fun(itheta), r8)
+     $        / (mu0 * jac)
+
+         det_term = -mu0jtheta *
+     $        (bwp_fun(itheta) * CONJG(xmz_fun(itheta)) -
+     $        bmz_fun(itheta) * CONJG(xwp_fun(itheta))) +
+     $        mu0jzeta *
+     $        (bwp_fun(itheta) * CONJG(xmt_fun(itheta)) -
+     $        bmt_fun(itheta) * CONJG(xwp_fun(itheta)))
+         jqx_density = det_term / (mu0 * jac)
+
+         divxi_density = xmp1_fun(itheta) +
+     $        (jac1 / jac) * xsp_fun(itheta) +
+     $        divspl%f1(1) / jac -
+     $        (twopi * ifac * nn) * divspl%f(2) / jac
+         xigradp_density = p1 * xsp_fun(itheta)
+         pdiv_density = CONJG(divxi_density) * xigradp_density
+         total_density = CMPLX(q2_density, 0.0_r8, r8) -
+     $        jqx_density + pdiv_density
+
+         IF (PRESENT(q2_fun)) q2_fun(itheta) =
+     $        CMPLX(q2_density, 0.0_r8, r8)
+         IF (PRESENT(jqx_fun)) jqx_fun(itheta) = jqx_density
+         IF (PRESENT(pdiv_fun)) pdiv_fun(itheta) = pdiv_density
+         IF (PRESENT(total_fun)) total_fun(itheta) = total_density
+
+         IF (itheta < mthsurf) THEN
+            q2_int = q2_int + q2_density * jac / REAL(mthsurf, r8)
+            jqx_int = jqx_int + jqx_density * jac / REAL(mthsurf, r8)
+            pdiv_int = pdiv_int + pdiv_density * jac /
+     $           REAL(mthsurf, r8)
+            total_int = total_int + total_density * jac /
+     $           REAL(mthsurf, r8)
+         ENDIF
+      ENDDO
+
+      CALL cspline_dealloc(divspl)
+
+      IF(debug_flag) PRINT *, "->Leaving gpeq_firstform"
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpeq_firstform
+c-----------------------------------------------------------------------
 c     subprogram 9b. gpeq_epf.
 c     compute the flux-surface integral of the first EPF kernel,
 c
