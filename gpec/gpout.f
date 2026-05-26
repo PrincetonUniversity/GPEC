@@ -27,6 +27,7 @@ c     18. gpout_qrv
 c     19. gpout_init_netcdf
 c     20. gpout_close_netcdf
 c     21. gpout_recon
+c     22. gpout_recon2
 c-----------------------------------------------------------------------
 c     subprogram 0. gpout_mod.
 c     module declarations.
@@ -7440,5 +7441,241 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_recon
+c-----------------------------------------------------------------------
+c     subprogram 22. gpout_recon2
+c     first-form plasma energy diagnostic based on
+c
+c        |Q|^2 - j.(Q x xi*) + mu0 (div xi)* (xi.grad p)
+c
+c     with the gamma p |div xi|^2 term intentionally omitted.
+c     The pressure-divergence contribution is evaluated directly from
+c     div xi and xi.grad p rather than closed as a Bernstein residual.
+c-----------------------------------------------------------------------
+      SUBROUTINE gpout_recon2(mode, xspmn)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: mode
+      COMPLEX(r8), DIMENSION(:), INTENT(IN) :: xspmn
+
+      INTEGER :: ipsi, itheta, usurf, u_int, u_log
+      INTEGER :: istep, nint_pts, iint
+      REAL(r8) :: psi, eta, rfac, dpsi_local, q2_hr
+      REAL(r8), DIMENSION(0:mthsurf) :: rvals, zvals
+      COMPLEX(r8) :: jqx_hr, pdiv_hr, total_hr
+      COMPLEX(r8) :: jqx_cum, pdiv_cum, total_cum, dw_raw_hr,
+     $     dw_dcon_hr
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: q2_fun, jqx_fun, pdiv_fun,
+     $     total_fun
+      CHARACTER(8) :: smode
+      CHARACTER(128) :: surf_file, int_file
+      REAL(r8) :: dcon_fac
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: psi_int_pts, q2_vals_r
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: q2_vals, jqx_vals,
+     $     pdiv_vals, total_vals
+      TYPE(cspline_type) :: recon2_spl
+
+      IF(verbose) WRITE(*,*)""
+      IF(verbose) WRITE(*,*)"GPOUT_RECON2: Starting first-form"//
+     $  " diagnostics"
+      IF(verbose) WRITE(*,*)"__________________________________________"
+
+      WRITE(smode,'(I8)') mode
+      smode = ADJUSTL(smode)
+      surf_file = "gpec_recon2_terms_sol"//TRIM(smode)//".out"
+      int_file = "gpec_recon2_integration_sol"//TRIM(smode)//".out"
+      usurf = 94
+      u_int = 95
+      u_log = 96
+
+      IF (recon_out) THEN
+         OPEN(UNIT=usurf, FILE=surf_file, STATUS="UNKNOWN")
+         OPEN(UNIT=u_int, FILE=int_file, STATUS="UNKNOWN")
+         WRITE(usurf,'(12(1x,a16))')
+     $        "psi","theta","r","z","q2_re","q2_im","jqx_re",
+     $        "jqx_im","pdiv_re","pdiv_im","total_re","total_im"
+         WRITE(u_int,'(10(1x,a16))')
+     $        "psi","q2_re","q2_im","jqx_re","jqx_im","pdiv_re",
+     $        "pdiv_im","total_re","total_im","dw_re"
+      ENDIF
+
+      CALL idcon_build(mode, xspmn)
+      CALL gpeq_alloc
+
+      DO ipsi = 0, mpsi
+         psi = rzphi%xs(ipsi)
+         IF (psi > psilim) EXIT
+         CALL gpeq_firstform(psi, q2_hr, jqx_hr, pdiv_hr, total_hr,
+     $        q2_fun, jqx_fun, pdiv_fun, total_fun)
+
+         IF (recon_out) THEN
+            DO itheta = 0, mthsurf
+               CALL bicube_eval(rzphi, psi, theta(itheta), 1)
+               rfac = SQRT(rzphi%f(1))
+               eta = twopi*(theta(itheta) + rzphi%f(2))
+               rvals(itheta) = ro + rfac*COS(eta)
+               zvals(itheta) = zo + rfac*SIN(eta)
+               WRITE(usurf,'(12(es17.8e3))') psi, theta(itheta),
+     $              rvals(itheta), zvals(itheta), REAL(q2_fun(itheta)),
+     $              AIMAG(q2_fun(itheta)), REAL(jqx_fun(itheta)),
+     $              AIMAG(jqx_fun(itheta)), REAL(pdiv_fun(itheta)),
+     $              AIMAG(pdiv_fun(itheta)), REAL(total_fun(itheta)),
+     $              AIMAG(total_fun(itheta))
+            ENDDO
+            WRITE(usurf,*)
+         ENDIF
+      ENDDO
+
+      dcon_fac = (mu0*2.0_r8) / psio**2 / (chi1*1.0e-3_r8)**2
+      q2_hr = 0.0_r8
+      jqx_hr = CMPLX(0.0_r8, 0.0_r8, r8)
+      pdiv_hr = CMPLX(0.0_r8, 0.0_r8, r8)
+      total_hr = CMPLX(0.0_r8, 0.0_r8, r8)
+
+      nint_pts = 0
+      DO istep = 0, mstep
+         IF (psifac(istep) < rzphi%xs(0)) CYCLE
+         IF (psifac(istep) > rzphi%xs(mpsi)) EXIT
+         nint_pts = nint_pts + 1
+      ENDDO
+      ALLOCATE(psi_int_pts(nint_pts), q2_vals_r(nint_pts),
+     $   q2_vals(nint_pts), jqx_vals(nint_pts), pdiv_vals(nint_pts),
+     $   total_vals(nint_pts))
+      iint = 0
+      DO istep = 0, mstep
+         psi = psifac(istep)
+         IF (psi < rzphi%xs(0)) CYCLE
+         IF (psi > rzphi%xs(mpsi)) EXIT
+         CALL gpeq_firstform(psi, q2_hr, jqx_hr, pdiv_hr, total_hr,
+     $        q2_fun, jqx_fun, pdiv_fun, total_fun)
+         iint = iint + 1
+         psi_int_pts(iint) = psi
+         q2_vals_r(iint) = q2_hr
+         q2_vals(iint) = CMPLX(q2_hr, 0.0_r8, r8)
+         jqx_vals(iint) = jqx_hr
+         pdiv_vals(iint) = pdiv_hr
+         total_vals(iint) = total_hr
+      ENDDO
+
+      IF (recon_out) THEN
+         WRITE(u_int,'(a)') "c  first-form plasma-energy terms"
+         WRITE(u_int,'(a)') "c  total = q2 - jqx + pdiv"
+         WRITE(u_int,'(a)') "c  pdiv term is computed directly"
+         WRITE(u_int,'(a,a)') "c  recon_int = ", TRIM(recon_int)
+      ENDIF
+
+      IF (TRIM(recon_int) == "spline" .AND. nint_pts > 1) THEN
+         CALL cspline_alloc(recon2_spl, nint_pts-1, 4)
+         recon2_spl%xs = psi_int_pts
+         recon2_spl%fs(:,1) = q2_vals
+         recon2_spl%fs(:,2) = jqx_vals
+         recon2_spl%fs(:,3) = pdiv_vals
+         recon2_spl%fs(:,4) = total_vals
+         CALL cspline_fit(recon2_spl, "extrap")
+         CALL cspline_int(recon2_spl)
+         DO iint = 1, nint_pts
+            q2_hr = REAL(recon2_spl%fsi(iint-1,1), r8)
+            jqx_hr = recon2_spl%fsi(iint-1,2)
+            pdiv_hr = recon2_spl%fsi(iint-1,3)
+            total_hr = recon2_spl%fsi(iint-1,4)
+            dw_raw_hr = 0.5_r8 * total_hr
+            IF (recon_out) WRITE(u_int,'(10(es17.8e3))')
+     $         psi_int_pts(iint), q2_vals_r(iint), 0.0_r8,
+     $         REAL(jqx_vals(iint)), AIMAG(jqx_vals(iint)),
+     $         REAL(pdiv_vals(iint)), AIMAG(pdiv_vals(iint)),
+     $         REAL(total_vals(iint)), AIMAG(total_vals(iint)),
+     $         REAL(dw_raw_hr)
+         ENDDO
+         CALL cspline_dealloc(recon2_spl)
+      ELSE
+         q2_hr = 0.0_r8
+         jqx_hr = CMPLX(0.0_r8, 0.0_r8, r8)
+         pdiv_hr = CMPLX(0.0_r8, 0.0_r8, r8)
+         total_hr = CMPLX(0.0_r8, 0.0_r8, r8)
+         DO iint = 1, nint_pts
+            IF (iint > 1) THEN
+               dpsi_local = psi_int_pts(iint) - psi_int_pts(iint-1)
+               q2_hr = q2_hr + (q2_vals_r(iint-1) + q2_vals_r(iint)) *
+     $              dpsi_local / 2.0_r8
+               jqx_hr = jqx_hr + (jqx_vals(iint-1) + jqx_vals(iint)) *
+     $              dpsi_local / 2.0_r8
+               pdiv_hr = pdiv_hr + (pdiv_vals(iint-1) +
+     $              pdiv_vals(iint)) * dpsi_local / 2.0_r8
+               total_hr = total_hr + (total_vals(iint-1) +
+     $              total_vals(iint)) * dpsi_local / 2.0_r8
+            ENDIF
+            dw_raw_hr = 0.5_r8 * total_hr
+            IF (recon_out) WRITE(u_int,'(10(es17.8e3))')
+     $         psi_int_pts(iint), q2_vals_r(iint), 0.0_r8,
+     $         REAL(jqx_vals(iint)), AIMAG(jqx_vals(iint)),
+     $         REAL(pdiv_vals(iint)), AIMAG(pdiv_vals(iint)),
+     $         REAL(total_vals(iint)), AIMAG(total_vals(iint)),
+     $         REAL(dw_raw_hr)
+         ENDDO
+      ENDIF
+
+      dw_raw_hr = 0.5_r8 * total_hr
+      dw_dcon_hr = dw_raw_hr * dcon_fac
+
+      IF (recon_out) THEN
+         WRITE(u_int,*)
+         WRITE(u_int,'(a)') "c  Final first-form totals:"
+         WRITE(u_int,'(2(es17.8e3))') q2_hr, 0.0_r8
+         WRITE(u_int,'(2(es17.8e3))') REAL(jqx_hr), AIMAG(jqx_hr)
+         WRITE(u_int,'(2(es17.8e3))') REAL(pdiv_hr), AIMAG(pdiv_hr)
+         WRITE(u_int,'(2(es17.8e3))') REAL(total_hr), AIMAG(total_hr)
+         WRITE(u_int,'(a)') "c  dW_p(recon2)"
+         WRITE(u_int,'(2(es17.8e3))') REAL(dw_raw_hr), AIMAG(dw_raw_hr)
+         WRITE(u_int,'(a)') "c  dW_p(recon2-normalize)"
+         WRITE(u_int,'(2(es17.8e3))') REAL(dw_dcon_hr),
+     $        AIMAG(dw_dcon_hr)
+      ENDIF
+
+      WRITE(*,'(a)') "GPEC_RECON2 final first-form totals:"
+      WRITE(*,'(a,es17.8e3)') "  int_J_Q2_over_mu0    = ", q2_hr
+      WRITE(*,'(a,2es17.8e3)') "  int_J_jQxixi_over_mu0= ",
+     $     REAL(jqx_hr), AIMAG(jqx_hr)
+      WRITE(*,'(a,2es17.8e3)') "  int_J_pdiv_term      = ",
+     $     REAL(pdiv_hr), AIMAG(pdiv_hr)
+      WRITE(*,'(a,2es17.8e3)') "  int_J_total          = ",
+     $     REAL(total_hr), AIMAG(total_hr)
+      WRITE(*,'(a,es17.8e3)') "  dW_p(recon2)         = ",
+     $     REAL(dw_raw_hr)
+      WRITE(*,'(a,es17.8e3)') "  dW_p(recon2-normalize)= ",
+     $     REAL(dw_dcon_hr)
+
+      IF (recon_out) THEN
+         OPEN(UNIT=u_log, FILE="gpec.log", STATUS="UNKNOWN",
+     $        POSITION="APPEND")
+         WRITE(u_log,'(a)') "GPEC_RECON2 final results:"
+         WRITE(u_log,'(a,I8)') "  mode = ", mode
+         WRITE(u_log,'(a,L1)') "  reg_flag = ", reg_flag
+         WRITE(u_log,'(a,es17.8e3)') "  int_J_Q2_over_mu0    = ", q2_hr
+         WRITE(u_log,'(a,2es17.8e3)') "  int_J_jQxixi_over_mu0= ",
+     $        REAL(jqx_hr), AIMAG(jqx_hr)
+         WRITE(u_log,'(a,2es17.8e3)') "  int_J_pdiv_term      = ",
+     $        REAL(pdiv_hr), AIMAG(pdiv_hr)
+         WRITE(u_log,'(a,2es17.8e3)') "  int_J_total          = ",
+     $        REAL(total_hr), AIMAG(total_hr)
+         WRITE(u_log,'(a,es17.8e3)') "  dW_p(recon2)         = ",
+     $        REAL(dw_raw_hr)
+         WRITE(u_log,'(a,es17.8e3)') "  dW_p(recon2-normalize)= ",
+     $        REAL(dw_dcon_hr)
+         WRITE(u_log,*)
+         CLOSE(u_log)
+      ENDIF
+
+      DEALLOCATE(psi_int_pts, q2_vals_r, q2_vals, jqx_vals, pdiv_vals,
+     $   total_vals)
+      CALL gpeq_dealloc
+      IF (recon_out) THEN
+         CLOSE(usurf)
+         CLOSE(u_int)
+      ENDIF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpout_recon2
 
       END MODULE gpout_mod
