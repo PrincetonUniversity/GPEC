@@ -72,7 +72,7 @@ c-----------------------------------------------------------------------
      $     netcdf_flag,ascii_flag,singthresh_flag,
      $     singthresh_callen_flag,singthresh_slayer_flag,
      $     singthresh_slayer_inpr,out_ahg2msc,recon_flag,recon_int,
-     $     cveri_flag,recon_out,recon_flag2
+     $     cveri_flag,recon_out,recon_flag2,xi_flag,xifile
       NAMELIST/gpec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,jacfac_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
@@ -91,6 +91,7 @@ c-----------------------------------------------------------------------
       dcon_dir=""
       ieqfile="psi_in.bin"
       idconfile="euler.bin"
+      xifile=""
       ivacuumfile="DEPRECATED"
       rdconfile="globalsol.bin"
       power_flag=.TRUE.
@@ -198,6 +199,7 @@ c-----------------------------------------------------------------------
       mutual_test_flag=.FALSE.
       recon_flag=.FALSE.
       recon_flag2=.FALSE.
+      xi_flag=.FALSE.
       recon_int="spline"
       cveri_flag=.FALSE.
       recon_out=.TRUE.
@@ -309,6 +311,7 @@ c-----------------------------------------------------------------------
          CALL setahgdir(dcon_dir)
          idconfile = TRIM(dcon_dir)//"/"//TRIM(idconfile)
          ieqfile = TRIM(dcon_dir)//"/"//TRIM(ieqfile)
+         IF (xifile /= "") xifile = TRIM(dcon_dir)//"/"//TRIM(xifile)
          ivacuumfile = TRIM(dcon_dir)//"/"//TRIM(ivacuumfile)
          rdconfile = TRIM(dcon_dir)//"/"//TRIM(rdconfile)
       ENDIF
