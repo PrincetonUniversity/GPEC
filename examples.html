@@ -1,19 +1,16 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="./">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>GPEC DIII-D Ideal Example &#8212; GPEC 1.5.6 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="_static/doctools.js"></script>
-    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=49fa7461" />
+    <script src="_static/documentation_options.js?v=8f564690"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
 <meta charset='utf-8'>
@@ -36,7 +33,7 @@
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </button>
-        <a class="navbar-brand" href="index.html"><img height=40, src="_static/GPEC_logo.png">
+        <a class="navbar-brand" href="index.html">
           <!-- GPEC-->
         </a>
         <!-- <span class="navbar-text navbar-version pull-left"><b>1.5</b></span> -->
@@ -46,6 +43,7 @@
           <ul class="nav navbar-nav">
             
                 <li><a href="references.html">Cite</a></li>
+                <li><a href="installation.html">Installation</a></li>
                 <li><a href="contact.html">Contact</a></li>
                 <li><a href="outputs.html">I/O</a></li>
                 <li><a href="releases.html">Release History</a></li>
@@ -87,14 +85,18 @@
 
 <div class="container">
   <div class="row">
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
             <p class="logo"><a href="index.html">
-              <img class="logo" src="_static/GPEC_logo.png" alt="Logo"/>
+              <img class="logo" src="_static/GPEC_logo.png" alt="Logo of GPEC"/>
             </a></p><ul>
 <li><a class="reference internal" href="#">GPEC DIII-D Ideal Example</a></li>
 </ul>
 
+<div id="sourcelink">
+  <a href="_sources/examples.rst.txt"
+     rel="nofollow">Source</a>
+</div>
 <form action="search.html" method="get">
  <div class="form-group">
   <input type="text" name="q" class="form-control" placeholder="Search" />
@@ -104,10 +106,10 @@
 </form>
         </div>
       </div>
-    <div class="body col-md-12 content" role="main">
+    <div class="body col-md-9 content" role="main">
       
   <section id="gpec-diii-d-ideal-example">
-<span id="diiid-ideal-example"></span><span id="examples"></span><h1>GPEC DIII-D Ideal Example<a class="headerlink" href="#gpec-diii-d-ideal-example" title="Permalink to this heading">¶</a></h1>
+<span id="diiid-ideal-example"></span><span id="examples"></span><h1>GPEC DIII-D Ideal Example<a class="headerlink" href="#gpec-diii-d-ideal-example" title="Link to this heading">¶</a></h1>
 <p>This example uses a baseline H-mode Error Field Correction (EFC) plasma from a n=1 EFC study done in 2013. The equilibrium used is a kinetic EFIT from DIII-D shot 147131 at 2300ms, and the profiles are self consistent with the equilibrium. Pre-GPEC results using a combination of GPEC and PENT for this calculation are published in <a class="reference external" href="http://scitation.aip.org/content/aip/journal/pop/21/7/10.1063/1.4886795">[C. Paz-Soldan, M. J. Lanctot, N. C. Logan, et al., Phys. Plasmas 21, 072503 (2014).]</a>.</p>
 <p>Note that the coil and pentrc input namelists use relative paths to the package’s data files. If you would like to run the example in a different location, you must change the input appropriately.</p>
 <p>Following a typical workflow we first cd to the example’s directory, then run DCON:</p>
@@ -154,7 +156,7 @@ always a good idea to check any solution, using xdraw or just skimming dcon.out.
  <span class="n">mstep</span> <span class="o">=</span>  <span class="mi">1574</span> <span class="p">,</span> <span class="n">mfix</span> <span class="o">=</span>  <span class="mi">17</span> <span class="p">,</span> <span class="n">msing</span> <span class="o">=</span>  <span class="mi">4</span>
  <span class="n">Recontructing</span> <span class="n">flux</span> <span class="n">functions</span> <span class="ow">and</span> <span class="n">metric</span> <span class="n">tensors</span>
  <span class="n">Reading</span> <span class="n">vacuum</span> <span class="n">energy</span> <span class="n">matrices</span>
- <span class="n">Calculating</span> <span class="n">field</span> <span class="n">on</span> <span class="n">the</span> <span class="n">boundary</span> <span class="kn">from</span> <span class="nn">coils</span>
+ <span class="n">Calculating</span> <span class="n">field</span> <span class="n">on</span> <span class="n">the</span> <span class="n">boundary</span> <span class="kn">from</span><span class="w"> </span><span class="nn">coils</span>
  <span class="n">Building</span> <span class="n">free</span> <span class="n">boundary</span> <span class="n">solutions</span>
  <span class="n">eigenmode</span> <span class="o">=</span>   <span class="mi">1</span><span class="p">,</span> <span class="n">dw</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.364E-03</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span>  <span class="mf">3.608E-09</span>
  <span class="n">eigenmode</span> <span class="o">=</span>   <span class="mi">2</span><span class="p">,</span> <span class="n">dw</span> <span class="o">=</span>  <span class="mf">3.918E-01</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span>  <span class="mf">1.151E-12</span>
@@ -348,7 +350,7 @@ PENTRC STOP =&gt; Normal termination.
     </p>
     <p>
         &copy; Copyright 2007 The Trustees of Princeton University.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.3.0.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 8.2.3.<br/>
     </p>
   </div>
 </footer>

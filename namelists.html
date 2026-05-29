@@ -1,19 +1,16 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="./">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>The EQUIL Namelist &#8212; GPEC 1.5.6 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="_static/doctools.js"></script>
-    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=49fa7461" />
+    <script src="_static/documentation_options.js?v=8f564690"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
 <meta charset='utf-8'>
@@ -36,7 +33,7 @@
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </button>
-        <a class="navbar-brand" href="index.html"><img height=40, src="_static/GPEC_logo.png">
+        <a class="navbar-brand" href="index.html">
           <!-- GPEC-->
         </a>
         <!-- <span class="navbar-text navbar-version pull-left"><b>1.5</b></span> -->
@@ -46,6 +43,7 @@
           <ul class="nav navbar-nav">
             
                 <li><a href="references.html">Cite</a></li>
+                <li><a href="installation.html">Installation</a></li>
                 <li><a href="contact.html">Contact</a></li>
                 <li><a href="outputs.html">I/O</a></li>
                 <li><a href="releases.html">Release History</a></li>
@@ -87,10 +85,10 @@
 
 <div class="container">
   <div class="row">
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
             <p class="logo"><a href="index.html">
-              <img class="logo" src="_static/GPEC_logo.png" alt="Logo"/>
+              <img class="logo" src="_static/GPEC_logo.png" alt="Logo of GPEC"/>
             </a></p><ul>
 <li><a class="reference internal" href="#">The EQUIL Namelist</a></li>
 <li><a class="reference internal" href="#the-dcon-namelist">The DCON Namelist</a></li>
@@ -98,6 +96,10 @@
 <li><a class="reference internal" href="#the-pentrc-namelist">The PENTRC Namelist</a></li>
 </ul>
 
+<div id="sourcelink">
+  <a href="_sources/namelists.rst.txt"
+     rel="nofollow">Source</a>
+</div>
 <form action="search.html" method="get">
  <div class="form-group">
   <input type="text" name="q" class="form-control" placeholder="Search" />
@@ -107,12 +109,12 @@
 </form>
         </div>
       </div>
-    <div class="body col-md-12 content" role="main">
+    <div class="body col-md-9 content" role="main">
       
   <p>Fully annotated namelist input files can be found in the $GPECHOME/input directory and any of the examples in $GPECHOME/docs/examples directories of any <cite>public installation &lt;installation&gt;</cite>.</p>
 <p>The major input files requiring user interaction are as follows.</p>
 <section id="the-equil-namelist">
-<h1>The EQUIL Namelist<a class="headerlink" href="#the-equil-namelist" title="Permalink to this heading">¶</a></h1>
+<h1>The EQUIL Namelist<a class="headerlink" href="#the-equil-namelist" title="Link to this heading">¶</a></h1>
 <p>This namelist specifies the equilibrium inputs and how equilibrium quantities are splined for use in the various executables.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>&amp;EQUIL_CONTROL
     eq_type=&quot;efit&quot;       ! Type of the input 2D equilibrium file. Accepts efit, chease, fluxgrid, transp, jsolver, lar, sol, etc.
@@ -149,7 +151,7 @@
 </div>
 </section>
 <section id="the-dcon-namelist">
-<h1>The DCON Namelist<a class="headerlink" href="#the-dcon-namelist" title="Permalink to this heading">¶</a></h1>
+<h1>The DCON Namelist<a class="headerlink" href="#the-dcon-namelist" title="Link to this heading">¶</a></h1>
 <p>This namelist controls the behavior of the DCON code and determines its outputs.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>&amp;DCON_CONTROL
     bal_flag=f           ! Ideal MHD ballooning criterion for short wavelengths
@@ -193,10 +195,10 @@
     singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
     ucrit=1e3            ! Maximum fraction of solutions allowed before re-normalized
 
+    wv_farwall_flag = f  ! Force nowall gpec calculations while calculating mutual inductance with the wall, when set true.
     termbycross_flag = t ! Terminate ODE solver in the event of a zero crossing (default: false)
 
     use_classic_splines = f ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
-    wv_farwall_flag = f  ! Force nowall gpec calculations while calculating mutual inductance with the wall, when set true.
 /
 &amp;DCON_OUTPUT
     out_fund=f           ! Output fundamental matrices A,B,C,D,E,H
@@ -228,7 +230,7 @@
 </div>
 </section>
 <section id="the-gpec-namelist">
-<h1>The GPEC Namelist<a class="headerlink" href="#the-gpec-namelist" title="Permalink to this heading">¶</a></h1>
+<h1>The GPEC Namelist<a class="headerlink" href="#the-gpec-namelist" title="Link to this heading">¶</a></h1>
 <p>This namelist sets the inputs, controls the behavior, and determines the outputs of the GPEC code.</p>
 <pre class="literal-block">&amp;GPEC_INPUT
    dcon_dir   = &quot;&quot;                   ! Path to DCON outputs. Individual file paths are appended to this
@@ -326,7 +328,7 @@
 </pre>
 </section>
 <section id="the-pentrc-namelist">
-<h1>The PENTRC Namelist<a class="headerlink" href="#the-pentrc-namelist" title="Permalink to this heading">¶</a></h1>
+<h1>The PENTRC Namelist<a class="headerlink" href="#the-pentrc-namelist" title="Link to this heading">¶</a></h1>
 <p>This namelist sets the inputs, controls the behavior, and determines the outputs of the GPEC code.</p>
 <pre class="literal-block">&amp;PENT_INPUT
     idconfile  = &quot;euler.bin&quot;            ! Eigenfunctions output by DCON run
@@ -429,7 +431,7 @@
     </p>
     <p>
         &copy; Copyright 2007 The Trustees of Princeton University.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.3.0.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 8.2.3.<br/>
     </p>
   </div>
 </footer>

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Installation &#8212; GPEC 1.5.6 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=49fa7461" />
+    <script src="_static/documentation_options.js?v=8f564690"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="_static/js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript" src="_static/js/jquery-fix.js"></script>
+<script type="text/javascript" src="_static/bootstrap-3.4.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html">
+          <!-- GPEC-->
+        </a>
+        <!-- <span class="navbar-text navbar-version pull-left"><b>1.5</b></span> -->
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="references.html">Cite</a></li>
+                <li><a href="#">Installation</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="outputs.html">I/O</a></li>
+                <li><a href="releases.html">Release History</a></li>
+                <li><a href="dcon_readme.html">DCON</a></li>
+                <li><a href="developers.html">Develop</a></li>
+                <li><a href="source_documentation.html">Python Post Processing</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Jump to <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+           <!-- 
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+           -->
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/GPEC_logo.png" alt="Logo of GPEC"/>
+            </a></p><ul>
+<li><a class="reference internal" href="#">Installation</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#requirements">Requirements</a></li>
+<li><a class="reference internal" href="#quick-start-local-build">Quick start (local build)</a></li>
+<li><a class="reference internal" href="#important-make-targets">Important make targets</a></li>
+<li><a class="reference internal" href="#build-options-and-environment-variables">Build options and environment variables</a></li>
+<li><a class="reference internal" href="#automatic-dependency-builds">Automatic dependency builds</a></li>
+<li><a class="reference internal" href="#platform-notes">Platform notes</a><ul>
+<li><a class="reference internal" href="#linux-clusters-module-environments">Linux clusters (module environments)</a></li>
+<li><a class="reference internal" href="#generic-linux-gfortran">Generic Linux (gfortran)</a></li>
+<li><a class="reference internal" href="#macos-intel">macOS (Intel)</a></li>
+<li><a class="reference internal" href="#macos-apple-silicon">macOS (Apple Silicon)</a></li>
+<li><a class="reference internal" href="#x11-xdraw">X11 (xdraw)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+</ul>
+
+<div id="sourcelink">
+  <a href="_sources/installation.rst.txt"
+     rel="nofollow">Source</a>
+</div>
+<form action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+        </div>
+      </div>
+    <div class="body col-md-9 content" role="main">
+      
+  <section id="installation">
+<span id="id1"></span><h1>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h1>
+<p>This page describes how to build GPEC from source using the Makefiles in
+the install directory. The build system supports multiple compilers and
+platforms and can automatically build missing dependencies when needed.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>The top-level build entry point is the Makefile in the install directory.
+It compiles all major modules and stages executables into the bin directory.</p>
+<p>Key behaviors:</p>
+<ul class="simple">
+<li><p>Auto-detects math and netCDF libraries (MKL, OpenBLAS, LAPACK, netCDF).</p></li>
+<li><p>Builds missing dependencies into deps (OpenBLAS, HDF5, netCDF-C, netCDF-Fortran).</p></li>
+<li><p>Uses git metadata to generate version files for some modules.</p></li>
+</ul>
+</section>
+<section id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Fortran compiler (ifort/ifx, gfortran, or another modern OpenMP-capable compiler)</p></li>
+<li><p>C compiler (for xdraw and some dependencies)</p></li>
+<li><p>git (required for version metadata and to fetch dependency submodules)</p></li>
+<li><p>BLAS/LAPACK and netCDF (auto-built if not found)</p></li>
+</ul>
+</section>
+<section id="quick-start-local-build">
+<h2>Quick start (local build)<a class="headerlink" href="#quick-start-local-build" title="Link to this heading">¶</a></h2>
+<p>From the install directory, run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span>
+</pre></div>
+</div>
+<p>This builds all main executables and libraries. Output executables appear in
+bin and also inside each module subdirectory.</p>
+<p>To build a single module, use:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">dcon</span>
+<span class="n">make</span> <span class="n">gpec</span>
+</pre></div>
+</div>
+<p>To print the detected configuration, run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">v</span>
+</pre></div>
+</div>
+</section>
+<section id="important-make-targets">
+<h2>Important make targets<a class="headerlink" href="#important-make-targets" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>all (default): build all main executables and libraries</p></li>
+<li><p>allf: same as all but Fortran-only modules</p></li>
+<li><p>clean: remove built objects and module files</p></li>
+<li><p>clear: remove example outputs in docs/examples</p></li>
+<li><p>realclean: deep clean including dependencies built into deps</p></li>
+<li><p>&lt;module&gt;: build a specific module (e.g. dcon, gpec, stride)</p></li>
+</ul>
+</section>
+<section id="build-options-and-environment-variables">
+<h2>Build options and environment variables<a class="headerlink" href="#build-options-and-environment-variables" title="Link to this heading">¶</a></h2>
+<p>You can override compilers and library locations without editing files by
+setting environment variables or make variables.</p>
+<p>Common overrides:</p>
+<ul class="simple">
+<li><p>FC: Fortran compiler (e.g. ifort, ifx, gfortran)</p></li>
+<li><p>CC: C compiler (for xdraw and dependencies)</p></li>
+<li><p>FFLAGS: Fortran flags (optimization, debugging, OpenMP)</p></li>
+<li><p>CFLAGS: C compiler flags</p></li>
+<li><p>OMPFLAG: OpenMP flag (e.g. -qopenmp or -fopenmp)</p></li>
+</ul>
+<p>Math libraries (BLAS/LAPACK):</p>
+<ul class="simple">
+<li><p>MKLROOT: use Intel MKL</p></li>
+<li><p>OPENBLASHOME: use OpenBLAS</p></li>
+<li><p>LAPACKHOME or LAPACK_HOME: use system LAPACK/BLAS</p></li>
+<li><p>ACML_HOME: use ACML (legacy)</p></li>
+</ul>
+<p>netCDF libraries:</p>
+<ul class="simple">
+<li><p>NETCDF_FORTRAN_HOME: preferred when C and Fortran installs are split</p></li>
+<li><p>NETCDFHOME or NETCDF_DIR: netCDF installation prefix</p></li>
+<li><p>NETCDFINC: netCDF include path</p></li>
+<li><p>NETCDF_C_HOME or NETCDF_C_DIR: netCDF-C location if separate</p></li>
+</ul>
+<p>Dependency install location:</p>
+<ul class="simple">
+<li><p>DEPSINSTALLDIR: where auto-built deps are installed (default: deps)</p></li>
+</ul>
+<p>Examples:</p>
+<p>Build with debug flags:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">FFLAGS</span><span class="o">=</span><span class="s2">&quot;-g -traceback -check all -recursive&quot;</span>
+</pre></div>
+</div>
+<p>Build with modern gfortran (avoid argument mismatch errors):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">FFLAGS</span><span class="o">=</span><span class="s2">&quot;-fallow-argument-mismatch&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="automatic-dependency-builds">
+<h2>Automatic dependency builds<a class="headerlink" href="#automatic-dependency-builds" title="Link to this heading">¶</a></h2>
+<p>If the build cannot find required math or netCDF libraries, it will build
+dependencies into deps. These include:</p>
+<ul class="simple">
+<li><p>OpenBLAS</p></li>
+<li><p>HDF5</p></li>
+<li><p>netCDF-C</p></li>
+<li><p>netCDF-Fortran</p></li>
+<li><p>harvest (git submodule)</p></li>
+</ul>
+<p>To build all dependencies explicitly, run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">alldeps</span>
+</pre></div>
+</div>
+</section>
+<section id="platform-notes">
+<h2>Platform notes<a class="headerlink" href="#platform-notes" title="Link to this heading">¶</a></h2>
+<section id="linux-clusters-module-environments">
+<h3>Linux clusters (module environments)<a class="headerlink" href="#linux-clusters-module-environments" title="Link to this heading">¶</a></h3>
+<p>On supported clusters, it is recommended to use the public GPEC module
+which sets compilers and library paths correctly. Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">module</span> <span class="n">load</span> <span class="n">gpec</span>
+</pre></div>
+</div>
+<p>To use the development module, load gpec/0.0 if provided. After loading a
+module, verify configuration with:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">v</span>
+</pre></div>
+</div>
+</section>
+<section id="generic-linux-gfortran">
+<h3>Generic Linux (gfortran)<a class="headerlink" href="#generic-linux-gfortran" title="Link to this heading">¶</a></h3>
+<p>Set paths manually if modules are unavailable:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">export</span> <span class="n">FC</span><span class="o">=</span><span class="n">gfortran</span>
+<span class="n">export</span> <span class="n">LAPACKHOME</span><span class="o">=/</span><span class="n">usr</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">x86_64</span><span class="o">-</span><span class="n">linux</span><span class="o">-</span><span class="n">gnu</span><span class="o">/</span>
+<span class="n">export</span> <span class="n">NETCDFHOME</span><span class="o">=/</span><span class="n">usr</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">x86_64</span><span class="o">-</span><span class="n">linux</span><span class="o">-</span><span class="n">gnu</span><span class="o">/</span>
+<span class="n">export</span> <span class="n">NETCDFINC</span><span class="o">=/</span><span class="n">usr</span><span class="o">/</span><span class="n">include</span>
+</pre></div>
+</div>
+<p>Then build with:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">FFLAGS</span><span class="o">=</span><span class="s2">&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="macos-intel">
+<h3>macOS (Intel)<a class="headerlink" href="#macos-intel" title="Link to this heading">¶</a></h3>
+<p>Install gfortran, netCDF, and LAPACK (via MacPorts or Homebrew). Typical
+settings are:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">export</span> <span class="n">FC</span><span class="o">=/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">gfortran</span>
+<span class="n">export</span> <span class="n">NETCDFHOME</span><span class="o">=/</span><span class="n">opt</span><span class="o">/</span><span class="n">local</span>
+<span class="n">export</span> <span class="n">LAPACKHOME</span><span class="o">=/</span><span class="n">usr</span><span class="o">/</span><span class="n">lib</span>
+</pre></div>
+</div>
+<p>Then build with:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">FFLAGS</span><span class="o">=</span><span class="s2">&quot;-fallow-argument-mismatch&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="macos-apple-silicon">
+<h3>macOS (Apple Silicon)<a class="headerlink" href="#macos-apple-silicon" title="Link to this heading">¶</a></h3>
+<p>If you do not have the Xcode command line tools installed, run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xcode</span><span class="o">-</span><span class="n">select</span> <span class="o">--</span><span class="n">install</span>
+</pre></div>
+</div>
+<p>Use Homebrew for netCDF and the Accelerate framework for BLAS/LAPACK. Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">export</span> <span class="n">CC</span><span class="o">=/</span><span class="n">opt</span><span class="o">/</span><span class="n">homebrew</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">gcc</span><span class="o">-</span><span class="mi">14</span>
+    <span class="n">export</span> <span class="n">FC</span><span class="o">=/</span><span class="n">opt</span><span class="o">/</span><span class="n">homebrew</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">gfortran</span><span class="o">-</span><span class="mi">14</span>
+    <span class="n">export</span> <span class="n">NETCDFHOME</span><span class="o">=/</span><span class="n">opt</span><span class="o">/</span><span class="n">homebrew</span>
+<span class="n">export</span> <span class="n">X11_HOME</span><span class="o">=/</span><span class="n">opt</span><span class="o">/</span><span class="n">homebrew</span>
+    <span class="n">export</span> <span class="n">LAPACKHOME</span><span class="o">=/</span><span class="n">System</span><span class="o">/</span><span class="n">Library</span><span class="o">/</span><span class="n">Frameworks</span><span class="o">/</span><span class="n">Accelerate</span><span class="o">.</span><span class="n">framework</span><span class="o">/</span><span class="n">Versions</span><span class="o">/</span><span class="n">A</span><span class="o">/</span><span class="n">Frameworks</span><span class="o">/</span><span class="n">vecLib</span><span class="o">.</span><span class="n">framework</span><span class="o">/</span>
+</pre></div>
+</div>
+<p>Then build with:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">FFLAGS</span><span class="o">=</span><span class="s2">&quot;-fallow-argument-mismatch&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="x11-xdraw">
+<h3>X11 (xdraw)<a class="headerlink" href="#x11-xdraw" title="Link to this heading">¶</a></h3>
+<p>If xdraw fails to link on macOS, ensure XQuartz is installed and add include
+and library paths in xdraw/makefile, for example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">brew</span> <span class="n">install</span> <span class="n">libx11</span>
+<span class="n">export</span> <span class="n">X11_HOME</span><span class="o">=/</span><span class="n">opt</span><span class="o">/</span><span class="n">homebrew</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Run make v to verify detected compiler and library paths.</p></li>
+<li><p>If netCDF or BLAS/LAPACK are not found, set NETCDFHOME and LAPACKHOME
+(or MKLROOT/OPENBLASHOME) explicitly.</p></li>
+<li><p>Ensure git is available so version files can be generated.</p></li>
+</ul>
+<p>If your platform is not covered above, provide your OS, compiler, and library
+installation paths to a maintainer and update DEFAULTS.inc as needed.</p>
+</section>
+</section>
+
+
+    </div>
+    
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+<div id="sourcelink">
+  <a href="_sources/installation.rst.txt"
+     rel="nofollow">Source</a>
+</div>
+      
+    </p>
+    <p>
+        &copy; Copyright 2007 The Trustees of Princeton University.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 8.2.3.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

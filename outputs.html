@@ -1,19 +1,16 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="./">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Coordinates &#8212; GPEC 1.5.6 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="_static/doctools.js"></script>
-    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=49fa7461" />
+    <script src="_static/documentation_options.js?v=8f564690"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -37,7 +34,7 @@
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </button>
-        <a class="navbar-brand" href="index.html"><img height=40, src="_static/GPEC_logo.png">
+        <a class="navbar-brand" href="index.html">
           <!-- GPEC-->
         </a>
         <!-- <span class="navbar-text navbar-version pull-left"><b>1.5</b></span> -->
@@ -47,6 +44,7 @@
           <ul class="nav navbar-nav">
             
                 <li><a href="references.html">Cite</a></li>
+                <li><a href="installation.html">Installation</a></li>
                 <li><a href="contact.html">Contact</a></li>
                 <li><a href="#">I/O</a></li>
                 <li><a href="releases.html">Release History</a></li>
@@ -88,10 +86,10 @@
 
 <div class="container">
   <div class="row">
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
             <p class="logo"><a href="index.html">
-              <img class="logo" src="_static/GPEC_logo.png" alt="Logo"/>
+              <img class="logo" src="_static/GPEC_logo.png" alt="Logo of GPEC"/>
             </a></p><ul>
 <li><a class="reference internal" href="#">Coordinates</a><ul>
 <li><a class="reference internal" href="#translating-to-machine-space">Translating to Machine Space</a></li>
@@ -122,6 +120,10 @@
 </li>
 </ul>
 
+<div id="sourcelink">
+  <a href="_sources/outputs.rst.txt"
+     rel="nofollow">Source</a>
+</div>
 <form action="search.html" method="get">
  <div class="form-group">
   <input type="text" name="q" class="form-control" placeholder="Search" />
@@ -131,10 +133,10 @@
 </form>
         </div>
       </div>
-    <div class="body col-md-12 content" role="main">
+    <div class="body col-md-9 content" role="main">
       
   <section id="coordinates">
-<h1>Coordinates<a class="headerlink" href="#coordinates" title="Permalink to this heading">¶</a></h1>
+<h1>Coordinates<a class="headerlink" href="#coordinates" title="Link to this heading">¶</a></h1>
 <p>A clear understanding of the input and output coordinate conventions is essential for GPEC. There are up to 3 separate coordinate systems use in the programs within GPEC package. This include,</p>
 <ol class="arabic simple">
 <li><p>The ‘working coordinates’ defined by jac_type in equil.in.</p></li>
@@ -148,7 +150,7 @@
 </div>
 <p>The <code class="code docutils literal notranslate"><span class="pre">gpec_control_output_n#</span></code> netcdf file gives spectral quantities in the working coordinates (specified in the ‘jacobian’ attribute). It also provides a J_out matrix. The dot product of this matrix and the b or xi spectra will convert the the output coordinates, reproducing the final table of the gpec_control_n#.out ascii output. <em>Note that the same transformation cannot be safely made for other weighted quantities</em>.</p>
 <section id="translating-to-machine-space">
-<h2>Translating to Machine Space<a class="headerlink" href="#translating-to-machine-space" title="Permalink to this heading">¶</a></h2>
+<h2>Translating to Machine Space<a class="headerlink" href="#translating-to-machine-space" title="Link to this heading">¶</a></h2>
 <p>When comparing spectral GPEC outputs to real space quantities or to other codes, it is important to remember</p>
 <ol class="arabic simple">
 <li><p>GPEC uses a right handed magnetic coordinate system decomposed in <span class="math notranslate nohighlight">\(\exp(im\theta-in\phi)\)</span>.</p></li>
@@ -156,15 +158,17 @@
 <li><p>GPEC always uses upward outboard <span class="math notranslate nohighlight">\(\theta\)</span>.</p></li>
 </ol>
 <p>The result of this is that the pitch-aligned field will always be positive m. This convention makes in-house analysis nice and easy. For example, one can <em>always</em> plot the m=2 perturbed normal displacement profile and see the resonant surface behavior at q=2. The m=-2 normal displacement will always be nonresonant. This is shown in the figure below from the package DIII-D example, which is a LH plasma.</p>
-<a class="reference internal image-reference" href="_images/example_xno_kinkprofile.png"><img alt="_images/example_xno_kinkprofile.png" class="align-center" src="_images/example_xno_kinkprofile.png" style="width: 400px;" /></a>
+<a class="reference internal image-reference" href="_images/example_xno_kinkprofile.png"><img alt="_images/example_xno_kinkprofile.png" class="align-center" src="_images/example_xno_kinkprofile.png" style="width: 400px;" />
+</a>
 <p>For another example, the figure below shows a that the positive m fields are magnified for a DIII-D example control surface. We always look here for kink amplification.</p>
-<a class="reference internal image-reference" href="_images/example_bnm_positiveamplified.png"><img alt="_images/example_bnm_positiveamplified.png" class="align-center" src="_images/example_bnm_positiveamplified.png" style="width: 400px;" /></a>
+<a class="reference internal image-reference" href="_images/example_bnm_positiveamplified.png"><img alt="_images/example_bnm_positiveamplified.png" class="align-center" src="_images/example_bnm_positiveamplified.png" style="width: 400px;" />
+</a>
 <p>The convention does require some awareness from the user when interfacing with real-space quantities and/or other codes though. For example, the user does need to know that the spectrum rotates by <span class="math notranslate nohighlight">\(-\phi\)</span> if real space coil rotates by <span class="math notranslate nohighlight">\(\phi\)</span> in a RH configuration.</p>
 <p>To facilitate interfacing with other codes that may have different handedness conventions, the helicity is included in the gpec_control_output netcdf file. The helicity is defined as +1 for right handed plasmas in which Bt and Ip are in the same direction, and -1 for left handed plasmas in which Bt and Ip are apposed.</p>
 <p>In the real space representation decomposed in <span class="math notranslate nohighlight">\(\exp(-in\phi)\)</span> with CCW <span class="math notranslate nohighlight">\(\phi\)</span>, GPEC takes the complex conjugate of the inverse poloidal Fourier transform for RH configurations. This is restoring CCW <span class="math notranslate nohighlight">\(\phi\)</span> (according to 2), and is done internally before writing function outputs. Note in the full Fourier representation by <span class="math notranslate nohighlight">\(\exp(im\theta-in\phi)\)</span>, the complex conjugate operation does not simply restore CCW phi for RH configurations. It will also flip up and down.</p>
 </section>
 <section id="interfacing-with-surfmn">
-<h2>Interfacing with SURFMN<a class="headerlink" href="#interfacing-with-surfmn" title="Permalink to this heading">¶</a></h2>
+<h2>Interfacing with SURFMN<a class="headerlink" href="#interfacing-with-surfmn" title="Link to this heading">¶</a></h2>
 <p>SURFMN is a popular vacuum spectrum code. It calculates the field from experimental coil geometries and/or intrinsic error fields in magnetic coordinates on plasma flux surfaces. SURFMN also uses upward outboard <span class="math notranslate nohighlight">\(\theta\)</span>. However, it expands in <span class="math notranslate nohighlight">\(\exp(-im\theta-in\phi)\)</span> and always uses a CCW <span class="math notranslate nohighlight">\(\phi\)</span>. In SURFMN, the pitch resonant m can flip sign dependending on the sign of Bt and Ip.</p>
 <p>As a practical example, interfacing a Fourier representation of the 3D field on a flux surface from GPEC with SURFMN would require using,</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">m_surfmn</span> <span class="o">=</span> <span class="n">helicity</span> <span class="o">*</span> <span class="n">m_gpec</span>
@@ -174,16 +178,16 @@
 <p>For LH configurations only the sign of m is flipped (according to 1). For RH configurations, m remains unchanged but the complex conjugate is taken (the combined effect of to 1 &amp; 2).</p>
 </section>
 <section id="interfacing-with-vacuum">
-<h2>Interfacing with VACUUM<a class="headerlink" href="#interfacing-with-vacuum" title="Permalink to this heading">¶</a></h2>
+<h2>Interfacing with VACUUM<a class="headerlink" href="#interfacing-with-vacuum" title="Link to this heading">¶</a></h2>
 <p>Vacuum is the code used in DCON to calculate the vacuum energy matrices, which combine with the plasma energy matrix to describe the full system eigenmodes. The VACUUM code uses CCW <span class="math notranslate nohighlight">\(\phi\)</span> and downward outboard <span class="math notranslate nohighlight">\(\theta\)</span>. We thus use the complex conjugate of RH configurations to interface GPEC and VACUUM.</p>
 </section>
 </section>
 <section id="inputs">
-<span id="id1"></span><h1>Inputs<a class="headerlink" href="#inputs" title="Permalink to this heading">¶</a></h1>
+<span id="id1"></span><h1>Inputs<a class="headerlink" href="#inputs" title="Link to this heading">¶</a></h1>
 <p>Fully annotated namelist input files can be found in the $GPECHOME/input directory and any of the examples in $GPECHOME/docs/examples directories of any <cite>public installation &lt;installation&gt;</cite>.</p>
 <p>The major input files requiring user interaction are as follows.</p>
 <section id="the-equil-namelist">
-<h2>The EQUIL Namelist<a class="headerlink" href="#the-equil-namelist" title="Permalink to this heading">¶</a></h2>
+<h2>The EQUIL Namelist<a class="headerlink" href="#the-equil-namelist" title="Link to this heading">¶</a></h2>
 <p>This namelist specifies the equilibrium inputs and how equilibrium quantities are splined for use in the various executables.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>&amp;EQUIL_CONTROL
     eq_type=&quot;efit&quot;       ! Type of the input 2D equilibrium file. Accepts efit, chease, fluxgrid, transp, jsolver, lar, sol, etc.
@@ -220,7 +224,7 @@
 </div>
 </section>
 <section id="the-dcon-namelist">
-<h2>The DCON Namelist<a class="headerlink" href="#the-dcon-namelist" title="Permalink to this heading">¶</a></h2>
+<h2>The DCON Namelist<a class="headerlink" href="#the-dcon-namelist" title="Link to this heading">¶</a></h2>
 <p>This namelist controls the behavior of the DCON code and determines its outputs.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>&amp;DCON_CONTROL
     bal_flag=f           ! Ideal MHD ballooning criterion for short wavelengths
@@ -264,10 +268,10 @@
     singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
     ucrit=1e3            ! Maximum fraction of solutions allowed before re-normalized
 
+    wv_farwall_flag = f  ! Force nowall gpec calculations while calculating mutual inductance with the wall, when set true.
     termbycross_flag = t ! Terminate ODE solver in the event of a zero crossing (default: false)
 
     use_classic_splines = f ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
-    wv_farwall_flag = f  ! Force nowall gpec calculations while calculating mutual inductance with the wall, when set true.
 /
 &amp;DCON_OUTPUT
     out_fund=f           ! Output fundamental matrices A,B,C,D,E,H
@@ -299,7 +303,7 @@
 </div>
 </section>
 <section id="the-gpec-namelist">
-<h2>The GPEC Namelist<a class="headerlink" href="#the-gpec-namelist" title="Permalink to this heading">¶</a></h2>
+<h2>The GPEC Namelist<a class="headerlink" href="#the-gpec-namelist" title="Link to this heading">¶</a></h2>
 <p>This namelist sets the inputs, controls the behavior, and determines the outputs of the GPEC code.</p>
 <pre class="literal-block">&amp;GPEC_INPUT
    dcon_dir   = &quot;&quot;                   ! Path to DCON outputs. Individual file paths are appended to this
@@ -397,7 +401,7 @@
 </pre>
 </section>
 <section id="the-pentrc-namelist">
-<h2>The PENTRC Namelist<a class="headerlink" href="#the-pentrc-namelist" title="Permalink to this heading">¶</a></h2>
+<h2>The PENTRC Namelist<a class="headerlink" href="#the-pentrc-namelist" title="Link to this heading">¶</a></h2>
 <p>This namelist sets the inputs, controls the behavior, and determines the outputs of the GPEC code.</p>
 <pre class="literal-block">&amp;PENT_INPUT
     idconfile  = &quot;euler.bin&quot;            ! Eigenfunctions output by DCON run
@@ -481,29 +485,29 @@
 </section>
 </section>
 <section id="outputs">
-<h1>Outputs<a class="headerlink" href="#outputs" title="Permalink to this heading">¶</a></h1>
+<h1>Outputs<a class="headerlink" href="#outputs" title="Link to this heading">¶</a></h1>
 <p>The results of an GPEC run depend on the output flags selected in gpec.in prior to the run. Without getting into the specifics of each output, there are a few important properties any GPEC run that should always be kept in minds. Each GPEC run always returns its results in the form of consistently named .out files in the run-directory. This means that it will overwrite any previous run’s results if they are not moved first. Always move any results worth keeping to a separate directory and keep track of which runs used which inputs. Outputs are expensive, so try to limit runs to only output the essential physics of interest each time.</p>
 <p>An important property of many GPEC results is their linearity. GPEC calculates results for a single toroidal harmonic. When appropriate, results from multiple runs can simply be added (to obtain a total perturbed field for example). In the same spirit, the amplitude of a plasma response calculated by GPEC is linear with the error-field. Thus, plasma response fields can be multiplier by a constant to simulate changes in a driven 3D error field.</p>
 <section id="post-processing-visualization">
-<h2>Post-Processing &amp; Visualization<a class="headerlink" href="#post-processing-visualization" title="Permalink to this heading">¶</a></h2>
+<h2>Post-Processing &amp; Visualization<a class="headerlink" href="#post-processing-visualization" title="Link to this heading">¶</a></h2>
 <section id="omfit">
-<h3>OMFIT<a class="headerlink" href="#omfit" title="Permalink to this heading">¶</a></h3>
+<h3>OMFIT<a class="headerlink" href="#omfit" title="Link to this heading">¶</a></h3>
 <p>The easiest way to visualize and interact with GPEC outputs is through the OMFIT interface. In OMFIT, one can easily navigate the ascii, binary, and netcdf outputs, double-clicking to visualize certain quantities as desired. A number of pre-packaged plotting and post-processing routines are also provided. See the <a class="reference external" href="https://docs.google.com/document/d/1qSUjJZYmET8-X08rRGBT6L_9D9fzEN_zCV75OX_ZbZk/edit?usp=sharing">google doc tutorial</a> for examples.</p>
 </section>
 <section id="pypec">
-<h3>PYPEC<a class="headerlink" href="#pypec" title="Permalink to this heading">¶</a></h3>
+<h3>PYPEC<a class="headerlink" href="#pypec" title="Link to this heading">¶</a></h3>
 <p>GPEC installations also come with a stand-alone python package for reading, manipulating, and visualizing the GPEC output. When loading the GPEC module of one of the public installations, this module will be available in your python path. Examples are provided in the <a class="reference internal" href="source_documentation.html#source-documentation"><span class="std std-ref">python documentation</span></a>.</p>
 </section>
 <section id="xdraw">
-<h3>xdraw<a class="headerlink" href="#xdraw" title="Permalink to this heading">¶</a></h3>
+<h3>xdraw<a class="headerlink" href="#xdraw" title="Link to this heading">¶</a></h3>
 <p>The binary GPEC outputs can be viewed using the commandxdraw filenamewhere filename is one of the .bin files created by GPEC (“.bin” excluded). This is a quick way to view results immediately as they are produced. The xdraw tool provides a highly interactive environment that takes keystroke inputs to change plot display options, navigate plots, display single or multiple responses at once, do limited post processing (get a gradient, or ratio), and save figures. For a full list of the command options, enter the xdraw environment and press “k”.</p>
 </section>
 </section>
 <section id="output-files">
-<h2>Output Files<a class="headerlink" href="#output-files" title="Permalink to this heading">¶</a></h2>
+<h2>Output Files<a class="headerlink" href="#output-files" title="Link to this heading">¶</a></h2>
 <p>The GPEC outputs are entirely specified by flags (bool types t or f) set in the GPEC_output section of GPEC.in. All outputs are ASCII files, and can be grouped into two major categories.</p>
 <section id="ascii-file-outputs">
-<h3>ASCII File Outputs<a class="headerlink" href="#ascii-file-outputs" title="Permalink to this heading">¶</a></h3>
+<h3>ASCII File Outputs<a class="headerlink" href="#ascii-file-outputs" title="Link to this heading">¶</a></h3>
 <p>A number of the flag options in GPEC.in instruct GPEC to output ASCII file data. Some of these outputs are always available. Some, however, require a input error field instead of a hard coded harmonic_flag call. Both groups are listed in detail here.</p>
 <p>Outputs Always Available</p>
 <p>These GPEC outputs can always be obtained from a equil.bin file output from DCON.</p>
@@ -571,7 +575,7 @@
 </ul>
 </section>
 <section id="binary-file-outputs">
-<h3>Binary File Outputs<a class="headerlink" href="#binary-file-outputs" title="Permalink to this heading">¶</a></h3>
+<h3>Binary File Outputs<a class="headerlink" href="#binary-file-outputs" title="Link to this heading">¶</a></h3>
 <p>These files are designed for quick and easy visualization of results using the xdraw command. For more details on using xdraw see the devoted section on this page.</p>
 <p>xbnormal.bin</p>
 <blockquote>
@@ -617,7 +621,7 @@
     </p>
     <p>
         &copy; Copyright 2007 The Trustees of Princeton University.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.3.0.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 8.2.3.<br/>
     </p>
   </div>
 </footer>
