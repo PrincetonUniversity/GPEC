@@ -97,7 +97,7 @@ c-----------------------------------------------------------------------
       DO i=1,msing
          respsi = sing(i)%psifac
          CALL spline_eval(locstab,respsi,0)
-         dr_rationals(i)=locstab%f(1)/respsi
+         dr_rationals(i)=locstab%f(2)/respsi
       END DO
 c-----------------------------------------------------------------------
 c     open files
