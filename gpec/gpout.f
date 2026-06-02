@@ -1570,7 +1570,7 @@ c     compute current and field on rational surfaces.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_singfld(egnum,xspmn,spot,nspot,
      $             callen_threshold_flag,slayer_threshold_flag,
-     $             slayer_inpr)
+     $             slayer_inpr,slayer_inpr_prof)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -1578,6 +1578,7 @@ c-----------------------------------------------------------------------
      $            slayer_threshold_flag
       INTEGER, INTENT(IN) :: egnum,nspot
       REAL(r8), INTENT(IN) :: spot, slayer_inpr
+      REAL(r8), DIMENSION(20), INTENT(IN) :: slayer_inpr_prof
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: i_id,q_id,m_id,p_id,c_id,bp_id,w_id,k_id,n_id,d_id,
@@ -1619,6 +1620,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(msing) :: b_crit, ti_r, te_r, ni_r, ne_r,
      $    q1_r, we_r, wi_r, rh_r, r1_r
       REAL(r8) :: omega_i,omega_e,jxb,omega_sol,br_th,slayer_shear
+      REAL(r8) :: slayer_inpr_loc
       COMPLEX(r8) :: delta_s,psi0
 
 c-----------------------------------------------------------------------
@@ -1868,9 +1870,20 @@ c-----------------------------------------------------------------------
          IF (slayer_threshold_flag) THEN
             ! True shear s=(r/q)*dq/dr via rhotor Jacobian
             slayer_shear=(sr%f(1)/sq%f(4))*sq%f1(4)/sr%f1(1)
+            ! per-surface Prandtl from profile array (ordered by
+            ! ascending q); negative entry falls back to scalar inpr
+            IF (ising <= 20) THEN
+               IF (slayer_inpr_prof(ising) > 0.0_r8) THEN
+                  slayer_inpr_loc = slayer_inpr_prof(ising)
+               ELSE
+                  slayer_inpr_loc = slayer_inpr
+               ENDIF
+            ELSE
+               slayer_inpr_loc = slayer_inpr
+            ENDIF
             CALL gpec_slayer(kin%f(2),kin%f(4)/e,kin%f(1),kin%f(3)/e,
      $           kin%f(9),kin%f(5),omega_e,omega_i,sq%f(4),slayer_shear,
-     $           bt0,sr%f(1),ro,mi,slayer_inpr,resm,nn,ascii_flag,
+     $           bt0,sr%f(1),ro,mi,slayer_inpr_loc,resm,nn,ascii_flag,
      $           delta_s,psi0,jxb,omega_sol,br_th)
             b_crit(ising)=br_th  ! Tesla. Normal resonant field comparable to singflx
          ENDIF

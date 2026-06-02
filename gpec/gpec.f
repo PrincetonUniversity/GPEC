@@ -28,6 +28,7 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(:), POINTER :: ipiv
       REAL(r8) :: sing_spot,majr,minr,smallwidth,fp,normpsi,
      $     singthresh_slayer_inpr
+      REAL(r8), DIMENSION(20) :: singthresh_slayer_inpr_prof
       CHARACTER(8) :: filter_types
       CHARACTER(128) :: infile
       LOGICAL :: singcoup_flag,singfld_flag,vsingfld_flag,pmodb_flag,
@@ -70,7 +71,8 @@ c-----------------------------------------------------------------------
      $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout,filter_flag,
      $     netcdf_flag,ascii_flag,singthresh_flag,
      $     singthresh_callen_flag,singthresh_slayer_flag,
-     $     singthresh_slayer_inpr,out_ahg2msc
+     $     singthresh_slayer_inpr,singthresh_slayer_inpr_prof,
+     $     out_ahg2msc
       NAMELIST/gpec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,jacfac_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
@@ -159,6 +161,7 @@ c-----------------------------------------------------------------------
       singthresh_callen_flag=.False.
       singthresh_slayer_flag=.False.
       singthresh_slayer_inpr=5.0
+      singthresh_slayer_inpr_prof=-1.0
       singthresh_flag=.False.
       fun_flag=.FALSE.
       flux_flag=.FALSE.
@@ -633,7 +636,7 @@ c-----------------------------------------------------------------------
             ENDIF
             CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi,
      $              singthresh_callen_flag,singthresh_slayer_flag,
-     $              singthresh_slayer_inpr)
+     $              singthresh_slayer_inpr,singthresh_slayer_inpr_prof)
          ENDIF
       ENDIF
 
@@ -748,7 +751,7 @@ c-----------------------------------------------------------------------
          edge_flag=.TRUE.
          CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi,
      $           singthresh_callen_flag,singthresh_slayer_flag,
-     $           singthresh_slayer_inpr)
+     $           singthresh_slayer_inpr,singthresh_slayer_inpr_prof)
       ENDIF
 
       IF (cas3d_flag) THEN
@@ -772,7 +775,7 @@ c-----------------------------------------------------------------------
          edge_flag=.TRUE.
          CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi,
      $           singthresh_callen_flag,singthresh_slayer_flag,
-     $           singthresh_slayer_inpr)
+     $           singthresh_slayer_inpr,singthresh_slayer_inpr_prof)
          CALL gpdiag_xbcontra(mode,xspmn,0,0,2,0,1)
          CALL gpout_xbnormal(mode,xspmn,sing_spot,sing_npsi)
          CALL gpdiag_xbnobo(mode,xspmn,d3_flag)
