@@ -31,7 +31,7 @@ c-----------------------------------------------------------------------
      $                       bicube_eval_external
       USE params, only : r4,r8,pi,twopi,mu0
       USE utilities, only : get_free_file_unit,iscdftb,iscdftf
-      
+
       IMPLICIT NONE
 
       LOGICAL :: edge_flag=.FALSE.,fft_flag=.FALSE.,
@@ -469,7 +469,7 @@ c-----------------------------------------------------------------------
             u2%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,2),temp1)
             u3%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,3),temp1)
             u4%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,4),temp1)
-         ENDDO         
+         ENDDO
          jfix=kfix+1
       ENDDO
 c-----------------------------------------------------------------------
@@ -499,7 +499,7 @@ c-----------------------------------------------------------------------
       INTEGER :: ipsi,itheta,out_unit
       REAL(r8) :: w11,w12,delpsi,qintb,val1,val2,
      $      q,rfac,eta,jac,jac1
-      
+
       REAL(r8), DIMENSION(0:mpsi) :: psitor
       REAL(r8), DIMENSION(0:mpsi,0:mtheta) :: rs,zs,jacb2
       REAL(r8), DIMENSION(3,3) :: w,v
@@ -605,7 +605,7 @@ c-----------------------------------------------------------------------
       qs%fs(1:mpsi+1,1)=sq%fs(:,4)
       CALL spline_eval(sq,val2,0)
       qs%fs(mpsi+2,1)=sq%f(4)
-      CALL spline_fit(qs,"extrap") 
+      CALL spline_fit(qs,"extrap")
       CALL spline_int(qs)
       qintb=qs%fsi(mpsi+2,1)
       psitor(:)=qs%fsi(1:mpsi+1,1)/qintb
@@ -615,30 +615,30 @@ c-----------------------------------------------------------------------
       OPEN(UNIT=out_unit,FILE="idcon_equil.out",STATUS="UNKNOWN")
       WRITE(out_unit,*)"IDCON_EQUIL: "//
      $     "Various equilibrium quantities"
-      WRITE(out_unit,*)     
+      WRITE(out_unit,*)
       WRITE(out_unit,'(1x,a13,a8)')"jac_type = ",jac_type
       WRITE(out_unit,'(2(1x,a8,1x,I6))')"mpsi =",mpsi,"mtheta =",mtheta
       WRITE(out_unit,'(2(1x,a14,1x,es16.8))')"psi_edge =",psio,
      $     "psitor_edge =",qintb*psio
-      WRITE(out_unit,*)     
+      WRITE(out_unit,*)
       WRITE(out_unit,*)" Flux functions:"
-      WRITE(out_unit,*) 
+      WRITE(out_unit,*)
       WRITE(out_unit,'(6(1x,a16))')"psi","psitor","p","q","g","I"
       DO ipsi=0,mpsi
          CALL spline_eval(sq,sq%xs(ipsi),0)
          CALL spline_alloc(qs,mtheta,1)
          qs%xs=rzphi%ys
          qs%fs(:,1)=jacb2(ipsi,:)
-         CALL spline_fit(qs,"periodic") 
-         CALL spline_int(qs)          
+         CALL spline_fit(qs,"periodic")
+         CALL spline_int(qs)
          WRITE(out_unit,'(6(1x,es16.8))')sq%xs(ipsi),psitor(ipsi),
      $        sq%f(2)/mu0,sq%f(4),sq%f(1)/(twopi*mu0),
      $        (qs%fsi(mtheta,1)/(twopi*chi1)-sq%f(4)*sq%f(1)/twopi)/mu0
          CALL spline_dealloc(qs)
       ENDDO
-      WRITE(out_unit,*)     
+      WRITE(out_unit,*)
       WRITE(out_unit,*)" 2D functions:"
-      WRITE(out_unit,*)  
+      WRITE(out_unit,*)
       WRITE(out_unit,'(8(1x,a16))')"psi","theta","r","z",
      $     "eta","dphi","jac","b0"
       DO ipsi=0,mpsi
@@ -801,7 +801,7 @@ c-----------------------------------------------------------------------
      $        ", ipert = ",info,", reduce delta_mband"
          !CALL gpec_stop(message)
          PRINT *,message
-         STOP         
+         STOP
       ENDIF
 c-----------------------------------------------------------------------
 c     store hermitian matrices fg.
@@ -868,7 +868,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: psi,angle,rs,
      $     g12,g22,g13,g23,g33,singfac2,b2h,b2hp,b2ht,
      $     p1,q,rfac,eta,jac,jac1
-      COMPLEX(r8), DIMENSION(-mband:mband) :: 
+      COMPLEX(r8), DIMENSION(-mband:mband) ::
      $     sband,tband,xband,yband1,yband2,zband1,zband2,zband3
       COMPLEX(r8), DIMENSION(mpert,mpert) :: smat,tmat,xmat,ymat,zmat
       REAL(r8), DIMENSION(3,3) :: w,v
@@ -935,7 +935,7 @@ c-----------------------------------------------------------------------
             g22=SUM(v(2,:)**2)
             g23=v(2,3)*v(3,3)
             g33=v(3,3)*v(3,3)
-            
+
             fmodb%fs(ipsi,itheta,1)=jac*(p1+b2hp)
      $           -chi1**2*b2ht*(g12+q*g13)/(jac*b2h*2)
             fmodb%fs(ipsi,itheta,2)=
@@ -958,7 +958,7 @@ c-----------------------------------------------------------------------
       ENDIF
 
       DO ipsi=0,mpsi
-         
+
          q=sq%fs(ipsi,4)
          sband(0:-mband:-1)=fmodb%cs%fs(ipsi,1:mband+1)
          tband(0:-mband:-1)=fmodb%cs%fs(ipsi,mband+2:2*mband+2)
@@ -1070,7 +1070,7 @@ c-----------------------------------------------------------------------
       END FUNCTION issect
 c-----------------------------------------------------------------------
 c     subprogram 9. idcon_coords.
-c     transform coordinates to dcon coordinates. 
+c     transform coordinates to dcon coordinates.
 c-----------------------------------------------------------------------
       SUBROUTINE idcon_coords(psi,ftnmn,amf,amp,ri,bpi,bi,rci,ti,ji)
 c-----------------------------------------------------------------------
@@ -1089,8 +1089,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(0:mthsurf) :: ftnfun
       REAL(r8), DIMENSION(3,3) :: w
 
-      TYPE(spline_type) :: spl     
-      
+      TYPE(spline_type) :: spl
+
       CALL spline_alloc(spl,mthsurf,2)
       spl%xs=theta
 
@@ -1114,11 +1114,11 @@ c-----------------------------------------------------------------------
      $        bpfac**bpi*bfac**bi
          ! jacobian for coordinate angle at dcon angle
          spl%fs(itheta,2)=delpsi(itheta)*r(itheta)**ri*rfac**rci/
-     $        (bpfac**bpi*bfac**bi)  
+     $        (bpfac**bpi*bfac**bi)
          IF (ti .EQ. 0) THEN
             dphi(itheta)=rzphi%f(3)
          ENDIF
-      ENDDO      
+      ENDDO
 
       CALL spline_fit(spl,"periodic")
       CALL spline_int(spl)
@@ -1139,10 +1139,10 @@ c-----------------------------------------------------------------------
          CALL iscdftb(amf,amp,ftnfun,mthsurf,ftnmn)
          ftnfun=ftnfun/jacfac*jarea
          CALL iscdftf(amf,amp,ftnfun,mthsurf,ftnmn)
-      ENDIF         
+      ENDIF
 c-----------------------------------------------------------------------
 c     convert coordinates.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       ! compute given function in dcon angle
       DO itheta=0,mthsurf
          ftnfun(itheta)=0
@@ -1421,8 +1421,8 @@ c-----------------------------------------------------------------------
      $              set_smats,set_tmats,set_xmats,set_ymats,set_zmats,
      $              set_chi1,set_ro,set_nn,set_jac_type,
      $              set_mlow,set_mhigh,set_mpert,set_mthsurf)
-      !----------------------------------------------------------------------- 
-      !*DESCRIPTION: 
+      !-----------------------------------------------------------------------
+      !*DESCRIPTION:
       !   Set the dcon equilibrium global variables directly. For internal use
       !   within kinetic dcon.
       !
@@ -1449,21 +1449,21 @@ c-----------------------------------------------------------------------
       !       Number grid intervals in theta
       !
       !-----------------------------------------------------------------------
-    
+
         implicit none
         ! declare arguments
         integer :: set_mlow,set_mhigh,set_mpert,set_nn,set_mthsurf
         real(r8) :: set_ro,set_chi1
         !real(r8), dimension(:) :: set_psifac
         character(*), intent(in) :: set_jac_type
-        
+
         type(spline_type) :: set_sq
         type(bicube_type) :: set_eqfun,set_rzphi
         type(cspline_type) :: set_smats,set_tmats,set_xmats,
      $      set_ymats,set_zmats
-        
+
         integer :: m
-        
+
         ! directly transfer dcon global equilibrium variables to PENTRC
         eqfun   =set_eqfun
         sq      =set_sq
@@ -1471,7 +1471,7 @@ c-----------------------------------------------------------------------
         mpsi = sq%mx
 
         ! needed to create w_i^T*w_j coefficient matices
-        smats   =set_smats 
+        smats   =set_smats
         tmats   =set_tmats
         xmats   =set_xmats
         ymats   =set_ymats
@@ -1489,76 +1489,10 @@ c-----------------------------------------------------------------------
         ! evaluate field on axis
         call spline_eval(sq,0.0_r8,0)
         bo = abs(sq%f(1))/(twopi*ro)
-        
+
         ! set additional geometric spline
         call set_geom
 
       end subroutine set_eq
-      
-c-----------------------------------------------------------------------
-c     subprogram idcon_harvest.
-c     log inputs with harvest.
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     declarations.
-c-----------------------------------------------------------------------
-      SUBROUTINE idcon_harvest(hlog)
-c-----------------------------------------------------------------------
-c     no declarations. All module variables.
-c-----------------------------------------------------------------------
-      ! harvest variables
-      include 'harvest_lib.inc77'
-      integer :: ierr
-      character(len=65507) :: hlog
-      character, parameter :: nul = char(0)
-
-      ! log inputs with harvest
-      ! standard CODEDB records
-      if(machine/='') ierr=set_harvest_payload_str(hlog,'MACHINE'//nul,
-     $   trim(machine)//nul)
-      if(shotnum>0)
-     $   ierr=set_harvest_payload_int(hlog,'SHOT'//nul,int(shotnum))
-      if(shottime>0)
-     $   ierr=set_harvest_payload_int(hlog,'TIME'//nul,int(shottime))
-      ! DCON specifc records
-      ierr=set_harvest_payload_int(hlog,'mpsi'//nul,mpsi)
-      ierr=set_harvest_payload_int(hlog,'mtheta'//nul,mtheta)
-      ierr=set_harvest_payload_int(hlog,'mlow'//nul,mlow)
-      ierr=set_harvest_payload_int(hlog,'mhigh'//nul,mhigh)
-      ierr=set_harvest_payload_int(hlog,'mpert'//nul,mpert)
-      ierr=set_harvest_payload_int(hlog,'mband'//nul,mband)
-      ierr=set_harvest_payload_dbl(hlog,'psilow'//nul,psilow)
-      ierr=set_harvest_payload_dbl(hlog,'amean'//nul,amean)
-      ierr=set_harvest_payload_dbl(hlog,'rmean'//nul,rmean)
-      ierr=set_harvest_payload_dbl(hlog,'aratio'//nul,aratio)
-      ierr=set_harvest_payload_dbl(hlog,'kappa'//nul,kappa)
-      ierr=set_harvest_payload_dbl(hlog,'delta1'//nul,delta1)
-      ierr=set_harvest_payload_dbl(hlog,'delta2'//nul,delta2)
-      ierr=set_harvest_payload_dbl(hlog,'li1'//nul,li1)
-      ierr=set_harvest_payload_dbl(hlog,'li2'//nul,li2)
-      ierr=set_harvest_payload_dbl(hlog,'li3'//nul,li3)
-      ierr=set_harvest_payload_dbl(hlog,'ro'//nul,ro)
-      ierr=set_harvest_payload_dbl(hlog,'zo'//nul,zo)
-      ierr=set_harvest_payload_dbl(hlog,'psio'//nul,psio)
-      ierr=set_harvest_payload_dbl(hlog,'betap1'//nul,betap1)
-      ierr=set_harvest_payload_dbl(hlog,'betap2'//nul,betap2)
-      ierr=set_harvest_payload_dbl(hlog,'betap3'//nul,betap3)
-      ierr=set_harvest_payload_dbl(hlog,'betat'//nul,betat)
-      ierr=set_harvest_payload_dbl(hlog,'betan'//nul,betan)
-      ierr=set_harvest_payload_dbl(hlog,'bt0'//nul,bt0)
-      ierr=set_harvest_payload_dbl(hlog,'q0'//nul,q0)
-      ierr=set_harvest_payload_dbl(hlog,'qmin'//nul,qmin)
-      ierr=set_harvest_payload_dbl(hlog,'qmax'//nul,qmax)
-      ierr=set_harvest_payload_dbl(hlog,'qa'//nul,qa)
-      ierr=set_harvest_payload_dbl(hlog,'crnt'//nul,crnt)
-      ierr=set_harvest_payload_dbl(hlog,'q95'//nul,q95)
-      ierr=set_harvest_payload_dbl(hlog,'betan'//nul,betan)
-      ierr=set_harvest_payload_dbl_array(hlog,'et'//nul,et,mpert)
-      ierr=set_harvest_payload_dbl_array(hlog,'ep'//nul,ep,mpert)
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE idcon_harvest
 
       END MODULE dcon_interface

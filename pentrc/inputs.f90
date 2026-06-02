@@ -1,8 +1,8 @@
 !@PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE
 
 module inputs
-    !----------------------------------------------------------------------- 
-    !*DESCRIPTION: 
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
     !   Input interface for PENTRC. Includes DCON interface developed by
     !   J.-K. Park in GPEC package, as well as ascii interfaces for
     !   kinetic profiles and perturbed equilibrium files.
@@ -28,7 +28,7 @@ module inputs
     ! AUTHOR: Logan
     ! EMAIL: nikolas.logan@columbia.edu
     !-----------------------------------------------------------------------
-    
+
     use params, only : r8,xj,mp,me,e,mu0,twopi
     use utilities, only : get_free_file_unit,readtable,nunique,progressbar,iscdftf,iscdftb
     use spline_mod, only : spline_type,spline_alloc,spline_fit,spline_eval,spline_write1
@@ -36,18 +36,18 @@ module inputs
                             cspline_fit,cspline_write,cspline_eval
     use fspline_mod, only : fspline_eval
     use bicube_mod, only : bicube_type,bicube_alloc,bicube_fit,bicube_eval
-    
+
     use dcon_interface, only : idcon_read,idcon_transform,idcon_metric,&
-        idcon_matrix,idcon_action_matrices,idcon_build,set_geom,idcon_harvest,&
+        idcon_matrix,idcon_action_matrices,idcon_build,set_geom,&
         geom,eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,amat,bmat,cmat,&
         chi1,ro,zo,bo,nn,idconfile,jac_type,&
         shotnum,shottime,machine,&
         mfac,psifac,mpert,mstep,mthsurf,theta,&
         idcon_coords,&
         verbose
-    
+
     implicit none
-    
+
     private
     public &
         read_kin, &
@@ -62,7 +62,7 @@ module inputs
         chi1,ro,zo,bo,nn,mfac,mpert,mthsurf, &
         shotnum,shottime,machine,&
         verbose
-    
+
     ! global variables with defaults
     type(spline_type) :: kin
     type(cspline_type) :: dbob_m, divx_m, xs_m(3)
@@ -121,7 +121,7 @@ module inputs
 
 
     !=======================================================================
-    subroutine read_equil(file,hlog)
+    subroutine read_equil(file)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
     !   Read dcon binary and form all the equilibrium splines.
@@ -131,17 +131,15 @@ module inputs
     !       File path.
     !
     !-----------------------------------------------------------------------
-    
+
         implicit none
         ! declare arguments
         character(*), intent(in) :: file
-        character(len=65507), optional :: hlog
 
         ! set idconfile
         idconfile = file
         ! prepare ideal solutions. (psixy=0)
         CALL idcon_read(0)
-        if(present(hlog)) CALL idcon_harvest(hlog)
         CALL idcon_transform
         ! reconstruct metric tensors.
         CALL idcon_metric
@@ -155,12 +153,12 @@ module inputs
         WRITE(*,*)chi1
 
     end subroutine read_equil
-    
-    
+
+
     !=======================================================================
     subroutine read_kin(file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,write_log)
-    !----------------------------------------------------------------------- 
-    !*DESCRIPTION: 
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
     !   Read ascii file containing table of kinetic profiles ni, ne, ti,
     !   te, and omegaE, then form kin spline containing some additional
     !   information (krook nui,nue).
@@ -187,9 +185,9 @@ module inputs
     !       Scaling of rotation profile, done via manipulation of omegaE
     !   write_log : bool
     !       Writes kinetic spline to log file
-    !   
+    !
     !-----------------------------------------------------------------------
-    
+
         implicit none
         ! declare arguments
         character(512), intent(in) :: file
@@ -200,17 +198,17 @@ module inputs
         logical :: warning_printed = .false.
         real(r8), dimension(:,:), allocatable :: table
         character(32), dimension(:), allocatable :: titles
-        
+
         integer, parameter :: nkin = 100
         integer :: i,out_unit, tshape(2)
         real(r8) :: psi
         real(r8), dimension(0:nkin) :: zeff,zpitch,welec,wdian,wdiat,wpefac
         type(spline_type) :: tmp
-        
+
         call readtable(file,table,titles,verbose,write_log)
         tshape = shape(table)
         if(write_log) print *,"Table shaped ",tshape
-        
+
         ! temp spline on experimental grid
         call spline_alloc(tmp,tshape(1)-1,5)
         tmp%xs(0:) = table(1:,1)
@@ -247,7 +245,7 @@ module inputs
 
         call spline_fit(kin,"extrap")
         if(write_log) print *,"Formed kin spline"
-    
+
         ! manipulation of N and T profiles
         kin%fs(:,1:2) = nfac*kin%fs(:,1:2)
         kin%fs(:,3:4) = tfac*kin%fs(:,3:4)
@@ -626,7 +624,7 @@ module inputs
             xmsmni(:,:) = reshape(table(:,7),(/npsi,nm/),order=(/1,2/))&
                     +xj*reshape(table(:,8),(/npsi,nm/),order=(/1,2/))
         endif
-        
+
         ! convert to chebyshev coordinates
         if(jac_in=="" .or. jac_in=="default")then
             jac_in = jac_type
@@ -735,16 +733,16 @@ module inputs
         ! set global variables (perturbed quantity csplines)
         call set_peq(psi(ipsilow:ipsihigh),mfac,xmp1mns(ipsilow:ipsihigh,:),xspmns(ipsilow:ipsihigh,:),&
                      xmsmns(ipsilow:ipsihigh,:),.true.,debug)
-        
+
         deallocate(ms,psi,xmp1mns,xspmns,xmsmns)
-        
+
     end subroutine read_peq
-    
-    
+
+
     !=======================================================================
     subroutine set_peq(psi,ms,xmp1mns,xspmns,xmsmns,op_set_dbdx,op_debug)
-    !----------------------------------------------------------------------- 
-    !*DESCRIPTION: 
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
     !   Set m quantity xs_m complex splines in psi for the 2 Clebsch
     !   displacement components from 2D (psi,m) distributions.
     !   **This routine sets global variables xs_m dbob_m and divx_m**
@@ -765,14 +763,14 @@ module inputs
     !       them to global complex spline variable dbob_m,divx_m. (Defaut True)
     !   op_debug : logical
     !       Print intermidient messages to terminal. (Default False)
-    !       
+    !
     !-----------------------------------------------------------------------
-    
+
         implicit none
-        
+
         ! declare arguments
         logical, intent(in), optional :: op_debug,op_set_dbdx
-        integer,  dimension(:), intent(in) :: ms        
+        integer,  dimension(:), intent(in) :: ms
         real(r8), dimension(:), intent(in) :: psi
         complex(r8), dimension(:,:), intent(in) :: xmp1mns,xspmns,xmsmns
         ! declare local variables
@@ -782,7 +780,7 @@ module inputs
         complex(r8), dimension(mpert,mpert) :: smat,tmat,xmat,ymat,zmat
         complex(r8), dimension(:,:), allocatable :: jbbkapxmns,jbbdivxmns,jbbdbobmns
         character(3) :: istring
-        
+
         ! defaults for optional args
         debug = .false.
         set_dbdx = .true.
@@ -793,7 +791,7 @@ module inputs
         istop_psi = UBOUND(psi,1)
         npsi = size(psi)
         nm = size(ms)
-        
+
         ! set global variables
         if(debug) print *,"  Setting global perturbed xi variables"
         !if(debug) print *,"  nm,mpert",nm,mpert
@@ -810,7 +808,7 @@ module inputs
         enddo
         do i =1,mpert
             ims = i+(mfac(1)-ms(1))
-            if(ims>0 .and. ims<=nm)then        
+            if(ims>0 .and. ims<=nm)then
                 xs_m(1)%fs(0:,i) =xmp1mns(1:,ims)
                 xs_m(2)%fs(0:,i) = xspmns(1:,ims)
                 xs_m(3)%fs(0:,i) = xmsmns(1:,ims)
@@ -909,8 +907,8 @@ module inputs
 
     !=======================================================================
     subroutine read_fnml(file)
-    !----------------------------------------------------------------------- 
-    !*DESCRIPTION: 
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
     !   Read matrix of pre-integrated functions, Eq. (13)
     !   [Park, Phys. Rev. Let 2009]
     !
@@ -924,7 +922,7 @@ module inputs
         character(*) :: file
         ! declare variables
         integer :: nfk,nft,in_unit
-  
+
         if(verbose) print *, "Reading F^-1/2_mnl from file:"
         if(verbose) print *, "  ",trim(file)
         in_unit = get_free_file_unit(-1)
@@ -939,11 +937,11 @@ module inputs
         return
       end subroutine read_fnml
 
-      
+
     !=======================================================================
     subroutine read_gpec_peq(file,write_log)
-    !----------------------------------------------------------------------- 
-    !*DESCRIPTION: 
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
     !   Read pmodb and divxprp fourier components (psi,m) from input file.
     !   Holdover from PENT - used to test development.
     !
@@ -955,12 +953,12 @@ module inputs
         ! declare arguments
         logical :: write_log
         character(*), intent(in) :: file
-        ! declare variables            
+        ! declare variables
         complex(r8), dimension(mstep,mpert) :: lagbpar,divxprp
         integer :: i,ms,mp,iout,istep,in_unit,out_unit
         type(cspline_type) :: outspl
-    
-          
+
+
         if(verbose) print *, "Reading pmodb and divxprp input file: "
         if(verbose) print *, '  ',trim(file)
         in_unit = get_free_file_unit(-1)
@@ -972,7 +970,7 @@ module inputs
         read(in_unit)lagbpar
         read(in_unit)divxprp
         close(in_unit)
-        
+
         ! form splines
         call cspline_alloc(dbob_m,mstep-1,mpert)
         call cspline_alloc(divx_m,mstep-1,mpert)
@@ -982,7 +980,7 @@ module inputs
         divx_m%fs(0:,:) = divxprp(:,:)
         call cspline_fit(dbob_m,"extrap")
         call cspline_fit(divx_m,"extrap")
-        
+
         ! write log - designed as check of reading routines
         if(write_log)then
             out_unit = get_free_file_unit(-1)
@@ -1012,5 +1010,5 @@ module inputs
         endif
     end subroutine read_gpec_peq
 
-    
+
 end module inputs
