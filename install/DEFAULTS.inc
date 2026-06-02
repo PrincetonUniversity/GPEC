@@ -401,7 +401,7 @@ endif
 
 # List of needed dependencies, will be appended if math or netcdf
 # libraries are not found
-NEEDED_DEPS = harvest
+NEEDED_DEPS = 
 
 # Platform and host information
 PLATFORM := $(shell uname -s)
