@@ -13,21 +13,15 @@ export OMPFLAG
 
 .IGNORE:
 
-all: v harvest lsode zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
+all: v lsode zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum xdraw coil gpec stride mkbin
 
 # fortran only
-allf: v harvest lsode zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
+allf: v lsode zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum coil gpec stride mkbin
 
 
 # executables:
-
-harvest:
-	cd ../; git submodule init; git submodule update
-	cd ../harvest; make FC='$(FC)' CC='$(CC)' GACODE_ROOT= -f Makefile libharvest.a
-	mkdir -p ../lib
-	cp -f ../harvest/libharvest.a ../lib/
 
 xdraw:
 	cd ../xdraw;  make
@@ -120,7 +114,6 @@ endif
 # cleaning
 
 clean:
-	cd ../harvest; make clean
 	cd ../xdraw;  make clean
 	cd ../lsode;  make clean
 	cd ../equil;  make clean

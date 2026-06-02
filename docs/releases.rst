@@ -10,6 +10,16 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.5.7
+===========
+
+Fixes
+------
+- ALL - BUMP - Update version to 1.5.7 and document changes in release notes
+- INSTALL - Remove harvest submodule reference from git tree
+- ALL - REMOVE - Remove all harvest dependencies and capabilities
+
+
 GPEC v1.5.6
 ===========
 

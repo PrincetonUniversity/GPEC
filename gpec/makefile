@@ -1,7 +1,7 @@
 
 include ../install/DEFAULTS.inc
 
-IFLAGS = -I../equil -I../harvest -I../pentrc -I../coil -I$(MATHINC) -I$(NETCDFINC)
+IFLAGS = -I../equil -I../pentrc -I../coil -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
 export FFLAGS # for sub-makes
 
@@ -15,7 +15,6 @@ LIBS = \
 	-llsode \
 	-lequil \
 	-lvac \
-	-lharvest \
 	-lcoil
 
 OBJS = \
@@ -34,7 +33,7 @@ OBJS = \
 
 all: pentrc coil gpec
 
-# takes care of harvest, equil, lsode, etc.
+# takes care of equil, lsode, etc.
 pentrc:
 	cd ../pentrc; make all
 

@@ -38,7 +38,7 @@ module inputs
     use bicube_mod, only : bicube_type,bicube_alloc,bicube_fit,bicube_eval
     
     use dcon_interface, only : idcon_read,idcon_transform,idcon_metric,&
-        idcon_matrix,idcon_action_matrices,idcon_build,set_geom,idcon_harvest,&
+        idcon_matrix,idcon_action_matrices,idcon_build,set_geom,&
         geom,eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,amat,bmat,cmat,&
         chi1,ro,zo,bo,nn,idconfile,jac_type,&
         shotnum,shottime,machine,&
@@ -121,7 +121,7 @@ module inputs
 
 
     !=======================================================================
-    subroutine read_equil(file,hlog)
+    subroutine read_equil(file)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
     !   Read dcon binary and form all the equilibrium splines.
@@ -135,13 +135,11 @@ module inputs
         implicit none
         ! declare arguments
         character(*), intent(in) :: file
-        character(len=65507), optional :: hlog
 
         ! set idconfile
         idconfile = file
         ! prepare ideal solutions. (psixy=0)
         CALL idcon_read(0)
-        if(present(hlog)) CALL idcon_harvest(hlog)
         CALL idcon_transform
         ! reconstruct metric tensors.
         CALL idcon_metric

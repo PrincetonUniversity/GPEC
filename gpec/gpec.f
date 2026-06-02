@@ -393,81 +393,6 @@ c-----------------------------------------------------------------------
          IF(timeit) CALL gpec_timer(2)
       ENDIF
 c-----------------------------------------------------------------------
-c     log inputs with harvest
-c-----------------------------------------------------------------------
-      ierr=init_harvest('CODEDB_GPEC'//NUL,hlog,len(hlog))
-      ierr=set_harvest_verbose(0)
-      ! standard CODEDB records
-      ierr=set_harvest_payload_str(hlog,'CODE'//nul,'GPEC'//nul)
-      IF (machine=='') then
-         machine = "UNKNOWN"
-      ELSEIF (machine=='d3d') then
-         machine = "DIII-D"
-      ENDIF
-      machine = to_upper(machine)
-      ierr=set_harvest_payload_str(hlog,'MACHINE'//nul,
-     $                             trim(machine)//nul)
-      ierr=set_harvest_payload_str(hlog,'VERSION'//nul,version//nul)
-      if(shotnum>0)
-     $   ierr=set_harvest_payload_int(hlog,'SHOT'//nul,INT(shotnum))
-      if(shottime>0)
-     $   ierr=set_harvest_payload_int(hlog,'TIME'//nul,INT(shottime))
-      ! DCON equilibrium descriptors
-      ierr=set_harvest_payload_int(hlog,'mpsi'//nul,mpsi)
-      ierr=set_harvest_payload_int(hlog,'mtheta'//nul,mtheta)
-      ierr=set_harvest_payload_int(hlog,'mlow'//nul,mlow)
-      ierr=set_harvest_payload_int(hlog,'mhigh'//nul,mhigh)
-      ierr=set_harvest_payload_int(hlog,'mpert'//nul,mpert)
-      ierr=set_harvest_payload_int(hlog,'mband'//nul,mband)
-      ierr=set_harvest_payload_dbl(hlog,'psilow'//nul,psilow)
-      ierr=set_harvest_payload_dbl(hlog,'psilim'//nul,psilim)
-      ierr=set_harvest_payload_dbl(hlog,'amean'//nul,amean)
-      ierr=set_harvest_payload_dbl(hlog,'rmean'//nul,rmean)
-      ierr=set_harvest_payload_dbl(hlog,'aratio'//nul,aratio)
-      ierr=set_harvest_payload_dbl(hlog,'kappa'//nul,kappa)
-      ierr=set_harvest_payload_dbl(hlog,'delta1'//nul,delta1)
-      ierr=set_harvest_payload_dbl(hlog,'delta2'//nul,delta2)
-      ierr=set_harvest_payload_dbl(hlog,'li1'//nul,li1)
-      ierr=set_harvest_payload_dbl(hlog,'li2'//nul,li2)
-      ierr=set_harvest_payload_dbl(hlog,'li3'//nul,li3)
-      ierr=set_harvest_payload_dbl(hlog,'ro'//nul,ro)
-      ierr=set_harvest_payload_dbl(hlog,'zo'//nul,zo)
-      ierr=set_harvest_payload_dbl(hlog,'psio'//nul,psio)
-      ierr=set_harvest_payload_dbl(hlog,'betap1'//nul,betap1)
-      ierr=set_harvest_payload_dbl(hlog,'betap2'//nul,betap2)
-      ierr=set_harvest_payload_dbl(hlog,'betap3'//nul,betap3)
-      ierr=set_harvest_payload_dbl(hlog,'betat'//nul,betat)
-      ierr=set_harvest_payload_dbl(hlog,'betan'//nul,betan)
-      ierr=set_harvest_payload_dbl(hlog,'bt0'//nul,bt0)
-      ierr=set_harvest_payload_dbl(hlog,'q0'//nul,q0)
-      ierr=set_harvest_payload_dbl(hlog,'qmin'//nul,qmin)
-      ierr=set_harvest_payload_dbl(hlog,'qmax'//nul,qmax)
-      ierr=set_harvest_payload_dbl(hlog,'qa'//nul,qa)
-      ierr=set_harvest_payload_dbl(hlog,'crnt'//nul,crnt)
-      ierr=set_harvest_payload_dbl(hlog,'q95'//nul,q95)
-      ierr=set_harvest_payload_dbl(hlog,'betan'//nul,betan)
-      ierr=set_harvest_payload_dbl_array(hlog,'et'//nul,et,mpert)
-      ierr=set_harvest_payload_dbl_array(hlog,'ep'//nul,ep,mpert)
-      ! gpec_input
-      ierr=set_harvest_payload_bol(hlog,'fixed_boundary_flag'//nul,
-     $                             fixed_boundary_flag)
-      ierr=set_harvest_payload_bol(hlog,'mode_flag'//nul,mode_flag)
-      ierr=set_harvest_payload_int(hlog,'mode'//nul,mode)
-      ierr=set_harvest_payload_str(hlog,'filter_types'//nul,
-     $                             filter_types//nul)
-      ierr=set_harvest_payload_int(hlog,'filter_modes'//nul,
-     $                             filter_modes)
-      ! gpec_control
-      ierr=set_harvest_payload_int(hlog,'resp_index'//nul,resp_index)
-      ierr=set_harvest_payload_dbl(hlog,'sing_spot'//nul,sing_spot)
-      ierr=set_harvest_payload_dbl(hlog,'sing_npsi'//nul,sing_npsi)
-      ierr=set_harvest_payload_bol(hlog,'reg_flag'//nul,reg_flag)
-      ierr=set_harvest_payload_dbl(hlog,'reg_spot'//nul,reg_spot)
-      ! gpec_output
-      ierr=set_harvest_payload_str(hlog,'jac_out'//nul,jac_out//nul)
-      ierr=set_harvest_payload_int(hlog,'jsurf_out'//nul,jsurf_out)
-      ierr=set_harvest_payload_int(hlog,'tmag_out'//nul,tmag_out)
-c-----------------------------------------------------------------------
 c     compute plasma response.
 c-----------------------------------------------------------------------
       CALL gpresp_eigen
@@ -726,10 +651,6 @@ c         ! Test coordinate independence of power eigenvectors
 c         CALL gpdiag_reluctpowout(power_rout,power_bpout,power_bout,
 c     $        power_rcout)
       ENDIF
-c-----------------------------------------------------------------------
-c     send harvest record.
-c-----------------------------------------------------------------------
-      ierr=harvest_send(hlog)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
