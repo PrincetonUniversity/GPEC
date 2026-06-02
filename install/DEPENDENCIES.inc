@@ -198,7 +198,7 @@
 ../slayer/slayer.o : ../slayer/sglobal.o ../slayer/params.o ../slayer/delta.o
 
 # COIL
-../coil/coil.o: ../equil/local.o ../equil/bicube.o ../coil/version.inc
+../coil/coil.o: ../equil/local.o ../equil/bicube.o ../coil/version.inc ../equil/fspline.o
 ../coil/field.o: ../coil/coil.o
 
 # GPEC
