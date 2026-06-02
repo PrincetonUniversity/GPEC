@@ -6,6 +6,37 @@ on:
     branches: [develop]
 
 jobs:
+  # Keep install/DEPENDENCIES.inc in sync with the Fortran sources. The graph
+  # is regenerated from the actual USE/MODULE relationships; if a contributor's
+  # change makes it stale, this job commits the corrected file back to the PR
+  # branch so nobody needs python/uv locally. (Same-repo PRs only -- a fork PR
+  # can't be pushed to, in which case just merge and fix on the next PR.)
+  deps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Regenerate dependency graph
+        working-directory: install
+        run: python gen_deps.py > DEPENDENCIES.inc
+      - name: Commit if the graph changed
+        run: |
+          if git diff --quiet -- install/DEPENDENCIES.inc; then
+            echo "DEPENDENCIES.inc already up to date."
+          else
+            git config user.name  "gpec-deps-bot"
+            git config user.email "actions@github.com"
+            git commit -am "INSTALL - MINOR - regenerate install/DEPENDENCIES.inc"
+            git push
+            echo "DEPENDENCIES.inc was stale; committed the regenerated graph."
+          fi
+
   build-netcdf-gfortran:
     runs-on: ubuntu-latest
     env:
