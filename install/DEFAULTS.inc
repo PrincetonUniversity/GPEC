@@ -25,9 +25,9 @@
 # compatible wth openmp.
 # Machine specific instructions are below.
 #
-# Note that GPEC uses git to fetch/update the harvest repository as well as
-# to label the version at compilation time. Thus, you must have a working git
-# command in order to compile.
+# Note that GPEC uses git to label the version at compilation time.
+# Thus, you must have a working git command in order to compile.
+# (Harvest integration was removed in v1.5.7.)
 #
 # On flux.pppl.gov
 #   Users can run GPEC on flux using the public module. Note, flux "hides" such modules behind a mod_* gateway module
