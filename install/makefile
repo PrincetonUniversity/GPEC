@@ -106,7 +106,6 @@ clear:
 # Revert to clean state
 realclean: clean clear
 	rm -rf ../deps/lib/* ../deps/hdf5 ../deps/include/* ../deps/bin/* ../deps/share ../bin
-	if [ -f ../deps/src/harvest/Makefile ]; then cd ../deps/src/harvest && make clean; fi
 	if [ -f ../deps/src/OpenBLAS/Makefile ]; then cd ../deps/src/OpenBLAS && make clean; fi
 	if [ -f ../deps/src/hdf5/Makefile ]; then cd ../deps/src/hdf5 && make clean; fi
 	if [ -f ../deps/src/netcdf-c/Makefile ]; then cd ../deps/src/netcdf-c && make clean; fi

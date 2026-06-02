@@ -33,7 +33,6 @@ gpec/
 ├── equil/        # Equilibrium data processing (EFIT, CHEASE, Miller, etc.)
 ├── gpec/         # Main GPEC code for 3D perturbations
 ├── docs/         # Sphinx documentation and examples
-├── harvest/      # Git submodule for data client
 ├── input/        # Template input namelists
 ├── install/      # Build configuration and Makefile
 ├── lib/          # Compiled library archives
