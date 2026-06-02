@@ -434,7 +434,8 @@ c-----------------------------------------------------------------------
                      CALL ZVODE1(sing_derFM,neq,uFM,startPsi,endPsi,
      $                    itol,rtol,atol,itask,istate,iopt,zwork,lzw,
      $                    rwork,lrw,iwork,liw,ode_nojac,mf,rpar,ipar)
-                     IF(istate < 0) EXIT
+                     IF(istate < 0) CALL program_stop
+     $                 ('STRIDE STOP: ZVODE1 integration failure.')
                   ENDDO
                   IF ( grid_packing == "naive" ) THEN
                      CALL SYSTEM_CLOCK(COUNT=fTime)
