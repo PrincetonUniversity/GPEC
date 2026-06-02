@@ -10,9 +10,9 @@
 # compatible wth openmpi.
 # Machine specific instructions are below.
 #
-# Note that GPEC used git to fetch/update the harvest repository as well as
-# to label the version at compilation time. Thus, you must have had a working git
-# command in order to compile. Harvest was removed in v1.5.7.
+# Note that GPEC uses git to label the version at compilation time.
+# Thus, you must have a working git command in order to compile.
+# (Harvest integration was removed in v1.5.7.)
 #
 # On portal.pppl.gov
 #   Users can run GPEC on portal using the public module. Note, portal now "hides" such modules behind a mod_* gateway module
