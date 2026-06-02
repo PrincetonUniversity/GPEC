@@ -19,6 +19,7 @@ c     10. gpeq_dst          (reconstruction: C vector for DST)
 c     11. gpeq_shear        (reconstruction: magnetic shear)
 c     12. gpeq_curvature    (reconstruction: curvature)
 c     13. gpeq_K            (reconstruction: Bernstein K quantity)
+c    13b. gpeq_recon3       (reconstruction: |C|^2 decomposition)
 c     14. gpeq_fcoords
 c     15. gpeq_fcoordsout
 c     16. gpeq_bcoords
@@ -1480,8 +1481,254 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_K
+c-----------------------------------------------------------------------
+c     subprogram 13b. gpeq_recon3.
+c     Bernstein-form |C|^2 decomposition for recon3 diagnostic.
+c     Vector identity: C = Q + V with V = xi_n * mu0 * j x n_hat.
+c     |C|^2 = |Q|^2 + 2 Re(V*.Q) + |V|^2
+c     j is purely tangent to flux surface (j.n=0), so
+c     |V|^2 = mu0^2 xi_n^2 |j|^2 = mu0^2 xi_n^2 (sigma^2 B^2
+c           + p'^2 |grad psi|^2 / B^2).
+c     Returns the surface integrals (theta only, jac measure):
+c        A_int    = int |Q|^2 / mu0 * J dtheta / mthsurf
+c        B_int    = int 2 Re(V*.Q) / mu0 * J dtheta / mthsurf
+c                   directly via V = C - Q (covariant pairing)
+c        Cpar_int = int mu0 sigma^2 B^2 xi_n^2 * J dtheta / mthsurf
+c                   (= K_2 xi_n^2 integral; matches gpeq_dst's dst2)
+c        Iperp_int= int mu0 p'^2 |grad psi|^2 xi_n^2 / B^2 *
+c                   J dtheta / mthsurf
+c        epf_int  = int |C|^2 / mu0 * J dtheta / mthsurf
+c     Identity check: epf_int = A_int + B_int + Cpar_int + Iperp_int
+c     should hold within numerical roundoff.
+c-----------------------------------------------------------------------
+      SUBROUTINE gpeq_recon3(psi, A_int, B_int, Iperp_int, Cpar_int,
+     $     epf_int, A_fun, B_fun, Iperp_fun, Cpar_fun, surf_extra)
+      REAL(r8), INTENT(IN) :: psi
+      REAL(r8), INTENT(OUT) :: A_int, B_int, Iperp_int, Cpar_int,
+     $     epf_int
+      REAL(r8), DIMENSION(0:mthsurf), OPTIONAL, INTENT(OUT) ::
+     $     A_fun, B_fun, Iperp_fun, Cpar_fun
+c     surf_extra: packed per-theta fields for R-Z heatmaps (recon_out).
+c     columns: 1 VdotQ_re, 2 VdotQ_im, 3 Bcur_den, 4 Bpre_den,
+c       5/6 Qp_re/im, 7/8 Qt_re/im, 9/10 Qz_re/im,
+c       11/12 Vt_re/im, 13/14 Vz_re/im, 15 jpar, 16 jperp,
+c       17/18 xin_re/im, 19 delpsi, 20 Bmod,
+c       21 dst1_den (K1 xin2), 22 dst3_den (K3 xin2).
+      REAL(r8), DIMENSION(0:mthsurf,22), OPTIONAL, INTENT(OUT) ::
+     $     surf_extra
+
+      INTEGER :: itheta
+      REAL(r8) :: f1raw, p1_local
+      REAL(r8) :: A_density, B_density, Iperp_density, Cpar_density,
+     $     epf_density
+      REAL(r8) :: delpsi_val, bsq_val, sigma_local, jdotb_val
+      REAL(r8) :: jwt, jwz, bth, bze, g22, g33, g23, r_val
+      REAL(r8) :: xin2, mu0jwt, mu0jwz
+      REAL(r8) :: mu0jpar_t, mu0jpar_z, mu0jper_t, mu0jper_z
+      REAL(r8) :: jsq_val, jpar_val, bmod_val
+      COMPLEX(r8) :: jvt_loc, jvz_loc, vdotq_loc
+      COMPLEX(r8) :: jvt_cur, jvz_cur, jvt_pre, jvz_pre
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: kfun_loc
+      REAL(r8), DIMENSION(0:mthsurf) :: kt1_loc, kt2_loc, kt3_loc
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: bwp_fun, bmt_fun, bmz_fun
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: bvp_fun, bvt_fun, bvz_fun
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: cwp_fun, cwt_fun, cwz_fun
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: cvp_fun, cvt_fun, cvz_fun
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: xno_fun, xwp_fun
+
+      IF(debug_flag) PRINT *, "Entering gpeq_recon3"
+c-----------------------------------------------------------------------
+c     prepare psi-local perturbed equilibrium and C, Q.
+c-----------------------------------------------------------------------
+      CALL gpeq_sol(psi)
+      CALL gpeq_contra(psi)
+      CALL gpeq_cova(psi)
+      CALL gpeq_normal(psi)
+      CALL gpeq_c(psi, 0)
+
+      CALL spline_eval(sq, psi, 1)
+      f1raw = sq%f1(1)
+      p1_local = sq%f1(2) / mu0
+      chi1 = psio * twopi
+
+      CALL iscdftb(mfac, mpert, xno_fun, mthsurf, xno_mn)
+      CALL iscdftb(mfac, mpert, bwp_fun, mthsurf, bwp_mn)
+      CALL iscdftb(mfac, mpert, bmt_fun, mthsurf, bmt_mn)
+      CALL iscdftb(mfac, mpert, bmz_fun, mthsurf, bmz_mn)
+      CALL iscdftb(mfac, mpert, bvp_fun, mthsurf, bvp_mn)
+      CALL iscdftb(mfac, mpert, bvt_fun, mthsurf, bvt_mn)
+      CALL iscdftb(mfac, mpert, bvz_fun, mthsurf, bvz_mn)
+      CALL iscdftb(mfac, mpert, cwp_fun, mthsurf, cwp_mn)
+      CALL iscdftb(mfac, mpert, cwt_fun, mthsurf, cwt_mn)
+      CALL iscdftb(mfac, mpert, cwz_fun, mthsurf, cwz_mn)
+      CALL iscdftb(mfac, mpert, cvp_fun, mthsurf, cvp_mn)
+      CALL iscdftb(mfac, mpert, cvt_fun, mthsurf, cvt_mn)
+      CALL iscdftb(mfac, mpert, cvz_fun, mthsurf, cvz_mn)
+      CALL iscdftb(mfac, mpert, xwp_fun, mthsurf, xwp_mn)
+
+c     K term breakdown (K1 shear, K3 curvature) for dst1/dst3 densities;
+c     only needed for the R-Z heatmap output.
+      IF (PRESENT(surf_extra)) THEN
+         CALL gpeq_K(psi, kfun_loc, kt1_loc, kt2_loc, kt3_loc)
+      ENDIF
+
+      A_int = 0.0_r8
+      B_int = 0.0_r8
+      Iperp_int = 0.0_r8
+      Cpar_int = 0.0_r8
+      epf_int = 0.0_r8
+c-----------------------------------------------------------------------
+c     accumulate densities in theta with jac measure.
+c-----------------------------------------------------------------------
+      DO itheta = 0, mthsurf
+         CALL bicube_eval(rzphi, psi, theta(itheta), 1)
+         CALL bicube_eval(eqfun, psi, theta(itheta), 0)
+         jac = rzphi%f(4)
+         rfac = SQRT(rzphi%f(1))
+         eta = twopi*(theta(itheta) + rzphi%f(2))
+         r_val = ro + rfac*COS(eta)
+         bsq_val = eqfun%f(1)**2
+
+c        |grad psi|
+         w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r_val/jac
+         w(1,2)=-rzphi%fy(1)*pi*r_val/(rfac*jac)
+         delpsi_val=SQRT(w(1,1)**2+w(1,2)**2)
+
+c        currents and B (idcon_metric convention, same as gpeq_K).
+         jwt = -f1raw/(jac*mu0)
+         jwz = sq%f(4)*jwt - p1_local/chi1
+         bth = chi1 / jac
+         bze = sq%f(4) * chi1 / jac
+
+         v(2,1) = rzphi%fy(1)/(2*rfac)
+         v(2,2) = (1+rzphi%fy(2))*twopi*rfac
+         v(2,3) = rzphi%fy(3)*r_val
+         v(3,3) = twopi*r_val
+         g22 = (v(2,1)**2 + v(2,2)**2 + v(2,3)**2)
+         g33 = (v(3,3)**2)
+         g23 = (v(2,3)*v(3,3))
+
+         jdotb_val = g22*bth*jwt + g33*bze*jwz +
+     $        g23*(bth*jwz + bze*jwt)
+         sigma_local = jdotb_val / bsq_val
+
+         xin2 = REAL(CONJG(xno_fun(itheta))*xno_fun(itheta), r8)
+
+c        |Q|^2 / mu0 density (matches gpeq_firstform q2_density)
+         A_density = REAL(CONJG(bwp_fun(itheta)) * bvp_fun(itheta) +
+     $        CONJG(bmt_fun(itheta)) * bvt_fun(itheta) +
+     $        CONJG(bmz_fun(itheta)) * bvz_fun(itheta), r8)
+     $        / (mu0 * jac)
+
+c        |C|^2 / mu0 density (matches gpeq_epf integrand)
+         epf_density = REAL(
+     $        CONJG(cwp_fun(itheta)) * cvp_fun(itheta) +
+     $        CONJG(cwt_fun(itheta)) * cvt_fun(itheta) +
+     $        CONJG(cwz_fun(itheta)) * cvz_fun(itheta), r8)
+     $        / (mu0 * jac)
+
+c        B density = 2 Re(V*.Q) / mu0, with V = xi_n (mu0 j x n_hat)
+c        computed DIRECTLY from the equilibrium current, NOT from C - Q.
+c        These are the same C^i - Q^i terms derived in main.tex (Sec. 5,
+c        the C component box): J V^psi = 0, and with xwp_fun = J xi^psi,
+c          J V^theta =  xwp/(|grad psi|^2 J) (mu0 j^theta g23 + mu0 j^zeta g33)
+c          J V^zeta  = -xwp/(|grad psi|^2 J) (mu0 j^theta g22 + mu0 j^zeta g23).
+c        mu0 j^i = mu0 * (physical j^i); jwt,jwz already hold physical j^i.
+         mu0jwt = mu0 * jwt
+         mu0jwz = mu0 * jwz
+         jvt_loc = xwp_fun(itheta) / (delpsi_val**2 * jac) *
+     $        (mu0jwt * g23 + mu0jwz * g33)
+         jvz_loc = -xwp_fun(itheta) / (delpsi_val**2 * jac) *
+     $        (mu0jwt * g22 + mu0jwz * g23)
+c        V is contravariant (J V^i); pair with covariant Q_i (bvt,bvz).
+         B_density = 2.0_r8 * REAL(
+     $        CONJG(jvt_loc) * bvt_fun(itheta) +
+     $        CONJG(jvz_loc) * bvz_fun(itheta), r8) / (mu0 * jac)
+
+c        K_2 xi_n^2 density (parallel current; should match dst2)
+         Cpar_density = mu0 * sigma_local**2 * bsq_val * xin2
+
+c        I_perp density (perpendicular Pfirsch-Schlueter current^2)
+         Iperp_density = mu0 * p1_local**2 * delpsi_val**2 *
+     $        xin2 / bsq_val
+
+c        Extra per-theta fields for R-Z heatmaps (only if requested).
+         IF (PRESENT(surf_extra)) THEN
+            bmod_val = SQRT(bsq_val)
+c           V*.Q (complex); B_density = 2 Re(vdotq_loc)/mu0.
+            vdotq_loc = (CONJG(jvt_loc) * bvt_fun(itheta) +
+     $           CONJG(jvz_loc) * bvz_fun(itheta)) / jac
+c           Split V = V_par + V_perp via j = j_par + j_perp.
+c           Parallel current: mu0 j_par^i = mu0 sigma B^i (B^t=bth,B^z=bze).
+            mu0jpar_t = mu0 * sigma_local * bth
+            mu0jpar_z = mu0 * sigma_local * bze
+            mu0jper_t = mu0jwt - mu0jpar_t
+            mu0jper_z = mu0jwz - mu0jpar_z
+            jvt_cur = xwp_fun(itheta) / (delpsi_val**2 * jac) *
+     $           (mu0jpar_t * g23 + mu0jpar_z * g33)
+            jvz_cur = -xwp_fun(itheta) / (delpsi_val**2 * jac) *
+     $           (mu0jpar_t * g22 + mu0jpar_z * g23)
+            jvt_pre = jvt_loc - jvt_cur
+            jvz_pre = jvz_loc - jvz_cur
+c           j_par = sigma B; |j_perp|^2 = |j|^2 - j_par^2 (j physical).
+            jpar_val = sigma_local * bmod_val
+            jsq_val = g22 * jwt**2 + g33 * jwz**2 +
+     $           2.0_r8 * g23 * jwt * jwz
+            surf_extra(itheta,1) = REAL(vdotq_loc, r8)
+            surf_extra(itheta,2) = AIMAG(vdotq_loc)
+            surf_extra(itheta,3) = 2.0_r8 * REAL(
+     $           CONJG(jvt_cur) * bvt_fun(itheta) +
+     $           CONJG(jvz_cur) * bvz_fun(itheta), r8) / (mu0 * jac)
+            surf_extra(itheta,4) = 2.0_r8 * REAL(
+     $           CONJG(jvt_pre) * bvt_fun(itheta) +
+     $           CONJG(jvz_pre) * bvz_fun(itheta), r8) / (mu0 * jac)
+            surf_extra(itheta,5) = REAL(bvp_fun(itheta), r8)
+            surf_extra(itheta,6) = AIMAG(bvp_fun(itheta))
+            surf_extra(itheta,7) = REAL(bvt_fun(itheta), r8)
+            surf_extra(itheta,8) = AIMAG(bvt_fun(itheta))
+            surf_extra(itheta,9) = REAL(bvz_fun(itheta), r8)
+            surf_extra(itheta,10) = AIMAG(bvz_fun(itheta))
+            surf_extra(itheta,11) = REAL(jvt_loc, r8)
+            surf_extra(itheta,12) = AIMAG(jvt_loc)
+            surf_extra(itheta,13) = REAL(jvz_loc, r8)
+            surf_extra(itheta,14) = AIMAG(jvz_loc)
+            surf_extra(itheta,15) = jpar_val
+            surf_extra(itheta,16) = SQRT(MAX(0.0_r8,
+     $           jsq_val - jpar_val**2))
+            surf_extra(itheta,17) = REAL(xno_fun(itheta), r8)
+            surf_extra(itheta,18) = AIMAG(xno_fun(itheta))
+            surf_extra(itheta,19) = delpsi_val
+            surf_extra(itheta,20) = bmod_val
+c           dst1 = K1 xin2 (shear), dst3 = K3 xin2 (curvature).
+            surf_extra(itheta,21) = kt1_loc(itheta) * xin2
+            surf_extra(itheta,22) = kt3_loc(itheta) * xin2
+         ENDIF
+
+         IF (PRESENT(A_fun)) A_fun(itheta) = A_density
+         IF (PRESENT(B_fun)) B_fun(itheta) = B_density
+         IF (PRESENT(Iperp_fun)) Iperp_fun(itheta) = Iperp_density
+         IF (PRESENT(Cpar_fun)) Cpar_fun(itheta) = Cpar_density
+
+         IF (itheta < mthsurf) THEN
+            A_int = A_int + A_density * jac / REAL(mthsurf, r8)
+            B_int = B_int + B_density * jac / REAL(mthsurf, r8)
+            epf_int = epf_int + epf_density * jac / REAL(mthsurf, r8)
+            Cpar_int = Cpar_int + Cpar_density * jac /
+     $           REAL(mthsurf, r8)
+            Iperp_int = Iperp_int + Iperp_density * jac /
+     $           REAL(mthsurf, r8)
+         ENDIF
+      ENDDO
+
+      IF(debug_flag) PRINT *, "->Leaving gpeq_recon3"
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpeq_recon3
+c-----------------------------------------------------------------------
 c     subprogram 14. gpeq_fcoords.
-c     transform coordinates to dcon coordinates. 
+c     transform coordinates to dcon coordinates.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_fcoords(psi,ftnmn,amf,amp,ri,bpi,bi,rci,ti,ji)
 c-----------------------------------------------------------------------

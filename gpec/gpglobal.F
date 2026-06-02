@@ -19,7 +19,7 @@ c-----------------------------------------------------------------------
      $     chebyshev_flag,coil_flag,eigm_flag,bwp_pest_flag,verbose,
      $     debug_flag,timeit,kin_flag,con_flag,resp_induct_flag,
      $     netcdf_flag,ascii_flag,wv_farwall_flag,mutual_test_flag,
-     $     cveri_flag,recon_out,recon_flag2,
+     $     cveri_flag,recon_out,recon_flag2,recon_flag3,
      $     xi_flag
 
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,

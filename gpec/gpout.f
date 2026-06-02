@@ -28,6 +28,7 @@ c     19. gpout_init_netcdf
 c     20. gpout_close_netcdf
 c     21. gpout_recon
 c     22. gpout_recon2
+c     23. gpout_recon3
 c-----------------------------------------------------------------------
 c     subprogram 0. gpout_mod.
 c     module declarations.
@@ -7360,10 +7361,10 @@ c-----------------------------------------------------------------------
      $     REAL(dw_raw_k_hr)
       WRITE(*,'(a,es17.8e3)') "  dW_p(recon-normalize)= ",
      $     REAL(dw_dcon_k_hr)
-      WRITE(*,'(a,a,a,es17.8e3)') "GPEC ep(", TRIM(smode), "):",
+      WRITE(*,'(a,a,a,es17.8e3)') "  GPEC ep(", TRIM(smode), ") = ",
      $     ep_selected
-      WRITE(*,'(a,a,a,es17.8e3)') "DCON ep(", TRIM(smode), "):",
-     $     ep_selected*(mu0*2.0) / psio**2 / (chi1*1e-3)**2
+      WRITE(*,'(a,a,a,es17.8e3)') "  DCON ep(", TRIM(smode), ") = ",
+     $     ep_selected*dcon_fac
       IF (cveri_flag) THEN
          cveri_stat = "PASS"
          IF (cveri_count > 0) THEN
@@ -7410,7 +7411,7 @@ c-----------------------------------------------------------------------
          WRITE(u_log,'(a,a,a,es17.8e3)') "  GPEC ep(", TRIM(smode),
      $        ") = ", ep_selected
          WRITE(u_log,'(a,a,a,es17.8e3)') "  DCON ep(", TRIM(smode),
-     $        ") = ", ep_selected*(mu0*2.0) / psio**2 / (chi1*1e-3)**2
+     $        ") = ", ep_selected*dcon_fac
          IF (cveri_flag) THEN
             WRITE(u_log,'(a,a)') "  C verify: ", TRIM(cveri_stat)
             WRITE(u_log,'(a,es17.8e3)') "    max = ", cveri_max
@@ -7470,6 +7471,8 @@ c-----------------------------------------------------------------------
       CHARACTER(8) :: smode
       CHARACTER(128) :: surf_file, int_file
       REAL(r8) :: dcon_fac
+      INTEGER :: ep_index
+      REAL(r8) :: ep_selected, ep_dcon
       REAL(r8), DIMENSION(:), ALLOCATABLE :: psi_int_pts, q2_vals_r
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: q2_vals, jqx_vals,
      $     pdiv_vals, total_vals
@@ -7527,6 +7530,13 @@ c-----------------------------------------------------------------------
       ENDDO
 
       dcon_fac = (mu0*2.0_r8) / psio**2 / (chi1*1.0e-3_r8)**2
+      ep_index = 1
+      IF (mode_flag) ep_index = mode
+      IF (ep_index < 1 .OR. ep_index > mpert) THEN
+         CALL gpec_stop("gpout_recon2 selected mode is out of range")
+      ENDIF
+      ep_selected = REAL(ep(ep_index))
+      ep_dcon = ep_selected * dcon_fac
       q2_hr = 0.0_r8
       jqx_hr = CMPLX(0.0_r8, 0.0_r8, r8)
       pdiv_hr = CMPLX(0.0_r8, 0.0_r8, r8)
@@ -7643,6 +7653,10 @@ c-----------------------------------------------------------------------
      $     REAL(dw_raw_hr)
       WRITE(*,'(a,es17.8e3)') "  dW_p(recon2-normalize)= ",
      $     REAL(dw_dcon_hr)
+      WRITE(*,'(a,a,a,es17.8e3)') "  GPEC ep(", TRIM(smode), ") = ",
+     $     ep_selected
+      WRITE(*,'(a,a,a,es17.8e3)') "  DCON ep(", TRIM(smode), ") = ",
+     $     ep_dcon
 
       IF (recon_out) THEN
          OPEN(UNIT=u_log, FILE="gpec.log", STATUS="UNKNOWN",
@@ -7661,6 +7675,10 @@ c-----------------------------------------------------------------------
      $        REAL(dw_raw_hr)
          WRITE(u_log,'(a,es17.8e3)') "  dW_p(recon2-normalize)= ",
      $        REAL(dw_dcon_hr)
+         WRITE(u_log,'(a,a,a,es17.8e3)') "  GPEC ep(", TRIM(smode),
+     $        ") = ", ep_selected
+         WRITE(u_log,'(a,a,a,es17.8e3)') "  DCON ep(", TRIM(smode),
+     $        ") = ", ep_dcon
          WRITE(u_log,*)
          CLOSE(u_log)
       ENDIF
@@ -7677,5 +7695,297 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_recon2
+c-----------------------------------------------------------------------
+c     subprogram 23. gpout_recon3
+c     Bernstein |C|^2 decomposition diagnostic.
+c     |C|^2 = |Q|^2 + 2 Re(V*.Q) + |V|^2 with V = xi_n mu0 j x n_hat.
+c     j is tangent to the flux surface (j.n=0) so
+c     |V|^2 = mu0^2 xi_n^2 |j|^2 = mu0^2 xi_n^2 (sigma^2 B^2
+c           + p'^2 |grad psi|^2 / B^2).
+c     This routine writes ABS decomposition pieces:
+c         A     = int J |Q|^2 / mu0              (perturbed B energy)
+c         Cpar  = int J mu0 sigma^2 B^2 xi_n^2   (parallel current^2)
+c         Iperp = int J mu0 p'^2 |grad psi|^2 xi_n^2 / B^2  (perp current^2)
+c         epf   = int J |C|^2 / mu0              (already in recon1)
+c     and derives B = epf - A - Cpar - Iperp.
+c     Diagnostic: Cpar should equal dst2 (K_2 xi_n^2) from recon1
+c     pointwise and integrated, since both express mu0 sigma^2 B^2 xi_n^2.
+c-----------------------------------------------------------------------
+      SUBROUTINE gpout_recon3(mode, xspmn)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: mode
+      COMPLEX(r8), DIMENSION(:), INTENT(IN) :: xspmn
+
+      INTEGER :: ipsi, itheta, usurf, u_int, u_log
+      INTEGER :: istep, nint_pts, iint
+      REAL(r8) :: psi, dpsi_local
+      REAL(r8) :: A_hr, B_hr, Iperp_hr, Cpar_hr, epf_hr
+      REAL(r8) :: A_total, B_total, Iperp_total, Cpar_total, epf_total
+      REAL(r8) :: dst1_total, dst3_total
+      REAL(r8) :: identity_residual
+      REAL(r8) :: dw_raw3, dw_dcon3, ep_selected, ep_dcon
+      INTEGER :: ep_index
+      COMPLEX(r8) :: dst_int_c, dst1_c, dst2_c, dst3_c
+      REAL(r8), DIMENSION(0:mthsurf) :: rvals, zvals
+      REAL(r8), DIMENSION(0:mthsurf) :: A_fun, B_fun, Iperp_fun
+      REAL(r8), DIMENSION(0:mthsurf) :: Cpar_fun
+      REAL(r8), DIMENSION(0:mthsurf,22) :: surf_extra
+      INTEGER :: kcol
+      CHARACTER(8) :: smode
+      CHARACTER(128) :: surf_file, int_file
+      REAL(r8) :: dcon_fac
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: psi_int_pts
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: A_vals, B_vals,
+     $     Iperp_vals, Cpar_vals, epf_vals, dst1_vals, dst3_vals
+      TYPE(cspline_type) :: recon3_spl
+
+      IF(verbose) WRITE(*,*)""
+      IF(verbose) WRITE(*,*)"GPOUT_RECON3: Bernstein |C|^2 decomp"
+      IF(verbose) WRITE(*,*)"__________________________________________"
+
+      WRITE(smode,'(I8)') mode
+      smode = ADJUSTL(smode)
+      surf_file = "gpec_recon3_terms_sol"//TRIM(smode)//".out"
+      int_file = "gpec_recon3_integration_sol"//TRIM(smode)//".out"
+      usurf = 97
+      u_int = 98
+      u_log = 99
+
+      IF (recon_out) THEN
+         OPEN(UNIT=usurf, FILE=surf_file, STATUS="UNKNOWN")
+         OPEN(UNIT=u_int, FILE=int_file, STATUS="UNKNOWN")
+         WRITE(usurf,'(30(1x,a16))')
+     $        "psi","theta","r","z","A_den","B_den","Iperp_den",
+     $        "Cpar_den","VdotQ_re","VdotQ_im","Bcur_den","Bpre_den",
+     $        "Qp_re","Qp_im","Qt_re","Qt_im","Qz_re","Qz_im",
+     $        "Vt_re","Vt_im","Vz_re","Vz_im","jpar","jperp",
+     $        "xin_re","xin_im","delpsi","Bmod","dst1_den","dst3_den"
+         WRITE(u_int,'(12(1x,a16))')
+     $        "psi","A","B","Iperp","Cpar","epf","A_cum","B_cum",
+     $        "Iperp_cum","Cpar_cum","epf_cum","identity_res"
+      ENDIF
+
+      CALL idcon_build(mode, xspmn)
+      CALL gpeq_alloc
+
+      DO ipsi = 0, mpsi
+         psi = rzphi%xs(ipsi)
+         IF (psi > psilim) EXIT
+         CALL gpeq_recon3(psi, A_hr, B_hr, Iperp_hr, Cpar_hr, epf_hr,
+     $        A_fun, B_fun, Iperp_fun, Cpar_fun, surf_extra)
+         IF (recon_out) THEN
+            DO itheta = 0, mthsurf
+               CALL bicube_eval(rzphi, psi, theta(itheta), 1)
+               rfac = SQRT(rzphi%f(1))
+               eta = twopi*(theta(itheta) + rzphi%f(2))
+               rvals(itheta) = ro + rfac*COS(eta)
+               zvals(itheta) = zo + rfac*SIN(eta)
+               WRITE(usurf,'(30(es17.8e3))') psi, theta(itheta),
+     $              rvals(itheta), zvals(itheta), A_fun(itheta),
+     $              B_fun(itheta), Iperp_fun(itheta), Cpar_fun(itheta),
+     $              (surf_extra(itheta,kcol), kcol=1,22)
+            ENDDO
+            WRITE(usurf,*)
+         ENDIF
+      ENDDO
+
+      dcon_fac = (mu0*2.0_r8) / psio**2 / (chi1*1.0e-3_r8)**2
+
+      nint_pts = 0
+      DO istep = 0, mstep
+         IF (psifac(istep) < rzphi%xs(0)) CYCLE
+         IF (psifac(istep) > rzphi%xs(mpsi)) EXIT
+         nint_pts = nint_pts + 1
+      ENDDO
+      ALLOCATE(psi_int_pts(nint_pts), A_vals(nint_pts),
+     $   B_vals(nint_pts), Iperp_vals(nint_pts), Cpar_vals(nint_pts),
+     $   epf_vals(nint_pts), dst1_vals(nint_pts), dst3_vals(nint_pts))
+      iint = 0
+      DO istep = 0, mstep
+         psi = psifac(istep)
+         IF (psi < rzphi%xs(0)) CYCLE
+         IF (psi > rzphi%xs(mpsi)) EXIT
+         CALL gpeq_recon3(psi, A_hr, B_hr, Iperp_hr, Cpar_hr, epf_hr)
+c        dst1 (=K1 xi_n^2) and dst3 (=K3 xi_n^2) for the C-free dW form
+c        2 dW_p = A + B + Iperp - dst1 - dst3 (dst2 = Cpar cancels).
+         CALL gpeq_dst(psi, dst_int_c, dst1_c, dst2_c, dst3_c)
+         iint = iint + 1
+         psi_int_pts(iint) = psi
+         A_vals(iint) = A_hr
+         B_vals(iint) = B_hr
+         Iperp_vals(iint) = Iperp_hr
+         Cpar_vals(iint) = Cpar_hr
+         epf_vals(iint) = epf_hr
+         dst1_vals(iint) = REAL(dst1_c, r8)
+         dst3_vals(iint) = REAL(dst3_c, r8)
+      ENDDO
+
+      IF (recon_out) THEN
+         WRITE(u_int,'(a)') "c  Bernstein |C|^2 decomposition (direct)"
+         WRITE(u_int,'(a)') "c  identity: epf = A + B + Cpar + Iperp"
+         WRITE(u_int,'(a)') "c  identity_res = epf - A - B - Cpar"//
+     $        " - Iperp (should be near zero)"
+         WRITE(u_int,'(a)') "c  Cpar should equal dst2 from recon1"
+         WRITE(u_int,'(a,a)') "c  recon_int = ", TRIM(recon_int)
+      ENDIF
+
+      A_total = 0.0_r8
+      B_total = 0.0_r8
+      Iperp_total = 0.0_r8
+      Cpar_total = 0.0_r8
+      epf_total = 0.0_r8
+      dst1_total = 0.0_r8
+      dst3_total = 0.0_r8
+
+      IF (TRIM(recon_int) == "spline" .AND. nint_pts > 1) THEN
+         CALL cspline_alloc(recon3_spl, nint_pts-1, 7)
+         recon3_spl%xs = psi_int_pts
+         recon3_spl%fs(:,1) = CMPLX(A_vals, 0.0_r8, r8)
+         recon3_spl%fs(:,2) = CMPLX(B_vals, 0.0_r8, r8)
+         recon3_spl%fs(:,3) = CMPLX(Iperp_vals, 0.0_r8, r8)
+         recon3_spl%fs(:,4) = CMPLX(Cpar_vals, 0.0_r8, r8)
+         recon3_spl%fs(:,5) = CMPLX(epf_vals, 0.0_r8, r8)
+         recon3_spl%fs(:,6) = CMPLX(dst1_vals, 0.0_r8, r8)
+         recon3_spl%fs(:,7) = CMPLX(dst3_vals, 0.0_r8, r8)
+         CALL cspline_fit(recon3_spl, "extrap")
+         CALL cspline_int(recon3_spl)
+         DO iint = 1, nint_pts
+            A_total = REAL(recon3_spl%fsi(iint-1,1), r8)
+            B_total = REAL(recon3_spl%fsi(iint-1,2), r8)
+            Iperp_total = REAL(recon3_spl%fsi(iint-1,3), r8)
+            Cpar_total = REAL(recon3_spl%fsi(iint-1,4), r8)
+            epf_total = REAL(recon3_spl%fsi(iint-1,5), r8)
+            dst1_total = REAL(recon3_spl%fsi(iint-1,6), r8)
+            dst3_total = REAL(recon3_spl%fsi(iint-1,7), r8)
+            identity_residual = epf_total - A_total - B_total -
+     $           Cpar_total - Iperp_total
+            IF (recon_out) WRITE(u_int,'(12(es17.8e3))')
+     $         psi_int_pts(iint), A_vals(iint), B_vals(iint),
+     $         Iperp_vals(iint), Cpar_vals(iint), epf_vals(iint),
+     $         A_total, B_total, Iperp_total, Cpar_total, epf_total,
+     $         identity_residual
+         ENDDO
+         CALL cspline_dealloc(recon3_spl)
+      ELSE
+         DO iint = 1, nint_pts
+            IF (iint > 1) THEN
+               dpsi_local = psi_int_pts(iint) - psi_int_pts(iint-1)
+               A_total = A_total + (A_vals(iint-1)+A_vals(iint)) *
+     $              dpsi_local / 2.0_r8
+               B_total = B_total + (B_vals(iint-1)+B_vals(iint)) *
+     $              dpsi_local / 2.0_r8
+               Iperp_total = Iperp_total + (Iperp_vals(iint-1) +
+     $              Iperp_vals(iint)) * dpsi_local / 2.0_r8
+               Cpar_total = Cpar_total + (Cpar_vals(iint-1) +
+     $              Cpar_vals(iint)) * dpsi_local / 2.0_r8
+               epf_total = epf_total + (epf_vals(iint-1) +
+     $              epf_vals(iint)) * dpsi_local / 2.0_r8
+               dst1_total = dst1_total + (dst1_vals(iint-1) +
+     $              dst1_vals(iint)) * dpsi_local / 2.0_r8
+               dst3_total = dst3_total + (dst3_vals(iint-1) +
+     $              dst3_vals(iint)) * dpsi_local / 2.0_r8
+            ENDIF
+            identity_residual = epf_total - A_total - B_total -
+     $           Cpar_total - Iperp_total
+            IF (recon_out) WRITE(u_int,'(12(es17.8e3))')
+     $         psi_int_pts(iint), A_vals(iint), B_vals(iint),
+     $         Iperp_vals(iint), Cpar_vals(iint), epf_vals(iint),
+     $         A_total, B_total, Iperp_total, Cpar_total, epf_total,
+     $         identity_residual
+         ENDDO
+      ENDIF
+
+      identity_residual = epf_total - A_total - B_total - Cpar_total
+     $     - Iperp_total
+
+c     C-free reconstructed dW_p: 2 dW = A + B + Iperp - dst1 - dst3
+c     (the parallel-current piece dst2 = Cpar cancels identically).
+      dw_raw3 = 0.5_r8 * (A_total + B_total + Iperp_total
+     $     - dst1_total - dst3_total)
+      dw_dcon3 = dw_raw3 * dcon_fac
+      ep_index = 1
+      IF (mode_flag) ep_index = mode
+      IF (ep_index < 1 .OR. ep_index > mpert) THEN
+         CALL gpec_stop("gpout_recon3 selected mode is out of range")
+      ENDIF
+      ep_selected = REAL(ep(ep_index))
+      ep_dcon = ep_selected * dcon_fac
+
+      IF (recon_out) THEN
+         WRITE(u_int,*)
+         WRITE(u_int,'(a)') "c  Final |C|^2 decomposition totals:"
+         WRITE(u_int,'(a)') "c    A_total    = int J |Q|^2 / mu0"
+         WRITE(u_int,'(a)') "c    B_total    = int J 2 Re(V*.Q) / mu0"
+         WRITE(u_int,'(a)') "c    Cpar_total = int J mu0 sigma^2 B^2"//
+     $        " xi_n^2"
+         WRITE(u_int,'(a)') "c    Iperp_total= int J mu0 p'^2 |gp|^2"//
+     $        " xi_n^2 / B^2"
+         WRITE(u_int,'(a)') "c    epf_total  = int J |C|^2 / mu0"
+         WRITE(u_int,'(a)') "c    identity_res = epf - (A+B+Cpar+Iperp)"
+         WRITE(u_int,'(es17.8e3)') A_total
+         WRITE(u_int,'(es17.8e3)') B_total
+         WRITE(u_int,'(es17.8e3)') Cpar_total
+         WRITE(u_int,'(es17.8e3)') Iperp_total
+         WRITE(u_int,'(es17.8e3)') epf_total
+         WRITE(u_int,'(es17.8e3)') identity_residual
+      ENDIF
+
+      WRITE(*,'(a)') "GPEC_RECON3 |C|^2 decomposition totals:"
+      WRITE(*,'(a,es17.8e3)') "  A_total       = ", A_total
+      WRITE(*,'(a,es17.8e3)') "  B_total       = ", B_total
+      WRITE(*,'(a,es17.8e3)') "  Cpar_total    = ", Cpar_total
+      WRITE(*,'(a,es17.8e3)') "  Iperp_total   = ", Iperp_total
+      WRITE(*,'(a,es17.8e3)') "  epf_total     = ", epf_total
+      WRITE(*,'(a,es17.8e3)') "  identity_res  = ", identity_residual
+      WRITE(*,'(a)') "  (identity_res should be ~ 0; Cpar = dst2.)"
+      WRITE(*,'(a,es17.8e3)') "  dW_p(recon3)         = ", dw_raw3
+      WRITE(*,'(a,es17.8e3)') "  dW_p(recon3-normalize)= ", dw_dcon3
+      WRITE(*,'(a,a,a,es17.8e3)') "  GPEC ep(", TRIM(smode), ") = ",
+     $     ep_selected
+      WRITE(*,'(a,a,a,es17.8e3)') "  DCON ep(", TRIM(smode), ") = ",
+     $     ep_dcon
+
+      IF (recon_out) THEN
+         OPEN(UNIT=u_log, FILE="gpec.log", STATUS="UNKNOWN",
+     $        POSITION="APPEND")
+         WRITE(u_log,'(a)') "GPEC_RECON3 final results:"
+         WRITE(u_log,'(a,I8)') "  mode = ", mode
+         WRITE(u_log,'(a,L1)') "  reg_flag = ", reg_flag
+         WRITE(u_log,'(a)') "  Bernstein |C|^2 decomposition:"
+         WRITE(u_log,'(a,es17.8e3)') "    A_total      = ", A_total
+         WRITE(u_log,'(a,es17.8e3)') "    B_total      = ", B_total
+         WRITE(u_log,'(a,es17.8e3)') "    Cpar_total   = ", Cpar_total
+         WRITE(u_log,'(a,es17.8e3)') "    Iperp_total  = ", Iperp_total
+         WRITE(u_log,'(a,es17.8e3)') "    epf_total    = ", epf_total
+         WRITE(u_log,'(a,es17.8e3)') "    identity_res = ",
+     $        identity_residual
+         WRITE(u_log,'(a)') "  (identity_res should be ~0;"//
+     $        " Cpar should match dst2 from recon1.)"
+         WRITE(u_log,'(a,es17.8e3)') "  dW_p(recon3)         = ",
+     $        dw_raw3
+         WRITE(u_log,'(a,es17.8e3)') "  dW_p(recon3-normalize)= ",
+     $        dw_dcon3
+         WRITE(u_log,'(a,a,a,es17.8e3)') "  GPEC ep(", TRIM(smode),
+     $        ") = ", ep_selected
+         WRITE(u_log,'(a,a,a,es17.8e3)') "  DCON ep(", TRIM(smode),
+     $        ") = ", ep_dcon
+         WRITE(u_log,*)
+         CLOSE(u_log)
+      ENDIF
+
+      DEALLOCATE(psi_int_pts, A_vals, B_vals, Iperp_vals, Cpar_vals,
+     $     epf_vals, dst1_vals, dst3_vals)
+      CALL gpeq_dealloc
+      IF (recon_out) THEN
+         CLOSE(usurf)
+         CLOSE(u_int)
+      ENDIF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpout_recon3
 
       END MODULE gpout_mod
