@@ -1871,7 +1871,7 @@ c-----------------------------------------------------------------------
             ! True shear s=(r/q)*dq/dr via rhotor Jacobian
             slayer_shear=(sr%f(1)/sq%f(4))*sq%f1(4)/sr%f1(1)
             ! per-surface Prandtl from profile array (ordered by
-            ! ascending q); negative entry falls back to scalar inpr
+            ! ascending q); non-positive entry falls back to scalar inpr
             IF (ising <= 20) THEN
                IF (slayer_inpr_prof(ising) > 0.0_r8) THEN
                   slayer_inpr_loc = slayer_inpr_prof(ising)
