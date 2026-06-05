@@ -6882,7 +6882,10 @@ c-----------------------------------------------------------------------
       
       INTEGER :: ipsi, itheta, ipert, ushear_fun, ucurv, uk, ucveri,
      $     uk_sigma, ucw_fun, ucw_mn, ucv_fun, ucv_mn, ucv2_fun,
-     $     ucv2_mn, u_int, u_log
+     $     ucv2_mn, u_int, u_log, u_terms
+      REAL(r8), DIMENSION(0:mthsurf) :: epf_den_fun, epf_p_fun,
+     $     epf_t_fun, epf_z_fun, dst1_den_fun, dst2_den_fun,
+     $     dst3_den_fun
       REAL(r8) :: psi, eta, rfac
       REAL(r8), DIMENSION(0:mthsurf) :: rvals, zvals
       REAL(r8) :: epf_int, epf_p_int, epf_t_int, epf_z_int
@@ -6898,7 +6901,7 @@ c-----------------------------------------------------------------------
       CHARACTER(128) :: shear_fun_file, curv_file, cveri_file
       CHARACTER(128) :: k_file, k_sigma_file
       CHARACTER(128) :: cw_fun_file, cw_mn_file, cv_fun_file, cv_mn_file
-      CHARACTER(128) :: cv2_fun_file, cv2_mn_file, int_file
+      CHARACTER(128) :: cv2_fun_file, cv2_mn_file, int_file, terms_file
       REAL(r8) :: dpsi_local
       INTEGER :: istep, nint_pts, iint, ep_index
       REAL(r8) :: psi_prev, psi_curr, epf_prev, epf_curr, ep_selected
@@ -6959,6 +6962,7 @@ c-----------------------------------------------------------------------
       cv2_fun_file = "gpec_recon_cv2fun_sol"//TRIM(smode)//".out"
       cv2_mn_file = "gpec_recon_cv2mn_sol"//TRIM(smode)//".out"
       int_file = "gpec_recon_integration_sol"//TRIM(smode)//".out"
+      terms_file = "gpec_recon_terms_sol"//TRIM(smode)//".out"
 
       ushear_fun = 82
       ucurv = 72
@@ -6973,6 +6977,7 @@ c-----------------------------------------------------------------------
       ucv2_mn = 91
       u_int = 92
       u_log = 93
+      u_terms = 94
 
       IF (recon_out) THEN
          OPEN(UNIT=ushear_fun, FILE=shear_fun_file, STATUS="UNKNOWN")
@@ -6989,6 +6994,7 @@ c-----------------------------------------------------------------------
          CALL ascii_open(ucv2_fun, cv2_fun_file, "UNKNOWN")
          CALL ascii_open(ucv2_mn, cv2_mn_file, "UNKNOWN")
          OPEN(UNIT=u_int, FILE=int_file, STATUS="UNKNOWN")
+         OPEN(UNIT=u_terms, FILE=terms_file, STATUS="UNKNOWN")
          WRITE(ushear_fun,'(6(1x,a16))')
      $        "psi","theta","r","z","shear_re","shear_im"
          WRITE(ucurv,'(6(1x,a16))')
@@ -7024,6 +7030,10 @@ c-----------------------------------------------------------------------
      $        "c2_mu0_sum","k_xin2_c_re","k_xin2_c_im",
      $        "dw_c_re","dw_c_im","c2_psi","c2_theta","c2_zeta",
      $        "k1_xin2_re","k2_xin2_re","k3_xin2_re"
+         WRITE(u_terms,'(11(1x,a16))')
+     $        "psi","theta","r","z","c2_den","c2_psi_den",
+     $        "c2_theta_den","c2_zeta_den","dst1_den","dst2_den",
+     $        "dst3_den"
       ENDIF
       ep_index = 1
       IF (mode_flag) ep_index = mode
@@ -7050,7 +7060,9 @@ c-----------------------------------------------------------------------
 c        Compute the J|C|^2/mu0 state once so C fields below use
 c        the current psi. This keeps the psi-local reconstruction path
 c        identical to the original logic.
-         CALL gpeq_epf(psi, epf_int)
+         CALL gpeq_epf(psi, epf_int, epf_den_fun=epf_den_fun,
+     $        epf_p_fun=epf_p_fun, epf_t_fun=epf_t_fun,
+     $        epf_z_fun=epf_z_fun)
 
 c        Reconstruct detailed K diagnostics for output. Keep this on
 c        the original path so recon terminal totals remain unchanged.
@@ -7081,6 +7093,9 @@ c        full equilibrium/C reconstruction a second time at each psi.
          IF (recon_out) THEN
 c           Store spatial values with coordinates only when recon file
 c           output is requested.
+c           K_i xi_n^2 per-theta densities for the recon terms file.
+            CALL gpeq_dst(psi, dst_int, dst1_den_fun=dst1_den_fun,
+     $           dst2_den_fun=dst2_den_fun, dst3_den_fun=dst3_den_fun)
             DO itheta = 0, mthsurf
                CALL bicube_eval(rzphi, psi, theta(itheta), 1)
                rfac = SQRT(rzphi%f(1))
@@ -7088,6 +7103,11 @@ c           output is requested.
                rvals(itheta) = ro + rfac*COS(eta)
                zvals(itheta) = zo + rfac*SIN(eta)
 
+               WRITE(u_terms,'(11(es17.8e3))') psi, theta(itheta),
+     $              rvals(itheta), zvals(itheta), epf_den_fun(itheta),
+     $              epf_p_fun(itheta), epf_t_fun(itheta),
+     $              epf_z_fun(itheta), dst1_den_fun(itheta),
+     $              dst2_den_fun(itheta), dst3_den_fun(itheta)
                WRITE(ushear_fun,'(6(es17.8e3))') psi, theta(itheta),
      $              rvals(itheta), zvals(itheta),
      $              REAL(shear_fun(itheta)), AIMAG(shear_fun(itheta))
@@ -7107,6 +7127,7 @@ c           output is requested.
      $              jdotb_vals(itheta), K_term2(itheta),
      $              mu0 * sigma_vals(itheta) * jdotb_vals(itheta)
             ENDDO
+            WRITE(u_terms,*)
             WRITE(ushear_fun,*)
             WRITE(ucurv,*)
             IF (cveri_flag) WRITE(ucveri,*)
@@ -7430,6 +7451,7 @@ c-----------------------------------------------------------------------
          CLOSE(uk)
          CLOSE(uk_sigma)
          CLOSE(u_int)
+         CLOSE(u_terms)
          CALL ascii_close(ucw_fun)
          CALL ascii_close(ucw_mn)
          CALL ascii_close(ucv_fun)

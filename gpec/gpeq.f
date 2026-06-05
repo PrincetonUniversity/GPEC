@@ -1070,18 +1070,23 @@ c        \int dtheta dzeta J |C|^2 / mu0
 c
 c     and return the theta/zeta integrated value for one psi.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpeq_epf(psi, epf_int, epf_p, epf_t, epf_z)
+      SUBROUTINE gpeq_epf(psi, epf_int, epf_p, epf_t, epf_z,
+     $     epf_den_fun, epf_p_fun, epf_t_fun, epf_z_fun)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psi
       REAL(r8), INTENT(OUT) :: epf_int
       REAL(r8), OPTIONAL, INTENT(OUT) :: epf_p, epf_t, epf_z
+c     optional per-theta C^2/mu0 densities for R-Z heatmaps. Same
+c     convention as gpeq_recon3 epf_density: integral = sum den*jac/mth.
+      REAL(r8), DIMENSION(0:mthsurf), OPTIONAL, INTENT(OUT) ::
+     $     epf_den_fun, epf_p_fun, epf_t_fun, epf_z_fun
       INTEGER :: itheta
       COMPLEX(r8), DIMENSION(0:mthsurf) :: cwp_fun, cwt_fun, cwz_fun
       COMPLEX(r8), DIMENSION(0:mthsurf) :: cvp_fun, cvt_fun, cvz_fun
       REAL(r8) :: epf_psi_int, epf_theta_int, epf_zeta_int
-      REAL(r8) :: epf_fac
+      REAL(r8) :: dpsi_d, dthe_d, dzet_d
       
       IF(debug_flag) PRINT *, "Entering gpeq_epf"
 c-----------------------------------------------------------------------
@@ -1104,16 +1109,26 @@ c-----------------------------------------------------------------------
       epf_psi_int = 0.0_r8
       epf_theta_int = 0.0_r8
       epf_zeta_int = 0.0_r8
-      DO itheta = 0, mthsurf-1
+      DO itheta = 0, mthsurf
          CALL bicube_eval(rzphi, psi, theta(itheta), 0)
          jac = rzphi%f(4)
-         epf_fac = jac / (mu0 * REAL(mthsurf, r8))
-         epf_psi_int = epf_psi_int + epf_fac *
-     $        REAL(CONJG(cwp_fun(itheta)/jac) * cvp_fun(itheta), r8)
-         epf_theta_int = epf_theta_int + epf_fac *
-     $        REAL(CONJG(cwt_fun(itheta)/jac) * cvt_fun(itheta), r8)
-         epf_zeta_int = epf_zeta_int + epf_fac *
-     $        REAL(CONJG(cwz_fun(itheta)/jac) * cvz_fun(itheta), r8)
+c        per-theta densities (Re(conjg(cw_i) cv_i)/(mu0 jac)).
+         dpsi_d = REAL(CONJG(cwp_fun(itheta)) * cvp_fun(itheta), r8)
+     $        / (mu0 * jac)
+         dthe_d = REAL(CONJG(cwt_fun(itheta)) * cvt_fun(itheta), r8)
+     $        / (mu0 * jac)
+         dzet_d = REAL(CONJG(cwz_fun(itheta)) * cvz_fun(itheta), r8)
+     $        / (mu0 * jac)
+         IF (PRESENT(epf_p_fun)) epf_p_fun(itheta) = dpsi_d
+         IF (PRESENT(epf_t_fun)) epf_t_fun(itheta) = dthe_d
+         IF (PRESENT(epf_z_fun)) epf_z_fun(itheta) = dzet_d
+         IF (PRESENT(epf_den_fun)) epf_den_fun(itheta) =
+     $        dpsi_d + dthe_d + dzet_d
+         IF (itheta < mthsurf) THEN
+            epf_psi_int = epf_psi_int + dpsi_d*jac/REAL(mthsurf, r8)
+            epf_theta_int = epf_theta_int + dthe_d*jac/REAL(mthsurf, r8)
+            epf_zeta_int = epf_zeta_int + dzet_d*jac/REAL(mthsurf, r8)
+         ENDIF
       ENDDO
       epf_int = epf_psi_int + epf_theta_int + epf_zeta_int
       IF (PRESENT(epf_p)) epf_p = epf_psi_int
@@ -1134,14 +1149,19 @@ c        \int dtheta dzeta J * K * xi_n^2
 c
 c     and return the theta/zeta integrated value for one psi.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpeq_dst(psi, dst_int, dst_t1, dst_t2, dst_t3)
+      SUBROUTINE gpeq_dst(psi, dst_int, dst_t1, dst_t2, dst_t3,
+     $     dst1_den_fun, dst2_den_fun, dst3_den_fun)
       REAL(r8), INTENT(IN) :: psi
       COMPLEX(r8), INTENT(OUT) :: dst_int
       COMPLEX(r8), OPTIONAL, INTENT(OUT) :: dst_t1, dst_t2, dst_t3
+c     optional per-theta K_i xi_n^2 densities for R-Z heatmaps. Same
+c     convention as gpeq_recon3: integral = sum den*jac/mthsurf.
+      REAL(r8), DIMENSION(0:mthsurf), OPTIONAL, INTENT(OUT) ::
+     $     dst1_den_fun, dst2_den_fun, dst3_den_fun
       INTEGER :: itheta
       COMPLEX(r8), DIMENSION(0:mthsurf) :: K_fun, xno_fun
       REAL(r8), DIMENSION(0:mthsurf) :: K_term1, K_term2, K_term3
-      REAL(r8) :: xin2_fac
+      REAL(r8) :: xin2_fac, xin2_loc, d1, d2, d3
       COMPLEX(r8) :: dst1_int, dst2_int, dst3_int
 
 c-----------------------------------------------------------------------
@@ -1157,17 +1177,22 @@ c-----------------------------------------------------------------------
       dst1_int = CMPLX(0.0_r8, 0.0_r8, r8)
       dst2_int = CMPLX(0.0_r8, 0.0_r8, r8)
       dst3_int = CMPLX(0.0_r8, 0.0_r8, r8)
-      DO itheta = 0, mthsurf-1
+      DO itheta = 0, mthsurf
          CALL bicube_eval(rzphi, psi, theta(itheta), 0)
          jac = rzphi%f(4)
-         xin2_fac = jac * ABS(xno_fun(itheta))**2 /
-     $        REAL(mthsurf, r8)
-         dst1_int = dst1_int + CMPLX(K_term1(itheta) * xin2_fac,
-     $        0.0_r8, r8)
-         dst2_int = dst2_int + CMPLX(K_term2(itheta) * xin2_fac,
-     $        0.0_r8, r8)
-         dst3_int = dst3_int + CMPLX(K_term3(itheta) * xin2_fac,
-     $        0.0_r8, r8)
+         xin2_loc = ABS(xno_fun(itheta))**2
+         d1 = K_term1(itheta) * xin2_loc
+         d2 = K_term2(itheta) * xin2_loc
+         d3 = K_term3(itheta) * xin2_loc
+         IF (PRESENT(dst1_den_fun)) dst1_den_fun(itheta) = d1
+         IF (PRESENT(dst2_den_fun)) dst2_den_fun(itheta) = d2
+         IF (PRESENT(dst3_den_fun)) dst3_den_fun(itheta) = d3
+         IF (itheta < mthsurf) THEN
+            xin2_fac = jac / REAL(mthsurf, r8)
+            dst1_int = dst1_int + CMPLX(d1 * xin2_fac, 0.0_r8, r8)
+            dst2_int = dst2_int + CMPLX(d2 * xin2_fac, 0.0_r8, r8)
+            dst3_int = dst3_int + CMPLX(d3 * xin2_fac, 0.0_r8, r8)
+         ENDIF
       ENDDO
       dst_int = dst1_int + dst2_int + dst3_int
       IF (PRESENT(dst_t1)) dst_t1 = dst1_int
