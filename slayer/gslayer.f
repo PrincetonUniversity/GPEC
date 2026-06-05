@@ -36,7 +36,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: inQ,inQ_e,inQ_i,inpe,inc_beta,inds,intau,inlu
       REAL(r8) :: mrs,nrs,rho,b_l,v_a,Qconv,Q0,delta_n_p,
      $            lbeta,tau_i,tau_h,tau_r,tau_v
-      REAL(r8) :: inQ_min,inQ_max,Q_sol
+      REAL(r8) :: inQ_min,inQ_max,Q_sol,maxbal
       
       REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs,jxbl,bal
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: deltal
@@ -157,11 +157,26 @@ c-----------------------------------------------------------------------
          CLOSE(out_unit)
       ENDIF
 
-      ! Identify the threshold from the maximum of the balance parameter
-      index=MAXLOC(bal,MASK=bal==bal)
+      ! Identify the threshold from the maximum of the balance
+      ! parameter. Exclude non-finite entries (NaN from 0/0 or Inf
+      ! from a near-zero jxbl at a sign crossing) so they cannot
+      ! corrupt the location or value of the maximum.
+      index=MAXLOC(bal,MASK=(bal==bal .AND. ABS(bal)<HUGE(bal)))
       Q_sol=inQs(index(1))
       omega_sol=inQs(index(1))/Qconv
-      br_th=sqrt(MAXVAL(bal,MASK=bal==bal)/lu*(sval**2.0/2.0))
+      maxbal=MAXVAL(bal,MASK=(bal==bal .AND. ABS(bal)<HUGE(bal)))
+      ! The torque-balance maximum can fall at or below zero for outer
+      ! surfaces with a weak locking nose; sqrt of a negative argument
+      ! would return NaN and poison b_crit/Phi_res_crit downstream.
+      ! Floor at zero (no finite penetration threshold) and warn.
+      IF (maxbal>0.0_r8) THEN
+         br_th=sqrt(maxbal/lu*(sval**2.0/2.0))
+      ELSE
+         br_th=0.0_r8
+         WRITE(*,'(1x,a,i0,a,i0,a)')
+     $      "!! WARNING: SLAYER torque balance has no positive "//
+     $      "maximum at m=",mms,", n=",nns,"; br_th set to 0"
+      ENDIF
       DEALLOCATE(inQs,deltal,jxbl,bal)
 
       RETURN
