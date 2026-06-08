@@ -98,7 +98,7 @@
 ../pentrc/inputs.o: ../equil/bicube.o ../equil/cspline.o ../equil/fspline.o ../equil/spline.o ../pentrc/dcon_interface.o ../pentrc/params.o ../pentrc/utilities.o
 ../pentrc/lsode1.o: ../equil/local.o
 ../pentrc/lsode2.o: ../equil/local.o
-../pentrc/params.o: ../equil/local.o
+../pentrc/params.o: ../equil/local.o ../pentrc/version.inc
 ../pentrc/pentrc.o: ../pentrc/pentrc_interface.o ../pentrc/utilities.o
 ../pentrc/pentrc_interface.o: ../equil/spline.o ../pentrc/dcon_interface.o ../pentrc/diagnostics.o ../pentrc/energy.o ../pentrc/inputs.o ../pentrc/params.o ../pentrc/pitch.o ../pentrc/special.o ../pentrc/torque.o ../pentrc/utilities.o
 ../pentrc/pitch.o: ../equil/bicube.o ../equil/cspline.o ../equil/spline.o ../pentrc/dcon_interface.o ../pentrc/energy.o ../pentrc/lsode1.o ../pentrc/params.o ../pentrc/special.o ../pentrc/utilities.o
@@ -123,7 +123,7 @@
 # RDCON
 ../rdcon/bal.o: ../rdcon/dcon_mod.o
 ../rdcon/dcon.o: ../equil/equil.o ../equil/equil_out.o ../rdcon/bal.o ../rdcon/free.o ../rdcon/gal.o ../rdcon/lib_interface.o ../rdcon/mercier.o ../rdcon/ode.o ../rdcon/resist.o
-../rdcon/dcon_mod.o: ../equil/equil.o ../equil/equil_out.o ../equil/global.o ../equil/spline.o
+../rdcon/dcon_mod.o: ../equil/equil.o ../equil/equil_out.o ../equil/global.o ../equil/spline.o ../rdcon/version.inc
 ../rdcon/debug.o: ../equil/local.o
 ../rdcon/fourfit.o: ../equil/fspline.o ../equil/global.o ../rdcon/dcon_mod.o ../rdcon/toolbox.o
 ../rdcon/free.o: ../rdcon/ode.o ../rdcon/rdcon_netcdf.o ../vacuum/vacuum_ma.o
@@ -140,7 +140,7 @@
 
 # STRIDE
 ../stride/bal.o: ../stride/dcon_mod.o
-../stride/dcon_mod.o: ../equil/equil.o ../equil/equil_out.o ../equil/global.o ../equil/spline.o
+../stride/dcon_mod.o: ../equil/equil.o ../equil/equil_out.o ../equil/global.o ../equil/spline.o ../stride/version.inc
 ../stride/debug.o: ../equil/local.o
 ../stride/fourfit.o: ../equil/fspline.o ../equil/global.o ../stride/dcon_mod.o
 ../stride/free.o: ../stride/ode.o ../stride/stride_netcdf.o ../vacuum/vacuum_ma.o
@@ -189,7 +189,7 @@
 ../slayer/slayer.o: ../slayer/delta.o ../slayer/params.o ../slayer/sglobal.o
 
 # COIL
-../coil/coil.o: ../equil/bicube.o ../equil/fspline.o
+../coil/coil.o: ../coil/version.inc ../equil/bicube.o ../equil/fspline.o
 ../coil/field.o: ../coil/coil.o
 
 # GPEC
@@ -197,7 +197,7 @@
 ../gpec/gpec.o: ../coil/coil.o ../gpec/gpdiag.o ../gpec/gpout.o ../gpec/rdcon.o
 ../gpec/gpeq.o: ../gpec/idcon.o
 ../gpec/gpglobal.o: ../equil/bicube.o ../equil/fspline.o ../equil/local.o
-../gpec/gpout.o: ../coil/field.o ../gpec/gpdiag.o ../gpec/gpresp.o ../gpec/gpvacuum.o ../gpec/idcon.o ../pentrc/inputs.o ../pentrc/pentrc_interface.o ../pentrc/utilities.o ../slayer/gslayer.o
+../gpec/gpout.o: ../coil/field.o ../gpec/gpdiag.o ../gpec/gpresp.o ../gpec/gpvacuum.o ../gpec/idcon.o ../gpec/version.inc ../pentrc/inputs.o ../pentrc/pentrc_interface.o ../pentrc/utilities.o ../slayer/gslayer.o
 ../gpec/gpresp.o: ../gpec/gpeq.o
 ../gpec/gpvacuum.o: ../gpec/gpeq.o ../vacuum/vacuum_ma.o
 ../gpec/idcon.o: ../gpec/gpglobal.o ../gpec/ismath.o ../vacuum/vacuum_ma.o

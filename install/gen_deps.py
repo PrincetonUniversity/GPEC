@@ -54,6 +54,14 @@ EXTERNAL_MODULES = {
     "openacc", "cudafor",
 }
 
+# Generated include files: a source INCLUDEs them, but they are produced by a
+# build rule (TARGETS.inc), so they do NOT exist in a clean checkout. The
+# generic include handling below requires the file on disk; for these we must
+# emit the dependency unconditionally, otherwise the .inc only appears when the
+# generator happens to run on an already-built tree, and a clean run (CI) drops
+# it -- causing parallel-build races (e.g. params.o before version.inc exists).
+GENERATED_INCLUDES = {"version.inc"}
+
 re_module  = re.compile(r"^\s*module\s+(\w+)", re.I)
 re_endmod  = re.compile(r"^\s*end\s*module", re.I)
 re_modproc = re.compile(r"^\s*module\s+procedure", re.I)
@@ -198,7 +206,9 @@ def main():
             for inc in info["incs"]:
                 incbase = os.path.basename(inc)
                 cand = os.path.join(REPO, d, incbase)
-                if os.path.exists(cand):
+                # Generated includes won't be on disk in a clean tree, so don't
+                # gate them on os.path.exists -- emit the same-dir dep directly.
+                if os.path.exists(cand) or incbase in GENERATED_INCLUDES:
                     dep = f"../{d}/{incbase}"
                     if dep != obj:
                         deps.add(dep)
