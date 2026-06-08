@@ -24,7 +24,7 @@ jobs:
           python-version: '3.x'
       - name: Regenerate dependency graph
         working-directory: install
-        run: python gen_deps.py > DEPENDENCIES.inc
+        run: python3 gen_deps.py > DEPENDENCIES.inc
       - name: Commit if the graph changed
         run: |
           if git diff --quiet -- install/DEPENDENCIES.inc; then
@@ -33,8 +33,11 @@ jobs:
             git config user.name  "gpec-deps-bot"
             git config user.email "actions@github.com"
             git commit -am "INSTALL - MINOR - regenerate install/DEPENDENCIES.inc"
-            git push
-            echo "DEPENDENCIES.inc was stale; committed the regenerated graph."
+            if git push; then
+              echo "DEPENDENCIES.inc was stale; committed the regenerated graph."
+            else
+              echo "::warning title=Stale DEPENDENCIES.inc::install/DEPENDENCIES.inc is out of date and could not be auto-updated (expected on fork PRs, which can't be pushed to). A maintainer should run 'make deps' in install/ and commit, or merge and fix on the next same-repo PR."
+            fi
           fi
 
   build-netcdf-gfortran:
