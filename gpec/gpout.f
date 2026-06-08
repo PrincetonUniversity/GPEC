@@ -1586,10 +1586,8 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(msing) :: b_crit, ti_r, te_r, ni_r, ne_r,
      $    q1_r, we_r, wi_r, rh_r, r1_r, dP_r, P_r
-      REAL(r8) :: omega_i,omega_e,jxb,omega_sol,br_th,
+      REAL(r8) :: omega_i,omega_e,jxb,omega_sol,br_th,slayer_shear,
      $     pleft, pright, psileft, psiright
-     $    q1_r, we_r, wi_r, rh_r, r1_r
-      REAL(r8) :: omega_i,omega_e,jxb,omega_sol,br_th,slayer_shear
       REAL(r8) :: slayer_inpr_loc
       COMPLEX(r8) :: delta_s,psi0
 
