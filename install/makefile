@@ -111,6 +111,25 @@ realclean: clean clear
 	if [ -f ../deps/src/netcdf-c/Makefile ]; then cd ../deps/src/netcdf-c && make clean; fi
 	if [ -f ../deps/src/netcdf-fortran/Makefile ]; then cd ../deps/src/netcdf-fortran && make clean; fi
 
+# Dependency graph (DEPENDENCIES.inc) maintenance.
+# Building GPEC never needs these -- DEPENDENCIES.inc is committed. They are
+# only for regenerating it when source USE/MODULE relationships change, and
+# require python3 (used by maintainers and the CI deps job, not end users).
+PYTHON ?= python3
+.PHONY: deps checkdeps
+deps:
+	$(PYTHON) gen_deps.py > DEPENDENCIES.inc
+checkdeps:
+	@$(PYTHON) gen_deps.py > .deps.check
+	@if diff -u DEPENDENCIES.inc .deps.check; then \
+		rm -f .deps.check; \
+		echo "DEPENDENCIES.inc is up to date"; \
+	else \
+		rm -f .deps.check; \
+		echo "ERROR: DEPENDENCIES.inc is stale -- run 'make deps' and commit"; \
+		exit 1; \
+	fi
+
 # Debug
 print-% : ; $(info $* is a $(flavor $*) variable set to [$($*)]) @true
 
