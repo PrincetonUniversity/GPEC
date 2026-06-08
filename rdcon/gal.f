@@ -89,6 +89,7 @@ c-----------------------------------------------------------------------
       INTEGER, PRIVATE :: jsing,np=3
       REAL(r8) :: dx0,dx1,dx2,pfac
       REAL(r8) :: gal_tol=1e-10
+      INTEGER  :: gnstep=5000
       LOGICAL :: gal_xmin_flag = .FALSE.
       REAL(r8), DIMENSION(0:2) :: gal_eps_xmin = (/1e-2,1e-6,5e-7/)
       TYPE(cell_type), POINTER, PRIVATE :: cell
@@ -775,7 +776,6 @@ c-----------------------------------------------------------------------
 
       LOGICAL, PARAMETER :: diagnose=.FALSE.
       CHARACTER(16) :: name
-      INTEGER :: nstep
       INTEGER :: neq,itol,itask,istate,iopt,lrw,liw,jac,mf,istep
       INTEGER, DIMENSION(:), ALLOCATABLE :: iwork
       REAL(r8) :: rtol,atol
@@ -797,7 +797,6 @@ c-----------------------------------------------------------------------
       iopt=1
       
       istep=0
-      nstep=5000
       rtol=gal_tol
       atol=gal_tol
 c-----------------------------------------------------------------------
@@ -857,13 +856,13 @@ c-----------------------------------------------------------------------
          dt=rwork(11)/dx
          IF(diagnose_lsode)
      $        CALL gal_lsode_diagnose(neq,istep,x0,x1,x,t,dt,u)
-         IF(ABS(t-1) < gal_tol .OR. istep >= nstep)EXIT
+         IF(ABS(t-1) < gal_tol .OR. istep >= gnstep)EXIT
          istep=istep+1
          CALL lsode(gal_lsode_der,neq,u,x,x1,itol,rtol,atol,
      $        itask,istate,iopt,rwork,lrw,iwork,liw,jac,mf)
       ENDDO
-      IF (istep >= nstep) THEN 
-         WRITE (*,*)"Warning: LSODE exceeds nstep."
+      IF (istep >= gnstep) THEN 
+         WRITE (*,*)"Warning: LSODE exceeds gnstep:",gnstep
          WRITE (*,*)"  ABS(t-1)=",ABS(t-1)," > gal_tol=",gal_tol
       ENDIF
       IF(cell%extra == "right")u=-u
@@ -1688,7 +1687,7 @@ c-----------------------------------------------------------------------
       NAMELIST/gal_input/nx,nq,dx0,dx1,dx2,pfac,diagnose_map,solver,
      $     diagnose_grid,diagnose_lsode,ndiagnose,diagnose_integrand,
      $     diagnose_mat,gal_tol,dx1dx2_flag,cutoff,prefac,dpsi_intvl,
-     $     dpsi1_intvl,gal_xmin_flag,gal_eps_xmin
+     $     dpsi1_intvl,gal_xmin_flag,gal_eps_xmin,gnstep
       NAMELIST /gal_output/interp_np,restore_uh,restore_us,
      $     restore_ul,bin_delmatch,out_galsol,bin_galsol,b_flag,
      $     bin_coilsol

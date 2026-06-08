@@ -73,7 +73,7 @@ c-----------------------------------------------------------------------
       eta= 1.65e-9*lnLamb/(t_e/1e3)**1.5 ! spitzer resistivity (wesson)
       rho=(mu_i*m_p)*n_e               ! mass density
 
-      b_l=(nrs/mrs)*nrs*sval*bt/R0     ! characteristic magnetic field
+      b_l=(nrs/mrs)*rs*sval*bt/R0      ! characteristic magnetic field
       v_a=b_l/(mu0*rho)**0.5           ! alfven velocity
       rho_s=1.02e-4*(mu_i*t_e)**0.5/bt ! ion Lamour by elec. Temp.
 
@@ -158,10 +158,10 @@ c-----------------------------------------------------------------------
       ENDIF
 
       ! Identify the threshold from the maximum of the balance parameter
-      index=MAXLOC(bal)
+      index=MAXLOC(bal,MASK=bal==bal)
       Q_sol=inQs(index(1))
       omega_sol=inQs(index(1))/Qconv
-      br_th=sqrt(MAXVAL(bal)/lu*(sval**2.0/2.0))
+      br_th=sqrt(MAXVAL(bal,MASK=bal==bal)/lu*(sval**2.0/2.0))
       DEALLOCATE(inQs,deltal,jxbl,bal)
 
       RETURN

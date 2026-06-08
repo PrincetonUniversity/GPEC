@@ -55,6 +55,8 @@
    singfld_flag=f           ! Output of resonant surface quantities (flux,current,etc.)
    vsingfld_flag=f          ! Output of vacuum resonant surface quantities
    singthresh_flag=f        ! Calculate SLAYRE and CALLEN's resonant field penetration threshold (requires kinetic profiles from pentrc.in)
+   singthresh_slayer_inpr=5.0 ! Scalar Prandtl number (viscosity) used by SLAYER for all rational surfaces
+   singthresh_slayer_inpr_prof=-1.0 ! Per-rational-surface Prandtl number profile, comma-separated and ordered by ascending q, up to 20 entries (e.g. singthresh_slayer_inpr_prof=3.0,5.0,8.0,12.0 for the q=2,3,4,5 surfaces). Any entry <= 0 falls back to the scalar singthresh_slayer_inpr
 
    pmodb_flag=f             ! Outputs delta-B_Lagrangian
    xbnormal_flag=t          ! Outputs normal displacement and field in plasma

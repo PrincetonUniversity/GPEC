@@ -9,6 +9,7 @@
 *.mod
 *.pyc
 *~
+*.i
 *.out
 *.bin
 *.nc
@@ -30,6 +31,12 @@ docs/_build/
 docs/examples/*/gal_solution.dat
 docs/examples/*/delta_gw.dat
 docs/examples/*/gal_solution_cut.dat
+
+deps/bin/*
+deps/hdf5
+deps/include/*
+deps/lib/*
+deps/share/*
 
 *version.inc
 

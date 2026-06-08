@@ -57,16 +57,15 @@ c-----------------------------------------------------------------------
 
       INTEGER :: i, ncid,
      $    i_dim, m_dim, mo_dim, p_dim, i_id, m_id, mo_id, p_id,
-     $    f_id, q_id, dv_id, mu_id, di_id, dr_id, ca_id,
+     $    f_id, q_id, dv_id, mu_id, di_id, dr_id, h_id, ca_id,
      $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id, wt0_id,
      $    l_dim, l_id, coil_dim, coil_id, dpc_id, dc_id,
      $    lp_dim, lp_id, r_dim, r_id, rp_dim, rp_id, pr_id, qr_id,
      $    dp_id, ap_id, bp_id, gp_id, dpp_id, lrc_dim, lrc_id
-      INTEGER :: hbs_id, ta_id, tr_id, ftr_id, muf_id, jbs_id, dnc_id,
+      INTEGER :: hbs_id, ta_id, tr_id, ftr_id, muf_id, dnc_id,
      $    wc_id, jp_id, b_id, bt_id, bpo_id, mir_id, mar_id, mair_id,
-     $    obr_id, ars_id, a1_id, a2_id, a3_id, a4_id, a5_id,
-     $    a6_id, a7_id, a14_id, a15_id, a16_id, a17_id, a18_id, a19_id
-
+     $    obr_id, ars_id, a1_id, a2_id, a3_id, a4_id, a5_id, a6_id,
+     $    a7_id, a14_id, a15_id, a16_id, a17_id, a18_id, a19_id, npsi_id
       REAL(r4) :: cpusec, wallsec
       CHARACTER(2) :: sn
       CHARACTER(64) :: ncfile
@@ -129,6 +128,9 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_att(ncid,nf90_global,'betap3', betap3))
       CALL check( nf90_put_att(ncid,nf90_global,'betat', betat))
       CALL check( nf90_put_att(ncid,nf90_global,'betan', betan))
+      CALL check( nf90_put_att(ncid,nf90_global,'volume', volume))
+      CALL check( nf90_put_att(ncid,nf90_global,'Zeff', Zeff))
+      CALL check( nf90_put_att(ncid,nf90_global,'bwall', bwall))
       CALL check( nf90_put_att(ncid,nf90_global,'bt0', bt0))
       CALL check( nf90_put_att(ncid,nf90_global,'q0', q0))
       CALL check( nf90_put_att(ncid,nf90_global,'qmin', qmin))
@@ -217,10 +219,11 @@ c-----------------------------------------------------------------------
      $       "Safety Factor") )
       CALL check( nf90_def_var(ncid, "di", nf90_double, p_dim, di_id) )
       CALL check( nf90_def_var(ncid, "dr", nf90_double, p_dim, dr_id) )
+      CALL check( nf90_def_var(ncid, "h", nf90_double, p_dim, h_id) )
       CALL check( nf90_def_var(ncid, "ca1", nf90_double, p_dim, ca_id))
       IF(MRE_flag)THEN
          CALL check( nf90_def_var(ncid,
-     $     "Hbs", nf90_double, p_dim, hbs_id))
+     $     "Hbs_prefac", nf90_double, p_dim, hbs_id))
          CALL check( nf90_def_var(ncid,
      $     "tau_a", nf90_double, p_dim, ta_id))
          CALL check( nf90_def_var(ncid,
@@ -229,8 +232,6 @@ c-----------------------------------------------------------------------
      $     "ftr", nf90_double, p_dim, ftr_id))
          CALL check( nf90_def_var(ncid,
      $     "mufrac", nf90_double, p_dim, muf_id))
-         CALL check( nf90_def_var(ncid,
-     $     "avg_mu0Jbs_dot_B", nf90_double, p_dim, jbs_id))
          CALL check( nf90_def_var(ncid,
      $     "Dnc", nf90_double, p_dim, dnc_id))
          CALL check( nf90_def_var(ncid,
@@ -280,6 +281,8 @@ c-----------------------------------------------------------------------
      $     "avg_18", nf90_double, p_dim, a18_id))
             CALL check( nf90_def_var(ncid,
      $     "avg_19", nf90_double, p_dim, a19_id))
+            CALL check( nf90_def_var(ncid,
+     $     "avg_nabla_psi", nf90_double, p_dim, npsi_id))
          ENDIF
       ENDIF
       IF(ode_flag .AND. vac_flag)THEN !shift to .OR.
@@ -377,6 +380,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,q_id, sq%fs(:,4)))
       CALL check( nf90_put_var(ncid,di_id, locstab%fs(:,1)/sq%xs(:)))
       CALL check( nf90_put_var(ncid,dr_id, locstab%fs(:,2)/sq%xs(:)))
+      CALL check( nf90_put_var(ncid,h_id,  locstab%fs(:,3)))
       CALL check( nf90_put_var(ncid,ca_id, locstab%fs(:,4)))
 
       IF(MRE_flag)THEN
@@ -385,7 +389,6 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_var(ncid,tr_id, mreterms%fs(:,3)))
          CALL check( nf90_put_var(ncid,ftr_id, mreterms%fs(:,4)))
          CALL check( nf90_put_var(ncid,muf_id, mreterms%fs(:,5)))
-         CALL check( nf90_put_var(ncid,jbs_id, mreterms%fs(:,6)))
          CALL check( nf90_put_var(ncid,dnc_id, mreterms%fs(:,7)))
          CALL check( nf90_put_var(ncid,wc_id, mreterms%fs(:,8)))
          CALL check( nf90_put_var(ncid,jp_id, mreterms%fs(:,9)))
@@ -411,6 +414,7 @@ c-----------------------------------------------------------------------
             CALL check( nf90_put_var(ncid,a17_id, mreterms%fs(:,28)))
             CALL check( nf90_put_var(ncid,a18_id, mreterms%fs(:,29)))
             CALL check( nf90_put_var(ncid,a19_id, mreterms%fs(:,30)))
+            CALL check( nf90_put_var(ncid,npsi_id, mreterms%fs(:,6)))
          ENDIF
       ENDIF
 
