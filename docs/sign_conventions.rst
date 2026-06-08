@@ -25,7 +25,7 @@ Poloidal Flux :math:`\psi`
 
 - Normalized from 0 (magnetic axis) to 1 (plasma boundary).
 - :math:`\psi_0 = \psi_{\mathrm{bry}} - \psi_{\mathrm{axis}}` is forced positive
-  on read (``equil/read_eq.f``, line 674). If the EQDSK has
+  on read (``read_eq_efit`` in ``equil/read_eq.f``). If the EQDSK has
   :math:`\psi_{\mathrm{bry}} < \psi_{\mathrm{axis}}`, both :math:`\psi_0` and
   the 2D flux array are sign-flipped.
 - Occasionally :math:`\rho = \sqrt{\psi}` is used as a radius-like variable.
@@ -50,8 +50,8 @@ Toroidal Coordinate :math:`\zeta` and :math:`\phi`
 Working Coordinate Options
 --------------------------
 
-Controlled by ``jac_type`` in ``equil.in``. The Jacobian weighting is
-:math:`\mathbf{B} \cdot \nabla\theta \propto B_p^{p_{bp}} \, B^{p_b} \, R^{-p_r}`:
+Controlled by ``jac_type`` in ``equil.in``. The Jacobian is
+:math:`J \propto B_p^{p_{bp}} \, B^{p_b} \, R^{-p_r}`:
 
 .. list-table::
    :header-rows: 1
@@ -84,7 +84,7 @@ See also the coordinate discussion in :doc:`outputs`.
 Helicity and Handedness
 =======================
 
-Helicity is computed in ``gpec/gpec.f`` (line 370):
+Helicity is computed in the ``gpec_main`` program (``gpec/gpec.f``):
 
 .. code-block:: fortran
 
@@ -106,7 +106,8 @@ Helicity is computed in ``gpec/gpec.f`` (line 370):
 =====================
 
 The poloidal-current function :math:`F = R B_\phi` from the Grad-Shafranov
-equation is **forced positive** via ``ABS()`` (``equil/read_eq.f``, line 665):
+equation is **forced positive** via ``ABS()`` (``read_eq_efit`` in
+``equil/read_eq.f``):
 
 .. code-block:: fortran
 
@@ -125,7 +126,7 @@ Safety Factor :math:`q`
 - In standard tokamak operation, EFIT provides :math:`q > 0`.
 - Can be adjusted via ``newq0`` in ``equil.in``, which modifies :math:`F`
   to match while preserving the Grad-Shafranov solution
-  (``equil/direct.f``, line 190).
+  (``direct_run`` in ``equil/direct.f``).
 
 
 Mode Numbers :math:`m` and :math:`n`
@@ -140,8 +141,8 @@ Toroidal Mode Number :math:`n`
 Poloidal Mode Range
 -------------------
 
-The poloidal mode spectrum spans ``mlow`` to ``mhigh``, computed in
-``dcon/dcon.F`` (line 174):
+The poloidal mode spectrum spans ``mlow`` to ``mhigh``, computed in the
+``dcon`` program (``dcon/dcon.F``):
 
 .. code-block:: fortran
 
@@ -154,7 +155,7 @@ beyond the resonant modes.
 Why Positive :math:`m` Is Always Resonant
 -----------------------------------------
 
-Resonant surfaces are found by ``sing_find`` in ``dcon/sing.f`` (line 80).
+Resonant surfaces are found by ``sing_find`` in ``dcon/sing.f``.
 It performs a binary search for flux surfaces where :math:`m = n \cdot q`.
 Since :math:`n > 0` (by convention) and :math:`q > 0` (standard tokamak):
 
@@ -214,7 +215,7 @@ Rotation Velocity Conventions (PENTRC)
 ----------------------------------
 
 - Column 6 of the PENTRC kinetic profile file: :math:`\omega_E` in rad/s.
-- Read by ``pentrc/inputs.f90`` (``read_kin`` subroutine, line 168).
+- Read by the ``read_kin`` subroutine in ``pentrc/inputs.f90``.
 - **Sign convention**: positive :math:`\omega_E` means rotation in the
   direction of the toroidal coordinate :math:`\zeta`.
 - Since :math:`\phi` direction depends on helicity, positive :math:`\omega_E`
@@ -224,8 +225,8 @@ Rotation Velocity Conventions (PENTRC)
 Diamagnetic Frequencies
 -----------------------
 
-Computed in ``pentrc/inputs.f90`` (lines 255--256) and
-``pentrc/torque.F90`` (lines 315--316):
+Computed in ``read_kin`` (``pentrc/inputs.f90``) and ``tpsi``
+(``pentrc/torque.F90``):
 
 .. math::
 
@@ -244,7 +245,7 @@ Total Toroidal Rotation
 
 .. code-block:: fortran
 
-   wphi = welec + wdian + wdiat    ! pentrc/torque.F90, line 317
+   wphi = welec + wdian + wdiat    ! tpsi in pentrc/torque.F90
 
 The total toroidal rotation frequency is the sum of the E x B, density
 diamagnetic, and temperature diamagnetic contributions.
@@ -261,16 +262,17 @@ Rotation Scaling Parameters
 Energy Integral Resonance
 -------------------------
 
-In the PENTRC energy integral (``pentrc/energy.f90``), the resonance
-denominator involves:
+In the PENTRC energy integral (``xintgrnd`` in ``pentrc/energy.f90``), the
+resonance denominator involves:
 
 .. math::
 
-   n \omega_E + \ell \omega_b + n \omega_D x
+   n \omega_E + \ell_{\mathrm{eff}} \omega_b \sqrt{x} + n \omega_D x
 
-where :math:`\omega_b` is the bounce frequency, :math:`\omega_D` is the magnetic
-precession frequency, :math:`\ell` is the bounce harmonic, and
-:math:`x = E/T` is the normalized energy. The sign of :math:`\omega_E`
+where :math:`\omega_b` is the bounce frequency divided by :math:`x`,
+:math:`\omega_D` is the magnetic precession frequency,
+:math:`\ell_{\mathrm{eff}} = \ell - \sigma n q` is the effective bounce harmonic,
+and :math:`x = E/T` is the normalized energy. The sign of :math:`\omega_E`
 determines the direction of resonance in velocity space.
 
 
@@ -325,15 +327,15 @@ Quick Reference
 Source Code References
 ======================
 
-- **Poloidal flux sign**: ``equil/read_eq.f``, lines 674--677
-- **F = R*Bt forced positive**: ``equil/read_eq.f``, line 665
-- **q definition**: ``dcon/README``, lines 100--102
-- **Helicity computation**: ``gpec/gpec.f``, lines 370--374
-- **ip/bt direction**: ``input/coil.in``, lines 6--7
-- **Poloidal mode range**: ``dcon/dcon.F``, lines 174--175
-- **Resonant surface finder**: ``dcon/sing.f``, lines 80--149
+- **Poloidal flux sign**: ``read_eq_efit`` in ``equil/read_eq.f``
+- **F = R*Bt forced positive**: ``read_eq_efit`` in ``equil/read_eq.f``
+- **q definition**: ``dcon/README``
+- **Helicity computation**: ``gpec_main`` program in ``gpec/gpec.f``
+- **ip/bt direction**: ``input/coil.in``
+- **Poloidal mode range**: ``dcon`` program in ``dcon/dcon.F``
+- **Resonant surface finder**: ``sing_find`` in ``dcon/sing.f``
 - **Output sign flips**: ``gpec/gpout.f`` (many locations, search ``helicity``)
-- **omega_E input**: ``pentrc/inputs.f90``, lines 253--263
-- **Diamagnetic frequencies**: ``pentrc/torque.F90``, lines 314--317
-- **Energy integral**: ``pentrc/energy.f90``, lines 100--145
-- **SURFMN interface**: ``docs/outputs.rst``, lines 48--60
+- **omega_E input**: ``read_kin`` in ``pentrc/inputs.f90``
+- **Diamagnetic frequencies**: ``tpsi`` in ``pentrc/torque.F90``
+- **Energy integral**: ``xintgrnd`` in ``pentrc/energy.f90``
+- **SURFMN interface**: ``docs/outputs.rst``
