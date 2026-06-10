@@ -257,7 +257,7 @@ decomposition exp(im*theta - in*phi). A comprehensive reference is in
 - **helicity** = ipd * btd (+1 = RH, -1 = LH), computed in `gpec_main` (`gpec/gpec.f`)
 - **nn** (toroidal mode number) is always positive; resonant **m** is always positive
 - **F = R*Bt** is forced positive via ABS() in `read_eq_efit` (`equil/read_eq.f`)
-- **q** is NOT forced positive (read directly from EFIT)
+- **q** is recomputed by field-line integration in `direct_run` (`equil/direct.f`); the g-file q profile is unused, and q is always positive for g-file input (negative `newq0` is the only override)
 - **omega_E** is positive for rotation in the direction of the toroidal coordinate zeta
 - The code does NOT use the COCOS standard
 - For SURFMN interface: `m_surfmn = helicity * m_gpec`

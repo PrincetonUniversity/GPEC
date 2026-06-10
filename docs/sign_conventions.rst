@@ -96,9 +96,9 @@ Helicity is computed in the ``gpec_main`` program (``gpec/gpec.f``):
 
 - ``ip_direction`` and ``bt_direction`` are set in ``coil.in``.
   "positive" means CCW viewed from above; "negative" means CW.
-- **helicity = +1**: right-handed (RH) --- :math:`B_t` and :math:`I_p` in the
+- **helicity = +1**: right-handed (RH), :math:`B_t` and :math:`I_p` in the
   same direction.
-- **helicity = -1**: left-handed (LH) --- :math:`B_t` and :math:`I_p` opposed.
+- **helicity = -1**: left-handed (LH), :math:`B_t` and :math:`I_p` opposed.
 - The helicity value is stored in the ``gpec_control_output`` netcdf file.
 
 
@@ -121,12 +121,21 @@ Safety Factor :math:`q`
 ========================
 
 - Defined as :math:`q = (\mathbf{B} \cdot \nabla\zeta) / (\mathbf{B} \cdot \nabla\theta)`.
-- **Not forced positive.** Read directly from the EFIT g-file without sign
-  manipulation (unlike :math:`F`).
-- In standard tokamak operation, EFIT provides :math:`q > 0`.
-- Can be adjusted via ``newq0`` in ``equil.in``, which modifies :math:`F`
-  to match while preserving the Grad-Shafranov solution
-  (``direct_run`` in ``equil/direct.f``).
+- **Recomputed, not read.** For direct equilibria (EFIT g-files), the q
+  profile in the file is read but never used. ``direct_run`` in
+  ``equil/direct.f`` rebuilds q on each flux surface from a field-line
+  integration.
+- **Always positive for g-file input.** The integration uses the
+  sign-normalized :math:`\psi` map and :math:`|F|`, so q comes out positive
+  for any combination of signs in the g-file. Reversing all signed
+  quantities in a g-file (:math:`\psi`, ``simag``, ``sibry``, ``cpasma``,
+  q) reproduces the original DCON results bit for bit.
+- Inverse equilibria (e.g. CHEASE) keep the q profile of the input file,
+  including its sign (``inverse_run`` in ``equil/inverse.f``).
+- ``newq0`` in ``equil.in`` rescales :math:`F` to set q on axis while
+  preserving the Grad-Shafranov solution (``direct_run`` in
+  ``equil/direct.f``). A negative ``newq0`` is the one way to impose
+  q < 0 on a direct equilibrium.
 
 
 Mode Numbers :math:`m` and :math:`n`
@@ -157,7 +166,8 @@ Why Positive :math:`m` Is Always Resonant
 
 Resonant surfaces are found by ``sing_find`` in ``dcon/sing.f``.
 It performs a binary search for flux surfaces where :math:`m = n \cdot q`.
-Since :math:`n > 0` (by convention) and :math:`q > 0` (standard tokamak):
+Since :math:`n > 0` (by convention) and :math:`q > 0` (guaranteed for
+direct equilibria, see the safety factor section above):
 
 .. math::
 
@@ -284,6 +294,17 @@ system. The conventions described in this document are GPEC-native and predate
 COCOS. Users interfacing with COCOS-aware codes must manually translate between
 conventions.
 
+For g-file input the sign part of the COCOS choice cannot matter:
+``read_eq_efit`` sign-normalizes the :math:`\psi` map, forces
+:math:`F > 0`, and discards the file's q profile, so g-files that differ
+only in sign conventions produce identical results. Field and current
+directions enter solely through ``ip_direction`` and ``bt_direction`` in
+``coil.in``. What does matter is the flux normalization: GPEC assumes the
+g-eqdsk standard of poloidal flux per radian (Wb/rad). A file carrying the
+full flux (the COCOS 11-18 family) yields a wrong q magnitude. Reports
+that g-files must be supplied in one specific COCOS trace to this unit
+requirement, since the sign choices are normalized away on read.
+
 
 Quick Reference
 ===============
@@ -308,8 +329,8 @@ Quick Reference
      - Always positive
      - Yes, ABS()
    * - :math:`q` (safety factor)
-     - From EFIT, typically positive
-     - No
+     - Recomputed by field-line integration
+     - Yes, positive for g-files
    * - :math:`n` (toroidal mode)
      - Always positive
      - By convention
@@ -330,6 +351,8 @@ Source Code References
 - **Poloidal flux sign**: ``read_eq_efit`` in ``equil/read_eq.f``
 - **F = R*Bt forced positive**: ``read_eq_efit`` in ``equil/read_eq.f``
 - **q definition**: ``dcon/README``
+- **q from field-line integration**: ``direct_run`` in ``equil/direct.f``
+- **q copied from inverse input**: ``inverse_run`` in ``equil/inverse.f``
 - **Helicity computation**: ``gpec_main`` program in ``gpec/gpec.f``
 - **ip/bt direction**: ``input/coil.in``
 - **Poloidal mode range**: ``dcon`` program in ``dcon/dcon.F``
