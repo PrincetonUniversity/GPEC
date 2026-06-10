@@ -36,8 +36,12 @@ c-----------------------------------------------------------------------
       REAL(r8) :: inQ,inQ_e,inQ_i,inpe,inc_beta,inds,intau,inlu
       REAL(r8) :: mrs,nrs,rho,b_l,v_a,Qconv,Q0,delta_n_p,
      $            lbeta,tau_i,tau_h,tau_r,tau_v
-      REAL(r8) :: inQ_min,inQ_max,Q_sol
-      
+      REAL(r8) :: inQ_min,inQ_max,Q_sol,maxbal
+      INTEGER :: ipass
+      INTEGER, PARAMETER :: nref=4
+      REAL(r8) :: xpk,rlo,rhi,rdq,rdqc,xq,bloc,jloc
+      COMPLEX(r8) :: dloc
+
       REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs,jxbl,bal
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: deltal
       CHARACTER(3) :: sn,sm
@@ -157,11 +161,50 @@ c-----------------------------------------------------------------------
          CLOSE(out_unit)
       ENDIF
 
-      ! Identify the threshold from the maximum of the balance parameter
-      index=MAXLOC(bal,MASK=bal==bal)
-      Q_sol=inQs(index(1))
-      omega_sol=inQs(index(1))/Qconv
-      br_th=sqrt(MAXVAL(bal,MASK=bal==bal)/lu*(sval**2.0/2.0))
+      ! The coarse scan above gives the overall torque-balance shape
+      ! and the diagnostic output. The locking "nose" (the maximum of
+      ! bal) can be a very narrow spike near inQ=Q0, however, and the
+      ! coarse grid can step right over it, leaving a spuriously
+      ! negative MAXVAL(bal) and hence a NaN br_th. Bracket the coarse
+      ! maximum and iteratively refine the scan around the running peak
+      ! so the nose is resolved regardless of how narrow it is. Exclude
+      ! non-finite entries (NaN from 0/0, Inf from a near-zero jxbl).
+      index=MAXLOC(bal,MASK=(bal==bal .AND. ABS(bal)<HUGE(bal)))
+      rdqc=(inQ_max-inQ_min)/inum
+      xpk=inQs(index(1))
+      rlo=xpk-2.0*rdqc
+      rhi=xpk+2.0*rdqc
+      maxbal=-HUGE(maxbal)
+      DO ipass=1,nref
+         rdq=(rhi-rlo)/inum
+         DO i=0,inum
+            xq=rlo+REAL(i)*rdq
+            dloc=riccati(xq,inQ_e,inQ_i,inpr,
+     $           inc_beta,inds,intau,inpe)
+            jloc=-AIMAG(1.0/(dloc+delta_n_p))
+            bloc=2.0*inpr*(Q0-xq)/jloc
+            IF (bloc==bloc .AND. ABS(bloc)<HUGE(bloc)
+     $           .AND. bloc>maxbal) THEN
+               maxbal=bloc
+               xpk=xq
+            ENDIF
+         ENDDO
+         rlo=xpk-2.0*rdq
+         rhi=xpk+2.0*rdq
+      ENDDO
+      Q_sol=xpk
+      omega_sol=xpk/Qconv
+      ! If even the refined nose is non-positive the surface has no
+      ! finite penetration threshold; floor at zero and warn rather
+      ! than propagating a NaN into b_crit/Phi_res_crit downstream.
+      IF (maxbal>0.0_r8) THEN
+         br_th=sqrt(maxbal/lu*(sval**2.0/2.0))
+      ELSE
+         br_th=0.0_r8
+         WRITE(*,'(1x,a,i0,a,i0,a)')
+     $      "!! WARNING: SLAYER torque balance has no positive "//
+     $      "maximum at m=",mms,", n=",nns,"; br_th set to 0"
+      ENDIF
       DEALLOCATE(inQs,deltal,jxbl,bal)
 
       RETURN
