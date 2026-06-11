@@ -132,10 +132,6 @@ Safety Factor :math:`q`
   q) reproduces the original DCON results bit for bit.
 - Inverse equilibria (e.g. CHEASE) keep the q profile of the input file,
   including its sign (``inverse_run`` in ``equil/inverse.f``).
-- ``newq0`` in ``equil.in`` rescales :math:`F` to set q on axis while
-  preserving the Grad-Shafranov solution (``direct_run`` in
-  ``equil/direct.f``). A negative ``newq0`` is the one way to impose
-  q < 0 on a direct equilibrium.
 
 
 Mode Numbers :math:`m` and :math:`n`
