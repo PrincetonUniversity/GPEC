@@ -39,7 +39,6 @@
    sing_interpspot=1.0      ! Scaling of the interpolation width, in units of spot size, for smoothed outputs of singular surface quantities
    reg_flag=f               ! Regularize the solution near resonant surfaces
    reg_spot=5e-2            ! Regularize by (m-nq)^2/((m-nq)^2+reg_spot^2)
-   res_psilim_diff=0.002    ! Difference between psilim and psihigh to ensure that psilim is slightly inside the control surface when using resistive DCON solutions.
    chebyshev_flag=f         ! Fit Chebyshev polynomials to the displacement.
    nche=20                  ! Number of Chebyshev polynomials used
    use_classic_splines = f  ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions

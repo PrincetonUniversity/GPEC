@@ -78,8 +78,9 @@ c-----------------------------------------------------------------------
          xss_mn=u4%f
       ELSE
          IF (galsol%gal_flag) THEN
-            CALL cspline_eval(u1,psi,1)
-            xsp1_mn=u1%f1
+            ! analytic galerkin derivative carried in u3 (not d/dpsi of u1)
+            CALL cspline_eval(u3,psi,0)
+            xsp1_mn=u3%f
          ELSE
             CALL cspline_eval(u2,psi,0)
             xspfac=u2%f/singfac

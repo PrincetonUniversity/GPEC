@@ -78,6 +78,8 @@ c-----------------------------------------------------------------------
          REAL(r8), DIMENSION(:),ALLOCATABLE :: psi,q,qpsifac,qsing
          REAL(r8), DIMENSION(:,:), ALLOCATABLE :: xext
          COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: sols,sols_cut
+         ! analytic radial derivative d(sols)/dpsi (whole profile)
+         COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: sols_deriv
       END TYPE outsol_type
 
       TYPE :: insol_type
@@ -1324,6 +1326,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(4*msing,4*msing) :: mat,cmat
       COMPLEX(r8), DIMENSION(2*msing,coil%mcoil) :: cout,cin
       COMPLEX(r8), DIMENSION(:,:,:),ALLOCATABLE :: globalsol,globalsol_b
+      COMPLEX(r8), DIMENSION(:,:,:),ALLOCATABLE :: globalsol_deriv
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -1426,6 +1429,7 @@ c-----------------------------------------------------------------------
       CALL match_alloc_sol(rpec_eigenvalues)
       ALLOCATE  (globalsol(outs%mpert,0:outs%tot_grids,coil%mcoil))
       ALLOCATE(globalsol_b(outs%mpert,0:outs%tot_grids,coil%mcoil))
+      ALLOCATE(globalsol_deriv(outs%mpert,0:outs%tot_grids,coil%mcoil))
       jsol=0
       DO isol=coil%m1,coil%m2
          jsol=jsol+1
@@ -1435,6 +1439,7 @@ c-----------------------------------------------------------------------
          CALL match_output_solution(cout(:,jsol),cin(:,jsol),isol,
      $                              globalsol(:,:,jsol),
      $                              globalsol_b(:,:,jsol),
+     $                              globalsol_deriv(:,:,jsol),
      $                              filename(1))
       ENDDO
 c-----------------------------------------------------------------------
@@ -1482,12 +1487,22 @@ c-----------------------------------------------------------------------
             WRITE(bin_unit) globalsol_b(1:outs%mpert,ip,isol)
          ENDDO
       ENDDO
+      ! analytic radial derivative d(xi)/dpsi of the outer solution
+      DO isol=1,coil%mcoil
+         DO ip=0,outs%tot_grids
+            IF (outs%issing(ip)) THEN
+               CYCLE
+            ENDIF
+            WRITE(bin_unit) globalsol_deriv(1:outs%mpert,ip,isol)
+         ENDDO
+      ENDDO
       CALL bin_close(bin_unit)
 c-----------------------------------------------------------------------
 c     deallocate.
 c-----------------------------------------------------------------------
       CALL match_dealloc_sol
       DEALLOCATE (globalsol)
+      DEALLOCATE (globalsol_deriv)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -1517,6 +1532,7 @@ c-----------------------------------------------------------------------
      $         outs%q(0:outs%tot_grids))
       ALLOCATE(outs%qpsifac(outs%msing),outs%qsing(outs%msing))
       ALLOCATE(outs%sols(outs%mpert,0:outs%tot_grids,outs%nsol))
+      ALLOCATE(outs%sols_deriv(outs%mpert,0:outs%tot_grids,outs%nsol))
       ALLOCATE(outs%sols_cut(outs%mpert,0:outs%tot_grids,outs%nsol))
       ALLOCATE(outs%xext(outs%msing,2))
       DO isol=1,outs%msing
@@ -1525,6 +1541,10 @@ c-----------------------------------------------------------------------
       READ(bin_unit) outs%psi,outs%issing,outs%q
       DO isol=1,outs%nsol
          READ (bin_unit) outs%sols(:,:,isol)
+      ENDDO
+      ! analytic radial derivative, written by rdcon after the sol block
+      DO isol=1,outs%nsol
+         READ (bin_unit) outs%sols_deriv(:,:,isol)
       ENDDO
       CALL bin_close(bin_unit)
 
@@ -1568,6 +1588,7 @@ c-----------------------------------------------------------------------
       DEALLOCATE(outs%psi,outs%issing,outs%q)
       DEALLOCATE(outs%qpsifac,outs%qsing)
       DEALLOCATE(outs%sols)
+      DEALLOCATE(outs%sols_deriv)
       DEALLOCATE(outs%sols_cut)
       DEALLOCATE(outs%xext)
 c-----------------------------------------------------------------------
@@ -1590,12 +1611,14 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE match_output_solution(cout,cin,csol,globalsol,
-     $    globalsol_b,filename)
+     $    globalsol_b,globalsol_deriv,filename)
       CHARACTER(*),INTENT(IN) :: filename
       INTEGER, INTENT(IN) :: csol
       COMPLEX(r8), DIMENSION(:), INTENT(IN) :: cout,cin
       COMPLEX(r8), DIMENSION(:,0:), INTENT(OUT) :: globalsol
       COMPLEX(r8), DIMENSION(:,0:), INTENT(OUT) :: globalsol_b
+      ! analytic radial derivative d(xi)/dpsi of the outer (xi) solution
+      COMPLEX(r8), DIMENSION(:,0:), INTENT(OUT) :: globalsol_deriv
 
       CHARACTER(100) :: filename1
       CHARACTER(100) :: comp_tittle,tmp
@@ -1605,6 +1628,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: inpsifac
       COMPLEX(r8) :: insol,x0
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: outtotsol
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: outtotsol_deriv
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: outtotsol_b
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: outtotsol_b_cut
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: outtotsol_cut,tmp_cut
@@ -1615,6 +1639,7 @@ c-----------------------------------------------------------------------
 c     allocate.
 c-----------------------------------------------------------------------
       ALLOCATE(outtotsol(outs%mpert,0:outs%tot_grids))
+      ALLOCATE(outtotsol_deriv(outs%mpert,0:outs%tot_grids))
       ALLOCATE(outtotsol_b(outs%mpert,0:outs%tot_grids))
       ALLOCATE(singfac(outs%mpert))
       ALLOCATE(outtotsol_cut(outs%mpert,0:outs%tot_grids),
@@ -1627,17 +1652,22 @@ c-----------------------------------------------------------------------
 c     construct linear combination of outer region solutions w/ cofout.
 c-----------------------------------------------------------------------
       outtotsol=0
+      outtotsol_deriv=0
       outtotsol_b=0
       outtotsol_cut=0
       outtotsol_b_cut=0
       DO isol=1,2*msing
          outtotsol=outtotsol+cout(isol)*outs%sols(:,:,isol)
+         outtotsol_deriv=outtotsol_deriv
+     $                  +cout(isol)*outs%sols_deriv(:,:,isol)
          outtotsol_cut=outtotsol_cut+cout(isol)*outs%sols_cut(:,:,isol)
       ENDDO
       IF (coil%ideal_flag) THEN
          outtotsol=outs%sols(:,:,csol)
+         outtotsol_deriv=outs%sols_deriv(:,:,csol)
       ELSE
          outtotsol=outtotsol+outs%sols(:,:,csol)
+         outtotsol_deriv=outtotsol_deriv+outs%sols_deriv(:,:,csol)
       ENDIF
       outtotsol_cut=outtotsol_cut+outs%sols_cut(:,:,csol)
       IF(out_rpecsol)THEN
@@ -2005,11 +2035,13 @@ c     save to global solution for coulping to coils.
 c-----------------------------------------------------------------------
       globalsol=outtotsol
       globalsol_b=outtotsol_b
+      globalsol_deriv=outtotsol_deriv
 c-----------------------------------------------------------------------
 c     deallocate.
 c-----------------------------------------------------------------------
       CALL cspline_dealloc(q_sp)
       DEALLOCATE(outtotsol)
+      DEALLOCATE(outtotsol_deriv)
       DEALLOCATE(outtotsol_b)
       DEALLOCATE(outtotsol_b_cut)
       DEALLOCATE(outtotsol_cut,tmp_cut,psi_cut)
@@ -2046,6 +2078,21 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:msing+1) :: psising
       COMPLEX(r8) :: outsols,insols,diffsols,ul0,us0,u0
       TYPE(cspline_type), DIMENSION(msing) :: insp
+c-----------------------------------------------------------------------
+c     WARNING: match_auto_connect is currently very buggy and does
+c              not work in most cases. 
+c-----------------------------------------------------------------------
+      WRITE(*,*)
+      WRITE(*,*)"********************************************"
+      WRITE(*,*)"**                                        **"
+      WRITE(*,*)"**  WARNING: auto_connect is BROKEN.      **"
+      WRITE(*,*)"**  It does NOT currently work with GPEC  **"
+      WRITE(*,*)"**  Results with match_sol%auto_connect=t **"
+      WRITE(*,*)"**  are INVALID.                          **"
+      WRITE(*,*)"**  Set match_sol%auto_connect=f.         **"
+      WRITE(*,*)"**                                        **"
+      WRITE(*,*)"********************************************"
+      WRITE(*,*)
 c-----------------------------------------------------------------------
 c     find auto connect interval.
 c-----------------------------------------------------------------------

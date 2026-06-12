@@ -1831,7 +1831,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE gal_get_solution(x,gal,icell,iintvl,isol,sol,
-     $                            deltaij,cut_flag)
+     $                            deltaij,cut_flag,dsol)
       LOGICAL, INTENT(IN) :: cut_flag
       INTEGER, INTENT(IN) :: isol
       INTEGER, INTENT(INOUT) :: icell,iintvl
@@ -1839,15 +1839,18 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:), INTENT(IN) :: deltaij
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: sol
       TYPE(gal_type), INTENT(IN) :: gal
+      ! Optional analytic radial derivative d(sol)/dpsi (non-cut only).
+      COMPLEX(r8), DIMENSION(mpert), INTENT(OUT), OPTIONAL :: dsol
 
       INTEGER :: i,ising,ipert0,jsol
       REAL(r8) :: tmp,xext
+      LOGICAL :: want_d
       COMPLEX(r8) :: delta
       INTEGER, DIMENSION(mpert,0:np) :: umap
-      REAL(r8), DIMENSION(2) :: epb
-      REAL(r8), DIMENSION(0:np) :: pb
+      REAL(r8), DIMENSION(2) :: epb,eqb
+      REAL(r8), DIMENSION(0:np) :: pb,qb
       COMPLEX(r8),DIMENSION(mpert,0:np) :: u
-      COMPLEX(r8), DIMENSION(mpert,2*mpert,2) :: ua,uaext,duaext
+      COMPLEX(r8), DIMENSION(mpert,2*mpert,2) :: ua,uaext,duaext,dua
       TYPE(cell_type), POINTER :: cell
       TYPE(hermite2_type) :: hermite
 c-----------------------------------------------------------------------
@@ -1872,6 +1875,8 @@ c-----------------------------------------------------------------------
          ENDIF
       ENDDO
       sol=0.0
+      want_d=PRESENT(dsol)
+      IF (want_d) dsol=0.0
 c-----------------------------------------------------------------------
 c     construct non-resonant solution (normal solution).
 c-----------------------------------------------------------------------
@@ -1879,14 +1884,21 @@ c-----------------------------------------------------------------------
          umap=cell%map
          CALL gal_hermite(x,cell%x(1),cell%x(2),hermite)
          pb=hermite%pb
+         IF (want_d) qb=hermite%qb
          IF (iintvl.EQ.msing.AND.icell.EQ.gal%nx) THEN
             tmp=pb(2)
             pb(2)=pb(3)
             pb(3)=tmp
+            IF (want_d) THEN
+               tmp=qb(2)
+               qb(2)=qb(3)
+               qb(3)=tmp
+            ENDIF
          ENDIF
          DO i=0,np
             u(:,i)=gal%sol(umap(:,i),isol)
             sol=sol+u(:,i)*pb(i)
+            IF (want_d) dsol=dsol+u(:,i)*qb(i)
          ENDDO
       ENDIF
 c-----------------------------------------------------------------------
@@ -1900,16 +1912,23 @@ c-----------------------------------------------------------------------
          CALL gal_hermite(x,cell%x(1),cell%x(2),hermite)
          epb(1)=hermite%pb(2)
          epb(2)=hermite%pb(3)
+         eqb(1)=hermite%qb(2)
+         eqb(2)=hermite%qb(3)
          xext=cell%x(2)
       CASE("right")
          ising=iintvl
          CALL gal_hermite(x,cell%x(1),cell%x(2),hermite)
          epb(1)=hermite%pb(0)
          epb(2)=hermite%pb(1)
+         eqb(1)=hermite%qb(0)
+         eqb(2)=hermite%qb(1)
          xext=cell%x(1)
       END SELECT
       IF (cell%etype=="res".OR.cell%etype=="ext".OR.cell%etype=="ext1")
-     $   CALL sing_get_ua(ising,x,ua)
+     $   THEN
+         CALL sing_get_ua(ising,x,ua)
+         IF (want_d) CALL sing_get_dua(ising,x,dua)
+      ENDIF
       IF (cell%etype=="ext".OR.cell%etype=="ext2") THEN
          CALL sing_get_ua(ising,xext,uaext)
          CALL sing_get_dua(ising,xext,duaext)
@@ -1920,10 +1939,14 @@ c-----------------------------------------------------------------------
          SELECT CASE(cell%etype)
          CASE("res")
             sol=sol+delta*ua(:,ipert0+mpert,1)
+            IF (want_d) dsol=dsol+delta*dua(:,ipert0+mpert,1)
          CASE("ext")
             sol=sol+delta*
      $     (epb(1)*uaext(:,ipert0+mpert,1)
      $     +epb(2)*duaext(:,ipert0+mpert,1))
+            IF (want_d) dsol=dsol+delta*
+     $     (eqb(1)*uaext(:,ipert0+mpert,1)
+     $     +eqb(2)*duaext(:,ipert0+mpert,1))
          END SELECT
       ENDIF
       IF (restore_ul) THEN
@@ -1934,10 +1957,14 @@ c-----------------------------------------------------------------------
          SELECT CASE(cell%etype)
             CASE ("res","ext","ext1")
                sol=sol+ua(:,ipert0,1)
+               IF (want_d) dsol=dsol+dua(:,ipert0,1)
             CASE("ext2")
                sol=sol
      $            +(epb(1)*uaext(:,ipert0,1)
      $            +epb(2)*duaext(:,ipert0,1))
+               IF (want_d) dsol=dsol
+     $            +(eqb(1)*uaext(:,ipert0,1)
+     $            +eqb(2)*duaext(:,ipert0,1))
          END SELECT
          ENDIF
       ENDIF
@@ -1990,7 +2017,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(mpert) :: singfac
       REAL(r8), DIMENSION(:), ALLOCATABLE :: psi,q
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: xext
-      COMPLEX(r8),DIMENSION(:,:,:), ALLOCATABLE :: sol,sol_cut
+      COMPLEX(r8),DIMENSION(:,:,:), ALLOCATABLE :: sol,sol_cut,dsol
       TYPE(cell_type), POINTER :: cell
 c-----------------------------------------------------------------------
 c     check flag
@@ -2003,6 +2030,7 @@ c-----------------------------------------------------------------------
      $                                           4*interp_np_res*msing
       ALLOCATE (issing(0:tot_grids),psi(0:tot_grids),q(0:tot_grids),
      $          sol(mpert,0:tot_grids,gal%nsol),
+     $          dsol(mpert,0:tot_grids,gal%nsol),
      $          sol_cut(mpert,0:tot_grids,gal%nsol))
       ALLOCATE (xext(msing,2))
       xvar=(1.0/interp_np)*(/(ip,ip=0,interp_np-1)/)
@@ -2050,6 +2078,7 @@ c-----------------------------------------------------------------------
       ENDDO
       psi(ip)=psihigh
       sol=0
+      dsol=0
       sol_cut=0
       DO ip=0,tot_grids
          CALL spline_eval(sq,psi(ip),0)
@@ -2064,7 +2093,8 @@ c-----------------------------------------------------------------------
          DO ip=0,tot_grids
             IF (.NOT.issing(ip)) THEN
                CALL gal_get_solution(psi(ip),gal,icell,iintvl,isol,
-     $                               sol(:,ip,isol),delta,.FALSE.)
+     $                               sol(:,ip,isol),delta,.FALSE.,
+     $                               dsol(:,ip,isol))
                CALL gal_get_solution(psi(ip),gal,icell,iintvl,isol,
      $                               sol_cut(:,ip,isol),delta,.TRUE.)
 
@@ -2085,6 +2115,10 @@ c-----------------------------------------------------------------------
          WRITE (gal_bin_unit) psi,issing,q
          DO isol=1,gal%nsol
             WRITE (gal_bin_unit) sol(:,:,isol)
+         ENDDO
+         ! analytic radial derivative d(sol)/dpsi for the whole profile
+         DO isol=1,gal%nsol
+            WRITE (gal_bin_unit) dsol(:,:,isol)
          ENDDO
          CALL bin_close(gal_bin_unit)
 c-----------------------------------------------------------------------
@@ -2230,7 +2264,7 @@ c-----------------------------------------------------------------------
             ENDDO
          ENDIF
       ENDIF
-      DEALLOCATE (issing,psi,q,sol,sol_cut)
+      DEALLOCATE (issing,psi,q,sol,dsol,sol_cut)
       DEALLOCATE (xext)
 c-----------------------------------------------------------------------
 c     terminate.

@@ -124,6 +124,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(galsol%psifac(0:galsol%tot_grids),
      $         galsol%q(0:galsol%tot_grids),
      $         galsol%u(galsol%mpert,0:galsol%tot_grids,galsol%mtot),
+     $         galsol%du(galsol%mpert,0:galsol%tot_grids,galsol%mtot),
      $         galsol%bpsi(galsol%mpert,0:galsol%tot_grids,galsol%mtot))
       DO ip=0,galsol%tot_grids
          READ(bin_unit) galsol%psifac(ip),galsol%q(ip)
@@ -136,6 +137,12 @@ c-----------------------------------------------------------------------
       DO isol=1,galsol%mtot
          DO ip=0,galsol%tot_grids
             READ(bin_unit) galsol%bpsi(1:galsol%mpert,ip,isol)
+         ENDDO
+      ENDDO
+      ! analytic radial derivative d(xi)/dpsi (rmatch globalsol_deriv block)
+      DO isol=1,galsol%mtot
+         DO ip=0,galsol%tot_grids
+            READ(bin_unit) galsol%du(1:galsol%mpert,ip,isol)
          ENDDO
       ENDDO
       WRITE(*,*) "RDCON solutions read."
@@ -181,13 +188,12 @@ c-----------------------------------------------------------------------
       rhofac = SQRT(psifac)
       qfac = galsol%q
 c-----------------------------------------------------------------------
-c     Replace the stale euler.bin psilim with the galerkin solution's
-c     outer edge (the last node of the grid we actually spline on), so
-c     GPEC never evaluates the ideal solution past its own grid. The
-c     res_psilim_diff inset keeps the control surface slightly inside
-c     until the boundary derivative is computed robustly.
+c     Use the galerkin solution's outer edge (the last node of the grid
+c     we actually spline on) as psilim/qlim, so GPEC never evaluates the
+c     ideal solution past its own grid. The boundary derivative is now
+c     analytic (carried in u3), so no inset is needed.
 c-----------------------------------------------------------------------
-      psilim = galsol%psifac(galsol%tot_grids) - res_psilim_diff
+      psilim = galsol%psifac(galsol%tot_grids)
       CALL spline_eval(sq,psilim,0)
       qlim = sq%f(4)
       ! m's must already match

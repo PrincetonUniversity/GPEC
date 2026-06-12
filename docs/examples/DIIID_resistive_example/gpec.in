@@ -42,7 +42,6 @@
    sing_npsi=100            ! Number of points between rational surfaces used for b-normal splines across sin_spot
    reg_flag=f               ! Regularize the solution near resonant surfaces
    reg_spot=5e-2            ! Regularize by (m-nq)^2/((m-nq)^2+reg_spot^2)
-   res_psilim_diff=0.002    ! Difference between psilim and psihigh to ensure that psilim is slightly inside the control surface when using resistive DCON solutions.
    chebyshev_flag=f         ! Fit Chebyshev polynomials to the displacement.
    nche=20                  ! Number of Chebyshev polynomials used
    use_classic_splines = f  ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
@@ -66,7 +65,7 @@
    xclebsch_flag=t          ! Outputs clebsch coordinate displacement for PENT
    dw_flag=f                ! Outputs self-consistent energy and torque profiles (when kin_flag=t from DCON)
 
-   eqbrzphi_flag=f          ! Outputs equilibrium field on regular (r,z) grid
+   eqbrzphi_flag=t          ! Outputs equilibrium field on regular (r,z) grid
    brzphi_flag=t            ! Outputs perturbed field on regular (r,z) grid
    xrzphi_flag=f            ! Outputs displacement on regular (r,z) grid
    vbrzphi_flag=f           ! Outputs field on regular (r,z) grid due to total boundary surface current (not a real field)
@@ -76,8 +75,8 @@
    xbrzphifun_flag=f        ! Outputs r,z, and perturbation vectors on psi,theta grid
    arzphifun_flag=f         ! Outputs r,z, and vector potential on psi,theta grid
 
-   nr = 64                  ! Number of radial grid points in rzphi outputs
-   nz = 124                 ! Number of vertical grid points in rzphi outputs
+   nr = 280                 ! Number of radial grid points in rzphi outputs
+   nz = 440                 ! Number of vertical grid points in rzphi outputs
    fun_flag=t               ! Write outputs to (r,z) in addition to default (psi,m)
    flux_flag=f              ! Write outputs to (psi,theta) in addition to default (psi,m)
    bin_flag=f               ! Write binary outputs for use with xdraw

@@ -34,7 +34,7 @@ c-----------------------------------------------------------------------
      $     jac,jac1,q,q1,p,p1,bpfac,btfac,bfac,fac,reg_spot,
      $     amean,rmean,aratio,kappa,delta1,delta2,
      $     li1,li2,li3,betap1,betap2,betap3,betat,betan,bt0,
-     $     q0,qa,crnt,q95,shotnum,shottime,opsi1,opsi2,res_psilim_diff
+     $     q0,qa,crnt,q95,shotnum,shottime,opsi1,opsi2
 
       CHARACTER(2) :: sn,ss
       CHARACTER(10) :: date,time,zone
@@ -108,6 +108,7 @@ c-----------------------------------------------------------------------
       INTEGER :: mpert, tot_grids,mlow,mhigh,mtot,msing
       REAL(r8), DIMENSION(:), ALLOCATABLE :: psifac,q
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: u
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: du
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: bpsi
       END TYPE galsol_type
 

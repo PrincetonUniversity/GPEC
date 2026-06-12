@@ -287,7 +287,7 @@ c-----------------------------------------------------------------------
          qlim = sq%f(4)
       ENDIF
       ! gal_flag: psilim/qlim now set from the galerkin grid edge in
-      ! rdcon_read_solution (also applies res_psilim_diff inset).
+      ! rdcon_read_solution.
       rhofac=SQRT(psifac)
 c-----------------------------------------------------------------------
 c     normalize plasma/vacuum eigenvalues and eigenfunctions.
@@ -483,8 +483,11 @@ c-----------------------------------------------------------------------
          CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
          CALL zgetrs('N',mpert,1,temp2,mpert,ipiv,uedge,mpert,info)
          temp1=uedge
+         ! u3 carries the analytic galerkin derivative d(xi)/dpsi, as the
+         ! kin_flag path uses u3 for xsp1 (replaces d/dpsi of the u1 spline)
          DO istep=0,galsol%tot_grids
             u1%fs(istep,:)=MATMUL(galsol%u(:,istep,1:galmpert),temp1)
+            u3%fs(istep,:)=MATMUL(galsol%du(:,istep,1:galmpert),temp1)
             bpsi%fs(istep,:)=MATMUL(galsol%bpsi(:,istep,1:galmpert)
      $                                                           ,temp1)
          ENDDO
