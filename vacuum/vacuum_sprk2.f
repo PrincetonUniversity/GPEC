@@ -21,7 +21,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      subroutine testvec 
+      subroutine testvec
       USE vglobal_mod
       implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
@@ -153,8 +153,8 @@ c-----------------------------------------------------------------------
      $     isg,cplar,cplai,cslth,snlth, 1,1,
      $     cpwr,cpwi, dchxr,dchxi,dchzr,dchzi)
       if ( abs(n) .lt. 1.e-10 ) then
-         write ( outmod, 11 ) 
-         write ( iotty,  11 ) 
+         write ( outmod, 11 )
+         write ( iotty,  11 )
          return
       endif
       do iobs = 1, nobs
@@ -217,7 +217,7 @@ c-----------------------------------------------------------------------
             do io5 = 1, 5
                xs = yes1*(xobs(io) + (io5-3)*delx) + yes2*xobs(io)
                zs = yes2*(zobs(io) + (io5-3)*delz) + yes1*zobs(io)
-     $              
+     $
                if ( (io5 .ne. 3) .or. (ixz .ne. 2) ) then
                   do is = 1, ns
                      xt = xsce(is)
@@ -243,8 +243,8 @@ c-----------------------------------------------------------------------
                      enddo
                   enddo
                   do l1 = 1, jmax1
-                     chrl(io5,l1)  = 0.5 * isg*dtpw * chrl(io5,l1) 
-                     chil(io5,l1)  = 0.5 * isg*dtpw * chil(io5,l1) 
+                     chrl(io5,l1)  = 0.5 * isg*dtpw * chrl(io5,l1)
+                     chil(io5,l1)  = 0.5 * isg*dtpw * chil(io5,l1)
                   enddo
                endif
             enddo

@@ -166,7 +166,7 @@
 ../match/zroot.o: ../equil/local.o
 
 # Rmatch
-../rmatch/deltac.o: ../equil/jacobi.o ../rmatch/inps.o ../rmatch/inpso.o
+../rmatch/deltac.o: ../equil/jacobi.o ../rmatch/inps.o ../rmatch/inpso.o ../rmatch/msing.o
 ../rmatch/deltar.o: ../equil/spline.o ../rmatch/gamma.o
 ../rmatch/gamma.o: ../equil/local.o
 ../rmatch/inner.o: ../equil/local.o
@@ -200,7 +200,7 @@
 ../gpec/gpout.o: ../coil/field.o ../gpec/gpdiag.o ../gpec/gpresp.o ../gpec/gpvacuum.o ../gpec/idcon.o ../gpec/version.inc ../pentrc/inputs.o ../pentrc/pentrc_interface.o ../pentrc/utilities.o ../slayer/gslayer.o
 ../gpec/gpresp.o: ../gpec/gpeq.o
 ../gpec/gpvacuum.o: ../gpec/gpeq.o ../vacuum/vacuum_ma.o
-../gpec/idcon.o: ../gpec/gpglobal.o ../gpec/ismath.o ../vacuum/vacuum_ma.o
+../gpec/idcon.o: ../equil/equil.o ../gpec/gpglobal.o ../gpec/ismath.o ../vacuum/vacuum_ma.o
 ../gpec/ismath.o: ../equil/bicube.o ../equil/fspline.o ../equil/local.o ../gpec/gpglobal.o
 ../gpec/rdcon.o: ../gpec/gpglobal.o ../gpec/idcon.o ../gpec/ismath.o
 

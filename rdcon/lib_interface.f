@@ -22,7 +22,7 @@ c-----------------------------------------------------------------------
       USE inverse_mod
       IMPLICIT NONE
 
-      TYPE transpeq         
+      TYPE transpeq
       INTEGER :: nsm1, ntm1     !R_minor, poloidal angle dimensions respectively
       INTEGER :: nr, nz         !Cylindrical dims for inverse equilibrium
       REAL(r8), DIMENSION(:),   POINTER :: psis, qs, fs, ps  !Flux, safety factor, R*B_T, pressure (0:nsm1)
@@ -115,7 +115,7 @@ c-----------------------------------------------------------------------
       maxr=rg(nsurf,1)
       idx=1
       DO itheta=2,ntheta
-         IF (rg(nsurf,itheta)>maxr) THEN 
+         IF (rg(nsurf,itheta)>maxr) THEN
             maxr=rg(nsurf,itheta)
             idx=itheta
          ENDIF
@@ -170,16 +170,16 @@ c-----------------------------------------------------------------------
       READ(in_unit,10) (lib_input%ps(isurf),isurf=1,nsurf)
       READ(in_unit,10) (lib_input%qs(isurf),isurf=1,nsurf)
       READ(in_unit,10) (lib_input%fs(isurf),isurf=1,nsurf)
-      READ(in_unit,10) 
+      READ(in_unit,10)
      $     (rg(1:nsurf,itheta),itheta=1,ntheta)
-      READ(in_unit,10) 
+      READ(in_unit,10)
      $     (zg(1:nsurf,itheta),itheta=1,ntheta)
 
       CALL ascii_close(in_unit)
       maxr=rg(nsurf,1)
       idx=1
       DO itheta=2,ntheta
-         IF (rg(nsurf,itheta)>maxr) THEN 
+         IF (rg(nsurf,itheta)>maxr) THEN
             maxr=rg(nsurf,itheta)
             idx=itheta
          ENDIF
@@ -235,16 +235,16 @@ c-----------------------------------------------------------------------
       READ(in_unit,10) (lib_input%ps(isurf),isurf=1,nsurf)
       READ(in_unit,10) (lib_input%qs(isurf),isurf=1,nsurf)
       READ(in_unit,10) (lib_input%fs(isurf),isurf=1,nsurf)
-      READ(in_unit,10) 
+      READ(in_unit,10)
      $     (rg(1:nsurf,itheta),itheta=1,ntheta)
-      READ(in_unit,10) 
+      READ(in_unit,10)
      $     (zg(1:nsurf,itheta),itheta=1,ntheta)
 
       CALL ascii_close(in_unit)
       maxr=rg(nsurf,1)
       idx=1
       DO itheta=2,ntheta
-         IF (rg(nsurf,itheta)>maxr) THEN 
+         IF (rg(nsurf,itheta)>maxr) THEN
             maxr=rg(nsurf,itheta)
             idx=itheta
          ENDIF
@@ -309,9 +309,9 @@ c-----------------------------------------------------------------------
       READ(in_unit,10) (lib_input%ps(isurf),isurf=1,nsurf)
       READ(in_unit,10) (lib_input%qs(isurf),isurf=1,nsurf)
       READ(in_unit,10) (lib_input%fs(isurf),isurf=1,nsurf)
-      READ(in_unit,10) 
+      READ(in_unit,10)
      $     (lib_input%rg(1:nsurf,itheta),itheta=1,ntheta)
-      READ(in_unit,10) 
+      READ(in_unit,10)
      $     (lib_input%zg(1:nsurf,itheta),itheta=1,ntheta)
 
 
@@ -324,7 +324,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE lib_interface_input_1
 c-----------------------------------------------------------------------
 c     subprogram 2. lib_interface_set_equil.
-c     
+c
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.

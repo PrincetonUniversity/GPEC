@@ -1,5 +1,5 @@
       MODULE gslayer_mod
-      
+
       USE sglobal_mod, ONLY: out_unit, r8, mu0, m_p, chag, lnLamb,
      $   Q_e,Q_i,pr,pe,c_beta,ds,tau,
      $   eta,visc,rho_s,lu,omega_e,omega_i,
@@ -9,7 +9,7 @@
      $   parflow_flag,PeOhmOnly_flag
 
       IMPLICIT NONE
-      
+
       CONTAINS
 
 c-----------------------------------------------------------------------
@@ -29,7 +29,7 @@ c-----------------------------------------------------------------------
       LOGICAL, INTENT(IN) :: ascii_flag
       COMPLEX(r8),INTENT(OUT) :: delta,psi0
       REAL(r8),INTENT(OUT) :: jxb,omega_sol,br_th
-   
+
       INTEGER :: i,inum
       INTEGER, DIMENSION(1) :: index
 
@@ -91,8 +91,8 @@ c-----------------------------------------------------------------------
       lu=tau_r/tau_h                   ! Lundquist number
 
       Qconv=lu**(1.0/3.0)*tau_h        ! conversion to Qs based on Cole
-      
-      ! note Q depends on Qconv even if omega is fixed.     
+
+      ! note Q depends on Qconv even if omega is fixed.
       Q=Qconv*omega
       Q_e=-Qconv*omega_e
       Q_i=-Qconv*omega_i
@@ -138,7 +138,7 @@ c-----------------------------------------------------------------------
       inQ_max=10.0
       inQ_min=-10.0
       inum=200
-      ALLOCATE(inQs(0:inum),deltal(0:inum),jxbl(0:inum),bal(0:inum)) 
+      ALLOCATE(inQs(0:inum),deltal(0:inum),jxbl(0:inum),bal(0:inum))
       DO i=0,inum
          inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
          deltal(i)=riccati(inQs(i),inQ_e,inQ_i,

@@ -154,9 +154,9 @@ c-----------------------------------------------------------------------
      $       "Normalized Poloidal Flux") )
       ENDIF
       IF(ALLOCATED(sing_detf))THEN
-         CALL check( nf90_def_dim(ncid, "psi_n_detf", 
+         CALL check( nf90_def_dim(ncid, "psi_n_detf",
      $       SIZE(sing_detf, 2), pd_dim) )
-         CALL check( nf90_def_var(ncid, "psi_n_detf", nf90_double, 
+         CALL check( nf90_def_var(ncid, "psi_n_detf", nf90_double,
      $       pd_dim, pd_id))
          CALL check( nf90_put_att(ncid,pd_id,"long_name",
      $       "Normalized Poloidal Flux") )

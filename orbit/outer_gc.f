@@ -37,7 +37,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE outer_gc_run(istep,t,y,done)
-      
+
       INTEGER, INTENT(INOUT) :: istep
       REAL(r8), INTENT(INOUT) :: t
       REAL(r8), DIMENSION(4), INTENT(INOUT) :: y
@@ -109,7 +109,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE outer_gc_der(neq,t,y,dy)
-      
+
       INTEGER, INTENT(IN) :: neq
       REAL(r8), INTENT(IN) :: t
       REAL(r8), DIMENSION(neq), INTENT(IN) :: y

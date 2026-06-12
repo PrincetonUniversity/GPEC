@@ -22,7 +22,8 @@
 # required only default user path libraries.
 #
 # With the release of 1.2, the options restricted to more modern compilers
-# compatible wth openmp.
+# compatible wth openmp. The present version of GPEC explicitly supports
+# gfortran, ifort, and ifx. 
 # Machine specific instructions are below.
 #
 # Note that GPEC uses git to label the version at compilation time.
@@ -204,7 +205,7 @@
 #   ------------------------------------------------------------
 #
 #   Now compile using
-#     $ make FFLAGS='-fallow-argument-mismatch' 2>&1 | tee make.log
+#     $ make 2>&1 | tee make.log
 #   
 #
 # On intel mac OSX
@@ -228,14 +229,14 @@
 #   --------------------------------------------------------------
 #
 #   Now compile using
-#     $ make FFLAGS='-fallow-argument-mismatch' 2>&1 | tee make.log
+#     $ make 2>&1 | tee make.log
 #
 #
 #   On ARM mac OSX using Apple's optimized accelerate library
 #   The accelerate framework contains the necessary math libraries from
 #   BLAS and LAPACK, so you should compile netcdf-c and netcdf-fortran
 #   locally (or install them via homebrew). 
-#   If you install netcdf-c & -fortran using homebrew, you  
+#   If you install netcdf & netcdf-fortran using homebrew, you  
 #   can do `echo $HOMEBREW_PREFIX` to get the appropriate NETCDFHOME
 #   variable, as it has changed recently. Example with:
 #   CC = /opt/homebrew/bin/gcc-14
@@ -262,7 +263,7 @@
 #   ------------------------------------------------------------
 #   
 #   Now compile using
-#     $ make FFLAGS='-fallow-argument-mismatch' 2>&1 | tee make.log
+#     $ make 2>&1 | tee make.log
 #
 # Some common modifications of the above settings might include,
 #     $ make FFLAGS="-qopt-report -g -O0 -check all"  # for debugging

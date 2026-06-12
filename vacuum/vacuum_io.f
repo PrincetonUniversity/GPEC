@@ -59,7 +59,7 @@ c-----------------------------------------------------------------------
       USE vglobal_mod
       implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
-      
+
       logical, save :: warned = .false.
 
       character(8) under
@@ -116,7 +116,7 @@ c-----------------------------------------------------------------------
      $        "  > Vacuum code overriding r",r," from vac.in, to be",0
          r=0.0
          warned = .true.
-      endif 
+      endif
 c-----------------------------------------------------------------------
 c     subsidiary computations.
 c-----------------------------------------------------------------------

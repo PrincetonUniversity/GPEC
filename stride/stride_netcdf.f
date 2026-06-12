@@ -178,11 +178,11 @@ c-----------------------------------------------------------------------
          CALL check( nf90_def_var(ncid,"psi_n_rational",nf90_double,
      $                            r_dim,pr_id) )
          CALL check( nf90_put_att(ncid,pr_id,"long_name",
-     $       "Normalized Poloidal Flux at Rational Surfaces") )   
+     $       "Normalized Poloidal Flux at Rational Surfaces") )
          CALL check( nf90_def_var(ncid,"q_rational",nf90_double,
      $                            r_dim,qr_id) )
          CALL check( nf90_put_att(ncid,qr_id,"long_name",
-     $       "Safety Factor at Rational Surfaces") )    
+     $       "Safety Factor at Rational Surfaces") )
       ENDIF
       ! define variables
       IF(debug_flag) PRINT *," - Defining variables in netcdf"
@@ -193,7 +193,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(ncid, "di", nf90_double, p_dim, di_id) )
       CALL check( nf90_def_var(ncid, "dr", nf90_double, p_dim, dr_id) )
       CALL check( nf90_def_var(ncid, "ca1", nf90_double, p_dim, ca_id))
-      IF(ode_flag .AND. vac_flag)THEN !shift to .OR. 
+      IF(ode_flag .AND. vac_flag)THEN !shift to .OR.
         CALL check( nf90_def_var(ncid, "W_p_eigenvector", nf90_double,
      $    (/m_dim, mo_dim, i_dim/), wp_id) )
         CALL check( nf90_def_var(ncid, "W_p_eigenvalue", nf90_double,
@@ -258,7 +258,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,ca_id, locstab%fs(:,4)))
 
       IF(debug_flag) PRINT *," - Putting matrix variables in netcdf"
-      IF(ode_flag .AND. vac_flag)THEN !shift to .OR. 
+      IF(ode_flag .AND. vac_flag)THEN !shift to .OR.
         CALL check( nf90_put_var(ncid,wp_id,RESHAPE((/REAL(wp),
      $             AIMAG(wp)/),(/mpert,mpert,2/))) )
         CALL check( nf90_put_var(ncid,wpv_id,RESHAPE((/REAL(ep),

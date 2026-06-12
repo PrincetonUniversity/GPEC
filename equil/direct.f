@@ -95,7 +95,7 @@ c-----------------------------------------------------------------------
          CALL spline_dealloc(sq)
          CALL spline_alloc(sq,mpsi,4)
       ENDIF
-      
+
       sq%name="  sq  "
       sq%title=(/"psifac","twopif","mu0 p ","dvdpsi","  q   "/)
 c-----------------------------------------------------------------------
@@ -387,7 +387,7 @@ c-----------------------------------------------------------------------
             ird=ird+1
             r=((3-0.5*ird)*rmin+ro)/(1+3-0.5*ird)
             ir=0
-            IF (ird==6) THEN 
+            IF (ird==6) THEN
                direct_infinite_loop_flag = .TRUE.
                CALL program_stop("Took too many steps to find inb spx.")
             ENDIF
@@ -411,7 +411,7 @@ c-----------------------------------------------------------------------
             ird=ird+1
             r=(ro+(3-0.5*ird)*rmax)/(1+3-0.5*ird)
             ir=0
-            IF (ird==6) THEN 
+            IF (ird==6) THEN
                direct_infinite_loop_flag = .TRUE.
                CALL program_stop
      $              ("Took too many steps to find outb spx.")
