@@ -515,7 +515,7 @@ c-----------------------------------------------------------------------
      $     singbnoflxs, singbwp
 
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE ::
-     $     singcoup_out, localcoup_out,                       ! Coupling to external field in output coordinates
+     $     singcoup_out,                                      ! Coupling to external field in output coordinates
      $     singcoup_out_bvecs,localcoup_out_bvecs             ! Right singular vectors of power normalized coupling in output coordinates weighted by A_m^1/2/A^1/2
       REAL(r8), DIMENSION(:,:), ALLOCATABLE ::
      $     singcoup_out_vals, localcoup_out_vals              ! Singular values of energy normalized coupling in output coordinates
@@ -811,7 +811,6 @@ c-----------------------------------------------------------------------
          ALLOCATE(s(osing),u(osing,osing),a(osing,tmpert),
      $      vt(osing,tmpert),work(lwork),rwork(5*osing),ipiv(tmpert),
      $      localcoup_out_vals(nsingcoup, osing),
-     $      localcoup_out(nsingcoup, tmpert, osing),
      $      localcoup_out_vecs(nsingcoup,tmpert,osing),
      $      localcoup_out_bvecs(nsingcoup,tmpert,osing),
      $      matmo(tmpert, osing))
@@ -1039,7 +1038,7 @@ c-----------------------------------------------------------------------
             CALL check( nf90_put_var(mncid,s_id(i),
      $           singcoup_out_vals(i,:)) )
             IF(osing<msing)THEN
-               matmo = TRANSPOSE(localcoup_out(i,:,:))
+               matmo = TRANSPOSE(localcoup_out_vecs(i,:,:))
                CALL check( nf90_put_var(mncid,cl_id(i),RESHAPE(
      $              (/REAL(matmo), AIMAG(matmo)/),(/tmpert,osing,2/))))
                CALL check( nf90_put_var(mncid,rl_id(i),RESHAPE(
@@ -1059,9 +1058,10 @@ c-----------------------------------------------------------------------
 c     Deallocate local variables.
 c-----------------------------------------------------------------------
       DEALLOCATE(singcoup_out, singcoup_out_bvecs, singcoup_out_vals,
-     $     tmfac, fldflxmn, temp1, flxtofld)
+     $     tmfac, fldflxmn, temp1, flxtofld, matms)
       IF (osing<msing) THEN
-         DEALLOCATE(localcoup_out_bvecs, localcoup_out_vals)
+         DEALLOCATE(localcoup_out_bvecs, localcoup_out_vals,
+     $        localcoup_out_vecs, matmo)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1915,7 +1915,6 @@ c-----------------------------------------------------------------------
      $        "Resonant fields, singular currents, and islands"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a13,a8,1x,a12,I2)')
          WRITE(out_unit,'(1x,a12,1x,I4)')"msing =",msing
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,a6,17(1x,a16))')"q","psi","spot",
@@ -1927,7 +1926,6 @@ c-----------------------------------------------------------------------
      $        "half_w_isl_v_crit","singflx_crit",
      $        "half_w_sat","half_w_min"
          DO ising=1,msing
-            WRITE(out_unit,'(1x,f6.3,17(es17.8e3))')
             WRITE(out_unit,'(1x,f6.3,17(es17.8e3))')
      $           singtype(ising)%q,singtype(ising)%psifac,
      $           spots(ising),
@@ -3780,7 +3778,7 @@ c-----------------------------------------------------------------------
 c     deallocation cleans memory in heap
 c-----------------------------------------------------------------------
       DEALLOCATE(rvecs,zvecs,rs,zs,psis,rss,zss,xnofuns,bnofuns)
-      DEALLOCATE(xmns,ymns,xnomns,bnomns,bwpmns)
+      DEALLOCATE(xmns,ymns,xnomns,bnomns,bwpmns,bwpmns_rmatch)
       IF (msing>0) DEALLOCATE(intbwpmns)
 c-----------------------------------------------------------------------
 c     terminate.

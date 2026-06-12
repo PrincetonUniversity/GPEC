@@ -179,8 +179,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute psilim and qlim.
 c-----------------------------------------------------------------------
-      ! qlim=MIN(qmax,qhigh)
-      qlim=qmax
+      qlim=MIN(qmax,qhigh)
       q1lim=sq%fs1(mpsi,4)
       psilim=psihigh
       IF(sas_flag)THEN
@@ -1303,8 +1302,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: axisPsi,dpsi,q,q1,eps=1e-10
 
       ! use newton iteration to find starting psi if qlow it is above q0
-      ! IF(qlow > qmin)THEN
-      IF(.FALSE.)THEN
+      IF(qlow > qmin)THEN
       ! start check from the edge for robustness in reverse shear cores
       DO jpsi = sq%mx-1, 1, -1
             IF(sq%fs(jpsi - 1, 4) < qlow) EXIT
