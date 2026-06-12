@@ -130,8 +130,13 @@ Safety Factor :math:`q`
   for any combination of signs in the g-file. Reversing all signed
   quantities in a g-file (:math:`\psi`, ``simag``, ``sibry``, ``cpasma``,
   q) reproduces the original DCON results bit for bit.
-- Inverse equilibria (e.g. CHEASE) keep the q profile of the input file,
-  including its sign (``inverse_run`` in ``equil/inverse.f``).
+- **Inverse equilibria recompute q too.** The main inverse path
+  (``inverse_run`` in ``equil/inverse.f``, used by the CHEASE, JSOLVER,
+  TRANSP, and analytic formats) rebuilds q on each surface by a flux-surface
+  integration, exactly as the direct path does; the input file's q profile
+  is read into ``sq_in`` but not used, and the recomputed q is positive. The
+  one exception is the ``chease4`` format (``inverse_chease4_run``), which
+  takes q directly from the input file.
 
 
 Mode Numbers :math:`m` and :math:`n`
@@ -162,8 +167,8 @@ Why Positive :math:`m` Is Always Resonant
 
 Resonant surfaces are found by ``sing_find`` in ``dcon/sing.f``.
 It performs a binary search for flux surfaces where :math:`m = n \cdot q`.
-Since :math:`n > 0` (by convention) and :math:`q > 0` (guaranteed for
-direct equilibria, see the safety factor section above):
+Since :math:`n > 0` (by convention) and :math:`q > 0` (the recomputed q is
+always positive, see the safety factor section above):
 
 .. math::
 
@@ -295,7 +300,9 @@ For g-file input the sign part of the COCOS choice cannot matter:
 :math:`F > 0`, and discards the file's q profile, so g-files that differ
 only in sign conventions produce identical results. Field and current
 directions enter solely through ``ip_direction`` and ``bt_direction`` in
-``coil.in``. What does matter is the flux normalization: GPEC assumes the
+``coil.in``. The main inverse path likewise recomputes q rather than
+inheriting it from the input file. What does matter is the flux
+normalization: GPEC assumes the
 g-eqdsk standard of poloidal flux per radian (Wb/rad). A file carrying the
 full flux (the COCOS 11-18 family) yields a wrong q magnitude. Reports
 that g-files must be supplied in one specific COCOS trace to this unit
@@ -326,7 +333,7 @@ Quick Reference
      - Yes, ABS()
    * - :math:`q` (safety factor)
      - Recomputed by field-line integration
-     - Yes, positive for g-files
+     - Always positive
    * - :math:`n` (toroidal mode)
      - Always positive
      - By convention
@@ -348,7 +355,7 @@ Source Code References
 - **F = R*Bt forced positive**: ``read_eq_efit`` in ``equil/read_eq.f``
 - **q definition**: ``dcon/README``
 - **q from field-line integration**: ``direct_run`` in ``equil/direct.f``
-- **q copied from inverse input**: ``inverse_run`` in ``equil/inverse.f``
+- **q recomputed (inverse path)**: ``inverse_run`` in ``equil/inverse.f``
 - **Helicity computation**: ``gpec_main`` program in ``gpec/gpec.f``
 - **ip/bt direction**: ``input/coil.in``
 - **Poloidal mode range**: ``dcon`` program in ``dcon/dcon.F``
