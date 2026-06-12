@@ -51,12 +51,12 @@ c      END TYPE resist_type
 
       LOGICAL :: rescale=.TRUE.,dx1dx2_flag=.false.
       LOGICAL :: grid_diagnose=.FALSE.
-      CHARACTER(4) :: inps_type="gjt"
+      CHARACTER(4) :: inps_type="inps"
       CHARACTER(10) :: gal_method="normal"
       INTEGER, DIMENSION(2) :: rp=(/3,4/)
       INTEGER :: order_pow=10,order_exp=3,fulldomain=0,
      $     mpert=3,kmax=8,nx_ua=100,outt=3
-      REAL(r8) :: inps_xfac
+      REAL(r8) :: inps_xfac=1.0_r8
       REAL(r8), DIMENSION(0:2) :: inps_eps=(/1e-2,5e-7,1e-7/),inps_xmaxx
       REAL(r8) :: xmax=1,xfac=1
       REAL(r8) :: x0_ua=0.01,x1_ua=1

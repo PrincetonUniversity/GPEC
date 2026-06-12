@@ -491,7 +491,9 @@ c-----------------------------------------------------------------------
          ! WRITE(*,*) "ising=",ising," eta=",eta(ising)
          ! WRITE(*,*) "guess=",guess
          ! WRITE(*,*) "guess_modify=",guess_modify
-         guess_modify=guess+ifac*REAL(ntor,r8)*rotation(ising)
+         ! 2*pi converts rotation (Hz) to angular frequency, as in
+         ! match_rpec's rpec_eigenvalues convention.
+         guess_modify=guess+ifac*2*pi*REAL(ntor,r8)*rotation(ising)
 c-----------------------------------------------------------------------
 c     compute inner region matching data.
 c-----------------------------------------------------------------------

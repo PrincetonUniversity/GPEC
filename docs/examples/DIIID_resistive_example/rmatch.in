@@ -73,8 +73,8 @@
     x1_ua=1              ! Furthest distance from rational surface where the asymptotic approximation is evaluated in function inpso_ua_diagnose
     nx_ua=100            ! Step size for evaluating the convergence of the asymptotic approximation of the inner region equations in function inpso_ua_diagnose
     outt=3               ! Chooses which component of the inner region equations to output in function inpso_ua_diagnose. Must choose either outt = 3 or 6
-    inps_type="inps"
-    inps_xfac=10.
+    inps_type="inps"     ! Inner-region asymptotic matching method. "inps" is the improved power-series solver (default); "gjt" is the legacy GJT method.
+    inps_xfac=10.        ! Grid refinement factor for the inps solver (scales nx and the asymptotic match radius). Only used when inps_type="inps".
 
 /
 &NYQUIST_INPUT
