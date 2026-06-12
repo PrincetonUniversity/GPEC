@@ -55,6 +55,11 @@ c-----------------------------------------------------------------------
          READ(UNIT=in_unit,NML=equil_output)
       ENDIF
       CALL ascii_close(in_unit)
+c-----------------------------------------------------------------------
+c     guard against negative newq0 (negative q is not supported).
+c-----------------------------------------------------------------------
+      IF(newq0 < 0)CALL program_stop("newq0 < 0 is not supported: "//
+     $     "q must be positive. Use newq0 = 0 (default) or newq0 > 0.")
       IF(PRESENT(op_psihigh))THEN
          psihigh = op_psihigh
          IF(verbose) WRITE(*,*) "Reforming equilibrium with new psihigh"
