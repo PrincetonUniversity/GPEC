@@ -73,8 +73,7 @@ c-----------------------------------------------------------------------
      $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout,filter_flag,
      $     netcdf_flag,ascii_flag,singthresh_flag,
      $     singthresh_callen_flag,singthresh_slayer_flag,
-     $     singthresh_slayer_inpr,singthresh_slayer_inpr_prof,
-     $     out_ahg2msc
+     $     singthresh_slayer_inpr,singthresh_slayer_inpr_prof
       NAMELIST/gpec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,jacfac_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
@@ -714,7 +713,7 @@ c-----------------------------------------------------------------------
      $        power_rout,power_bpout,power_bout,power_rcout,
      $        tmag_out,jsurf_out,'   ',0,.FALSE.)
          edge_flag=.TRUE.
-         CALL gpout_singfld(mode,xspmn,sing_spot,sing_interpspot,
+         CALL gpout_singfld(mode,xspmn,sing_spots,sing_interpspot,
      $           sing_npsi,singthresh_callen_flag,
      $           singthresh_slayer_flag,singthresh_slayer_inpr,
      $           singthresh_slayer_inpr_prof)
