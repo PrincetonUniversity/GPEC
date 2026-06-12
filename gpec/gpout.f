@@ -49,16 +49,6 @@ c-----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! harvest variables
-      INCLUDE 'harvest_lib.inc77'
-      INTEGER  :: ierr
-      INTEGER  :: hint = 0
-      REAL(r8) :: hdbl = 0
-      CHARACTER(LEN=16)    :: hkey
-      CHARACTER(LEN=50000) :: hnml
-      CHARACTER(LEN=65507) :: hlog
-      CHARACTER, PARAMETER :: nul = char(0)
-
       ! netcdf ids
       INTEGER :: mncid,fncid,cncid
       CHARACTER(64) :: mncfile,fncfile,cncfile
@@ -165,17 +155,6 @@ c-----------------------------------------------------------------------
          IF (sts(i) > 0) s(i)=-s(i)
          s(i)=-1/s(i)
       ENDDO
-c-----------------------------------------------------------------------
-c     log eigenvalues with harvest
-c-----------------------------------------------------------------------
-      ierr=set_harvest_payload_dbl_array(hlog,"s_P"//nul,
-     $     REAL(permeabev(resp_index,:), r8),mpert)
-      ierr=set_harvest_payload_dbl_array(hlog,"s_L"//nul,
-     $     REAL(surf_indev(:), r8),mpert)
-      ierr=set_harvest_payload_dbl_array(hlog,"s_Lambda"//nul,
-     $     REAL(plas_indev(resp_index,:), r8),mpert)
-      ierr=set_harvest_payload_dbl_array(hlog,"s_rho"//nul,
-     $     REAL(reluctev(resp_index,:), r8),mpert)
 c-----------------------------------------------------------------------
 c     fundamental matrices in netcdf
 c-----------------------------------------------------------------------
@@ -1228,18 +1207,6 @@ c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,'(1x,a,es10.3)')
      $  "Amplification factor = ",sengy/pengy
 
-      ! log results with harvest
-      norm=SQRT(ABS(DOT_PRODUCT(finmn,finmn)))
-      ierr=set_harvest_payload_dbl(hlog,"MODPhi_x"//nul,norm)
-      norm=SQRT(ABS(DOT_PRODUCT(foutmn,foutmn)))
-      ierr=set_harvest_payload_dbl(hlog,"MODPhi"//nul,norm)
-      ierr=set_harvest_payload_dbl(hlog,"energy_vacuum"//nul,vengy)
-      ierr=set_harvest_payload_dbl(hlog,"energy_surface"//nul,sengy)
-      ierr=set_harvest_payload_dbl(hlog,"energy_plasma"//nul,pengy)
-      ierr=set_harvest_payload_dbl(hlog,
-     $     "toroidal_torque"//nul,-2.0*nn*AIMAG(py))
-      ierr=set_harvest_payload_dbl(hlog,
-     $     "amplification"//nul,sengy/pengy)
 c-----------------------------------------------------------------------
 c     calculate the scalar surface area for normalizations.
 c-----------------------------------------------------------------------
@@ -1573,7 +1540,7 @@ c     compute current and field on rational surfaces.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_singfld(egnum,xspmn,spots,interpspot,nspot,
      $             callen_threshold_flag,slayer_threshold_flag,
-     $             slayer_inpr)
+     $             slayer_inpr,slayer_inpr_prof)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -1582,6 +1549,7 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum,nspot
       REAL(r8), DIMENSION(msing), INTENT(IN) :: spots
       REAL(r8), INTENT(IN) :: slayer_inpr, interpspot
+      REAL(r8), DIMENSION(20), INTENT(IN) :: slayer_inpr_prof
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: i_id,q_id,m_id,p_id,c_id,bp_id,w_id,k_id,n_id,d_id,
@@ -1621,7 +1589,8 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(msing) :: b_crit, ti_r, te_r, ni_r, ne_r,
      $    q1_r, we_r, wi_r, rh_r, r1_r
-      REAL(r8) :: omega_i,omega_e,jxb,omega_sol,br_th
+      REAL(r8) :: omega_i,omega_e,jxb,omega_sol,br_th,slayer_shear
+      REAL(r8) :: slayer_inpr_loc
       COMPLEX(r8) :: delta_s,psi0
 
 c-----------------------------------------------------------------------
@@ -1872,9 +1841,22 @@ c-----------------------------------------------------------------------
 c     compute threshold by linear drift mhd with slayer module.
 c-----------------------------------------------------------------------
          IF (slayer_threshold_flag) THEN
+            ! True shear s=(r/q)*dq/dr via rhotor Jacobian
+            slayer_shear=(sr%f(1)/sq%f(4))*sq%f1(4)/sr%f1(1)
+            ! per-surface Prandtl from profile array (ordered by
+            ! ascending q); non-positive entry falls back to scalar inpr
+            IF (ising <= 20) THEN
+               IF (slayer_inpr_prof(ising) > 0.0_r8) THEN
+                  slayer_inpr_loc = slayer_inpr_prof(ising)
+               ELSE
+                  slayer_inpr_loc = slayer_inpr
+               ENDIF
+            ELSE
+               slayer_inpr_loc = slayer_inpr
+            ENDIF
             CALL gpec_slayer(kin%f(2),kin%f(4)/e,kin%f(1),kin%f(3)/e,
-     $           kin%f(9),kin%f(5),omega_e,omega_i,sq%f(4),sq%f1(4),
-     $           bt0,sr%f1(1),ro,mi,slayer_inpr,resm,nn,ascii_flag,
+     $           kin%f(9),kin%f(5),omega_e,omega_i,sq%f(4),slayer_shear,
+     $           bt0,sr%f(1),ro,mi,slayer_inpr_loc,resm,nn,ascii_flag,
      $           delta_s,psi0,jxb,omega_sol,br_th)
             b_crit(ising)=br_th  ! Tesla. Normal resonant field comparable to singflx
          ENDIF
@@ -2112,17 +2094,6 @@ c-----------------------------------------------------------------------
          CALL check( nf90_close(fncid) )
       ENDIF
 
-      ! log singular response with harvest
-      DO ising=1,msing
-         aq(ising) = singtype(ising)%q
-         asingflx(ising) = ABS(singflx_mn(resnum(ising),ising))
-      ENDDO
-      ierr=set_harvest_payload_dbl_array(hlog,"q"//nul,aq,msing)
-      ierr=set_harvest_payload_dbl_array(hlog,"singcur"//nul,
-     $     ABS(singcur),msing)
-      ierr=set_harvest_payload_dbl_array(hlog,"singflx"//nul,
-     $     asingflx,msing)
-
       IF (singcoup_set .AND. ALLOCATED(sbno_fun)) THEN
          sbnosurf=SQRT(ABS(DOT_PRODUCT(sbno_fun(1:mthsurf),
      $        sbno_fun(1:mthsurf)))/mthsurf)
@@ -2232,9 +2203,6 @@ c-----------------------------------------------------------------------
          ENDIF
 
          ! information already in netcdf from control_filter subroutine
-         ! log svd overlap with harvest
-         ierr=set_harvest_payload_dbl_array(hlog,'overlap_percent'//nul,
-     $        op(1,:),msing)
 
          IF(osing<msing)THEN
             DO icoup=1,nsingcoup

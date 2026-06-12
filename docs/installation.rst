@@ -108,7 +108,6 @@ dependencies into deps. These include:
 * HDF5
 * netCDF-C
 * netCDF-Fortran
-* harvest (git submodule)
 
 To build all dependencies explicitly, run::
 

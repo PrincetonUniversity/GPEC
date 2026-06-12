@@ -64,6 +64,11 @@ c-----------------------------------------------------------------------
          vac_memory=.TRUE.
       ENDIF
 c-----------------------------------------------------------------------
+c     guard against negative newq0 (negative q is not supported).
+c-----------------------------------------------------------------------
+      IF(newq0 < 0)CALL program_stop("newq0 < 0 is not supported: "//
+     $     "q must be positive. Use newq0 = 0 (default) or newq0 > 0.")
+c-----------------------------------------------------------------------
 c     read input data.
 c-----------------------------------------------------------------------
       IF(PRESENT(op_psihigh))THEN

@@ -6,6 +6,40 @@ on:
     branches: [develop]
 
 jobs:
+  # Keep install/DEPENDENCIES.inc in sync with the Fortran sources. The graph
+  # is regenerated from the actual USE/MODULE relationships; if a contributor's
+  # change makes it stale, this job commits the corrected file back to the PR
+  # branch so nobody needs python/uv locally. (Same-repo PRs only -- a fork PR
+  # can't be pushed to, in which case just merge and fix on the next PR.)
+  deps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Regenerate dependency graph
+        working-directory: install
+        run: python3 gen_deps.py > DEPENDENCIES.inc
+      - name: Commit if the graph changed
+        run: |
+          if git diff --quiet -- install/DEPENDENCIES.inc; then
+            echo "DEPENDENCIES.inc already up to date."
+          else
+            git config user.name  "gpec-deps-bot"
+            git config user.email "actions@github.com"
+            git commit -am "INSTALL - MINOR - regenerate install/DEPENDENCIES.inc"
+            if git push; then
+              echo "DEPENDENCIES.inc was stale; committed the regenerated graph."
+            else
+              echo "::warning title=Stale DEPENDENCIES.inc::install/DEPENDENCIES.inc is out of date and could not be auto-updated (expected on fork PRs, which can't be pushed to). A maintainer should run 'make deps' in install/ and commit, or merge and fix on the next same-repo PR."
+            fi
+          fi
+
   build-netcdf-gfortran:
     runs-on: ubuntu-latest
     env:
@@ -152,13 +186,11 @@ jobs:
 
       - name: Rewrite .gitmodules to use HTTPS
         run: |
-          git config --file .gitmodules submodule."deps/src/harvest".url https://github.com/gafusion/harvest_client.git
           git config --file .gitmodules submodule."deps/src/netcdf-c".url https://github.com/Unidata/netcdf-c.git
           git config --file .gitmodules submodule."deps/src/netcdf-fortran".url https://github.com/Unidata/netcdf-fortran.git
           git config --file .gitmodules submodule."deps/src/hdf5".url https://github.com/HDFGroup/hdf5.git
           git config --file .gitmodules submodule."deps/src/OpenBLAS".url https://github.com/OpenMathLib/OpenBLAS.git
           git submodule sync
-          git submodule update --init --recursive "deps/src/harvest"
           
       - name: Install Dependencies
         run: |
@@ -233,12 +265,10 @@ jobs:
 
       - name: Rewrite .gitmodules to use HTTPS
         run: |
-          git config --file .gitmodules submodule."deps/src/harvest".url https://github.com/gafusion/harvest_client.git
           git config --file .gitmodules submodule."deps/src/netcdf-c".url https://github.com/Unidata/netcdf-c.git
           git config --file .gitmodules submodule."deps/src/netcdf-fortran".url https://github.com/Unidata/netcdf-fortran.git
           git config --file .gitmodules submodule."deps/src/hdf5".url https://github.com/HDFGroup/hdf5.git
           git config --file .gitmodules submodule."deps/src/OpenBLAS".url https://github.com/OpenMathLib/OpenBLAS.git
-          git submodule update --init --recursive "deps/src/harvest"
 
       - name: Compile
         run: |

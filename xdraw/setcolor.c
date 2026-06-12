@@ -8,10 +8,10 @@
 **  Copyright (c) CounterPoint Graphics 1993.  All rights reserved.
 ******************************************************************************/
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
-#include <stdlib.h>
 #include <unistd.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -20,6 +20,7 @@
 
 #include "setcolor.h"
 #include "ps.h"
+#include "xtools.h"
 
 #define XPRINTF
 #include "gendefs.h"
@@ -34,8 +35,6 @@ extern Colormap cmap;
 extern int dialogwindow;
 extern Window dialog_win;
 extern GC dialog_gc;
-
-extern void get_properties(Window, unsigned int *, unsigned int *, unsigned int *);
 
 static XColor xcolor;
 

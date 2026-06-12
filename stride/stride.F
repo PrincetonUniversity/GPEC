@@ -263,7 +263,7 @@ c-----------------------------------------------------------------------
       CALL sing_parallel_alloc(nThreads+1)
 
 #ifdef _OPENMP
-      CALL OMP_SET_NESTED(.TRUE.)
+      CALL OMP_SET_MAX_ACTIVE_LEVELS(2)
       IF (vac_parallel .AND. nThreads > 1) THEN
          mainlevelThreads = 2
       ELSE

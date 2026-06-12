@@ -1498,13 +1498,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     revise q profile.
 c-----------------------------------------------------------------------
-      IF(newq0 == -1)newq0=-q0
       IF(newq0 /= 0)THEN
          f0=sq%fs(0,1)-sq%fs1(0,1)*sq%xs(0)
          f0fac=f0**2*((newq0/q0)**2-one)
          q0=newq0
          DO ipsi=0,mpsi
-            ffac=SQRT(1+f0fac/sq%fs(ipsi,1)**2)*SIGN(one,newq0)
+            ffac=SQRT(1+f0fac/sq%fs(ipsi,1)**2)
             sq%fs(ipsi,1)=sq%fs(ipsi,1)*ffac
             sq%fs(ipsi,4)=sq%fs(ipsi,4)*ffac
             rzphi%fs(ipsi,:,3)=rzphi%fs(ipsi,:,3)*ffac
