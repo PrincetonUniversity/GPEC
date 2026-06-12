@@ -180,6 +180,16 @@ c-----------------------------------------------------------------------
       psifac = galsol%psifac
       rhofac = SQRT(psifac)
       qfac = galsol%q
+c-----------------------------------------------------------------------
+c     Replace the stale euler.bin psilim with the galerkin solution's
+c     outer edge (the last node of the grid we actually spline on), so
+c     GPEC never evaluates the ideal solution past its own grid. The
+c     res_psilim_diff inset keeps the control surface slightly inside
+c     until the boundary derivative is computed robustly.
+c-----------------------------------------------------------------------
+      psilim = galsol%psifac(galsol%tot_grids) - res_psilim_diff
+      CALL spline_eval(sq,psilim,0)
+      qlim = sq%f(4)
       ! m's must already match
       IF(galsol%mpert/=mpert) THEN
          PRINT *,'Galerkin mpert = ',galsol%mpert
