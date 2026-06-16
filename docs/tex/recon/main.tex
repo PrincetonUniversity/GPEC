@@ -2711,20 +2711,6 @@ denotes the Jacobian-weighted contravariant arrays stored by the code
 \end{tabular}
 \end{table}
 
-\subsubsection*{Input Variables and Parameters}
-\begin{table}[h!]
-\centering
-\begin{tabular}{|l|l|}
-\hline
-\textbf{Variable} & \textbf{Symbol/Definition} \\
-\hline
-\texttt{bwp\_fun, bwt\_fun, bwz\_fun} & $\mathcal{J} Q^\psi, \mathcal{J} Q^\theta, \mathcal{J} Q^\zeta$ \\
-\texttt{jacs}$(itheta)$ & $\mathcal{J}(\theta)$ = Jacobian at each $\theta$ \\
-\texttt{metric\%cs\%f}$(0, i, j)$ & $g_{ij}(0)$ = Metric tensor at MODE index 0 \\
-\hline
-\end{tabular}
-\end{table}
-
 \section{Log-output quantities and their exact integrands}
 \label{sec:logmap}
 
@@ -3053,8 +3039,17 @@ $\vec v_i\cdot\vec v_j=g_{ij}/\mathcal J^2$.  We start from
 \qquad
 \vec C = \mathbf Q+\mathbf V,
 \end{equation}
-so that $|\vec C|^2$ contains $5$ diagonal and $10$ cross products, plus the
-scalar Bernstein term $-\mu_0K|\xi_\psi|^2/|\nabla\psi|^2$.
+so that $|\vec C|^2$ expands into $5$ diagonal and $10$ cross products.  The scalar
+Bernstein term $-\mu_0K|\xi_\psi|^2/|\nabla\psi|^2$ is a \emph{separate} piece of the energy
+$2\mu_0\delta W=\int[\,|\vec C|^2+\mu_0\gamma p|\nabla\cdot\vec\xi|^2-\mu_0K|\xi_\psi|^2/|\nabla\psi|^2\,]$;
+the purpose of this appendix is to show that the $\mathbf H_4$ part of the
+$\mathbf V$-sector --- the products
+$2\,\mathrm{Re}(\mathbf V^{*}\!\cdot\mathbf Y)
+ +2\,\mathrm{Re}(\mathbf V^{*}\!\cdot\mathbf U)+|\mathbf V|^2$,
+together with that scalar --- collapses to the compact block
+$\mathbf H_4=\mu_0p'(\tfrac{\chi''}{\chi'}\mathbf J+\mathbf J')-2\pi f'q'\chi'\mathbf I$.
+(The other two $\mathbf V$-cross products, $\mathbf V^{*}\!\cdot\mathbf X$ and
+$\mathbf V^{*}\!\cdot\mathbf Z$, are \emph{not} part of $\mathbf H_4$; see below.)
 The field pieces are
 \begin{equation}
 \begin{aligned}
@@ -3099,14 +3094,17 @@ $\zeta$; this is used in Sec.~\ref{app:assembly}.
 
 Every $|\mathbf C|^2$ product is reduced with
 $\vec v_i\cdot\vec v_j=g_{ij}/\mathcal J^2$ and the cofactor identity
-$g_{22}g_{33}-g_{23}^2=\mathcal J^2|\nabla\psi|^2$.  Only the
-$\mathbf V$-touching products
-($\mathbf X^*\!\cdot\mathbf V,\ \mathbf Y^*\!\cdot\mathbf V,\
-\mathbf Z^*\!\cdot\mathbf V,\ \mathbf U^*\!\cdot\mathbf V,\ |\mathbf V|^2$) and the
-scalar $-\mu_0K$ term enter $\mathbf H_4$; the remaining diagonals and cross
-products are listed for completeness and feed the blocks
-$\mathbf A,\mathbf B,\mathbf C,\mathbf D,\mathbf E,\mathbf H_{1\text{--}3}$ of the
-main text.
+$g_{22}g_{33}-g_{23}^2=\mathcal J^2|\nabla\psi|^2$.  Of the $\mathbf V$-touching
+products, only $\mathbf Y^*\!\cdot\mathbf V$, $\mathbf U^*\!\cdot\mathbf V$, and
+$|\mathbf V|^2$ --- together with the scalar $-\mu_0K$ term --- enter
+$\mathbf H_4$.  The other two route elsewhere:
+$\mathbf X^*\!\cdot\mathbf V$ (a $\xi_s$--$\xi_\psi$ coupling) feeds the
+$\mathbf C$ block and
+$\mathbf Z^*\!\cdot\mathbf V=\mu_0p'\,\xi_\psi^{\prime *}\xi_\psi$ (a
+$\xi_\psi'$--$\xi_\psi$ coupling) the $\mathbf E$ block; the remaining
+$\mathbf Q$-sector diagonals and cross products are listed for completeness and
+feed the blocks
+$\mathbf A,\mathbf B,\mathbf D,\mathbf H_{1\text{--}3}$ of the main text.
 
 \medskip\noindent\emph{Diagonal products.}
 
@@ -3168,25 +3166,29 @@ g_{22}+2q\,g_{23}+q^2 g_{33}
 \end{equation}
 
 The second equality for $|\mathbf V|^2$ is \emph{not} a generic metric identity:
-it uses the magnetic-surface condition and force balance.  Writing the bracket
-as
-$\mu_0^2[g_{22}(j^\theta)^2+2g_{23}j^\theta j^\zeta+g_{33}(j^\zeta)^2]
-=|\mu_0\mathbf j\times\nabla\psi|^2/|\nabla\psi|^2$ and using
-$\mathbf B\cdot\nabla\psi=0$ (so $|\mathbf B\times\nabla\psi|^2=B^2|\nabla\psi|^2$
-and $\mu_0\mathbf j\cdot\mathbf B=\mu_0\sigma B^2$),
+it uses force balance.  With the Lagrange identity
+$|\mathbf j|^2B^2=(\mathbf j\cdot\mathbf B)^2+|\mathbf j\times\mathbf B|^2$ and
+$\sigma\equiv\mathbf j\cdot\mathbf B/B^2$ (so the bracket
+$\mu_0^2[g_{22}(j^\theta)^2+2g_{23}j^\theta j^\zeta+g_{33}(j^\zeta)^2]=\mu_0^2|\mathbf j|^2$),
+the difference between the two forms of $|\mathbf V|^2/|\xi_\psi|^2$ is an exact
+equality, not a proportionality:
 \begin{equation}
-\frac{|\mu_0\mathbf j\times\nabla\psi|^2}{|\nabla\psi|^2}
+\frac{\mu_0^2|\mathbf j|^2}{|\nabla\psi|^2}
 -\left[\frac{\mu_0\sigma(\mu_0\mathbf j\cdot\mathbf B)}{|\nabla\psi|^2}
 +\frac{(\mu_0p')^2}{B^2}\right]
-\;\propto\;
-\chi'^2\,(q\,\mu_0 j^\theta-\mu_0 j^\zeta)^2-(\mu_0p')^2 .
+=\frac{\mu_0^2|\mathbf j\times\mathbf B|^2-(\mu_0p')^2|\nabla\psi|^2}
+       {B^2|\nabla\psi|^2}
+=0 ,
 \end{equation}
-Inserting the DCON currents~\eqref{eq:app_dconcurrents}, the
-$2\pi f'q/\mathcal J$ pieces cancel and
-$\chi'(q\,\mu_0 j^\theta-\mu_0 j^\zeta)=\mu_0p'$, so the residual vanishes
-identically: the parallel ($f'$) current supplies the
+the numerator vanishing identically by force balance
+$\mu_0\mathbf j\times\mathbf B=\mu_0\nabla p=\mu_0 p'\nabla\psi$.  Equivalently, in
+the DCON currents~\eqref{eq:app_dconcurrents} the $2\pi f'q/\mathcal J$ pieces
+cancel and $\chi'(q\,\mu_0 j^\theta-\mu_0 j^\zeta)=\mu_0p'$, whence
+$\mu_0^2|\mathbf j\times\mathbf B|^2
+=\chi'^2(q\,\mu_0 j^\theta-\mu_0 j^\zeta)^2|\nabla\psi|^2=(\mu_0p')^2|\nabla\psi|^2$:
+the parallel ($f'$) current supplies the
 $\mu_0\sigma(\mu_0\mathbf j\cdot\mathbf B)$ term and the in-surface pressure
-current supplies $|\nabla\psi|^2(\mu_0p')^2/B^2$.
+current supplies the $(\mu_0p')^2/B^2$ term.
 
 \medskip\noindent\emph{Cross products.}
 
