@@ -3068,6 +3068,30 @@ with
 \qquad
 \mathcal A_3 \equiv \mu_0j^\theta g_{22}+\mu_0j^\zeta g_{23}.
 \end{equation}
+
+Physically $\mathbf V$ is simply the edge current rotated into the flux surface,
+$\mathbf V=\frac{\xi_\psi}{|\nabla\psi|^2}\,\mu_0\mathbf j\times\nabla\psi$ --- a
+concrete field on the $(\psi,\theta)$ grid --- and the components
+$\mathcal A_2=\mathcal J(\mu_0\mathbf j\times\nabla\psi)^{\theta}$,
+$\mathcal A_3=-\mathcal J(\mu_0\mathbf j\times\nabla\psi)^{\zeta}$ are just its
+Jacobian-weighted contravariant entries (the expansion is in the main text).
+Because $\mathbf V$ is a cross product, every \emph{in-surface} product with it
+collapses in one line by a scalar triple product: for any surface vector
+$\mathbf W=a\vec v_2+b\vec v_3$,
+\begin{equation}
+\mathbf W\cdot\mathbf V
+=\frac{\xi_\psi}{|\nabla\psi|^2}\,\mu_0\,\nabla\psi\cdot(\mathbf W\times\mathbf j)
+=\xi_\psi\,(a\,\mu_0 j^\zeta-b\,\mu_0 j^\theta),
+\label{eq:app_Vrule}
+\end{equation}
+since $\mathbf W\times\mathbf j=(a\,j^\zeta-b\,j^\theta)\nabla\psi$ for two
+in-surface vectors.  This is the cofactor identity
+$g_{22}g_{33}-g_{23}^2=\mathcal J^2|\nabla\psi|^2$ in coordinate-free form, and is
+the only tool needed for $\mathbf X^*\!\cdot\mathbf V$, $\mathbf Z^*\!\cdot\mathbf V$,
+and $\mathbf U^*\!\cdot\mathbf V$ below; likewise
+$|\mathbf V|^2=|\xi_\psi|^2\mu_0^2|\mathbf j|^2/|\nabla\psi|^2$ follows from
+$|\mu_0\mathbf j\times\nabla\psi|^2=\mu_0^2|\mathbf j|^2|\nabla\psi|^2$
+($\mathbf j\cdot\nabla\psi=0$).
 All dot products are reduced with the single geometric rule
 \begin{equation}
 \vec v_i\cdot\vec v_j=\frac{g_{ij}}{\mathcal J^2},
@@ -3241,17 +3265,9 @@ n\,g_{12}+m\,g_{31}
 \end{aligned}
 \end{equation}
 
-The collapse of $\mathbf X^*\!\cdot\mathbf V$ to a two-component current form uses
-the cofactor identity: with $\mathcal A_2,\mathcal A_3$ as above,
-\begin{equation}
-n(\mathcal A_2 g_{22}-\mathcal A_3 g_{23})+m(\mathcal A_2 g_{23}-\mathcal A_3 g_{33})
-=(g_{22}g_{33}-g_{23}^2)\,(n\,\mu_0 j^\zeta-m\,\mu_0 j^\theta),
-\end{equation}
-since the $\mu_0 j^\theta$ terms drop from the $n$-bracket and the
-$\mu_0 j^\zeta$ terms from the $m$-bracket; dividing by
-$|\nabla\psi|^2\mathcal J^2$ and using
-$g_{22}g_{33}-g_{23}^2=\mathcal J^2|\nabla\psi|^2$ gives
-$-(m\,\mu_0 j^\theta-n\,\mu_0 j^\zeta)$.
+Here $\mathbf W=n\vec v_2+m\vec v_3$, so the triple-product
+rule~\eqref{eq:app_Vrule} gives the coefficient
+$n\,\mu_0 j^\zeta-m\,\mu_0 j^\theta=-(m\,\mu_0 j^\theta-n\,\mu_0 j^\zeta)$ directly.
 
 \begin{equation}
 \mathbf Y^*\!\cdot\mathbf Z
@@ -3287,11 +3303,11 @@ g_{12}+q\,g_{31}
 \mathbf Z^*\!\cdot\mathbf V
 =
 \mu_0p'\,\xi_\psi^{\prime *}\xi_\psi
-\qquad(\text{pointwise, after } g_{22}g_{33}-g_{23}^2=\mathcal J^2|\nabla\psi|^2),
+\qquad(\text{pointwise}),
 \end{equation}
 
-For $\mathbf Z^*\!\cdot\mathbf V$ the same cofactor cancellation gives, before
-inserting currents,
+For $\mathbf Z^*\!\cdot\mathbf V$ the rule~\eqref{eq:app_Vrule} with
+$\mathbf W=\vec v_2+q\vec v_3$ gives, before inserting currents,
 $\mathbf Z^*\!\cdot\mathbf V=\chi'\,\xi_\psi^{\prime *}\xi_\psi\,
 (q\,\mu_0 j^\theta-\mu_0 j^\zeta)$; inserting~\eqref{eq:app_dconcurrents},
 $q\,\mu_0 j^\theta-\mu_0 j^\zeta
@@ -3309,7 +3325,8 @@ $\mathbf Z^*\!\cdot\mathbf V=\mu_0p'\,\xi_\psi^{\prime *}\xi_\psi$.
 \qquad(\text{pointwise}),
 \end{equation}
 
-For $\mathbf U^*\!\cdot\mathbf V$ the cofactor cancellation leaves the pointwise
+For $\mathbf U^*\!\cdot\mathbf V$ the rule~\eqref{eq:app_Vrule} with
+$\mathbf W=\chi''\vec v_2+(q\chi')'\vec v_3$ leaves the pointwise
 coefficient $|\xi_\psi|^2[-\chi''\mu_0 j^\zeta+(q\chi')'\mu_0 j^\theta]$;
 inserting~\eqref{eq:app_dconcurrents} and expanding $(q\chi')'=q'\chi'+q\chi''$,
 the $\pm2\pi f'q\chi''/\mathcal J$ cross terms cancel, leaving
