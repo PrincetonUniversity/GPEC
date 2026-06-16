@@ -64,3 +64,6 @@ slayer/slayer
 *.synctex.gz
 *.pdf
 *.png
+
+# keep the figure included by docs/tex/recon/main.tex
+!docs/tex/recon/C_eulerian_lagrangian_n1.png
