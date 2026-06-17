@@ -8,6 +8,7 @@
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{amsmath, amssymb}
+\usepackage{array}
 \usepackage{hyperref}
 \usepackage{cancel}
 \usepackage{color}
@@ -1368,16 +1369,6 @@ g_{\psi\theta}C^{\psi*}C^\theta
 \end{aligned}
 \end{equation}
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=0.62\linewidth]{C_eulerian_lagrangian_n1.png}
-  \caption{Effective field $\vec C$ on two flux surfaces ($\psi=0.45,\,0.82$) in the
-  (a)~Eulerian and (b)~Lagrangian frames: equilibrium current $\vec j$ (blue) and its
-  apparent normal component (red). DIII-D \#147131 at $2300$~ms; $n=1$, displacement
-  exaggerated.}
-  \label{fig:C_frame}
-\end{figure}
-
 \paragraph{Verification: $\vec C$ as an effective field and the $\nabla\times\vec C$ check.}
 The reconstruction is closed by a self-consistency test of the condition
 $(\nabla\times\vec C)\cdot\nabla\psi=0$, which holds on every flux surface and admits both a
@@ -1399,12 +1390,10 @@ perturbed current,
 so the reconstruction condition states exactly that this effective current is tangent to the
 flux surface, $(\nabla\times\vec C)\cdot\nabla\psi=0\Leftrightarrow\vec j_{\mathrm{eff}}\cdot\nabla\psi=0$. In the equilibrium the current
 lies in flux surfaces, $\vec j\cdot\nabla\psi=0$. Under an ideal-MHD displacement the flux
-is frozen into the fluid, so each surface is convected to the perturbed label
-$\Psi=\psi-\vec\xi\cdot\nabla\psi$; followed along this displaced surface (the Lagrangian
-description) the perturbed current keeps no component through it. Referred instead to the
-unperturbed normal $\hat n=\nabla\psi/|\nabla\psi|$ at a fixed point---the Eulerian
-description natural to DCON's fixed control surface---the convected equilibrium current
-acquires an \emph{apparent} normal component; with $\vec Q=\delta\vec B$,
+is frozen into the fluid, so the equilibrium current is convected with the displaced surface
+$\Psi=\psi-\vec\xi\cdot\nabla\psi$ (the Lagrangian picture) and keeps no component through it.
+Referred instead to the \emph{fixed} (Eulerian) surface $\psi$ that DCON uses, this convected
+current acquires an \emph{apparent} normal component; with $\vec Q=\delta\vec B$,
 \begin{equation}
 \frac{1}{\mu_0}(\nabla\times\vec Q)\cdot\nabla\psi
 =\nabla\cdot\!\big[(\vec\xi\cdot\nabla\psi)\,\vec j\big]
@@ -1416,20 +1405,55 @@ $\nabla\cdot\vec j=0$), and the last uses $\nabla\psi\cdot\nabla\times\vec G=\na
 triple product $(\vec j\times\hat n)\times\hat n=(\vec j\cdot\hat n)\hat n-\vec j=-\vec j$
 (because $\vec j\cdot\hat n=0$), giving
 $\nabla\cdot[(\vec\xi\cdot\nabla\psi)\vec j]=-\nabla\psi\cdot\nabla\times[\xi_n(\vec j\times\hat n)]$.
-This apparent normal component is an artifact of measuring a displaced surface against its
-original normal. The cross term
-$\xi_n(\mu_0\vec j\times\hat n)$ in the definition of $\vec C$ is exactly this convective
-(Lagrangian$\leftrightarrow$Eulerian) contribution and cancels it,
+This apparent normal is a frame effect---the frozen current viewed against the unperturbed
+surface. The cross term $\xi_n(\mu_0\vec j\times\hat n)$ in the definition of $\vec C$ is
+exactly this convective (Lagrangian$\leftrightarrow$Eulerian) contribution and cancels it,
 \begin{equation}
 (\nabla\times\vec C)\cdot\nabla\psi
 =(\nabla\times\vec Q)\cdot\nabla\psi
 +\mu_0\,\nabla\psi\cdot\nabla\times\!\big[\xi_n(\vec j\times\hat n)\big]=0.
 \end{equation}
-Hence $\vec C$ is an \emph{effective perturbed magnetic field}---the Eulerian field
-$\vec Q$ corrected onto the displaced surface, not the perturbed flux $\Psi$ itself---whose
-curl is the genuine surface current (Fig.~\ref{fig:C_frame}); where $\vec j=0$ (e.g.\ outside the plasma) the
+Hence $\vec C$ is an \emph{effective perturbed magnetic field}---$\vec Q$ with the
+frozen-current artifact removed, so that its curl is a genuine surface current on the
+\emph{fixed} (Eulerian) flux surface (Fig.~\ref{fig:C_frame}); where $\vec j=0$ (e.g.\ outside the plasma) the
 correction drops and $\vec C=\vec Q$. (See Boozer~\cite{RevModPhys.76.1071};
 Park~\cite{Park2009Ideal}, \S2.2.)
+
+Table~\ref{tab:QvsC} contrasts the bare perturbed field with the effective field.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.8\linewidth]{QvsC_quant_n1.png}
+  \caption{Quantitative check of $(\nabla\times\vec C)\cdot\nabla\psi=0$ on the actual run
+  (DIII-D \#147131, $n=1$).  The real normal effective-current density
+  $(\nabla\times\,\cdot\,)\cdot\nabla\psi$ (at $\phi=0$) on the equilibrium flux grid for
+  (a)~the bare perturbed field $\vec Q=\delta\vec B$ and (b)~the effective field
+  $\vec C=\vec Q+\vec V$, \emph{both in the fixed (Eulerian) frame}.  $\vec Q$'s effective
+  current pierces the flux surface (RMS $=2.1\times10^{-3}$) while $\vec C$'s is tangent to
+  numerical roundoff (RMS $=2.1\times10^{-12}$).  Computed spectrally from the code's
+  covariant field components ($Q_i,C_i$) and validated against the \texttt{C verify} diagnostic; the
+  near-axis speckle is a $1/|\nabla\psi|$ reconstruction artifact.}
+  \label{fig:C_frame}
+\end{figure}
+
+\begin{table}[ht]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{l >{\raggedright\arraybackslash}p{0.32\linewidth} >{\raggedright\arraybackslash}p{0.38\linewidth}}
+\hline\hline
+ & $\vec Q=\delta\vec B$ & $\vec C=\vec Q+\vec V$ \\
+\hline
+Name & perturbed field (Eulerian $\delta\vec B$) & effective perturbed field ($\delta\vec B+\text{correction}$) \\
+Normal field (flux) & $b_n$ & $b_n$\quad\emph{(identical)} \\
+$\nabla\times$ on fixed $\psi$ & not tangent --- apparent normal current & tangent: $(\nabla\times\vec C)\cdot\nabla\psi=0$ \\
+\hline\hline
+\end{tabular}
+\caption{The bare perturbed field $\vec Q=\delta\vec B$ versus the effective perturbed
+field $\vec C=\vec Q+\vec V$.  Both carry the \emph{same} normal field (flux) $b_n$ and differ
+only in their tangential (surface-current) part, so that only $\nabla\times\vec C$ is tangent
+to the fixed flux surface ($\vec j_{\mathrm{eff}}\cdot\nabla\psi=0$).}
+\label{tab:QvsC}
+\end{table}
 
 The code's \texttt{C verify} check tests this condition on the reconstructed components
 through its flux-coordinate form

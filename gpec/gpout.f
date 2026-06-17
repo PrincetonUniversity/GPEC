@@ -6882,7 +6882,7 @@ c-----------------------------------------------------------------------
       
       INTEGER :: ipsi, itheta, ipert, ushear_fun, ucurv, uk, ucveri,
      $     uk_sigma, ucw_fun, ucw_mn, ucv_fun, ucv_mn, ucv2_fun,
-     $     ucv2_mn, u_int, u_log, u_terms
+     $     ucv2_mn, uqv_mn, u_int, u_log, u_terms
       REAL(r8), DIMENSION(0:mthsurf) :: epf_den_fun, epf_p_fun,
      $     epf_t_fun, epf_z_fun, dst1_den_fun, dst2_den_fun,
      $     dst3_den_fun
@@ -6895,6 +6895,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(0:mthsurf) :: shear_fun, curv_fun, K_fun,
      $     cveri_fun
       COMPLEX(r8), DIMENSION(0:mthsurf,3) :: cw_fun, cv_fun, cv2_fun
+      COMPLEX(r8), DIMENSION(mpert) :: qvp_mn, qvt_mn, qvz_mn
       REAL(r8), DIMENSION(0:mthsurf) :: K_term1, K_term2, K_term3
       REAL(r8), DIMENSION(0:mthsurf) :: sigma_vals, jdotb_vals
       CHARACTER(8) :: smode
@@ -6902,6 +6903,7 @@ c-----------------------------------------------------------------------
       CHARACTER(128) :: k_file, k_sigma_file
       CHARACTER(128) :: cw_fun_file, cw_mn_file, cv_fun_file, cv_mn_file
       CHARACTER(128) :: cv2_fun_file, cv2_mn_file, int_file, terms_file
+      CHARACTER(128) :: qv_mn_file
       REAL(r8) :: dpsi_local
       INTEGER :: istep, nint_pts, iint, ep_index
       REAL(r8) :: psi_prev, psi_curr, epf_prev, epf_curr, ep_selected
@@ -6961,6 +6963,7 @@ c-----------------------------------------------------------------------
       cv_mn_file = "gpec_recon_cvmn_sol"//TRIM(smode)//".out"
       cv2_fun_file = "gpec_recon_cv2fun_sol"//TRIM(smode)//".out"
       cv2_mn_file = "gpec_recon_cv2mn_sol"//TRIM(smode)//".out"
+      qv_mn_file = "gpec_recon_qvmn_sol"//TRIM(smode)//".out"
       int_file = "gpec_recon_integration_sol"//TRIM(smode)//".out"
       terms_file = "gpec_recon_terms_sol"//TRIM(smode)//".out"
 
@@ -6978,6 +6981,7 @@ c-----------------------------------------------------------------------
       u_int = 92
       u_log = 93
       u_terms = 94
+      uqv_mn = 95
 
       IF (recon_out) THEN
          OPEN(UNIT=ushear_fun, FILE=shear_fun_file, STATUS="UNKNOWN")
@@ -6993,6 +6997,7 @@ c-----------------------------------------------------------------------
          CALL ascii_open(ucv_mn, cv_mn_file, "UNKNOWN")
          CALL ascii_open(ucv2_fun, cv2_fun_file, "UNKNOWN")
          CALL ascii_open(ucv2_mn, cv2_mn_file, "UNKNOWN")
+         CALL ascii_open(uqv_mn, qv_mn_file, "UNKNOWN")
          OPEN(UNIT=u_int, FILE=int_file, STATUS="UNKNOWN")
          OPEN(UNIT=u_terms, FILE=terms_file, STATUS="UNKNOWN")
          WRITE(ushear_fun,'(6(1x,a16))')
@@ -7025,6 +7030,9 @@ c-----------------------------------------------------------------------
          WRITE(ucv2_mn,'(8(1x,a16))')
      $        "psi","m","cv2p_re","cv2p_im","cv2t_re","cv2t_im",
      $        "cv2z_re","cv2z_im"
+         WRITE(uqv_mn,'(8(1x,a16))')
+     $        "psi","m","qvp_re","qvp_im","qvt_re","qvt_im",
+     $        "qvz_re","qvz_im"
          WRITE(u_int,'(15(1x,a16))')
      $        "psi","c2_mu0","k_xin2_re","k_xin2_im",
      $        "c2_mu0_sum","k_xin2_c_re","k_xin2_c_im",
@@ -7063,6 +7071,18 @@ c        identical to the original logic.
          CALL gpeq_epf(psi, epf_int, epf_den_fun=epf_den_fun,
      $        epf_p_fun=epf_p_fun, epf_t_fun=epf_t_fun,
      $        epf_z_fun=epf_z_fun)
+
+c        Capture covariant bare-Q components (Q_i) set by gpeq_cova
+c        inside gpeq_epf, before gpeq_K/gpeq_dst run. These are the
+c        genuine perturbed-field covariant components delta-B_i; the
+c        effective field is cvmn = C_i = Q_i + V_i. Writing qvmn lets
+c        (curl Q).grad(psi) be formed from covariant components, the
+c        same way cveri forms (curl C).grad(psi) from cvmn.
+         IF (recon_out) THEN
+            qvp_mn = bvp_mn
+            qvt_mn = bvt_mn
+            qvz_mn = bvz_mn
+         ENDIF
 
 c        Reconstruct detailed K diagnostics for output. Keep this on
 c        the original path so recon terminal totals remain unchanged.
@@ -7172,6 +7192,9 @@ c           for recon output tables.
                WRITE(ucv2_mn,'(1x,es17.8e3,1x,I8,6(es17.8e3))') psi,
      $              mfac(ipert), c2vp_mn(ipert), c2vt_mn(ipert),
      $              c2vz_mn(ipert)
+               WRITE(uqv_mn,'(1x,es17.8e3,1x,I8,6(es17.8e3))') psi,
+     $              mfac(ipert), qvp_mn(ipert), qvt_mn(ipert),
+     $              qvz_mn(ipert)
             ENDDO
             WRITE(ucw_fun,*)
             WRITE(ucw_mn,*)
@@ -7179,6 +7202,7 @@ c           for recon output tables.
             WRITE(ucv_mn,*)
             WRITE(ucv2_fun,*)
             WRITE(ucv2_mn,*)
+            WRITE(uqv_mn,*)
          ENDIF
       ENDDO
       
@@ -7458,6 +7482,7 @@ c-----------------------------------------------------------------------
          CALL ascii_close(ucv_mn)
          CALL ascii_close(ucv2_fun)
          CALL ascii_close(ucv2_mn)
+         CALL ascii_close(uqv_mn)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
