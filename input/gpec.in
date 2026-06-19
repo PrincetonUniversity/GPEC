@@ -88,8 +88,6 @@
 
    recon_flag=f             ! Calculate each contribution of destabilizing term and effective perturbed field [Bernstein, Handbook of Plasma Physics, 1983].
    recon_flag2=f            ! Calculate the first-form plasma energy terms from Eq. (36) with the gamma|div xi|^2 term omitted.
-   xi_flag=f                ! Under recon workflows, reserve an external xi source file instead of using the default perturbation source.
-   xifile=""                ! Optional external xi file path used when xi_flag is true.(file format should be same with euler.bin)
    cveri_flag=f             ! Under recon_flag, verify (curl C).grad(psi-)=0 and write gpec_recon_cveri_sol*.out.
    recon_out=t              ! Under recon_flag, write recon diagnostic files and gpec.log entries. If false, keep terminal summary only.
    recon_int="spline"       ! recon_flag radial integration on psifac grid. Options: "spline" or "trapezoid".

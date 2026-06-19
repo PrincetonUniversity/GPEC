@@ -19,8 +19,7 @@ c-----------------------------------------------------------------------
      $     chebyshev_flag,coil_flag,eigm_flag,bwp_pest_flag,verbose,
      $     debug_flag,timeit,kin_flag,con_flag,resp_induct_flag,
      $     netcdf_flag,ascii_flag,wv_farwall_flag,mutual_test_flag,
-     $     cveri_flag,recon_out,recon_flag2,recon_flag3,
-     $     xi_flag
+     $     cveri_flag,recon_out,recon_flag2,recon_flag3
 
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths,nths2,lmpert,lmlow,lmhigh,
@@ -42,7 +41,7 @@ c-----------------------------------------------------------------------
       CHARACTER(10) :: date,time,zone
       CHARACTER(16) :: jac_type,jac_in,jac_out,data_type,recon_int
       CHARACTER(128) :: ieqfile,idconfile,ivacuumfile,rdconfile
-      CHARACTER(128) :: dcon_dir,xifile
+      CHARACTER(128) :: dcon_dir
 
       INTEGER, PARAMETER :: hmnum=128
       REAL(r8), PARAMETER :: gauss=0.0001
