@@ -37,12 +37,20 @@ c-----------------------------------------------------------------------
      $     eps_eff
       REAL(r8), DIMENSION(:), POINTER :: avg
       REAL(r8), DIMENSION(2) :: rmax_loc, rmin_loc, zmax_loc, zmin_loc
-      TYPE(spline_type), TARGET :: ff
+      TYPE(spline_type), TARGET :: ff, Zeff_spline
 c-----------------------------------------------------------------------
 c     prepare spline types.
 c-----------------------------------------------------------------------
       IF(MRE_flag)THEN
          CALL spline_alloc(ff,mtheta,22)
+         IF(ALLOCATED(Zeff) .AND. ALLOCATED(psi_N_Zeff))THEN
+            CALL spline_alloc(Zeff_spline,SIZE(psi_N_),1)
+            Zeff_spline%xs=psi_N_Zeff
+            Zeff_spline%fs(:,1)=Zeff
+            CALL spline_fit(Zeff_spline,"extrap")
+         ELSE
+            CALL program_stop("Provide Zeff profile values")
+         ENDIF
       ELSE
          CALL spline_alloc(ff,mtheta,5)
       ENDIF
@@ -207,8 +215,9 @@ c     Callen, 2010 UW-CPTC 09-6R, and Hegna PoP 1999
 c-----------------------------------------------------------------------
             ! mu_e_on_nu_e=(ftr/(1.d0-ftr))*(1.d0+0.533d0/Zeff)
             ! ^ Taking banana limit of eq. B17 (& B14) in Callen 
-            mufrac=ftr*(1.d0+0.533d0/Zeff)/
-     $                            ((1.d0-ftr)+ftr*(1.d0+0.533d0/Zeff))
+            CALL spline_eval(Zeff_spline,psifac,0)
+            mufrac=ftr*(1.d0+0.533d0/Zeff_spline%f(1))/
+     $                  ((1.d0-ftr)+ftr*(1.d0+0.533d0/Zeff_spline%f(1)))
 c-----------------------------------------------------------------------
 c     evaluate geometric prefactors of MRE stability terms from
 c     Hegna 1999 https://doi.org/10.1063/1.873661
