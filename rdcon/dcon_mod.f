@@ -82,7 +82,8 @@ c-----------------------------------------------------------------------
      $     crossover=1e-2,mthsurf0=1,prefac=1.0,
      $     plasma1=0.0,vacuum1=0.0,total1=0.0
 
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: Zeff, psi_N_Zeff
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: Zeff_, psi_N_Zeff_
+      REAL(r8), DIMENSION(1000) :: Zeff=-1.0, psi_N_Zeff=-1.0 ! read-in
 
       REAL(r8) :: dpsi_intvl=0.1,dpsi1_intvl=0.1
       TYPE(spline_type) :: locstab, mreterms
