@@ -44,7 +44,7 @@ c-----------------------------------------------------------------------
       IF(MRE_flag)THEN
          CALL spline_alloc(ff,mtheta,22)
          IF(ALLOCATED(Zeff) .AND. ALLOCATED(psi_N_Zeff))THEN
-            CALL spline_alloc(Zeff_spline,SIZE(psi_N_),1)
+            CALL spline_alloc(Zeff_spline,SIZE(psi_N_Zeff),1)
             Zeff_spline%xs=psi_N_Zeff
             Zeff_spline%fs(:,1)=Zeff
             CALL spline_fit(Zeff_spline,"extrap")
