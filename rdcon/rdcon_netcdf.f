@@ -130,7 +130,11 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_att(ncid,nf90_global,'betat', betat))
       CALL check( nf90_put_att(ncid,nf90_global,'betan', betan))
       CALL check( nf90_put_att(ncid,nf90_global,'volume', volume))
-      CALL check( nf90_put_att(ncid,nf90_global,'Zeff', Zeff))
+      IF(ALLOCATED(Zeff) .AND. ALLOCATED(psi_N_Zeff))THEN
+        CALL check( nf90_put_att(ncid,nf90_global,'Zeff', Zeff))
+        CALL check( nf90_put_att(ncid,nf90_global,'psi_N_Zeff',
+     $       psi_N_Zeff))
+      ENDIF
       CALL check( nf90_put_att(ncid,nf90_global,'bwall', bwall))
       CALL check( nf90_put_att(ncid,nf90_global,'bt0', bt0))
       CALL check( nf90_put_att(ncid,nf90_global,'q0', q0))
