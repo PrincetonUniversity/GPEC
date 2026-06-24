@@ -43,7 +43,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(6,2), PRIVATE :: pp,dpp
       COMPLEX(r8), DIMENSION(6,6), PRIVATE :: tmat,tinv
       COMPLEX(r8), DIMENSION(6,6,0:2), PRIVATE :: amat,jmat
-      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE, PRIVATE :: 
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE, PRIVATE ::
      $     k2mat,k6mat,bmat,pmat,qmat,cmat,dmat,ymat,emat,zmat
       TYPE(resist_type_inps) :: rt
 
@@ -64,12 +64,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     copy input values.
 c-----------------------------------------------------------------------
-      rt%e=rt_in%e 
+      rt%e=rt_in%e
       rt%f=rt_in%f
       rt%h=rt_in%h
       rt%g=rt_in%g
-      rt%k=rt_in%k 
-      rt%q=rt_in%q 
+      rt%k=rt_in%k
+      rt%q=rt_in%q
 c-----------------------------------------------------------------------
 c     compute powers.
 c-----------------------------------------------------------------------
@@ -112,7 +112,7 @@ c-----------------------------------------------------------------------
       SUBROUTINE inps_cmatwrite(mat,name,unit)
 
       COMPLEX(r8), DIMENSION(:,:), INTENT(IN) :: mat
-      CHARACTER(*), INTENT(IN) :: name 
+      CHARACTER(*), INTENT(IN) :: name
       INTEGER, INTENT(IN) :: unit
 
       INTEGER :: m,n,i,j
@@ -346,9 +346,9 @@ c-----------------------------------------------------------------------
          IF(k <= 2)
      $        CALL inps_cmatwrite(jmat(:,:,k),"jmat"//order,split_unit)
          CALL inps_cmatwrite(k6mat(:,:,k),"k6mat"//order,split_unit)
-         CALL inps_cmatwrite(bmat(:,:,k),"bmat"//order,split_unit) 
+         CALL inps_cmatwrite(bmat(:,:,k),"bmat"//order,split_unit)
          CALL inps_cmatwrite(pmat(:,:,k),"pmat"//order,split_unit)
-         CALL inps_cmatwrite(errmat(:,:,k),"errmat"//order,split_unit) 
+         CALL inps_cmatwrite(errmat(:,:,k),"errmat"//order,split_unit)
          WRITE(order,'(a,i2.2,a)')"(",k,")"
          WRITE(split_unit,'(a,es10.3/)')
      $        " error"//order//" = ",error(k)
@@ -460,10 +460,10 @@ c-----------------------------------------------------------------------
       DO k=1,kmax+2
          WRITE(coefs_unit,'(a,g0/)')" k = ",k
          WRITE(order,'(a,g0,a)')"(",k,")"
-         CALL inps_cmatwrite(k2mat(:,:,k),"k2mat"//order,coefs_unit) 
-         CALL inps_cmatwrite(qmat(:,:,k),"qmat"//order,coefs_unit) 
-         CALL inps_cmatwrite(cmat(:,:,k),"cmat"//order,coefs_unit) 
-         CALL inps_cmatwrite(qcemat(:,:,k),"qcemat"//order,coefs_unit) 
+         CALL inps_cmatwrite(k2mat(:,:,k),"k2mat"//order,coefs_unit)
+         CALL inps_cmatwrite(qmat(:,:,k),"qmat"//order,coefs_unit)
+         CALL inps_cmatwrite(cmat(:,:,k),"cmat"//order,coefs_unit)
+         CALL inps_cmatwrite(qcemat(:,:,k),"qcemat"//order,coefs_unit)
          WRITE(order,'(a,i2.2,a)')"(",k,")"
          WRITE(coefs_unit,'(a,es10.3/)')" qcerr"//order//" = ",qcerr(k)
       ENDDO
@@ -482,9 +482,9 @@ c-----------------------------------------------------------------------
          yerror=MAXVAL(ABS(yerrmat))
          WRITE(coefs_unit,'(a,g0/)')" k = ",k
          WRITE(order,'(a,g0,a)')"(",k,")"
-         CALL inps_cmatwrite(zmat(:,:,k),"zmat"//order,coefs_unit) 
-         CALL inps_cmatwrite(ymat(:,:,k),"ymat"//order,coefs_unit) 
-         CALL inps_cmatwrite(yerrmat,"yerrmat"//order,coefs_unit) 
+         CALL inps_cmatwrite(zmat(:,:,k),"zmat"//order,coefs_unit)
+         CALL inps_cmatwrite(ymat(:,:,k),"ymat"//order,coefs_unit)
+         CALL inps_cmatwrite(yerrmat,"yerrmat"//order,coefs_unit)
          WRITE(order,'(a,g0,a)')"(",k,")"
          WRITE(coefs_unit,'(a,es10.3/)')" yerror"//order//" = ",yerror
       ENDDO
@@ -558,8 +558,11 @@ c-----------------------------------------------------------------------
       smat=RESHAPE((/one,zero,zero,xfac/),(/2,2/))
       qsy=MATMUL(q,MATMUL(smat,y))
       ua=MATMUL(pp,qsy)
-      IF(PRESENT(tflag) .AND. tflag .OR. .NOT. PRESENT(tflag))
-     $     ua=MATMUL(tmat,ua)
+      IF(PRESENT(tflag))THEN
+         IF (tflag) ua=MATMUL(tmat,ua)
+      ELSE
+         ua=MATMUL(tmat,ua)
+      ENDIF
 c-----------------------------------------------------------------------
 c     back substitution for dua.
 c-----------------------------------------------------------------------
@@ -645,58 +648,93 @@ c-----------------------------------------------------------------------
       LOGICAL, DIMENSION(0:1) :: set
       CHARACTER(64) :: message
       REAL(r8), PARAMETER :: xlogmin=-1,dxlog=.01
-      INTEGER :: ixlog,nxlog=1000,i
-      REAL(r8) :: xlog,x,dxfac
+      INTEGER :: ixlog,nxlog=1000,i,ibis
+      INTEGER, PARAMETER :: nbisect=60
+      REAL(r8) :: xlog,x,dxfac,x_prev,dmax_prev,dmax
+      REAL(r8) :: xlo,xhi,xmid
       REAL(r8), DIMENSION(2) :: delta
+      REAL(r8), DIMENSION(0:2) :: xmax_lo,xmax_hi
+      LOGICAL, DIMENSION(0:2) :: bracketed
 c-----------------------------------------------------------------------
 c     start loops over x.
 c-----------------------------------------------------------------------
       set=.TRUE.
+      bracketed=.FALSE.
       dxfac=10**dxlog
       xlog=xlogmin
       x=10**xlog
       ixlog=0
+      CALL inps_delta(x,delta)
+      dmax_prev=MAXVAL(delta)
+      x_prev=x
+      ixlog=1
+      xlog=xlog+dxlog
+      x=x*dxfac
       DO
 c-----------------------------------------------------------------------
 c     compute delta and diagnose.
 c-----------------------------------------------------------------------
          CALL inps_delta(x,delta)
+         dmax=MAXVAL(delta)
          IF(diagnose)THEN
             WRITE(*,'(3(a,es10.3))')
      $           " e = ",rt%e,", f = ",rt%f,", h = ",rt%h
             WRITE(*,'(4(a,es10.3))')
-     $           " g = ",rt%g,", k = ",rt%k,", q = ",REAL(rt%q)
-            WRITE(*,'(a,es10.3,a,2es10.3)')" x = ",x,", delta = ",delta
-            CALL program_stop("inps_xmax: abort after diagnose.")
+     $           " g = ",rt%g,", k = ",rt%k,
+     $           ", q = ",REAL(rt%q)
+            WRITE(*,'(a,es10.3,a,2es10.3)')
+     $           " x = ",x,", delta = ",delta
+            CALL program_stop
+     $           ("inps_xmax: abort after diagnose.")
          ENDIF
 c-----------------------------------------------------------------------
-c     compute x1 and x2.
+c     bracket each threshold crossing.
 c-----------------------------------------------------------------------
-         DO i=0,1
-            IF(MAXVAL(delta) < eps(i) .AND. set(i))THEN
-               xmax(i)=x
-               set(i)=.FALSE.
+         DO i=0,2
+            IF(dmax_prev >= eps(i) .AND.
+     $           dmax < eps(i) .AND.
+     $           .NOT. bracketed(i))THEN
+               xmax_lo(i)=x_prev
+               xmax_hi(i)=x
+               bracketed(i)=.TRUE.
             ENDIF
          ENDDO
-         IF(MAXVAL(delta) < eps(2))THEN
-            xmax(2)=x
-            EXIT
-         ENDIF
+         IF(ALL(bracketed)) EXIT
 c-----------------------------------------------------------------------
 c     abort if ixlog = nxlog.
 c-----------------------------------------------------------------------
          IF(ixlog == nxlog)THEN
             WRITE(message,'(a,g0,a,es10.3)')
-     $           "inps_xmax: abort with ixlog = nxlog = ",nxlog,
+     $           "inps_xmax: abort with ixlog"
+     $           //" = nxlog = ",nxlog,
      $           ", xlog = ",xlog
             CALL program_stop(message)
          ENDIF
 c-----------------------------------------------------------------------
 c     finish loop over x.
 c-----------------------------------------------------------------------
+         x_prev=x
+         dmax_prev=dmax
          ixlog=ixlog+1
          xlog=xlog+dxlog
          x=x*dxfac
+      ENDDO
+c-----------------------------------------------------------------------
+c     bisect each bracket to find smooth xmax.
+c-----------------------------------------------------------------------
+      DO i=0,2
+         xlo=xmax_lo(i)
+         xhi=xmax_hi(i)
+         DO ibis=1,nbisect
+            xmid=(xlo+xhi)/2
+            CALL inps_delta(xmid,delta)
+            IF(MAXVAL(delta) < eps(i))THEN
+               xhi=xmid
+            ELSE
+               xlo=xmid
+            ENDIF
+         ENDDO
+         xmax(i)=(xlo+xhi)/2
       ENDDO
 c-----------------------------------------------------------------------
 c     terminate.
@@ -711,7 +749,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE inps_delta(x,delta)
-      
+
       REAL(r8), INTENT(IN) :: x
       REAL(r8), DIMENSION(2), INTENT(OUT) :: delta
 

@@ -28,7 +28,7 @@ c-----------------------------------------------------------------------
      $     power_bout,power_rout,power_bpout,power_rcout,tmag_out,
      $     nn,info,resp_index,rstep,resp,psixy,nmin,nmax,mmin,mmax,
      $     nche,nchr,nchz,rsing,rnqty,rnx,max_linesout,
-     $     nr,nz,malias,ol,ou,osing
+     $     nr,nz,malias,ol,ou,osing,galmpert
 
       REAL(r8) :: ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
      $     qmin,qmax,seconds,rfac,eta,singfac_min,rmin,rmax,zlim,
@@ -52,8 +52,6 @@ c-----------------------------------------------------------------------
 
       INTEGER, DIMENSION(8) :: values
 
-      LOGICAL :: out_ahg2msc, vac_memory
-
       LOGICAL, DIMENSION(:), ALLOCATABLE :: sing_flag
       INTEGER, DIMENSION(:), ALLOCATABLE :: fixstep,mfac,lmfac
       INTEGER, DIMENSION(:,:), ALLOCATABLE :: permeabindex,gdl
@@ -74,7 +72,8 @@ c-----------------------------------------------------------------------
      $     xno_mn,xta_mn,xpa_mn,bno_mn,bta_mn,bpa_mn,
      $     xrr_mn,xrz_mn,xrp_mn,brr_mn,brz_mn,brp_mn,
      $     chi_mn,che_mn,kax_mn,sbno_mn,sbno_fun,edge_mn,edge_fun,
-     $     chy_mn,chx_mn,chw_mn,kaw_mn,mutual_indev,mutual_indinvev
+     $     chy_mn,chx_mn,chw_mn,kaw_mn,mutual_indev,mutual_indinvev,
+     $     bwp_mn_rmatch
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: cwp_mn,cwt_mn,
      $     cwz_mn, cvp_mn,cvt_mn,cvz_mn,c2vp_mn,c2vt_mn, c2vz_mn
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: wt,wt0,chp_mn,kap_mn,
@@ -97,12 +96,13 @@ c-----------------------------------------------------------------------
       TYPE(bicube_type), ALLOCATABLE, TARGET :: gpout_shear
       TYPE(bicube_type), ALLOCATABLE, TARGET :: gpout_curvature
       TYPE(bicube_type), ALLOCATABLE, TARGET :: gpout_k
-      TYPE(cspline_type) :: u1,u2,u3,u4,u5
+      TYPE(cspline_type) :: u1,u2,u3,u4,u5,bpsi
       TYPE(cspline_type) :: smats,tmats,xmats,ymats,zmats
       TYPE(fspline_type) :: metric
 
       TYPE :: resist_type
       REAL(r8) :: e,f,h,m,g,k,eta,rho,taua,taur,di,dr,sfac,deltac
+      COMPLEX(r8) :: eigenvalue
       END TYPE resist_type
 
       TYPE :: solution_type
@@ -112,9 +112,11 @@ c-----------------------------------------------------------------------
 
       TYPE :: galsol_type
       LOGICAL :: gal_flag
-      INTEGER :: mpert, tot_grids,mlow,mhigh,mtot
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: psifac
+      INTEGER :: mpert, tot_grids,mlow,mhigh,mtot,msing
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: psifac,q
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: u
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: du
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: bpsi
       END TYPE galsol_type
 
       TYPE :: fixfac_type
@@ -122,7 +124,6 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(:), ALLOCATABLE :: index
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: fixfac,transform,gauss
       END TYPE fixfac_type
-
       TYPE :: sing_type
       INTEGER :: msol_l,msol_r,jfix,jpert
       REAL(r8) :: psifac,q,q1
@@ -166,7 +167,7 @@ c-----------------------------------------------------------------------
       CALL cspline_dealloc(u1)
       CALL cspline_dealloc(u2)
       CALL fspline_dealloc(metric)
-
+      IF(bpsi%allocated) CALL cspline_dealloc(bpsi)
       IF(ALLOCATED(soltype))THEN
          DO istep=0,mstep
             DEALLOCATE(soltype(istep)%u)

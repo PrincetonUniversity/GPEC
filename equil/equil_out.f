@@ -246,7 +246,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE equil_out_global
-      
+
       INTEGER :: itheta,ipsi,itmax=20
       REAL(r8) :: bp0,chi1,dpsi,dvsq,jacfac,r,rfac,eta,v21,v22,v33,jac
       TYPE(spline_type) :: gs,hs

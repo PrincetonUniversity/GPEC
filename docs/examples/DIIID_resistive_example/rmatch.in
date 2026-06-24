@@ -1,98 +1,100 @@
 &RMATCH_INPUT
-    galsol_filename = "gal_solution.dat"
-    galsol_filename_cut = "gal_solution_cut.dat"
-    deltabin_filename = "delta_gw.dat"
+    galsol_filename = "gal_solution.dat"          ! File containing Galerkin solutions
+    galsol_filename_cut = "gal_solution_cut.dat"  ! File containing resistive/cut Galerkin solutions
+    deltabin_filename = "delta_gw.dat"            ! File containing delta matrix from RDCON
 
-    match_flag=t
-    scan_flag=f
-    qscan_flag=f
-    sol_flag =f
-    deflate=f
-    nroot=5
-    itermax=5000
-    msing=4
-    initguess = ( 0,10)    !n=1
+    ! Scans, solves, and matching options. Not used with RPEC.
+    match_flag=t         ! Compute inner region matching data; not used with RPEC
+    scan_flag=f          ! Scan over eta; not used with RPEC
+    qscan_flag=f         ! Scan over eigenvalue Q; not used with RPEC
+    sol_flag =f          ! Newton solve for single eigenvalue; not used with RPEC
+    deflate=f            ! Divides Delta determinant by PRODUCT(guess-oldroots)
+    nroot=5              ! Number of eigenvalues to find
+    itermax=5000         ! Maximum number of iterations in Newton solve
+    relax_fac=0.5        ! Numerical relaxation factor in Newton solve
+    msing=4              ! Number of singular surfaces to include in matching
+    initguess = ( 0,10)  ! Initial guess for eigenvalues in Newton solve
+    scan_x0 = 1.90E-10   ! Start of scan range if doing any scan
+    scan_x1 =  1e-9      ! End of scan range if doing any scan
+    scan_nstep = 50      ! Number of steps in scan if doing any scan
+    qscan_ising=2        ! Which singular surface to scan Q over
+    deltar_flag=t        ! Solve inner layer equations in Fourier space
+    deltac_flag=t        ! Solve inner layer equations using cubic hermite finite element method
+    deltaj_flag=t        ! Solve inner layer equations using Jardin finite element GGJ model
+    qscan_out=f          ! Output delta from Q scan?
 
-    eta=8e-8,8e-8,8e-8,8e-8
-    massden=3.3e-07,3.3e-07,3.3e-07,3.3e-07
+    ! Resistive MHD options
+    eta=8e-08,8e-08,8e-08,8e-08   ! Resistivity at each rational surface, starting from the core
+    massden=3.3e-07,3.3e-07,3.3e-07,3.3e-07   ! Mass density (kg/m^3) at each rational surface, starting from the core. 3.3e-7 is ni=1e20 m^-3.
+    rotation=1,1,1,1     ! Rotation frequency f in Hz at each rational surface, starting from the core. (2pi f = omega, i omega = gamma in Wang et al 2020 eq 1)
+    model="deltac"       ! Which method to use for computing inner layer response. Options are "deltar", "deltac", "deltaj". 
 
-    scan_x1 =  1e-9
-    scan_x0 = 1.90E-10
-
-    scan_nstep = 50
-
-
-    model="deltac"
-    qscan_ising=2
-    deltar_flag=t
-    deltac_flag=t
-    deltaj_flag=t
-    qscan_out=f
-
-
-    match_sol%flag=t
-    match_sol%uniform=t
-    match_sol%qpert=2
-    match_sol%auto_connect=f
-    match_sol%connect_threshold=1e-3
-    match_sol%b_flag=f
-    coil%ideal_flag=f
+    match_sol%flag=t     ! Write outsol_qpert.bin
+    match_sol%uniform=t  ! Use a uniform grid in psi?
+    match_sol%qpert=2    ! Which mode to write in outsol_qpert.bin?
+    match_sol%auto_connect=f ! run match.f/match_auto_connect; false in examples, unknown precise behavior
+    match_sol%connect_threshold=1e-3 ! Proportional difference between outer and inner solutions for match_auto_connect to connect them
+    match_sol%b_flag=f   ! Write solutions in terms of b instead of xi
+    coil%ideal_flag=f    ! Write ideal galerkin solution instead of resistive -- combined with GPEC this is physically equivalent to running regular DCON
 /
 &RMATCH_OUTPUT
-    bin_rpecsol=f
-    out_rpecsol=f
+    bin_rpecsol=f        ! Write outer and inner solutions to binary files
+    out_rpecsol=f        ! Write outer and inner solutions to ascii files
 /
 
 &DELTAC_LIST
-    tid=3,5,6,4
-    deltac_bin_sol=f
-    deltac_out_sol=f
+    tid=3,5,6,4          ! Which solution indexes are used in computing combined solutions. Always 3,5,6,4 in examples. See Wang/Glasser PoP 2020.
+    deltac_bin_sol=f     ! Write deltac solutions to binary files for xdraw
+    deltac_out_sol=f     ! Write deltac solutions to ascii files
 
-    rescale=t
-    pfac=0.1
-    xfac=10.0
-    gal_method="normal"
-    noexp=t
-    nx=128
-    nq=5
-    deltac_tol=1e-11
-    dx1dx2_flag=f
-    dx1=0.001
-    dx2=0.002
-    restore_ul=t
-    restore_uh=t
-    restore_us=t
+    rescale=t            ! Rescale x during asymptotic matching for better numerical behavior
+    pfac=0.1             ! Packing ratio? Should it be the same as in RDCON?
+    gal_method="normal"  ! Something to do with cell types used? Options are "normal", "resonant". "normal" in examples.
+    noexp=t              ! Leaves out the small exponential solution to the asymptotic form of the inner region equations
+    nx=128               ! The number of elements in each interval between two singular surfaces
+    nq=5                 ! The number of Gaussian points in each Galerkin element
+    deltac_tol=1e-11     ! Tolerance of lsode integration
+    dx1dx2_flag=f        ! Flag to include the special dx1 and dx2 treatments for resonant and extension element
+    dx1=0.001            ! The size of resonant element
+    dx2=0.002            ! The size of extension element
+    restore_ul=t         ! Include the Hermite solution in Galerkin solution
+    restore_uh=t         ! Include the small solution in Galerkin solution
+    restore_us=t         ! Include the larger solution in Galerkin solution
 
-    cutoff=20
+    cutoff=20            ! The number of elements include the large solution as the driving term
 
-    interp_np=5
-    order_pow=20
-    order_exp=20
+    interp_np=5          ! The number of interpretation points for outputting Galerkin solution
+    order_pow=100        ! The order of polynomial expansion of large solution in asymptotic matching
+    order_exp=50         ! The order of exponential expansion of small solution in asymptotic matching
 
-    diagnose_res=f
+    diagnose_res=f       ! Diagnose asymptotic solutions in ua.out/ua.bin
 
-    x0_ua=0.3
-    x1_ua=1
-    nx_ua=100
-    outt=3
+    x0_ua=0.3            ! Starting distance from rational surface to begin evaluating the convergence of the asymptotic approximation of the inner region equations in function inpso_ua_diagnose
+    x1_ua=1              ! Furthest distance from rational surface where the asymptotic approximation is evaluated in function inpso_ua_diagnose
+    nx_ua=100            ! Step size for evaluating the convergence of the asymptotic approximation of the inner region equations in function inpso_ua_diagnose
+    outt=3               ! Chooses which component of the inner region equations to output in function inpso_ua_diagnose. Must choose either outt = 3 or 6
+    inps_type="inps"     ! Inner-region asymptotic matching method. "inps" is the improved power-series solver (default); "gjt" is the legacy GJT method.
+    inps_xfac=10.        ! Grid refinement factor for the inps solver (scales nx and the asymptotic match radius). Only used when inps_type="inps".
+
 /
 &NYQUIST_INPUT
-    nyquist%flag=f
-    nyquist%ns=100
+    nyquist%flag=f       ! Make nyquist plot
+    nyquist%ns=100       ! Parameter for nyquist plot
 
-    nyquist%small=.01
-    nyquist%big=300
-    nyquist%narc=32
+    nyquist%small=.01    ! minimum amplitude of Q searched in the nyquist root-finding script
+    nyquist%big=300      ! maximum amplitude of Q searched in the nyquist root-finding script
+    nyquist%narc=32      ! How fine a grid in |Q| to search for roots of the dispersion relation
 
-    nyquist%out=t
-    nyquist%bin=t
-/    
+    nyquist%out=t        ! ASCII output of nyquist plot data
+    nyquist%bin=t        ! Binary output of nyquist plot data
+/
 &MSING_LIST
-    msing_diagnose=f
-    vmat_filename="vmat.bin"
-    sing_frac=0.2
-    sing_nout=100
-    us_flag=t
-    ul_flag=t
+    msing_diagnose=f     ! Writes resonant power-series solutions to diagnose msing
+    vmat_filename="vmat.bin" ! File containing Vacuum energy matrix from RDCON
+    sing_frac=0.2        ! msing_write control: how far to compute the inner region equations as a fraction of the distance between singular surfaces for printing (?)
+    sing_nout=100        ! msing_write control: number of points at which to compute inner region equations for printing (?)
+    us_flag=t            ! msing_write control: whether to compute small asymptotic solution for printing (?)
+    ul_flag=t            ! msing_write control: whether to compute large asymptotic solution for printing (?)
+
 /
 

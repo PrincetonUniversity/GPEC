@@ -1851,7 +1851,7 @@ module torque
         integer :: status, ncid,i_did,i_id,p_did,p_id,l_did,l_id, &
             v_id,g_id,c_id,d_id,t_id, b_id,x_id, er_id,q_id,mp_id, &
             ni_id,ne_id,ti_id,te_id,vi_id,ve_id,ze_id,ll_id,we_id, &
-            wn_id,wt_id,ws_id,wg_id,wb_id,wd_id
+            wn_id,wt_id,ws_id,wg_id,wb_id,wd_id,wp_id
         character(16) :: nstring,suffix
         character(128) :: ncfile
 
@@ -1976,6 +1976,9 @@ module torque
         call check( nf90_def_var(ncid, "omega_d_rlar", nf90_double, p_did, wd_id) )
         call check( nf90_put_att(ncid, wd_id, "long_name", "Reduced Magnetic Precession Frequency") )
         call check( nf90_put_att(ncid, wd_id, "units", "rad/s") )
+        call check( nf90_def_var(ncid, "omega_p", nf90_double, p_did, wp_id))
+        call check( nf90_put_att(ncid, wp_id, "long_name", "Plasma Rotation"))
+        call check( nf90_put_att(ncid, wp_id, "units", "rad/s") )
         ! End definitions
         call check( nf90_enddef(ncid) )
         ! store variables
@@ -2001,6 +2004,7 @@ module torque
         call check( nf90_put_var(ncid, wg_id, wgyro) )
         call check( nf90_put_var(ncid, wb_id, wbhat) )
         call check( nf90_put_var(ncid, wd_id, wdhat) )
+        call check( nf90_put_var(ncid, wp_id, wphi) )
         deallocate(epsr,nuk,nueff,nui,nue,ni,ne,ti,te,llmda,&
             welec,wdian,wdiat,wphi,wtran,wgyro,wbhat,wdhat)
 
