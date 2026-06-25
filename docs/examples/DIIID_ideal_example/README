@@ -12,7 +12,7 @@ Following a typical workflow we first ``cd`` to the example's directory, then ru
   DCON START => ...
   DCON STOP => Normal termination.
 
-From the positive total free-boundary energy, we see that the plasma is stable for n=1 perturbations. Total energies of order 1e0--1e-2 indicate clear stability, while values of order 1e-3 or smaller may warrant further investigation. It is always a good idea to verify the solution using ``xdraw``, OMFIT, or your own ploting routines. One can also skim the human readable ``dcon.out`` ascii output.
+From the positive total free-boundary energy, we see that the plasma is stable for n=1 perturbations. Total energies of order 1e0--1e-2 indicate clear stability, while values of order 1e-3 or smaller may warrant further investigation. It is always a good idea to verify the solution using ``xdraw``, OMFIT, or your own plotting routines. One can also skim the human readable ``dcon.out`` ascii output.
 
 A ``stride.in`` is also included, allowing STRIDE to be run as an alternative stability solver. STRIDE parallelizes the ODE integration across radial intervals and should give consistent n=1 stability results::
 
