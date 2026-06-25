@@ -5,7 +5,7 @@
 	ideal_flag=t
 	contour_flag=t
 
-	sol_num=1 		!DCON eigen function index (1 is least stable), which will be calculates by MATCH
+	sol_num=1 		!DCON eigen function index (1 is most unstable), which will be calculated by MATCH
 
 	res_flag=f
 	ff0=1e6
