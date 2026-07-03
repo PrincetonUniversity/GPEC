@@ -267,38 +267,35 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE read_var_len(x_in, y_in, x_out, y_out)
+      SUBROUTINE read_var_len(x_in, x_out)
 
       IMPLICIT NONE
 
-      REAL(r8), DIMENSION(:), INTENT(IN) :: x_in, y_in
-      REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: x_out, y_out
+      REAL(r8), DIMENSION(:), INTENT(IN) :: x_in ! Indexes from 1...
+      REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: x_out
       INTEGER :: n, i
-      REAL(r8) :: default_value_x,default_value_y
+      REAL(r8) :: default_value
 c-----------------------------------------------------------------------
-c     assume last values of x_in, y_in are sentinals
+c     assume last value of x_in is a sentinal
 c-----------------------------------------------------------------------
-      default_value_x = x_in(SIZE(x_in))
-      default_value_y = y_in(SIZE(y_in))
+      default_value = x_in(SIZE(x_in))
 c-----------------------------------------------------------------------
 c     count leading non-sentinel values in x_in.
 c-----------------------------------------------------------------------
       n = 0
       DO i = 1, SIZE(x_in) - 1
-        IF (x_in(i) /= default_value_x) THEN
+        IF (x_in(i) /= default_value) THEN
           n = n + 1
         ELSE
           EXIT
         END IF
       END DO
 c-----------------------------------------------------------------------
-c     allocate output arrays and copy if values exist.
+c     allocate output array and copy if values exist.
 c-----------------------------------------------------------------------
       IF (n > 0) THEN
         ALLOCATE(x_out(n))
-        ALLOCATE(y_out(n))
         x_out(1:n) = x_in(1:n)
-        y_out(1:n) = y_in(1:n)
       END IF
 c-----------------------------------------------------------------------
 c     terminate.

@@ -262,10 +262,6 @@ c-----------------------------------------------------------------------
       ENDIF
       CALL ascii_close(in_unit)
 c-----------------------------------------------------------------------
-c     Allocate variable-length Zeff input profile.
-c-----------------------------------------------------------------------
-      CALL read_var_len(Zeff,psi_N_Zeff,Zeff_,psi_N_Zeff_)
-c-----------------------------------------------------------------------
 c     open output files, read, process, and diagnose equilibrium.
 c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"dcon.out","REPLACE")
@@ -343,6 +339,8 @@ c-----------------------------------------------------------------------
 c     optionally compute modified Rutherford equation (MRE) terms.
 c-----------------------------------------------------------------------
       IF(MRE_flag)THEN
+         CALL read_var_len(Zeff,Zeff_)
+         CALL read_var_len(psi_N_Zeff,psi_N_Zeff_)
          CALL spline_alloc(mreterms,mpsi,30)
          mreterms%xs=sq%xs
          mreterms%fs=0
