@@ -77,6 +77,11 @@ c-----------------------------------------------------------------------
             DEALLOCATE(cellinfos%icell,cellinfos%iintvl,
      $  cellinfos%etypes,cellinfos%etypes_int,cellinfos%x1,cellinfos%x2)
       ENDIF
+      IF(MRE_flag)THEN
+         CALL spline_dealloc(mreterms)
+         DEALLOCATE(Zeff_)
+         DEALLOCATE(psi_N_Zeff_)
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
