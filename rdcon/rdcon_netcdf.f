@@ -161,6 +161,20 @@ c-----------------------------------------------------------------------
         CALL check( nf90_put_att(ncid,nf90_global,"vacuum1",vacuum1))
         CALL check( nf90_put_att(ncid,nf90_global,"total1",total1))
       ENDIF
+      IF(gse_max /= 0)THEN
+        CALL check( nf90_put_att(ncid,nf90_global,'gse_max',
+     $       gse_max))
+        CALL check( nf90_put_att(ncid,nf90_global,'gse_max_psi',
+     $       gse_max_psi))
+        CALL check( nf90_put_att(ncid,nf90_global,'gse_max_q',
+     $       gse_max_q))
+        CALL check( nf90_put_att(ncid,nf90_global,'gse_tols',
+     $       gse_tols))
+        CALL check( nf90_put_att(ncid,nf90_global,'psi_gse_tols',
+     $       psi_gse_tols))
+        CALL check( nf90_put_att(ncid,nf90_global,'q_gse_tols',
+     $       q_gse_tols))
+      ENDIF
       ! define dimensions
       CALL check( nf90_def_dim(ncid, "i", 2, i_dim) )
       CALL check( nf90_def_var(ncid, "i", nf90_int, i_dim, i_id) )
