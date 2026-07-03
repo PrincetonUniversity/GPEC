@@ -772,6 +772,21 @@ c-----------------------------------------------------------------------
       WRITE(bin_unit)
       CALL bin_close(bin_unit)
 c-----------------------------------------------------------------------
+c     write integrated error criterion to ascii.
+c-----------------------------------------------------------------------
+      CALL ascii_open(bin_unit,"gsei.out","UNKNOWN")
+      WRITE(bin_unit,"(a)")"psifac,term1,term2,totali,errori,errlogi"
+      DO ipsi=0,mpsi
+         WRITE(bin_unit,"(5(f16.10,a),f16.10)")
+     $           flux%xs(ipsi),",",
+     $           REAL(term(ipsi,1),4),",",
+     $           REAL(term(ipsi,2),4),",",
+     $           totali(ipsi),",",
+     $           errori(ipsi),",",
+     $           errlogi(ipsi)
+      ENDDO
+      CALL bin_close(bin_unit)
+c-----------------------------------------------------------------------
 c     setting diagnostic gs error tolerances.
 c-----------------------------------------------------------------------
       gse_tols=(/1d-3,1d-2,1d-1/)
