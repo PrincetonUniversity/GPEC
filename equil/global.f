@@ -51,8 +51,10 @@ c-----------------------------------------------------------------------
       REAL(r8) :: ro=0,zo=0,psio,q0,qa,qmin,qmax,amean,rmean,aratio,
      $     delta1,delta2,bt0,bwall,crnt,betat,betaj,betan,betap1,betap2,
      $     betap3,li1,li2,li3,volume,p0,ppeakfac,q95,kappa
+      REAL(r8) :: gse_max=0, gse_max_psi=0, gse_max_q=0
       REAL(r8) :: shotnum=0, shottime=0
       REAL(r8), DIMENSION(2) :: rext,rsep,zsep
+      REAL(r8), DIMENSION(3) :: gse_tols, q_gse_tols=100, psi_gse_tols=1
       TYPE(spline_type) :: sq,sq_in
       TYPE(bicube_type) :: eqfun
       TYPE(bicube_type), TARGET :: rzphi
