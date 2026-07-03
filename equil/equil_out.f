@@ -562,7 +562,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE equil_out_gse
 
-      INTEGER :: ipsi,itheta,iqty
+      INTEGER :: ipsi,itheta,iqty,i_tol
       REAL(r8), ALLOCATABLE, DIMENSION(:,:) :: term
       REAL(r8), ALLOCATABLE, DIMENSION(:) :: totali,errori,errlogi
       REAL(r8), ALLOCATABLE, DIMENSION(:) :: rfac,angle
@@ -575,6 +575,7 @@ c-----------------------------------------------------------------------
      $     diagnose_xy=.FALSE.,diagnose_yx=.FALSE.,diagnose_src=.FALSE.
       INTEGER, DIMENSION(2) :: jmax
       REAL(r8) :: fxmax,fymax,smax,emax,lmax
+      LOGICAL, DIMENSION(3) :: tol_found
 
 c-----------------------------------------------------------------------
 c     allocate.
@@ -770,6 +771,36 @@ c-----------------------------------------------------------------------
       ENDDO
       WRITE(bin_unit)
       CALL bin_close(bin_unit)
+c-----------------------------------------------------------------------
+c     setting diagnostic gs error tolerances.
+c-----------------------------------------------------------------------
+      gse_tols=(/1d-3,1d-2,1d-1/)
+c-----------------------------------------------------------------------
+c     get psi-surfaces corresponding to gs error tolerances.
+c-----------------------------------------------------------------------
+      tol_found=.FALSE.
+      DO ipsi=0,mpsi
+         DO i_tol=1,3
+            IF((.NOT. tol_found(i_tol))
+     $            .AND. errori(ipsi)>gse_tols(i_tol))THEN
+               psi_gse_tols(i_tol)=flux%xs(MAX(ipsi-1,0))
+               q_gse_tols(i_tol)=sq%fs(MAX(ipsi-1,0),4)
+               tol_found(i_tol)=.TRUE.
+            ENDIF
+         ENDDO
+      ENDDO
+c-----------------------------------------------------------------------
+c     get maximum gse error and its location.
+c-----------------------------------------------------------------------
+      jmax(1:1)=MAXLOC(errori)
+      gse_max=errori(jmax(1)-1)
+      gse_max_psi=flux%xs(jmax(1)-1)
+      gse_max_q=sq%fs(jmax(1)-1,4)
+c-----------------------------------------------------------------------
+c     print gse max error info.
+c-----------------------------------------------------------------------
+      IF(verbose)WRITE(*,'(1p,3(a,e10.3))')
+     $ " gse_max =",gse_max," at (psi, q) =",gse_max_psi,' ',gse_max_q
 c-----------------------------------------------------------------------
 c     deallocate bicube_type.
 c-----------------------------------------------------------------------
