@@ -66,7 +66,9 @@ c-----------------------------------------------------------------------
       INTEGER :: hbs_id, ta_id, tr_id, ftr_id, muf_id, dnc_id,
      $    wc_id, jp_id, b_id, bt_id, bpo_id, mir_id, mar_id, mair_id,
      $    obr_id, ars_id, a1_id, a2_id, a3_id, a4_id, a5_id, a6_id,
-     $    a7_id, a14_id, a15_id, a16_id, a17_id, a18_id, a19_id, npsi_id
+     $    a7_id, a14_id, a15_id, a16_id, a17_id, a18_id, a19_id,
+     $    npsi_id, gse_dim, gse_tols_id, psi_gse_id, q_gse_id,
+     $    gse_max_id, gse_max_psi_id, gse_max_q_id
       REAL(r4) :: cpusec, wallsec
       CHARACTER(2) :: sn
       CHARACTER(64) :: ncfile
@@ -162,18 +164,26 @@ c-----------------------------------------------------------------------
         CALL check( nf90_put_att(ncid,nf90_global,"total1",total1))
       ENDIF
       IF(gse_max /= 0)THEN
-        CALL check( nf90_put_att(ncid,nf90_global,'gse_max',
-     $       gse_max))
-        CALL check( nf90_put_att(ncid,nf90_global,'gse_max_psi',
-     $       gse_max_psi))
-        CALL check( nf90_put_att(ncid,nf90_global,'gse_max_q',
-     $       gse_max_q))
-        CALL check( nf90_put_att(ncid,nf90_global,'gse_tols',
-     $       gse_tols))
-        CALL check( nf90_put_att(ncid,nf90_global,'psi_gse_tols',
-     $       psi_gse_tols))
-        CALL check( nf90_put_att(ncid,nf90_global,'q_gse_tols',
-     $       q_gse_tols))
+        CALL check( nf90_def_dim(ncid, 'gse_tols',
+     $       SIZE(gse_tols), gse_dim) )
+        CALL check( nf90_def_var(ncid, 'gse_tols', nf90_double,
+     $       gse_dim, gse_tols_id) )
+        CALL check( nf90_put_att(ncid, gse_tols_id, 'long_name',
+     $       'GSE Tolerance Values') )
+        CALL check( nf90_def_var(ncid, 'psi_gse_tols', nf90_double,
+     $       gse_dim, psi_gse_id) )
+        CALL check( nf90_put_att(ncid, psi_gse_id, 'long_name',
+     $       'Normalized Poloidal Flux at GSE Tolerance Points') )
+        CALL check( nf90_def_var(ncid, 'q_gse_tols', nf90_double,
+     $       gse_dim, q_gse_id) )
+        CALL check( nf90_put_att(ncid, q_gse_id, 'long_name',
+     $       'Safety Factor at GSE Tolerance Points') )
+        CALL check( nf90_def_var(ncid, 'gse_max', nf90_double,
+     $       gse_max_id) )
+        CALL check( nf90_def_var(ncid, 'gse_max_psi', nf90_double,
+     $       gse_max_psi_id) )
+        CALL check( nf90_def_var(ncid, 'gse_max_q', nf90_double,
+     $       gse_max_q_id) )
       ENDIF
       ! define dimensions
       CALL check( nf90_def_dim(ncid, "i", 2, i_dim) )
@@ -431,6 +441,15 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,dr_id, locstab%fs(:,2)/sq%xs(:)))
       CALL check( nf90_put_var(ncid,h_id,  locstab%fs(:,3)))
       CALL check( nf90_put_var(ncid,ca_id, locstab%fs(:,4)))
+
+      IF(gse_max /= 0)THEN
+         CALL check( nf90_put_var(ncid, gse_tols_id, gse_tols) )
+         CALL check( nf90_put_var(ncid, psi_gse_id, psi_gse_tols) )
+         CALL check( nf90_put_var(ncid, q_gse_id, q_gse_tols) )
+         CALL check( nf90_put_var(ncid, gse_max_id, gse_max) )
+         CALL check( nf90_put_var(ncid, gse_max_psi_id, gse_max_psi) )
+         CALL check( nf90_put_var(ncid, gse_max_q_id, gse_max_q) )
+      ENDIF
 
       IF(MRE_flag)THEN
          CALL check( nf90_put_var(ncid,hbs_id, mreterms%fs(:,1)))
