@@ -1553,9 +1553,10 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: i_id,q_id,m_id,p_id,c_id,bp_id,w_id,k_id,n_id,d_id,
-     $           a_id,pp_id,cp_id,wp_id,np_id,dp_id,wc_id,bc_id,ti_id,
-     $           te_id,ni_id,ne_id,we_id,wi_id,q1_id,rh_id,r1_id,ssp_id,
-     $           lq_id,rt_id,at_id,astat,wmin_id,wsat_id
+     $           a_id,pp_id,cp_id,wp_id,np_id,dp_id,dd_id,pr_id,wc_id,
+     $           bc_id,ti_id,te_id,ni_id,ne_id,we_id,wi_id,q1_id,rh_id,
+     $           r1_id,ssp_id,lq_id,rt_id,at_id,wmin_id,wsat_id,pm_id,
+     $           ps_id,astat
 
       INTEGER :: itheta,ising,icoup
       REAL(r8) :: respsi,lpsi,rpsi,shear,hdist,sbnosurf
@@ -1573,7 +1574,6 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(nsingcoup, msing) :: olap
       COMPLEX(r8), DIMENSION(mpert,msing) :: singflx_mn
 
-      TYPE(spline_type) :: spl
       TYPE(cspline_type) :: fsp_sol
       COMPLEX(r8), DIMENSION(mpert) :: interpbwn
 
@@ -1588,10 +1588,14 @@ c-----------------------------------------------------------------------
       TYPE(spline_type) :: sr
 
       REAL(r8), DIMENSION(msing) :: b_crit, ti_r, te_r, ni_r, ne_r,
-     $    q1_r, we_r, wi_r, rh_r, r1_r
-      REAL(r8) :: omega_i,omega_e,jxb,omega_sol,br_th,slayer_shear
+     $    q1_r, we_r, wi_r, rh_r, r1_r, dP_r, P_r
+      REAL(r8) :: omega_i,omega_e,jxb,omega_sol,br_th,slayer_shear,
+     $     pleft, pright, psileft, psiright
       REAL(r8) :: slayer_inpr_loc
       COMPLEX(r8) :: delta_s,psi0
+
+      INTEGER :: ipsi
+      REAL(r8), DIMENSION(mstep) :: dpdpsi, p_mod
 
 c-----------------------------------------------------------------------
 c     solve equation from the given poloidal perturbation.
@@ -1711,6 +1715,8 @@ c-----------------------------------------------------------------------
          hw_sat(ising) = 0.0_r8
          hw_min(ising) = 0.0_r8
          b_crit(ising) = 0.0_r8
+         dP_r(ising) = 0.0_r8
+         P_r(ising) = sq%f(2) / mu0
          IF (callen_threshold_flag. OR. slayer_threshold_flag) THEN
             resm = mfac(resnum(ising))
             CALL spline_eval(kin,respsi,1)
@@ -1836,6 +1842,20 @@ c-----------------------------------------------------------------------
             ENDIF
             ! convert from meters to psi_n for clear comparision to hw_isl
             hw_v_crit(ising) = hw_v_crit(ising) / sr%f1(1)
+
+            ! If we are above hw_v_crit then we can estimate the pressure lost assuming flat
+            ! pressure inside the island. NOTE: this per-surface dP_r/P_r
+            ! estimate uses the unmodified equilibrium pressure (sq) for
+            ! each island independently, so overlapping islands are
+            ! double-counted (an over-estimate). The full p_mod profile
+            ! below instead zeros dP/dpsi over the union of all islands
+            ! and does not double-count overlaps.
+            CALL spline_eval(sq,MAX(0.0_r8, respsi - hw_sat(ising)),0)
+            pleft = sq%f(2)
+            CALL spline_eval(sq,MIN(1.0_r8, respsi + hw_sat(ising)),0)
+            pright = sq%f(2)
+            dP_r(ising) = (pleft - pright)  / mu0  ! Pascal
+            CALL spline_eval(sq,respsi,1) ! assumed to be at resonant surface later in this subroutine
          ENDIF
 c-----------------------------------------------------------------------
 c     compute threshold by linear drift mhd with slayer module.
@@ -1864,16 +1884,17 @@ c-----------------------------------------------------------------------
          IF (verbose) THEN
 
             IF (callen_threshold_flag .OR. slayer_threshold_flag) THEN
-               IF(ising == 1) WRITE(*,'(1x,10a13)')
+               IF(ising == 1) WRITE(*,'(1x,11a13)')
      $              "psi","q","singflx","singlfx_crit","chirikov",
      $              "w_island", "w_v", "w_v_crit",
-     $              "w_sat","w_min"
-               WRITE(*,'(1x,es13.3,f13.3,2es13.3,f13.3,5es13.3)')
+     $              "w_sat","w_min","dP/P"
+               WRITE(*,'(1x,es13.3,f13.3,2es13.3,f13.3,6es13.3)')
      $              respsi,sq%f(4),ABS(singflx_mn(resnum(ising),ising)),
      $              ABS(b_crit(ising)),
      $              chirikov(ising),2*hw_isl(ising),
      $              2*hw_v(ising),2*hw_v_crit(ising),
-     $              2*hw_sat(ising),2*hw_min(ising)
+     $              2*hw_sat(ising),2*hw_min(ising),
+     $              dP_r(ising)/P_r(ising)
             ELSE
 
                IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12,a12)') "psi",
@@ -1888,6 +1909,53 @@ c-----------------------------------------------------------------------
       CALL cspline_dealloc(fsp_sol)
       CALL gpeq_dealloc
 c-----------------------------------------------------------------------
+c     Calculate modified pressure profile from saturated islands
+c-----------------------------------------------------------------------
+      IF (callen_threshold_flag) THEN
+         ! Work directly on the psi_n profile grid (psifac, 1:mstep).
+         ! This grid packs points near the rational surfaces, so even
+         ! narrow saturated islands are always resolved.
+         ! Get pressure derivative at each grid point.
+         DO ipsi=1,mstep
+            CALL spline_eval(sq,psifac(ipsi),1)
+            dpdpsi(ipsi) = sq%f1(2) / mu0
+         ENDDO
+
+         ! Zero out pressure derivative in island regions. Overlapping
+         ! islands share zeroed points, so they are not double-counted.
+         DO ising=1,msing
+            IF (hw_sat(ising) > 0.0_r8) THEN
+               psileft = MAX(0.0_r8,
+     $              singtype(ising)%psifac - hw_sat(ising))
+               psiright = MIN(1.0_r8,
+     $              singtype(ising)%psifac + hw_sat(ising))
+               DO ipsi=1,mstep
+                  IF (psifac(ipsi) >= psileft .AND.
+     $                 psifac(ipsi) <= psiright) THEN
+                     dpdpsi(ipsi) = 0.0_r8
+                  ENDIF
+               ENDDO
+            ENDIF
+         ENDDO
+
+         ! Anchor at the edge and integrate dP/dpsi inward with the
+         ! trapezoidal rule using the (non-uniform) psifac spacing.
+         CALL spline_eval(sq,psifac(mstep),0)
+         p_mod(mstep) = sq%f(2) / mu0
+         DO ipsi=mstep-1,1,-1
+            p_mod(ipsi) = p_mod(ipsi+1) - 0.5_r8 *
+     $           (dpdpsi(ipsi+1) + dpdpsi(ipsi)) *
+     $           (psifac(ipsi+1) - psifac(ipsi))
+         ENDDO
+      ELSE
+         ! No island correction - use equilibrium pressure
+         DO ipsi=1,mstep
+            CALL spline_eval(sq,psifac(ipsi),0)
+            p_mod(ipsi) = sq%f(2) / mu0
+         ENDDO
+      ENDIF
+
+c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
       IF(ascii_flag)THEN
@@ -1899,16 +1967,16 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,a12,1x,I4)')"msing =",msing
          WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a6,17(1x,a16))')"q","psi","spot",
+         WRITE(out_unit,'(1x,a6,18(1x,a16))')"q","psi","spot",
      $        "real(singflx)","imag(singflx)",
      $        "real(singcur)","imag(singcur)",
      $        "real(singbwp)","imag(singbwp)",
      $        "real(Delta)","imag(Delta)",
      $        "half_w_isl","chirikov",
      $        "half_w_isl_v_crit","singflx_crit",
-     $        "half_w_sat","half_w_min"
+     $        "half_w_sat","half_w_min","dP","P"
          DO ising=1,msing
-            WRITE(out_unit,'(1x,f6.3,17(es17.8e3))')
+            WRITE(out_unit,'(1x,f6.3,18(es17.8e3))')
      $           singtype(ising)%q,singtype(ising)%psifac,
      $           spots(ising),
      $           REAL(singflx_mn(resnum(ising),ising)),
@@ -1918,7 +1986,8 @@ c-----------------------------------------------------------------------
      $           REAL(delta(ising)),AIMAG(delta(ising)),
      $           hw_isl(ising),chirikov(ising),
      $           hw_v_crit(ising),b_crit(ising),
-     $           hw_sat(ising),hw_min(ising)
+     $           hw_sat(ising),hw_min(ising),
+     $           dP_r(ising),P_r(ising)
          ENDDO
          WRITE(out_unit,*)
       ENDIF
@@ -1993,6 +2062,16 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(fncid, wsat_id, "units", "psi_n") )
          CALL check( nf90_put_att(fncid, wsat_id, "long_name",
      $     "Saturated island width from Callen model") )
+         CALL check( nf90_def_var(fncid, "dP_res", nf90_double,
+     $      (/q_id/), dp_id) )
+         CALL check( nf90_put_att(fncid, dp_id, "units", "Pa") )
+         CALL check( nf90_put_att(fncid, dp_id, "long_name",
+     $     "Pressure lost due to saturated island") )
+         CALL check( nf90_def_var(fncid, "P_res", nf90_double,
+     $      (/q_id/), pr_id) )
+         CALL check( nf90_put_att(fncid, pr_id, "units", "Pa") )
+         CALL check( nf90_put_att(fncid, pr_id, "long_name",
+     $     "Pressure at rational surface") )
          CALL check( nf90_def_var(fncid, "Phi_res_crit", nf90_double,
      $      (/q_id/), bc_id) )
          CALL check( nf90_put_att(fncid, bc_id, "units", "T") )
@@ -2054,6 +2133,12 @@ c-----------------------------------------------------------------------
             CALL check( nf90_put_att(fncid, a_id, "long_name",
      $        "Surface area of rational surface") )
          ENDIF
+         CALL check( nf90_inq_dimid(fncid, "psi_n", ps_id) )
+         CALL check( nf90_def_var(fncid, "p_mod", nf90_double,
+     $      (/ps_id/), pm_id) )
+         CALL check( nf90_put_att(fncid, pm_id, "units", "Pa") )
+         CALL check( nf90_put_att(fncid, pm_id, "long_name",
+     $      "Modified pressure with saturated island correction") )
          CALL check( nf90_enddef(fncid) )
          CALL check( nf90_put_var(fncid, ssp_id, spots) )
          IF (galsol%gal_flag) THEN
@@ -2077,6 +2162,8 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_var(fncid, wc_id, 2*hw_v_crit) )
          CALL check( nf90_put_var(fncid, wmin_id, 2*hw_min) )
          CALL check( nf90_put_var(fncid, wsat_id, 2*hw_sat) )
+         CALL check( nf90_put_var(fncid, dp_id, dP_r) )
+         CALL check( nf90_put_var(fncid, pr_id, P_r) )
          CALL check( nf90_put_var(fncid, bc_id, b_crit) )
          CALL check( nf90_put_var(fncid, k_id, chirikov) )
          CALL check( nf90_put_var(fncid, ti_id, ti_r) )
@@ -2091,6 +2178,7 @@ c-----------------------------------------------------------------------
          IF(astat/=nf90_noerr)THEN
             CALL check( nf90_put_var(fncid, a_id, area) )
          ENDIF
+         CALL check( nf90_put_var(fncid, pm_id, p_mod) )
          CALL check( nf90_close(fncid) )
       ENDIF
 
@@ -2179,9 +2267,9 @@ c-----------------------------------------------------------------------
             CALL check( nf90_put_att(mncid, d_id, "long_name",
      $        "External Delta prime overlap") )
             CALL check( nf90_def_var(mncid, "Delta_overlap_norm",
-     $         nf90_double,(/m_id/), dp_id) )
-            CALL check( nf90_put_att(mncid, dp_id, "units", "untiless"))
-            CALL check( nf90_put_att(mncid, dp_id, "long_name",
+     $         nf90_double,(/m_id/), dd_id) )
+            CALL check( nf90_put_att(mncid, dd_id, "units", "untiless"))
+            CALL check( nf90_put_att(mncid, dd_id, "long_name",
      $        "External Delta prime overlap percentage") )
             CALL check( nf90_enddef(mncid) )
             CALL check( nf90_put_var(mncid, p_id, RESHAPE((/
@@ -2198,7 +2286,7 @@ c-----------------------------------------------------------------------
             CALL check( nf90_put_var(mncid, cp_id, op(2,:)) )
             CALL check( nf90_put_var(mncid, wp_id, op(3,:)) )
             CALL check( nf90_put_var(mncid, np_id, op(4,:)) )
-            CALL check( nf90_put_var(mncid, dp_id, op(5,:)) )
+            CALL check( nf90_put_var(mncid, dd_id, op(5,:)) )
             CALL check( nf90_close(mncid) )
          ENDIF
 
