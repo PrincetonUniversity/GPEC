@@ -26,7 +26,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE sol_run
-      
+
       INTEGER :: ir,iz,ia
       REAL(r8) :: psifac,efac,f0,pfac
       REAL(r8), DIMENSION(:,:), POINTER :: rg,zg

@@ -1,7 +1,7 @@
 c-----------------------------------------------------------------------
 c     PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT
 c     lsode integration copy of all subroutines that involve common
-c     block to avoid recursive overwrites. Note that calls to 
+c     block to avoid recursive overwrites. Note that calls to
 c     DSRCOM were insufficient to avoid this.
 
 c     !!! THIS MODULE STILL RELIES ON LSODE LIBRARY  for all subroutines
@@ -21,7 +21,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE LSODE2_MOD
       USE local_mod, ONLY: r8
-     
+
       IMPLICIT NONE
 
       REAL(r8) REAL_LSODE2
@@ -331,10 +331,10 @@ C
 C     on the interval from t = 0.0 to t = 4.E10, with initial conditions
 C     y1 = 1.0, y2 = y3 = 0. The problem is stiff.
 C
-C     The following coding solves this problem with LSODE, using 
-C     MF = 21 and printing results at t = .4, 4., ..., 4.E10.  It uses 
-C     ITOL = 2 and ATOL much smaller for y2 than for y1 or y3 because y2 
-C     has much smaller values.  At the end of the run, statistical 
+C     The following coding solves this problem with LSODE, using
+C     MF = 21 and printing results at t = .4, 4., ..., 4.E10.  It uses
+C     ITOL = 2 and ATOL much smaller for y2 than for y1 or y3 because y2
+C     has much smaller values.  At the end of the run, statistical
 C     quantities of interest are printed.
 C
 C        EXTERNAL  FEX, JEX
@@ -425,12 +425,12 @@ C     inputs.
 C
 C *Portability:
 C     Since NEQ is dimensioned inside LSODE, some compilers may object
-C     to a call to LSODE with NEQ a scalar variable.  In this event, 
+C     to a call to LSODE with NEQ a scalar variable.  In this event,
 C     use DIMENSION NEQ(1).  Similar remarks apply to RTOL and ATOL.
 C
 C     Note to Cray users:
 C     For maximum efficiency, use the CFT77 compiler.  Appropriate
-C     compiler optimization directives have been inserted for CFT77 
+C     compiler optimization directives have been inserted for CFT77
 C     (but not CIVIC).
 C
 C     NOTICE:  If moving the LSODE source code to other systems,
@@ -918,9 +918,9 @@ C
 C     Optional Outputs
 C     ----------------
 C     As optional additional output from LSODE, the variables listed
-C     below are quantities related to the performance of LSODE which 
+C     below are quantities related to the performance of LSODE which
 C     are available to the user.  These are communicated by way of the
-C     work arrays, but also have internal mnemonic names as shown. 
+C     work arrays, but also have internal mnemonic names as shown.
 C     Except where stated otherwise, all of these outputs are defined on
 C     any successful return from LSODE, and on any return with ISTATE =
 C     -1, -2, -4, -5, or -6.  On an illegal input return (ISTATE = -3),
@@ -1062,7 +1062,7 @@ C
 C     If LSODE is to be used in an overlay situation, the user must
 C     declare, in the primary overlay, the variables in:
 C     (1) the call sequence to LSODE,
-C     (2) the internal COMMON block /DLS002/, of length 255 
+C     (2) the internal COMMON block /DLS002/, of length 255
 C         (218 real(r8) words followed by 37 integer words).
 C
 C     If LSODE is used on a system in which the contents of internal
@@ -1183,7 +1183,7 @@ C   930326  Added comment about non-reentrancy.  (FNF)
 C   930723  Changed R1MACH to RUMACH. (FNF)
 C   930801  Removed Common variables ILLIN and NTREP (affects driver
 C           logic and Common references); minor changes to prologue and
-C           internal comments; changed Hollerith strings to quoted 
+C           internal comments; changed Hollerith strings to quoted
 C           strings; changed internal comments to mixed case; changed
 C           dummy dimensions from 1 to *. (ACH)
 C   930809  Changed to generic intrinsic names; changed names of
@@ -1216,7 +1216,7 @@ C           linear systems.
 C  DUMACH   computes the unit roundoff in a machine-independent manner.
 C  XERRWD, XSETUN, and XSETF   handle the printing of all error
 C           messages and warnings.  XERRWD is machine-dependent.
-C Note.. DVNORM and DUMACH are function routines.  All the others 
+C Note.. DVNORM and DUMACH are function routines.  All the others
 C are subroutines.
 C
 C The intrinsic routines used by LSODE are..
@@ -1685,7 +1685,7 @@ C-----------------------------------------------------------------------
 C Block I.
 C The following block handles all error returns due to illegal input
 C (ISTATE = -3), as detected before calling the core integrator.
-C First the error message routine is called.  If the illegal input 
+C First the error message routine is called.  If the illegal input
 C is a negative ISTATE, the run is aborted (apparent infinite loop).
 C-----------------------------------------------------------------------
  601  MSG = 'LSODE- Energy-  ISTATE (=I1) illegal '

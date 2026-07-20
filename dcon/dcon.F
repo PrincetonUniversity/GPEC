@@ -55,8 +55,7 @@ c-----------------------------------------------------------------------
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
      $     out_fl,bin_fl,out_evals,bin_evals,bin_euler,euler_stride,
-     $     bin_vac,ahb_flag,mthsurf0,msol_ahb,netcdf_out,out_fund,
-     $     out_ahg2msc
+     $     bin_vac,ahb_flag,mthsurf0,msol_ahb,netcdf_out,out_fund
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -76,15 +75,6 @@ c-----------------------------------------------------------------------
       READ(UNIT=in_unit,NML=dcon_control)
       READ(UNIT=in_unit,NML=dcon_output)
       CALL ascii_close(in_unit)
-
-      IF (out_ahg2msc) THEN
-         WRITE(*,*) "WARNING: ahg2msc.out is deprecated and will be " //
-     $          "removed in a future version. Set out_ahg2msc = .FALSE."
-         WRITE(*,*) "         to disable this warning."
-         vac_memory=.FALSE.
-      ELSE
-         vac_memory=.TRUE.
-      ENDIF
 
 c-----------------------------------------------------------------------
 c     set variables
@@ -368,6 +358,7 @@ c-----------------------------------------------------------------------
          ENDDO
          DEALLOCATE(sing)
       ENDIF
+
       IF(ode_flag)DEALLOCATE(u,du,u_save)
 c-----------------------------------------------------------------------
 c     terminate.

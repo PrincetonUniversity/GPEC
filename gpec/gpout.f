@@ -68,7 +68,7 @@ c-----------------------------------------------------------------------
      $   fldflxmat                                  ! convert power normalized field to area normalized flux (i.e. increase by sqrt(A_m)/sqrt(A) weighting)
 
       CONTAINS
-      
+
       !-----------------------------------------------------------------
       function str(k,fmt)
       !-----------------------------------------------------------------
@@ -83,7 +83,7 @@ c-----------------------------------------------------------------------
           character(len=20) str
           integer, intent(in) :: k
           character(*),intent(in) :: fmt
-          
+
           write (str, trim(fmt)) k
           str = adjustl(str)
       end function str
@@ -461,12 +461,14 @@ c-----------------------------------------------------------------------
 c     subprogram 2. gpout_singcoup.
 c     compute coupling between singular surfaces and external fields.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpout_singcoup(spot,nspot,rout,bpout,bout,rcout,tout)
+      SUBROUTINE gpout_singcoup(spots,interpspot,nspot,rout,bpout,bout,
+     $   rcout,tout)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: rout,bpout,bout,rcout,tout,nspot
-      REAL(r8), INTENT(IN) :: spot
+      REAL(r8), DIMENSION(msing), INTENT(IN) :: spots
+      REAL(r8), INTENT(IN) :: interpspot
 
       INTEGER :: i,j,itheta,ising,resnum,rsing,rpert,
      $     tmlow,tmhigh,tmpert,lwork,info
@@ -492,7 +494,7 @@ c-----------------------------------------------------------------------
      $     singbnoflxs, singbwp
 
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE ::
-     $     singcoup_out, localcoup_out,                       ! Coupling to external field in output coordinates
+     $     singcoup_out,                                      ! Coupling to external field in output coordinates
      $     singcoup_out_bvecs,localcoup_out_bvecs             ! Right singular vectors of power normalized coupling in output coordinates weighted by A_m^1/2/A^1/2
       REAL(r8), DIMENSION(:,:), ALLOCATABLE ::
      $     singcoup_out_vals, localcoup_out_vals              ! Singular values of energy normalized coupling in output coordinates
@@ -554,10 +556,10 @@ c-----------------------------------------------------------------------
      $        jcfun(mthsurf)/mthsurf
          w_c(ising)=w_c(ising)-0.5*wcfun(mthsurf)/mthsurf
 
-         j_c(ising)=1.0/j_c(ising)*chi1**2*sq%f(4)/mu0  
+         j_c(ising)=1.0/j_c(ising)*chi1**2*sq%f(4)/mu0
          shear(ising)=mfac(resnum)*sq%f1(4)/sq%f(4)**2
 
-         ALLOCATE(fsurf_indev(mpert),fsurf_indmats(mpert,mpert))         
+         ALLOCATE(fsurf_indev(mpert),fsurf_indmats(mpert,mpert))
          CALL gpvacuum_flxsurf(respsi)
          fsurfindmats(ising,:,:)=fsurf_indmats
          DEALLOCATE(fsurf_indev,fsurf_indmats)
@@ -584,21 +586,22 @@ c-----------------------------------------------------------------------
          edge_mn=foutmn/(chi1*singfac*twopi*ifac)
          edge_flag=.TRUE.
          CALL idcon_build(0,edge_mn)
-c-----------------------------------------------------------------------
-c     construct fsp_sol.
-c-----------------------------------------------------------------------
-         CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)         
+         ! Interpolation is necessary because bwp is invalid in the
+         ! inner layer due to excluding curl (eta J)
+         CALL gpeq_interp_singsurf(fsp_sol,spots*interpspot,nspot)
 c-----------------------------------------------------------------------
 c     evaluate delta/singular current/normal field/islands.
 c-----------------------------------------------------------------------
          DO ising=1,msing
             resnum=NINT(singtype(ising)%q*nn)-mlow+1
             respsi=singtype(ising)%psifac
-            lpsi=respsi-spot/(nn*ABS(singtype(ising)%q1))
+            lpsi=respsi-spots(ising)/(nn*ABS(singtype(ising)%q1))
+            ! IF (lpsi < psilow) lpsi=psilow
             CALL gpeq_sol(lpsi)
             lbwp1mn=bwp1_mn(resnum)
-            
-            rpsi=respsi+spot/(nn*ABS(singtype(ising)%q1)) 
+
+            rpsi=respsi+spots(ising)/(nn*ABS(singtype(ising)%q1))
+            ! IF (rpsi > psihigh) rpsi=psihigh
             CALL gpeq_sol(rpsi)
             rbwp1mn=bwp1_mn(resnum)
 
@@ -623,7 +626,6 @@ c-----------------------------------------------------------------------
 c     deallocate fsp_sol.
 c-----------------------------------------------------------------------
          CALL cspline_dealloc(fsp_sol)
-
          IF(verbose) WRITE(*,'(1x,i4,1x,es10.3)') mfac(i),
      $        SQRT(SUM(ABS(singbnoflxs(:,i))**2))
       ENDDO
@@ -645,7 +647,7 @@ c-----------------------------------------------------------------------
          IF(verbose) WRITE(*,*)"Converting coordinates"
          CALL spline_eval(sq,psilim,0)
          dphi=0
-         
+
          CALL spline_alloc(spl,mthsurf,2)
          spl%xs=theta
          DO itheta=0,mthsurf
@@ -667,12 +669,12 @@ c-----------------------------------------------------------------------
      $           bpfac**bpout*bfac**bout
             ! jacobian for coordinate angle at dcon angle
             spl%fs(itheta,2)=delpsi(itheta)*r(itheta)**rout*rfac**rcout/
-     $           (bpfac**bpout*bfac**bout)  
+     $           (bpfac**bpout*bfac**bout)
             IF (tout == 0) THEN
                dphi(itheta)=rzphi%f(3)
             ENDIF
-         ENDDO      
-         
+         ENDDO
+
          CALL spline_fit(spl,"periodic")
          CALL spline_int(spl)
 
@@ -687,11 +689,11 @@ c-----------------------------------------------------------------------
          jarea=0
          DO itheta=0,mthsurf-1
             jarea=jarea+jacfac(itheta)/mthsurf
-         ENDDO       
+         ENDDO
 
          CALL spline_dealloc(spl)
 c-----------------------------------------------------------------------
-c     convert coordinates. 
+c     convert coordinates.
 c-----------------------------------------------------------------------
          ALLOCATE(fldflxmn(lmpert), fldflxmat(lmpert,lmpert),
      $        singcoup_out(nsingcoup,msing,lmpert), tmfac(lmpert))
@@ -702,7 +704,7 @@ c-----------------------------------------------------------------------
             DO itheta=0,mthsurf
                ftnfun(itheta)=0
                ftnfun(itheta)=
-     $              lftnmn(i)*EXP(ifac*twopi*lmfac(i)*thetas(itheta))  
+     $              lftnmn(i)*EXP(ifac*twopi*lmfac(i)*thetas(itheta))
             ENDDO
             ! multiply toroidal factor for dcon angle
             IF (tout == 0) THEN
@@ -713,10 +715,10 @@ c-----------------------------------------------------------------------
             ENDIF
             CALL iscdftf(mfac,mpert,ftnfun,mthsurf,ftnmn)
             convmat(:,i)=ftnmn
-         
+
             CALL iscdftb(lmfac,lmpert,ftnfun,mthsurf,lftnmn)
             ftnfun(:)=ftnfun(:)*sqrt(jacfac(:))
-            CALL iscdftf(lmfac,lmpert,ftnfun,mthsurf,fldflxmn)            
+            CALL iscdftf(lmfac,lmpert,ftnfun,mthsurf,fldflxmn)
             fldflxmat(:,i)=fldflxmn/sqrt(jarea)
          ENDDO
          tmlow = lmlow
@@ -736,7 +738,7 @@ c-----------------------------------------------------------------------
             ftnmn(i)=1.0
             fldflxmn=ftnmn
             CALL gpeq_weight(psilim,fldflxmn,mfac,mpert,2)
-            fldflxmat(:,i)=fldflxmn/sqrt(jarea)            
+            fldflxmat(:,i)=fldflxmn/sqrt(jarea)
          ENDDO
          tmlow = mlow
          tmhigh = mhigh
@@ -760,7 +762,7 @@ c-----------------------------------------------------------------------
       ! get inverse of fldflxmat for converting to flux to power normalized field ((bA^1/2)_m / A^1/2)
       CALL iszhinv(fldflxmat,tmpert,flxtofld)
 
-      ! calculate the output coodinat matrix SVD 
+      ! calculate the output coodinat matrix SVD
       ! re-normalize such that overlap dot products operate on unweighted fields
       DO i=1,nsingcoup
          work=0
@@ -844,7 +846,7 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(2(1x,a12,es17.8e3))')
      $        "psilim =",psilim,"qlim =",qlim
          WRITE(out_unit,*)
-         
+
          DO i=1,nsingcoup
             WRITE(out_unit,*) "The "//trim(titles(i))
             WRITE(out_unit,*)
@@ -997,7 +999,7 @@ c-----------------------------------------------------------------------
                CALL check( nf90_put_att(mncid,sl_id(i),"long_name",
      $          "Local "//trim(names(i))//" coupling singular values"))
                CALL check(nf90_put_att(mncid,sl_id(i),"units",units(i)))
-            ENDIF 
+            ENDIF
          ENDDO
 
          ! end definitions
@@ -1015,7 +1017,7 @@ c-----------------------------------------------------------------------
             CALL check( nf90_put_var(mncid,s_id(i),
      $           singcoup_out_vals(i,:)) )
             IF(osing<msing)THEN
-               matmo = TRANSPOSE(localcoup_out(i,:,:))
+               matmo = TRANSPOSE(localcoup_out_vecs(i,:,:))
                CALL check( nf90_put_var(mncid,cl_id(i),RESHAPE(
      $              (/REAL(matmo), AIMAG(matmo)/),(/tmpert,osing,2/))))
                CALL check( nf90_put_var(mncid,rl_id(i),RESHAPE(
@@ -1035,9 +1037,10 @@ c-----------------------------------------------------------------------
 c     Deallocate local variables.
 c-----------------------------------------------------------------------
       DEALLOCATE(singcoup_out, singcoup_out_bvecs, singcoup_out_vals,
-     $     tmfac, fldflxmn, temp1, flxtofld)
+     $     tmfac, fldflxmn, temp1, flxtofld, matms)
       IF (osing<msing) THEN
-         DEALLOCATE(localcoup_out_bvecs, localcoup_out_vals)
+         DEALLOCATE(localcoup_out_bvecs, localcoup_out_vals,
+     $        localcoup_out_vecs, matmo)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1060,7 +1063,7 @@ c-----------------------------------------------------------------------
      $     rout,bpout,bout,rcout,tout,jout,filter_modes,mode
       LOGICAL, INTENT(IN) :: filter_out
       CHARACTER(len=*), INTENT(IN) :: filter_types
-      
+
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: finmn
       COMPLEX(r8), DIMENSION(mpert), INTENT(OUT) :: foutmn,xspmn
 
@@ -1083,7 +1086,7 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: dcosmn,dsinmn
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: rawmn
-      
+
       INTEGER :: i_id,m_id,modid,t_id,r_id,z_id,rn_id,zn_id,p_id,
      $    x_id,xx_id,xm_id,xxm_id,bm_id,bxm_id,b_id,bx_id,jo_id,j2_id,
      $    mpdid,mp_id
@@ -1117,7 +1120,7 @@ c-----------------------------------------------------------------------
             ENDIF
          ENDIF
          CALL ascii_open(in_unit,ifile,"old")
-                        
+
          DO i=i1,i2,i3
             IF (data_type=="surfmn") THEN
                READ(in_unit,'(1x,25f12.6)')(dcosmn(i,j),j=nmin,nmax)
@@ -1128,9 +1131,9 @@ c-----------------------------------------------------------------------
             ELSE
                WRITE(message,'(a)')"Can't recognize data format"
                CALL gpec_stop(message)
-            ENDIF            
+            ENDIF
          ENDDO
-         
+
          CALL ascii_close(in_unit)
          rawmn=dcosmn+ifac*dsinmn
          cawmn=rawmn(:,nn)
@@ -1161,7 +1164,7 @@ c-----------------------------------------------------------------------
             CALL gpeq_weight(psilim,binmn,mfac,mpert,5)
             binmn=twopi*ifac*chi1*(mfac-nn*qlim)*binmn
             CALL gpeq_weight(psilim,binmn,mfac,mpert,0)
-         ENDIF 
+         ENDIF
          binmn=binmn*scale
          tempmn=binmn
          CALL gpeq_weight(psilim,tempmn,mfac,mpert,1)
@@ -1289,7 +1292,7 @@ c-----------------------------------------------------------------------
             ENDIF
          ENDDO
          CALL gpeq_bcoords(psilim,cinmn,lmfac,lmpert,
-     $        rout,bpout,bout,rcout,tout,jout) 
+     $        rout,bpout,bout,rcout,tout,jout)
          CALL gpeq_bcoords(psilim,coutmn,lmfac,lmpert,
      $        rout,bpout,bout,rcout,tout,jout)
          IF(ascii_flag)THEN
@@ -1535,7 +1538,7 @@ c-----------------------------------------------------------------------
 c     subprogram 4. gpout_singfld.
 c     compute current and field on rational surfaces.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpout_singfld(egnum,xspmn,spot,nspot,
+      SUBROUTINE gpout_singfld(egnum,xspmn,spots,interpspot,nspot,
      $             callen_threshold_flag,slayer_threshold_flag,
      $             slayer_inpr,slayer_inpr_prof)
 c-----------------------------------------------------------------------
@@ -1544,15 +1547,16 @@ c-----------------------------------------------------------------------
       LOGICAL, INTENT(IN) :: callen_threshold_flag,
      $            slayer_threshold_flag
       INTEGER, INTENT(IN) :: egnum,nspot
-      REAL(r8), INTENT(IN) :: spot, slayer_inpr
+      REAL(r8), DIMENSION(msing), INTENT(IN) :: spots
+      REAL(r8), INTENT(IN) :: slayer_inpr, interpspot
       REAL(r8), DIMENSION(20), INTENT(IN) :: slayer_inpr_prof
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: i_id,q_id,m_id,p_id,c_id,bp_id,w_id,k_id,n_id,d_id,
-     $           a_id,pp_id,cp_id,wp_id,np_id,dp_id,dd_id,pr_id,
-     $           bc_id,ti_id, te_id, ni_id, ne_id, we_id, wi_id, q1_id,
-     $           rh_id, r1_id,wc_id,wmin_id,wsat_id,pm_id,ps_id,
-     $           astat
+     $           a_id,pp_id,cp_id,wp_id,np_id,dp_id,dd_id,pr_id,wc_id,
+     $           bc_id,ti_id,te_id,ni_id,ne_id,we_id,wi_id,q1_id,rh_id,
+     $           r1_id,ssp_id,lq_id,rt_id,at_id,wmin_id,wsat_id,pm_id,
+     $           ps_id,astat
 
       INTEGER :: itheta,ising,icoup
       REAL(r8) :: respsi,lpsi,rpsi,shear,hdist,sbnosurf
@@ -1570,7 +1574,6 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(nsingcoup, msing) :: olap
       COMPLEX(r8), DIMENSION(mpert,msing) :: singflx_mn
 
-      TYPE(spline_type) :: spl
       TYPE(cspline_type) :: fsp_sol
       COMPLEX(r8), DIMENSION(mpert) :: interpbwn
 
@@ -1591,10 +1594,8 @@ c-----------------------------------------------------------------------
       REAL(r8) :: slayer_inpr_loc
       COMPLEX(r8) :: delta_s,psi0
 
-      INTEGER, PARAMETER :: npsi_tmp = 1000
       INTEGER :: ipsi
-      REAL(r8), DIMENSION(0:npsi_tmp) :: psi_tmp, dp_tmp, p_tmp
-      REAL(r8), DIMENSION(mstep) :: p_mod
+      REAL(r8), DIMENSION(mstep) :: dpdpsi, p_mod
 
 c-----------------------------------------------------------------------
 c     solve equation from the given poloidal perturbation.
@@ -1603,8 +1604,7 @@ c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,*)"Computing total resonant fields"
       CALL gpeq_alloc
       CALL idcon_build(egnum,xspmn)
-
-      CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
+      CALL gpeq_interp_singsurf(fsp_sol,spots*interpspot,nspot)
 
       IF (vsbrzphi_flag) ALLOCATE(singbno_mn(mpert,msing))
 
@@ -1654,12 +1654,14 @@ c-----------------------------------------------------------------------
          CALL gpeq_interp_sol(fsp_sol,respsi,interpbwn)
          singbwp(ising)=interpbwn(resnum(ising))
 
-         lpsi=respsi-spot/(nn*ABS(singtype(ising)%q1))
+         lpsi=respsi-spots(ising)/(nn*ABS(singtype(ising)%q1))
+         ! IF (lpsi < psilow) lpsi=psilow
          CALL gpeq_sol(lpsi)
          lbwp1mn=bwp1_mn(resnum(ising))
-         
-         rpsi=respsi+spot/(nn*ABS(singtype(ising)%q1))
+
+         rpsi=respsi+spots(ising)/(nn*ABS(singtype(ising)%q1))
          CALL gpeq_sol(rpsi)
+         ! IF (rpsi > psihigh) rpsi=psihigh
          rbwp1mn=bwp1_mn(resnum(ising))
 
          delta(ising) = (rbwp1mn - lbwp1mn) / (twopi * chi1)
@@ -1669,14 +1671,14 @@ c-----------------------------------------------------------------------
 
          fkaxmn=0
          fkaxmn(resnum(ising))=singcur(ising)/(twopi*nn)
-         
-         ALLOCATE(fsurf_indev(mpert),fsurf_indmats(mpert,mpert))         
+
+         ALLOCATE(fsurf_indev(mpert),fsurf_indmats(mpert,mpert))
          CALL gpvacuum_flxsurf(respsi)
          singflx_mn(:,ising)=MATMUL(fsurf_indmats,fkaxmn)
          DEALLOCATE(fsurf_indmats,fsurf_indev)
 c-----------------------------------------------------------------------
 c     compute coordinate-independent resonant field.
-c----------------------------------------------------------------------- 
+c-----------------------------------------------------------------------
          IF (vsbrzphi_flag) THEN
             singbno_mn(:,ising)=-singflx_mn(:,ising)
 !            CALL gpeq_weight(respsi,singbno_mn(:,ising),mfac,mpert,0)
@@ -1691,8 +1693,10 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute pseudo-chirikov parameter.
 c-----------------------------------------------------------------------
-         IF (ising==1) THEN 
+         IF (ising==1 .AND. msing>1) THEN
             hdist=(singtype(ising+1)%psifac-respsi)/2.0
+         ELSE IF (ising==1 .AND. msing==1) THEN
+            hdist=MIN(respsi, 1-respsi)/2.0
          ELSE IF (ising==msing) THEN
             hdist=(respsi-singtype(ising-1)%psifac)/2.0
          ELSE IF ((ising/=1).AND.(ising/=msing)) THEN
@@ -1732,7 +1736,7 @@ c-----------------------------------------------------------------------
             te_r(ising) = 0.0_r8
             ni_r(ising) = 0.0_r8
             ne_r(ising) = 0.0_r8
-            q1_r(ising) = 0.0_r8
+            q1_r(ising) = sq%f1(4)
             we_r(ising) = 0.0_r8
             wi_r(ising) = 0.0_r8
          ENDIF
@@ -1839,14 +1843,19 @@ c-----------------------------------------------------------------------
             ! convert from meters to psi_n for clear comparision to hw_isl
             hw_v_crit(ising) = hw_v_crit(ising) / sr%f1(1)
 
-            ! If we are above hw_v_crit then we can estimate the pressure lost assuming flat 
-            ! pressure inside the island
-            CALL spline_eval(sq,MAX(0.0, respsi - hw_sat(ising)),1)
+            ! If we are above hw_v_crit then we can estimate the pressure lost assuming flat
+            ! pressure inside the island. NOTE: this per-surface dP_r/P_r
+            ! estimate uses the unmodified equilibrium pressure (sq) for
+            ! each island independently, so overlapping islands are
+            ! double-counted (an over-estimate). The full p_mod profile
+            ! below instead zeros dP/dpsi over the union of all islands
+            ! and does not double-count overlaps.
+            CALL spline_eval(sq,MAX(0.0_r8, respsi - hw_sat(ising)),0)
             pleft = sq%f(2)
-            CALL spline_eval(sq,MIN(1.0, respsi + hw_sat(ising)),1)
+            CALL spline_eval(sq,MIN(1.0_r8, respsi + hw_sat(ising)),0)
             pright = sq%f(2)
             dP_r(ising) = (pleft - pright)  / mu0  ! Pascal
-            CALL spline_eval(sq,respsi,1) ! assumed to be at resonant surface latetr in this subroutine
+            CALL spline_eval(sq,respsi,1) ! assumed to be at resonant surface later in this subroutine
          ENDIF
 c-----------------------------------------------------------------------
 c     compute threshold by linear drift mhd with slayer module.
@@ -1887,7 +1896,7 @@ c-----------------------------------------------------------------------
      $              2*hw_sat(ising),2*hw_min(ising),
      $              dP_r(ising)/P_r(ising)
             ELSE
-       
+
                IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12,a12)') "psi",
      $              "q","singflx","chirikov","w_island"
                WRITE(*,'(1x,es12.3,f12.3,es12.3,f12.3,es12.3)')
@@ -1903,52 +1912,41 @@ c-----------------------------------------------------------------------
 c     Calculate modified pressure profile from saturated islands
 c-----------------------------------------------------------------------
       IF (callen_threshold_flag) THEN
-         ! Create fine temporary grid for pressure calculation
-         DO ipsi=0,npsi_tmp
-            psi_tmp(ipsi) = REAL(ipsi,r8)/REAL(npsi_tmp,r8)
+         ! Work directly on the psi_n profile grid (psifac, 1:mstep).
+         ! This grid packs points near the rational surfaces, so even
+         ! narrow saturated islands are always resolved.
+         ! Get pressure derivative at each grid point.
+         DO ipsi=1,mstep
+            CALL spline_eval(sq,psifac(ipsi),1)
+            dpdpsi(ipsi) = sq%f1(2) / mu0
          ENDDO
 
-         ! Get pressure derivative at each point
-         DO ipsi=0,npsi_tmp
-            CALL spline_eval(sq,psi_tmp(ipsi),1)
-            dp_tmp(ipsi) = sq%f1(2) / mu0
-         ENDDO
-
-         ! Zero out pressure derivative in island regions
+         ! Zero out pressure derivative in island regions. Overlapping
+         ! islands share zeroed points, so they are not double-counted.
          DO ising=1,msing
             IF (hw_sat(ising) > 0.0_r8) THEN
                psileft = MAX(0.0_r8,
      $              singtype(ising)%psifac - hw_sat(ising))
                psiright = MIN(1.0_r8,
      $              singtype(ising)%psifac + hw_sat(ising))
-               DO ipsi=0,npsi_tmp
-                  IF (psi_tmp(ipsi) >= psileft .AND.
-     $                 psi_tmp(ipsi) <= psiright) THEN
-                     dp_tmp(ipsi) = 0.0_r8
+               DO ipsi=1,mstep
+                  IF (psifac(ipsi) >= psileft .AND.
+     $                 psifac(ipsi) <= psiright) THEN
+                     dpdpsi(ipsi) = 0.0_r8
                   ENDIF
                ENDDO
             ENDIF
          ENDDO
 
-         ! Integrate using trapezoidal rule to get modified pressure
-         CALL spline_eval(sq,1.0_r8,0)
-         p_tmp(npsi_tmp) = sq%f(2) / mu0
-         DO ipsi=npsi_tmp-1,0,-1
-            p_tmp(ipsi) = p_tmp(ipsi+1) - 0.5_r8 *
-     $           (dp_tmp(ipsi+1) + dp_tmp(ipsi)) /
-     $           REAL(npsi_tmp,r8)
+         ! Anchor at the edge and integrate dP/dpsi inward with the
+         ! trapezoidal rule using the (non-uniform) psifac spacing.
+         CALL spline_eval(sq,psifac(mstep),0)
+         p_mod(mstep) = sq%f(2) / mu0
+         DO ipsi=mstep-1,1,-1
+            p_mod(ipsi) = p_mod(ipsi+1) - 0.5_r8 *
+     $           (dpdpsi(ipsi+1) + dpdpsi(ipsi)) *
+     $           (psifac(ipsi+1) - psifac(ipsi))
          ENDDO
-
-         ! Interpolate to the psi_n profile grid (psifac, 1:mstep)
-         CALL spline_alloc(spl,npsi_tmp,1)
-         spl%xs = psi_tmp
-         spl%fs(:, 1) = p_tmp
-         CALL spline_fit(spl,"extrap")
-         DO ipsi=1,mstep
-            CALL spline_eval(spl,psifac(ipsi),0)
-            p_mod(ipsi) = spl%f(1)
-         ENDDO
-         CALL spline_dealloc(spl)
       ELSE
          ! No island correction - use equilibrium pressure
          DO ipsi=1,mstep
@@ -1967,12 +1965,9 @@ c-----------------------------------------------------------------------
      $        "Resonant fields, singular currents, and islands"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a13,a8,1x,a12,I2)')
-     $        "jac_out = ",jac_out,"tmag_out =",tmag_out
-         WRITE(out_unit,'(1x,a12,es17.8e3)')"sweet-spot =",spot
          WRITE(out_unit,'(1x,a12,1x,I4)')"msing =",msing
          WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a6,18(1x,a16))')"q","psi",
+         WRITE(out_unit,'(1x,a6,18(1x,a16))')"q","psi","spot",
      $        "real(singflx)","imag(singflx)",
      $        "real(singcur)","imag(singcur)",
      $        "real(singbwp)","imag(singbwp)",
@@ -1981,8 +1976,9 @@ c-----------------------------------------------------------------------
      $        "half_w_isl_v_crit","singflx_crit",
      $        "half_w_sat","half_w_min","dP","P"
          DO ising=1,msing
-            WRITE(out_unit,'(1x,f6.3,16(es17.8e3))')
+            WRITE(out_unit,'(1x,f6.3,18(es17.8e3))')
      $           singtype(ising)%q,singtype(ising)%psifac,
+     $           spots(ising),
      $           REAL(singflx_mn(resnum(ising),ising)),
      $           AIMAG(singflx_mn(resnum(ising),ising)),
      $           REAL(singcur(ising)),AIMAG(singcur(ising)),
@@ -2003,6 +1999,29 @@ c-----------------------------------------------------------------------
          CALL check( nf90_redef(fncid))
          CALL check( nf90_put_att(fncid, nf90_global,
      $     "Pr", slayer_inpr) )
+         CALL check( nf90_def_var(fncid, "sing_spots", nf90_double,
+     $      (/q_id/), ssp_id) )
+         CALL check( nf90_put_att(fncid, ssp_id, "long_name",
+     $    "Sweet spots used for calculating resonant jump quantities") )
+         CALL check( nf90_put_att(fncid, ssp_id, "units", "m-nq") )
+         IF (galsol%gal_flag) THEN
+            CALL check( nf90_def_var(fncid, "Sfac", nf90_double,
+     $         (/q_id/), lq_id) )
+            CALL check( nf90_put_att(fncid, lq_id, "long_name",
+     $       "Lundquist Number at rational surface") )
+            CALL check( nf90_put_att(fncid, lq_id, "units", "unitless"))
+            CALL check( nf90_def_var(fncid, "tauA", nf90_double,
+     $         (/q_id/), at_id) )
+            CALL check( nf90_put_att(fncid, at_id, "long_name",
+     $       "Alfven timescale at rational surface") )
+            CALL check( nf90_put_att(fncid, at_id, "units", "s"))
+            CALL check( nf90_def_var(fncid, "tauR", nf90_double,
+     $         (/q_id/), rt_id) )
+            CALL check( nf90_put_att(fncid, rt_id, "long_name",
+     $       "Resistive timescale at rational surface") )
+            CALL check( nf90_put_att(fncid, rt_id, "units", "s"))
+         
+         ENDIF
          CALL check( nf90_def_var(fncid, "Phi_res", nf90_double,
      $      (/q_id,i_id/), p_id) )
          CALL check( nf90_put_att(fncid, p_id, "units", "T") )
@@ -2013,7 +2032,7 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(fncid, d_id, "long_name",
      $     "Unitless Resonance Parameter $\partial_\psi \frac{"//
      $     "\delta B \cdot \nabla \psi}{B \cdot \nabla \theta}$") )
-         CALL check( nf90_def_var(fncid, "B_pen", nf90_double,
+         CALL check( nf90_def_var(fncid, "b_pen", nf90_double,
      $      (/q_id,i_id/), bp_id) )
          CALL check( nf90_put_att(fncid, bp_id, "units", "T") )
          CALL check( nf90_put_att(fncid, bp_id, "long_name",
@@ -2121,6 +2140,15 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(fncid, pm_id, "long_name",
      $      "Modified pressure with saturated island correction") )
          CALL check( nf90_enddef(fncid) )
+         CALL check( nf90_put_var(fncid, ssp_id, spots) )
+         IF (galsol%gal_flag) THEN
+            CALL check( nf90_put_var(fncid, lq_id, 
+     $         (/ (singtype(ising)%restype%sfac, ising=1, msing) /) ) )
+            CALL check( nf90_put_var(fncid, at_id,
+     $         (/ (singtype(ising)%restype%taua, ising=1, msing) /) ) )
+            CALL check( nf90_put_var(fncid, rt_id,
+     $         (/ (singtype(ising)%restype%taur, ising=1, msing) /) ) )
+         ENDIF
          singflx = (/(singflx_mn(resnum(ising),ising), ising=1,msing)/)
          CALL check( nf90_put_var(fncid, p_id,
      $      RESHAPE((/REAL(singflx), AIMAG(singflx)/), (/msing,2/))) )
@@ -2376,7 +2404,7 @@ c-----------------------------------------------------------------------
 
          ENDIF
       ENDIF
-        
+
       IF(ascii_flag) CALL ascii_close(out_unit)
       IF(singcoup_set) THEN
          DEALLOCATE(singcoup_out_vecs)
@@ -2434,8 +2462,10 @@ c-----------------------------------------------------------------------
          visland_hwidth(ising)=
      $        SQRT(ABS(4*vflxmn(ising)*area/
      $        (twopi*shear*singtype(ising)%q*chi1)))
-         IF (ising==1) THEN 
+         IF (ising==1 .AND. msing>1) THEN
             hdist=(singtype(ising+1)%psifac-respsi)/2.0
+         ELSE IF (ising==1 .AND. msing==1) THEN
+            hdist=MIN(respsi, 1-respsi)/2.0
          ELSE IF (ising==msing) THEN
             hdist=(respsi-singtype(ising-1)%psifac)/2.0
          ELSE IF ((ising/=1).AND.(ising/=msing)) THEN
@@ -2989,7 +3019,7 @@ c-----------------------------------------------------------------------
          xspmns(istep,:) = xsp_mn
          xmsmns(istep,:) = xms_mn
          xmtmns(istep,:) = xmt_mn
-         xmzmns(istep,:) = xmz_mn   
+         xmzmns(istep,:) = xmz_mn
 c-----------------------------------------------------------------------
 c     decompose components on the given coordinates.
 c-----------------------------------------------------------------------
@@ -3181,7 +3211,7 @@ c-----------------------------------------------------------------------
          psis=(/(istep,istep=0,cstep-1)/)/REAL(cstep-1,r8)*
      $        (psilim-psilow)+psilow
          ches=2.0*(psis-0.5)
-         
+
          DO ipert=1,mpert
             DO i=0,nche
                chelagbmns(:,ipert)=chelagbmns(:,ipert)+
@@ -3260,7 +3290,7 @@ c-----------------------------------------------------------------------
          ENDDO
          CALL ascii_close(out_unit)
       ENDIF
-      
+
       IF (bin_flag) THEN
          CALL bin_open(bin_unit,
      $        "pmodb.bin","UNKNOWN","REWIND","none")
@@ -3270,7 +3300,7 @@ c-----------------------------------------------------------------------
      $              REAL(REAL(eulbparmout(istep,ipert)),4),
      $              REAL(AIMAG(eulbparmout(istep,ipert)),4),
      $              REAL(REAL(lagbparmout(istep,ipert)),4),
-     $              REAL(AIMAG(lagbparmout(istep,ipert)),4)     
+     $              REAL(AIMAG(lagbparmout(istep,ipert)),4)
             ENDDO
             WRITE(bin_unit)
          ENDDO
@@ -3312,16 +3342,17 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     subprogram 9. gpout_xbnormal.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpout_xbnormal(egnum,xspmn,spot,nspot)
+      SUBROUTINE gpout_xbnormal(egnum,xspmn,spots,interpspot,nspot)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum,nspot
-      REAL(r8), INTENT(IN) :: spot
+      REAL(r8), DIMENSION(msing), INTENT(IN) :: spots
+      REAL(r8), INTENT(IN) :: interpspot
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: p_id,t_id,i_id,m_id,mp_id,r_id,z_id,bm_id,b_id,
-     $   wm_id,pwm_id, xm_id,x_id,rv_id,zv_id,mpv_id,rzstat
+     $   wm_id,wmr_id,pwm_id, xm_id,x_id,rv_id,zv_id,mpv_id,rzstat
 
       INTEGER :: i,istep,ipert,itheta,tout
       REAL(r8) :: ximax,rmax,area
@@ -3330,7 +3361,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,bwp_fun
 
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: xmns,ymns,
-     $     xnomns,bnomns,bwpmns
+     $     xnomns,bnomns,bwpmns,bwpmns_rmatch
 
       INTEGER :: mlow_pest,mhigh_pest,mpert_pest
       INTEGER, DIMENSION(:), ALLOCATABLE :: mfac_pest
@@ -3350,7 +3381,8 @@ c-----------------------------------------------------------------------
      $   rss(mstep,0:mthsurf),zss(mstep,0:mthsurf),
      $   xnofuns(mstep,0:mthsurf),bnofuns(mstep,0:mthsurf))
       ALLOCATE(xmns(mstep,lmpert),ymns(mstep,lmpert),
-     $   xnomns(mstep,lmpert),bnomns(mstep,lmpert),bwpmns(mstep,lmpert))
+     $   xnomns(mstep,lmpert),bnomns(mstep,lmpert),bwpmns(mstep,lmpert),
+     $   bwpmns_rmatch(mstep,lmpert))
       IF (msing>0) ALLOCATE(intbwpmns(mstep,lmpert))
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
@@ -3376,7 +3408,7 @@ c-----------------------------------------------------------------------
 
       CALL gpeq_alloc
       IF (msing>0) THEN
-         CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
+         CALL gpeq_interp_singsurf(fsp_sol,spots*interpspot,nspot)
       ENDIF
 
       ! these surfaces are phsyically independent
@@ -3428,7 +3460,7 @@ c-----------------------------------------------------------------------
             ! convert to pest with magnetic angle
             CALL gpeq_bcoords(psifac(istep),pwpmns(istep,:),
      $           mfac_pest,mpert_pest,2,0,0,0,0,1)
-         ENDIF            
+         ENDIF
 
          CALL gpeq_bcoordsout(xnomns(istep,:),xno_mn,psifac(istep),ji=0)
          CALL gpeq_bcoordsout(bnomns(istep,:),bno_mn,psifac(istep),ji=0)
@@ -3448,6 +3480,13 @@ c-----------------------------------------------------------------------
             bwpmns(istep,:)=0
             bwpmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=bwp_mn
 
+            IF(galsol%gal_flag) THEN
+               ! use rmatch bwp_mn if available
+               bwp_mn_rmatch=bwp_mn_rmatch/area
+               bwpmns_rmatch(istep,:)=0
+               bwpmns_rmatch(istep,mlow-lmlow+1:mlow-lmlow+mpert)=
+     $                                                     bwp_mn_rmatch
+            ENDIF
             IF (msing>0) THEN
                interpbwn=interpbwn/area
                intbwpmns(istep,:)=0
@@ -3499,15 +3538,15 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1x,a13,a8)')"jac_out = ","pest"
          WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
      $        "mstep =",mstep,"mpert =",mpert_pest,"mthsurf =",mthsurf
-         WRITE(out_unit,*)     
+         WRITE(out_unit,*)
          WRITE(out_unit,'(2(1x,a16),1x,a4,6(1x,a16))')"psi","q","m",
      $        "real(bwp)","imag(bwp)"
-         
+
          DO istep=1,mstep,MAX(1,(mstep*lmpert-1)/max_linesout+1)
             DO ipert=1,mpert_pest
                WRITE(out_unit,'(2(es17.8e3),1x,I4,6(es17.8e3))')
      $              psifac(istep),qfac(istep),mfac_pest(ipert),
-     $              REAL(pwpmns(istep,ipert)),AIMAG(pwpmns(istep,ipert))        
+     $              REAL(pwpmns(istep,ipert)),AIMAG(pwpmns(istep,ipert))
             ENDDO
          ENDDO
          CALL ascii_close(out_unit)
@@ -3515,7 +3554,7 @@ c-----------------------------------------------------------------------
 
       IF (fun_flag .AND. ascii_flag) THEN
          CALL ascii_open(out_unit,"gpec_xbnormal_fun_n"//
-     $        TRIM(sn)//".out","UNKNOWN")         
+     $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"GPEC_XBNORMAL_FUN: "//
      $        "Normal components of displacement and field in functions"
          WRITE(out_unit,*)version
@@ -3524,10 +3563,10 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
          WRITE(out_unit,'(1x,a12,1x,I6,1x,a12,I4)')
      $        "mstep =",mstep,"mthsurf =",mthsurf
-         WRITE(out_unit,*)     
+         WRITE(out_unit,*)
          WRITE(out_unit,'(10(1x,a16))')"psi","theta","r","z","rvec",
      $        "zvec","real(xno)","imag(xno)","real(bno)","imag(bno)"
-         
+
          DO istep=1,mstep,MAX(1,(mstep*(mthsurf+1)-1)/max_linesout+1)
             DO itheta=0,mthsurf
                WRITE(out_unit,'(10(es17.8e3))')
@@ -3537,7 +3576,7 @@ c-----------------------------------------------------------------------
      $              REAL(xnofuns(istep,itheta)),
      $              -helicity*AIMAG(xnofuns(istep,itheta)),
      $              REAL(bnofuns(istep,itheta)),
-     $              -helicity*AIMAG(bnofuns(istep,itheta))        
+     $              -helicity*AIMAG(bnofuns(istep,itheta))
             ENDDO
          ENDDO
          CALL ascii_close(out_unit)
@@ -3593,7 +3632,7 @@ c-----------------------------------------------------------------------
      $        REAL(-helicity*AIMAG(bnofuns(9:mstep,0:mthsurf)),4)
 
          CALL bin_close(bin_2d_unit)
-         
+
          ximax=MAXVAL(ABS(xnofuns))
          CALL bicube_eval(rzphi,psilim,theta(0),0)
          rmax=SQRT(rzphi%f(1))
@@ -3681,6 +3720,15 @@ c-----------------------------------------------------------------------
      $      "the perturbed field") )
          CALL check( nf90_put_att(fncid,wm_id,"units","Tesla") )
          CALL check( nf90_put_att(fncid,wm_id,"jacobian",jac_out) )
+         IF(galsol%gal_flag)THEN
+            CALL check( nf90_def_var(fncid, "Jbgradpsi_rmatch",
+     $                nf90_double,(/p_id,m_id,i_id/),wmr_id) )
+            CALL check( nf90_put_att(fncid,wmr_id,"long_name",
+     $      "Jacobian weighted contravariant psi component of "//
+     $      "the perturbed field") )
+            CALL check( nf90_put_att(fncid,wmr_id,"units","Tesla") )
+            CALL check( nf90_put_att(fncid,wmr_id,"jacobian",jac_out) )
+         ENDIF
          IF(TRIM(jac_out)/="pest" .AND. bwp_pest_flag)THEN
             CALL check( nf90_def_dim(fncid,"m_pest",mpert_pest,mp_id) )
             CALL check( nf90_def_var(fncid, "m_pest", nf90_int, mp_id,
@@ -3723,6 +3771,11 @@ c-----------------------------------------------------------------------
      $                AIMAG(bnomns)/),(/mstep,lmpert,2/))) )
          CALL check( nf90_put_var(fncid,wm_id,RESHAPE((/REAL(bwpmns),
      $                AIMAG(bwpmns)/),(/mstep,lmpert,2/))) )
+         IF(galsol%gal_flag)THEN
+            CALL check( nf90_put_var(fncid,wmr_id,RESHAPE((/
+     $          REAL(bwpmns_rmatch),AIMAG(bwpmns_rmatch)/),
+     $          (/mstep,lmpert,2/))) )
+         ENDIF
          IF(TRIM(jac_out)/="pest" .AND. bwp_pest_flag)THEN
             CALL check( nf90_put_var(fncid,mpv_id,mfac_pest) )
             CALL check( nf90_put_var(fncid,pwm_id,RESHAPE((/
@@ -3744,7 +3797,7 @@ c-----------------------------------------------------------------------
             rmax=SQRT(rzphi%f(1))
             xnofuns=xnofuns/ximax*rmax/6.0
          ENDIF
-            
+
          rss=xnofuns*rvecs
          zss=xnofuns*zvecs
          DO itheta=0,mthsurf
@@ -3776,12 +3829,12 @@ c-----------------------------------------------------------------------
             ENDDO
             CALL ascii_close(out_unit)
          ENDIF
-      ENDIF         
+      ENDIF
 c-----------------------------------------------------------------------
 c     deallocation cleans memory in heap
 c-----------------------------------------------------------------------
       DEALLOCATE(rvecs,zvecs,rs,zs,psis,rss,zss,xnofuns,bnofuns)
-      DEALLOCATE(xmns,ymns,xnomns,bnomns,bwpmns)
+      DEALLOCATE(xmns,ymns,xnomns,bnomns,bwpmns,bwpmns_rmatch)
       IF (msing>0) DEALLOCATE(intbwpmns)
 c-----------------------------------------------------------------------
 c     terminate.
@@ -3797,7 +3850,7 @@ c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: rout,bpout,bout,rcout,tout
-      
+
       INTEGER :: ipsi,ipert,i
       REAL(r8), DIMENSION(0:cmpsi) :: psi
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: vcmn
@@ -3858,7 +3911,7 @@ c-----------------------------------------------------------------------
             CALL gpeq_bcoords(psi(ipsi),pwpmns(ipsi,:),mfac_pest,
      $           mpert_pest,2,0,0,0,0,1)
          ENDIF
-         
+
          IF ((jac_out /= jac_type).OR.(tout==0)) THEN
             DO i=1,cmpert
                IF ((cmlow-lmlow+i>=1).AND.(cmlow-lmlow+i<=lmpert)) THEN
@@ -4000,7 +4053,7 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1x,a13,a8)')"jac_out = ","pest"
          WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
      $        "mpsi =",cmpsi,"mpert =",mpert_pest,"mthsurf =",mthsurf
-         WRITE(out_unit,*)     
+         WRITE(out_unit,*)
          WRITE(out_unit,'(2(1x,a16),1x,a4,2(1x,a16))')"psi","q","m",
      $        "real(bwp)","imag(bwp)"
          DO ipsi=1,cmpsi
@@ -4023,7 +4076,7 @@ c-----------------------------------------------------------------------
      $              REAL(AIMAG(vnomns(ipsi,ipert)),4),
      $              REAL(REAL(vwpmns(ipsi,ipert)),4),
      $              REAL(AIMAG(vwpmns(ipsi,ipert)),4)
-               
+
             ENDDO
             WRITE(bin_unit)
          ENDDO
@@ -4164,7 +4217,7 @@ c-----------------------------------------------------------------------
 
       IF (fun_flag .AND. ascii_flag) THEN
          CALL ascii_open(out_unit,"gpec_xbtangent_fun_n"//
-     $        TRIM(sn)//".out","UNKNOWN")         
+     $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"GPEC_XBTANGENT_FUN: "//
      $        "Tangential components of displacement "//
      $        "and field in functions"
@@ -4174,10 +4227,10 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
          WRITE(out_unit,'(1x,a12,1x,I6,1x,a12,I4)')
      $        "mstep =",mstep,"mthsurf =",mthsurf
-         WRITE(out_unit,*)     
+         WRITE(out_unit,*)
          WRITE(out_unit,'(8(1x,a16))')"r","z","rvec","zvec",
      $        "real(xta)","imag(xta)","real(bta)","imag(bta)"
-         
+
          DO istep=1,mstep,MAX(1,(mstep*(mthsurf+1)-1)/max_linesout+1)
             DO itheta=0,mthsurf
                WRITE(out_unit,'(8(es17.8e3))')
@@ -4186,7 +4239,7 @@ c-----------------------------------------------------------------------
      $              REAL(xtafuns(istep,itheta)),
      $              AIMAG(xtafuns(istep,itheta)),
      $              REAL(btafuns(istep,itheta)),
-     $              AIMAG(btafuns(istep,itheta))        
+     $              AIMAG(btafuns(istep,itheta))
             ENDDO
          ENDDO
          CALL ascii_close(out_unit)
@@ -4220,7 +4273,7 @@ c-----------------------------------------------------------------------
          WRITE(bin_2d_unit)REAL(REAL(btafuns(9:mstep,0:mthsurf)),4)
          WRITE(bin_2d_unit)REAL(AIMAG(btafuns(9:mstep,0:mthsurf)),4)
          CALL bin_close(bin_2d_unit)
-      ENDIF         
+      ENDIF
 c-----------------------------------------------------------------------
 c     deallocation cleans memory in heap
 c-----------------------------------------------------------------------
@@ -4260,7 +4313,7 @@ c-----------------------------------------------------------------------
       INTEGER :: vcbr_id, vcbz_id, vcbp_id
 
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
-      LOGICAL, PARAMETER :: complex_flag=.TRUE.      
+      LOGICAL, PARAMETER :: complex_flag=.TRUE.
 
       INTEGER, DIMENSION(0:nr,0:nz) :: vgdl
       REAL(r8), DIMENSION(0:nr,0:nz) :: vgdr,vgdz,ebr,ebz,ebp
@@ -4341,13 +4394,13 @@ c-----------------------------------------------------------------------
                CALL bicube_eval(psi_in,gdr(i,j),gdz(i,j),1)
                ebr(i,j) = -psi_in%fy(1)/gdr(i,j)*psio
                ebz(i,j) = psi_in%fx(1)/gdr(i,j)*psio
-               IF (gdl(i,j) >= 1) THEN  
+               IF (gdl(i,j) >= 1) THEN
                   CALL spline_eval(sq,gdpsi(i,j),0)
                   ebp(i,j) = abs(sq%f(1))/(twopi*gdr(i,j))
                ELSE
-                  ebp(i,j) = btlim*rlim/gdr(i,j)  
+                  ebp(i,j) = btlim*rlim/gdr(i,j)
                ENDIF
-            ENDDO   
+            ENDDO
          ENDDO
 
          IF(ipd>0)THEN
@@ -4444,12 +4497,12 @@ c-----------------------------------------------------------------------
                   brz(i,j)=vbz(i,j)
                   brp(i,j)=vbp(i,j)
                ENDIF
-               
+
             ENDDO
          ENDDO
          IF(timeit) CALL gpec_timer(2)
       ENDIF
-      
+
       IF (brzphi_flag) THEN
          IF(verbose) WRITE(*,*)
      $        "Constructing total perturbed fields"
@@ -4457,7 +4510,7 @@ c-----------------------------------------------------------------------
          CALL gpvacuum_bnormal(psilim,bnomn,nr,nz)
          CALL mscfld(wv,mpert,mthsurf,mthsurf,complex_flag,
      $        nr,nz,vgdl,vgdr,vgdz,vpbr,vpbz,vpbp)
-         
+
          IF (helicity<0) THEN
             vpbr=CONJG(vpbr)
             vpbz=CONJG(vpbz)
@@ -4477,10 +4530,10 @@ c-----------------------------------------------------------------------
      $              vcbr,vcbz,vcbp,"c")
             ENDIF
          ENDIF
-         
+
          DO i=0,nr
             IF(verbose) CALL progressbar(i,0,nr,op_percent=10)
-            DO j=0,nz                  
+            DO j=0,nz
                IF (gdl(i,j)<1) THEN
                   gdl(i,j)=vgdl(i,j)
                   bpr(i,j)=vpbr(i,j)
@@ -4497,7 +4550,7 @@ c-----------------------------------------------------------------------
                   btz(i,j)=brz(i,j)
                   btp(i,j)=brp(i,j)
                ENDIF
-               
+
             ENDDO
          ENDDO
          IF (divzero_flag) THEN
@@ -4543,7 +4596,7 @@ c-----------------------------------------------------------------------
                      cheaz(i,j)=cheaz(i,j)+btz(k,l)*
      $                    cos(REAL(i,r8)*acos(chex(k)))*
      $                    cos(REAL(j,r8)*acos(chey(l)))/
-     $                    sqrt((1.0-chex(k)**2.0)*(1.0-chey(l)**2.0))                    
+     $                    sqrt((1.0-chex(k)**2.0)*(1.0-chey(l)**2.0))
                      chxar(i,j)=chxar(i,j)+xrr(k,l)*
      $                    cos(REAL(i,r8)*acos(chex(k)))*
      $                    cos(REAL(j,r8)*acos(chey(l)))/
@@ -4551,7 +4604,7 @@ c-----------------------------------------------------------------------
                      chxaz(i,j)=chxaz(i,j)+xrz(k,l)*
      $                    cos(REAL(i,r8)*acos(chex(k)))*
      $                    cos(REAL(j,r8)*acos(chey(l)))/
-     $                    sqrt((1.0-chex(k)**2.0)*(1.0-chey(l)**2.0))                    
+     $                    sqrt((1.0-chex(k)**2.0)*(1.0-chey(l)**2.0))
                   ENDDO
                ENDDO
                chear(i,j)=chear(i,j)*4*delr*delz/(cha*chc*pi**2.0)
@@ -4561,13 +4614,13 @@ c-----------------------------------------------------------------------
             ENDDO
          ENDDO
          chear(0,:)=chear(0,:)/2.0
-         cheaz(0,:)=cheaz(0,:)/2.0        
+         cheaz(0,:)=cheaz(0,:)/2.0
          chear(:,0)=chear(:,0)/2.0
-         cheaz(:,0)=cheaz(:,0)/2.0  
+         cheaz(:,0)=cheaz(:,0)/2.0
          chxar(0,:)=chxar(0,:)/2.0
-         chxaz(0,:)=chxaz(0,:)/2.0        
+         chxaz(0,:)=chxaz(0,:)/2.0
          chxar(:,0)=chxar(:,0)/2.0
-         chxaz(:,0)=chxaz(:,0)/2.0   
+         chxaz(:,0)=chxaz(:,0)/2.0
 
          IF(ascii_flag)THEN
             CALL ascii_open(out_unit,"gpec_brzphi_chebyshev_n"//
@@ -4683,7 +4736,7 @@ c-----------------------------------------------------------------------
             vvbz=CONJG(vvbz)
             vvbp=CONJG(vvbp)
          ENDIF
-      ENDIF  
+      ENDIF
 c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
@@ -4810,9 +4863,9 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,a2,5(a17))')"l","r","z","eb_r",
      $        "eb_z","eb_phi"
-      
+
          DO i=0,nr
-            DO j=0,nz 
+            DO j=0,nz
                WRITE(out_unit,'(1x,I2,5(es17.8e3))')
      $              gdl(i,j),gdr(i,j),gdz(i,j),
      $              ebr(i,j),ebz(i,j),ebp(i,j)
@@ -4918,19 +4971,19 @@ c-----------------------------------------------------------------------
             CALL check( nf90_inq_dimid(cncid,"R",r_id) )
             CALL check( nf90_inq_dimid(cncid,"z",z_id) )
             CALL check( nf90_redef(cncid))
-            CALL check( nf90_def_var(cncid, "b_r_vacuum", nf90_double,     
+            CALL check( nf90_def_var(cncid, "b_r_vacuum", nf90_double,
      $               (/r_id, z_id, i_id/), vcbr_id) )
             CALL check( nf90_put_att(cncid, vcbr_id, "long_name",
      $               "Radial vacuum field") )
             CALL check( nf90_put_att(cncid, vcbr_id, "units",
      $               "Tesla") )
-            CALL check( nf90_def_var(cncid, "b_z_vacuum", nf90_double,     
+            CALL check( nf90_def_var(cncid, "b_z_vacuum", nf90_double,
      $               (/r_id, z_id, i_id/), vcbz_id) )
             CALL check( nf90_put_att(cncid, vcbz_id, "long_name",
      $               "Vertical vacuum field") )
             CALL check( nf90_put_att(cncid, vcbz_id, "units",
      $               "Tesla") )
-            CALL check( nf90_def_var(cncid, "b_p_vacuum", nf90_double,     
+            CALL check( nf90_def_var(cncid, "b_p_vacuum", nf90_double,
      $               (/r_id, z_id, i_id/), vcbp_id) )
             CALL check( nf90_put_att(cncid, vcbp_id, "long_name",
      $               "Toroidal vacuum field") )
@@ -4939,15 +4992,15 @@ c-----------------------------------------------------------------------
             CALL check( nf90_enddef(cncid) )
 
             CALL check( nf90_put_var(cncid, vcbr_id,
-     $               RESHAPE((/REAL(vcbr), AIMAG(vcbr)/), 
+     $               RESHAPE((/REAL(vcbr), AIMAG(vcbr)/),
      $               (/nr+1, nz+1,2/))) )
             CALL check( nf90_put_var(cncid, vcbz_id,
-     $               RESHAPE((/REAL(vcbz), AIMAG(vcbz)/), 
+     $               RESHAPE((/REAL(vcbz), AIMAG(vcbz)/),
      $               (/nr+1, nz+1,2/))) )
             CALL check( nf90_put_var(cncid, vcbp_id,
-     $               RESHAPE((/REAL(vcbp), AIMAG(vcbp)/), 
+     $               RESHAPE((/REAL(vcbp), AIMAG(vcbp)/),
      $               (/nr+1, nz+1,2/))) )
-     
+
             CALL check( nf90_close(cncid) )
 
          ENDIF
@@ -5076,7 +5129,7 @@ c-----------------------------------------------------------------------
          CALL ascii_close(out_unit)
       ENDIF
 
-      IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
+      IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR.
      $     vbrzphi_flag) DEALLOCATE(gdr,gdz,gdl,gdpsi,gdthe,gdphi)
       CALL gpeq_rzpgrid(nr,nz,psixy) ! reset the grid
 c-----------------------------------------------------------------------
@@ -5100,7 +5153,7 @@ c-----------------------------------------------------------------------
       INTEGER :: i_id, r_id, z_id, br_id, bz_id, bp_id, s_id, sdid
 
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
-      LOGICAL, PARAMETER :: complex_flag=.TRUE.      
+      LOGICAL, PARAMETER :: complex_flag=.TRUE.
 
       INTEGER, DIMENSION(:), ALLOCATABLE :: snums
       INTEGER, DIMENSION(:,:,:), ALLOCATABLE :: vgdl
@@ -5300,7 +5353,7 @@ c-----------------------------------------------------------------------
          xrz_fun(istep,:)=xrz_fun(istep,:)*EXP(ifac*nn*dphi)
          brz_fun(istep,:)=brz_fun(istep,:)*EXP(ifac*nn*dphi)
          xrp_fun(istep,:)=xrp_fun(istep,:)*EXP(ifac*nn*dphi)
-         brp_fun(istep,:)=brp_fun(istep,:)*EXP(ifac*nn*dphi)         
+         brp_fun(istep,:)=brp_fun(istep,:)*EXP(ifac*nn*dphi)
 
       ENDDO
 
@@ -5485,7 +5538,7 @@ c-----------------------------------------------------------------------
      $           eat(itheta)*sin(eta)
             eaz_fun(istep,itheta)=ear(itheta)*sin(eta)+
      $           eat(itheta)*cos(eta)
-            eap_fun(istep,itheta)=-eap(itheta)            
+            eap_fun(istep,itheta)=-eap(itheta)
             arr(itheta)=xss_fun(itheta)*w(1,1)-chi1*(qfac(istep)*
      $           xsp_fun(itheta)*w(2,1)+xsp_fun(itheta)*w(3,1))
             art(itheta)=xss_fun(itheta)*w(1,2)-chi1*(qfac(istep)*

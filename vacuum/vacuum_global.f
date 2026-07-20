@@ -280,7 +280,7 @@ c-----------------------------------------------------------------------
       DEALLOCATE(bxpwr,bxpwi,bzpwr,bzpwi,bnpwr,bnpwi)
       DEALLOCATE(bxpwtr,bxpwti,bzpwtr,bzpwti,bnpwtr,bnpwti)
       DEALLOCATE(xilr,xili,xigr,xigi,bnkr,bnki,bthpr,bthpi,
-     $     gpsjp,bnpptr,bnppti,chipr,chipi)     
+     $     gpsjp,bnpptr,bnppti,chipr,chipi)
       DEALLOCATE(lfm,bnlr,bnli)
 c-----------------------------------------------------------------------
 c     terminate.
