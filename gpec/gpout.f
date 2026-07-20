@@ -6898,9 +6898,8 @@ c-----------------------------------------------------------------------
 
 c-----------------------------------------------------------------------
 c     subprogram 20. gpout_recon
-c     main entry point for reconstruction diagnostics.
-c     calls gpeq functions to compute shear, curvature, K quantities
-c     and stores results as bicubes for visualization/analysis.
+c     reconstruction diagnostics: shear, curvature, K, field C and
+c     the integrals epf, dst giving delta-W_p.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_recon(mode, xspmn)
 c-----------------------------------------------------------------------
@@ -6953,31 +6952,11 @@ c-----------------------------------------------------------------------
       TYPE(cspline_type) :: recon_epf_spl, recon_dst_spl
       INTEGER :: cveri_count
       CHARACTER(4) :: cveri_stat
-      
-c     Diagnostic variables for C vector comparison
-      INTEGER :: ipsi_mid, itheta_mid, ipert_diag, m1
-      REAL(r8) :: psi_mid, theta_mid, delpsi_sq, jac_mid, q_mid,
-     $     q1_mid, chi1_mid, f1_mid, p1_mid, j_theta_coef, j_zeta_coef
-      COMPLEX(r8) :: term_exp, j_cross_factor, xi_psi_val
-      COMPLEX(r8), DIMENSION(-mband:mband) :: g11_diag, g12_diag,
-     $     g22_diag, g23_diag, g31_diag, g33_diag
-      REAL(r8), DIMENSION(10,10) :: w
-      REAL(r8) :: g11_r, g22_r, g33_r, g23_r, g31_r, g12_r
-      
+
       IF(verbose) WRITE(*,*)""
       IF(verbose) WRITE(*,*)"GPOUT_RECON: Starting reconstruction"//
      $  " diagnostics"
       IF(verbose) WRITE(*,*)"__________________________________________"
-
-c-----------------------------------------------------------------------
-c     allocate bicubes for shear, curvature, K only when the recon
-c     output tables are requested.
-c-----------------------------------------------------------------------
-      IF (recon_out) THEN
-         ALLOCATE(gpout_shear)
-         ALLOCATE(gpout_curvature)
-         ALLOCATE(gpout_k)
-      ENDIF
 
       WRITE(smode,'(I8)') mode
       smode = ADJUSTL(smode)
@@ -7120,6 +7099,7 @@ c        the original path so recon terminal totals remain unchanged.
 c        Verify (curl C).grad(psi)=0 using the same psi-local C state
 c        already prepared by gpeq_epf. This avoids rebuilding the
 c        full equilibrium/C reconstruction a second time at each psi.
+c        Same identity as gpeq_cveri, inlined; keep the two in sync.
          IF (cveri_flag) THEN
             DO ipert = 1, mpert
                curv_mn(ipert) = twopi * ifac * mfac(ipert)
@@ -7540,8 +7520,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: psi, eta, rfac, dpsi_local, q2_hr
       REAL(r8), DIMENSION(0:mthsurf) :: rvals, zvals
       COMPLEX(r8) :: jqx_hr, pdiv_hr, total_hr
-      COMPLEX(r8) :: jqx_cum, pdiv_cum, total_cum, dw_raw_hr,
-     $     dw_dcon_hr
+      COMPLEX(r8) :: dw_raw_hr, dw_dcon_hr
       COMPLEX(r8), DIMENSION(0:mthsurf) :: q2_fun, jqx_fun, pdiv_fun,
      $     total_fun
       CHARACTER(8) :: smode
@@ -7578,6 +7557,13 @@ c-----------------------------------------------------------------------
      $        "pdiv_im","total_re","total_im","dw_re"
       ENDIF
 
+c     fail fast on an out-of-range mode selection.
+      ep_index = 1
+      IF (mode_flag) ep_index = mode
+      IF (ep_index < 1 .OR. ep_index > mpert) THEN
+         CALL gpec_stop("gpout_recon2 selected mode is out of range")
+      ENDIF
+
       CALL idcon_build(mode, xspmn)
       CALL gpeq_alloc
 
@@ -7606,11 +7592,6 @@ c-----------------------------------------------------------------------
       ENDDO
 
       dcon_fac = (mu0*2.0_r8) / psio**2 / (chi1*1.0e-3_r8)**2
-      ep_index = 1
-      IF (mode_flag) ep_index = mode
-      IF (ep_index < 1 .OR. ep_index > mpert) THEN
-         CALL gpec_stop("gpout_recon2 selected mode is out of range")
-      ENDIF
       ep_selected = REAL(ep(ep_index))
       ep_dcon = ep_selected * dcon_fac
       q2_hr = 0.0_r8
@@ -7618,6 +7599,8 @@ c-----------------------------------------------------------------------
       pdiv_hr = CMPLX(0.0_r8, 0.0_r8, r8)
       total_hr = CMPLX(0.0_r8, 0.0_r8, r8)
 
+c     integrate on psifac points inside the spline domain; points
+c     below rzphi%xs(0) are skipped (gpout_recon clamps instead).
       nint_pts = 0
       DO istep = 0, mstep
          IF (psifac(istep) < rzphi%xs(0)) CYCLE
@@ -7782,10 +7765,11 @@ c     This routine writes ABS decomposition pieces:
 c         A     = int J |Q|^2 / mu0              (perturbed B energy)
 c         Cpar  = int J mu0 sigma^2 B^2 xi_n^2   (parallel current^2)
 c         Iperp = int J mu0 p'^2 |grad psi|^2 xi_n^2 / B^2  (perp current^2)
+c         B     = int J 2 Re(V*.Q) / mu0         (cross term)
 c         epf   = int J |C|^2 / mu0              (already in recon1)
-c     and derives B = epf - A - Cpar - Iperp.
-c     Diagnostic: Cpar should equal dst2 (K_2 xi_n^2) from recon1
-c     pointwise and integrated, since both express mu0 sigma^2 B^2 xi_n^2.
+c     All five are computed independently (B from the equilibrium
+c     current, not as a remainder), so identity_res is a real check.
+c     Cpar should equal recon1's dst2; not compared here.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_recon3(mode, xspmn)
 c-----------------------------------------------------------------------
@@ -7843,13 +7827,20 @@ c-----------------------------------------------------------------------
      $        "Iperp_cum","Cpar_cum","epf_cum","identity_res"
       ENDIF
 
+c     fail fast on an out-of-range mode selection.
+      ep_index = 1
+      IF (mode_flag) ep_index = mode
+      IF (ep_index < 1 .OR. ep_index > mpert) THEN
+         CALL gpec_stop("gpout_recon3 selected mode is out of range")
+      ENDIF
+
       CALL idcon_build(mode, xspmn)
       CALL gpeq_alloc
 
       DO ipsi = 0, mpsi
          psi = rzphi%xs(ipsi)
          IF (psi > psilim) EXIT
-         CALL gpeq_recon3(psi, A_hr, B_hr, Iperp_hr, Cpar_hr, epf_hr,
+         CALL gpeq_epfterms(psi, A_hr, B_hr, Iperp_hr, Cpar_hr, epf_hr,
      $        A_fun, B_fun, Iperp_fun, Cpar_fun, surf_extra)
          IF (recon_out) THEN
             DO itheta = 0, mthsurf
@@ -7869,6 +7860,8 @@ c-----------------------------------------------------------------------
 
       dcon_fac = (mu0*2.0_r8) / psio**2 / (chi1*1.0e-3_r8)**2
 
+c     integrate on psifac points inside the spline domain; points
+c     below rzphi%xs(0) are skipped (gpout_recon clamps instead).
       nint_pts = 0
       DO istep = 0, mstep
          IF (psifac(istep) < rzphi%xs(0)) CYCLE
@@ -7883,7 +7876,7 @@ c-----------------------------------------------------------------------
          psi = psifac(istep)
          IF (psi < rzphi%xs(0)) CYCLE
          IF (psi > rzphi%xs(mpsi)) EXIT
-         CALL gpeq_recon3(psi, A_hr, B_hr, Iperp_hr, Cpar_hr, epf_hr)
+         CALL gpeq_epfterms(psi, A_hr, B_hr, Iperp_hr, Cpar_hr, epf_hr)
 c        dst1 (=K1 xi_n^2) and dst3 (=K3 xi_n^2) for the C-free dW form
 c        2 dW_p = A + B + Iperp - dst1 - dst3 (dst2 = Cpar cancels).
          CALL gpeq_dst(psi, dst_int_c, dst1_c, dst2_c, dst3_c)
@@ -7903,7 +7896,8 @@ c        2 dW_p = A + B + Iperp - dst1 - dst3 (dst2 = Cpar cancels).
          WRITE(u_int,'(a)') "c  identity: epf = A + B + Cpar + Iperp"
          WRITE(u_int,'(a)') "c  identity_res = epf - A - B - Cpar"//
      $        " - Iperp (should be near zero)"
-         WRITE(u_int,'(a)') "c  Cpar should equal dst2 from recon1"
+         WRITE(u_int,'(a)') "c  Cpar should equal dst2 from recon1"//
+     $        " (compare against gpec_recon_integration_sol*.out)"
          WRITE(u_int,'(a,a)') "c  recon_int = ", TRIM(recon_int)
       ENDIF
 
@@ -7981,11 +7975,6 @@ c     (the parallel-current piece dst2 = Cpar cancels identically).
       dw_raw3 = 0.5_r8 * (A_total + B_total + Iperp_total
      $     - dst1_total - dst3_total)
       dw_dcon3 = dw_raw3 * dcon_fac
-      ep_index = 1
-      IF (mode_flag) ep_index = mode
-      IF (ep_index < 1 .OR. ep_index > mpert) THEN
-         CALL gpec_stop("gpout_recon3 selected mode is out of range")
-      ENDIF
       ep_selected = REAL(ep(ep_index))
       ep_dcon = ep_selected * dcon_fac
 
@@ -8015,7 +8004,8 @@ c     (the parallel-current piece dst2 = Cpar cancels identically).
       WRITE(*,'(a,es17.8e3)') "  Iperp_total   = ", Iperp_total
       WRITE(*,'(a,es17.8e3)') "  epf_total     = ", epf_total
       WRITE(*,'(a,es17.8e3)') "  identity_res  = ", identity_residual
-      WRITE(*,'(a)') "  (identity_res should be ~ 0; Cpar = dst2.)"
+      WRITE(*,'(a)') "  (identity_res should be ~ 0. Cpar = dst2"//
+     $     " from recon1, not checked here.)"
       WRITE(*,'(a,es17.8e3)') "  dW_p(recon3)         = ", dw_raw3
       WRITE(*,'(a,es17.8e3)') "  dW_p(recon3-normalize)= ", dw_dcon3
       WRITE(*,'(a,a,a,es17.8e3)') "  GPEC ep(", TRIM(smode), ") = ",

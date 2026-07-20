@@ -19,7 +19,7 @@ c     10. gpeq_dst          (reconstruction: C vector for DST)
 c     11. gpeq_shear        (reconstruction: magnetic shear)
 c     12. gpeq_curvature    (reconstruction: curvature)
 c     13. gpeq_K            (reconstruction: Bernstein K quantity)
-c    13b. gpeq_recon3       (reconstruction: |C|^2 decomposition)
+c    13b. gpeq_epfterms       (reconstruction: |C|^2 decomposition)
 c     14. gpeq_fcoords
 c     15. gpeq_fcoordsout
 c     16. gpeq_bcoords
@@ -231,8 +231,8 @@ c-----------------------------------------------------------------------
       END SUBROUTINE gpeq_contra
 c-----------------------------------------------------------------------
 c     subprogram 3. gpeq_cova.
-c     compute Jacobian-weighted covariant components from
-c     Jacobian-weighted contravariant components.
+c     compute covariant components from Jacobian-weighted ones.
+c     metric%cs holds g_ij/J, so the contraction cancels J.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_cova(psi)
 c-----------------------------------------------------------------------
@@ -685,7 +685,7 @@ c     Supporting functions
       REAL(r8), DIMENSION(0:mthsurf) :: g_22, g_23, g_33
       COMPLEX(r8), DIMENSION(-mband:mband) :: g11,g22,g33,g23,g31,g12
 
-      IF(debug_flag) PRINT *, "Entering gpeq_epf at ipsi=", ipsi
+      IF(debug_flag) PRINT *, "Entering gpeq_c at ipsi=", ipsi
 c-----------------------------------------------------------------------
 c     1) Setup: equilibrium and metric at this psi.
 c-----------------------------------------------------------------------
@@ -709,14 +709,9 @@ c-----------------------------------------------------------------------
       CALL iscdftb(mfac, mpert, bvz_fun, mthsurf, bvz_mn)
 
 c-----------------------------------------------------------------------
-c     4) Extract contravariant components: divide by jacobian.
-c     
-c     bwp_mn, bwt_mn, bwz_mn are complex Fourier mode coefficients
-c     (derived from complex eigenfunctions xsp_mn, xss_mn).
-c     After IFFT via iscdftb(), they remain complex-valued functions
-c     of theta. Dividing by real jacobian preserves complex nature.
-c     This is essential because perturbations are inherently complex
-c     functions in MHD stability analysis.
+c     4) Evaluate equilibrium geometry and metric on the theta grid.
+c     No Jacobian division: upper family stays J-weighted (J Q^i,
+c     J C^i), lower family is plain covariant.
 c-----------------------------------------------------------------------
       DO itheta = 0, mthsurf
          CALL bicube_eval(rzphi, psi, theta(itheta), 1)
@@ -885,6 +880,9 @@ c     and
 c
 c        (curl C) · grad(psi)
 c        = (d_theta C_zeta + 2*pi*i*n*C_theta)/J.
+c
+c     Self-contained; gpout_recon inlines the same identity to reuse
+c     gpeq_epf's state. Keep the two in sync.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_cveri(psi, cveri_fun)
 c-----------------------------------------------------------------------
@@ -1085,7 +1083,7 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(OUT) :: epf_int
       REAL(r8), OPTIONAL, INTENT(OUT) :: epf_p, epf_t, epf_z
 c     optional per-theta C^2/mu0 densities for R-Z heatmaps. Same
-c     convention as gpeq_recon3 epf_density: integral = sum den*jac/mth.
+c     convention as gpeq_epfterms epf_density: integral = sum den*jac/mth.
       REAL(r8), DIMENSION(0:mthsurf), OPTIONAL, INTENT(OUT) ::
      $     epf_den_fun, epf_p_fun, epf_t_fun, epf_z_fun
       INTEGER :: itheta
@@ -1161,7 +1159,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), INTENT(OUT) :: dst_int
       COMPLEX(r8), OPTIONAL, INTENT(OUT) :: dst_t1, dst_t2, dst_t3
 c     optional per-theta K_i xi_n^2 densities for R-Z heatmaps. Same
-c     convention as gpeq_recon3: integral = sum den*jac/mthsurf.
+c     convention as gpeq_epfterms: integral = sum den*jac/mthsurf.
       REAL(r8), DIMENSION(0:mthsurf), OPTIONAL, INTENT(OUT) ::
      $     dst1_den_fun, dst2_den_fun, dst3_den_fun
       INTEGER :: itheta
@@ -1506,33 +1504,23 @@ c     optionally return individual term values
       IF (PRESENT(shear_out)) shear_out = shear_fun
       IF (PRESENT(curv_out)) curv_out = curv_fun
 
-      IF(debug_flag) PRINT *, "Exiting gpeq_K"
+      IF(debug_flag) PRINT *, "->Leaving gpeq_K"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_K
 c-----------------------------------------------------------------------
-c     subprogram 13b. gpeq_recon3.
-c     Bernstein-form |C|^2 decomposition for recon3 diagnostic.
-c     Vector identity: C = Q + V with V = xi_n * mu0 * j x n_hat.
-c     |C|^2 = |Q|^2 + 2 Re(V*.Q) + |V|^2
-c     j is purely tangent to flux surface (j.n=0), so
-c     |V|^2 = mu0^2 xi_n^2 |j|^2 = mu0^2 xi_n^2 (sigma^2 B^2
-c           + p'^2 |grad psi|^2 / B^2).
-c     Returns the surface integrals (theta only, jac measure):
-c        A_int    = int |Q|^2 / mu0 * J dtheta / mthsurf
-c        B_int    = int 2 Re(V*.Q) / mu0 * J dtheta / mthsurf
-c                   directly via V = C - Q (covariant pairing)
-c        Cpar_int = int mu0 sigma^2 B^2 xi_n^2 * J dtheta / mthsurf
-c                   (= K_2 xi_n^2 integral; matches gpeq_dst's dst2)
-c        Iperp_int= int mu0 p'^2 |grad psi|^2 xi_n^2 / B^2 *
-c                   J dtheta / mthsurf
-c        epf_int  = int |C|^2 / mu0 * J dtheta / mthsurf
-c     Identity check: epf_int = A_int + B_int + Cpar_int + Iperp_int
-c     should hold within numerical roundoff.
+c     subprogram 13b. gpeq_epfterms.
+c     split the epf surface integral of gpeq_epf into terms of
+c     comparable magnitude, using C = Q + V, V = xi_n mu0 j x n_hat:
+c        A     = int |Q|^2 / mu0            B     = int 2 Re(V*.Q) / mu0
+c        Cpar  = int mu0 sigma^2 B^2 xin^2  (= gpeq_dst's dst2)
+c        Iperp = int mu0 p'^2 |grad psi|^2 xin^2 / B^2
+c     each on the jac measure, as int (..) J dtheta / mthsurf. The
+c     terms satisfy epf = A + B + Cpar + Iperp to roundoff.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpeq_recon3(psi, A_int, B_int, Iperp_int, Cpar_int,
+      SUBROUTINE gpeq_epfterms(psi, A_int, B_int, Iperp_int, Cpar_int,
      $     epf_int, A_fun, B_fun, Iperp_fun, Cpar_fun, surf_extra)
       REAL(r8), INTENT(IN) :: psi
       REAL(r8), INTENT(OUT) :: A_int, B_int, Iperp_int, Cpar_int,
@@ -1567,7 +1555,7 @@ c       21 dst1_den (K1 xin2), 22 dst3_den (K3 xin2).
       COMPLEX(r8), DIMENSION(0:mthsurf) :: cvp_fun, cvt_fun, cvz_fun
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xno_fun, xwp_fun
 
-      IF(debug_flag) PRINT *, "Entering gpeq_recon3"
+      IF(debug_flag) PRINT *, "Entering gpeq_epfterms"
 c-----------------------------------------------------------------------
 c     prepare psi-local perturbed equilibrium and C, Q.
 c-----------------------------------------------------------------------
@@ -1751,12 +1739,12 @@ c           dst1 = K1 xin2 (shear), dst3 = K3 xin2 (curvature).
          ENDIF
       ENDDO
 
-      IF(debug_flag) PRINT *, "->Leaving gpeq_recon3"
+      IF(debug_flag) PRINT *, "->Leaving gpeq_epfterms"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE gpeq_recon3
+      END SUBROUTINE gpeq_epfterms
 c-----------------------------------------------------------------------
 c     subprogram 14. gpeq_fcoords.
 c     transform coordinates to dcon coordinates.

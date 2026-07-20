@@ -93,9 +93,6 @@ c-----------------------------------------------------------------------
 
       TYPE(spline_type) :: sq
       TYPE(bicube_type) :: psi_in,eqfun,rzphi
-      TYPE(bicube_type), ALLOCATABLE, TARGET :: gpout_shear
-      TYPE(bicube_type), ALLOCATABLE, TARGET :: gpout_curvature
-      TYPE(bicube_type), ALLOCATABLE, TARGET :: gpout_k
       TYPE(cspline_type) :: u1,u2,u3,u4,u5,bpsi
       TYPE(cspline_type) :: smats,tmats,xmats,ymats,zmats
       TYPE(fspline_type) :: metric
