@@ -1370,6 +1370,7 @@ g_{\psi\theta}C^{\psi*}C^\theta
 \end{equation}
 
 \paragraph{Verification: $\vec C$ as an effective field and the $\nabla\times\vec C$ check.}
+\label{par:cveri}
 The reconstruction is closed by a self-consistency test of the condition
 $(\nabla\times\vec C)\cdot\nabla\psi=0$, which holds on every flux surface and admits both a
 variational and a physical reading. \emph{Variationally}, it is the Euler--Lagrange
@@ -1609,24 +1610,26 @@ n(\mathbf G_{22}+q\mathbf G_{23})
 Decompose the $\vec C$ term as
 \begin{equation}
 \begin{aligned}
-&\mathbf X \equiv \nabla \xi_s \times \nabla \psi,\\
-&\mathbf Y \equiv (\nabla \theta \times \nabla \zeta)\, \mathcal J \, \mathbf B \cdot \nabla \xi_\psi,\\
-&\mathbf Z \equiv -\mathbf B\, \xi_\psi',\\
-&\mathbf U \equiv -\left(
+&\mathbf L \equiv \nabla \xi_s \times \nabla \psi=-2\pi i\sum_m u_m e_m\,(n\vec v_2+m\vec v_3),\\
+&\mathbf M \equiv (\nabla \theta \times \nabla \zeta)\, \mathcal J \, \mathbf B \cdot \nabla \xi_\psi=2\pi i\chi'\sum_m (m-nq)v_m e_m\,\vec v_1\\
+&\mathbf N \equiv -\mathbf B\, \xi_\psi'=-\chi'\sum_m v_m' e_m\,(\vec v_2+q\vec v_3)\\
+&\mathbf O \equiv -\left(
 \chi'' \nabla \zeta \times \nabla \psi
 +
 (q\chi')'
 \nabla \psi \times \nabla \theta
-\right)\xi_\psi,\\
+\right)\xi_\psi=-\sum_m v_m e_m\,
+\left[\chi''\vec v_2+(q\chi')'\vec v_3\right]\\
 &\mathbf V \equiv
 \frac{\xi_\psi}{|\nabla \psi|^2}
-\, \mu_0 \mathbf j \times \nabla \psi .    
+\, \mu_0 \mathbf j \times \nabla \psi.
 \end{aligned}
+\label{eq:fieldpieces}
 \end{equation}
 
 \noindent Define
 \begin{equation}
-\mathbf Q \equiv \mathbf X+\mathbf Y+\mathbf Z+\mathbf U,
+\mathbf Q \equiv \mathbf L+\mathbf M+\mathbf N+\mathbf O,
 \qquad
 \vec C=\mathbf Q+\mathbf V .
 \label{eq:CeqQplusV}
@@ -1646,48 +1649,12 @@ Then the Bernstein part of the energy is
 \Big].
 \end{aligned}
 \end{equation}
-Using \(e_m\equiv e^{2\pi i(m\theta-n\zeta)}\), the four $\mathbf Q$ pieces are
-\begin{equation}
-\begin{aligned}
-\mathbf X
-&=
--2\pi i\sum_m u_m e_m\,(n\vec v_2+m\vec v_3),\\
-\mathbf Y
-&=
-2\pi i\chi'\sum_m (m-nq)v_m e_m\,\vec v_1,\\
-\mathbf Z
-&=
--\chi'\sum_m v_m' e_m\,(\vec v_2+q\vec v_3),\\
-\mathbf U
-&=
--\sum_m v_m e_m\,
-\left[\chi''\vec v_2+(q\chi')'\vec v_3\right].
-\end{aligned}
-\end{equation}
-Therefore each bilinear product has a fixed matrix block:
-\begin{equation}
-\begin{array}{c|c|c}
-\text{product} & \text{radial amplitudes} & \text{matrix block} \\ \hline
-\mathbf X^*\!\cdot\mathbf X & \Xi_s^\dagger\Xi_s & \mathbf A\\
-\mathbf X^*\!\cdot\mathbf Z+\mathbf Z^*\!\cdot\mathbf X
-& \Xi_s^\dagger\Xi_\psi' + \Xi_\psi^{\prime\dagger}\Xi_s & \mathbf B\\
-\mathbf X^*\!\cdot(\mathbf Y+\mathbf U+\mathbf V)
-+(\mathbf Y+\mathbf U+\mathbf V)^*\!\cdot\mathbf X
-& \Xi_s^\dagger\Xi_\psi + \Xi_\psi^\dagger\Xi_s & \mathbf C\\
-\mathbf Z^*\!\cdot\mathbf Z & \Xi_\psi^{\prime\dagger}\Xi_\psi' & \mathbf D\\
-\mathbf Z^*\!\cdot(\mathbf Y+\mathbf U+\mathbf V)
-+(\mathbf Y+\mathbf U+\mathbf V)^*\!\cdot\mathbf Z
-& \Xi_\psi^{\prime\dagger}\Xi_\psi + \Xi_\psi^\dagger\Xi_\psi' & \mathbf E\\
-\mathbf Y,\mathbf U,\mathbf V,K\ \text{pure terms}
-& \Xi_\psi^\dagger\Xi_\psi & \mathbf H .
-\end{array}
-\end{equation}
 
 This is the actual route from the real-space Bernstein expression to the radial matrix form.  The factors \(m\) and \(m-nq\) are then written as the diagonal matrices \(\mathbf M\) and \(\mathbf Q\).
 For instance,
 \begin{equation}
 \begin{aligned}
-\int d\theta\,\mathcal J\,\mathbf X^*\cdot\mathbf X
+\int d\theta\,\mathcal J\,\mathbf L^*\cdot\mathbf L
 &=
 \Xi_s^\dagger
 (2\pi)^2
@@ -1697,7 +1664,7 @@ n^2\mathbf G_{22}
 {}+n\mathbf M\mathbf G_{23}
 {}+\mathbf M\mathbf G_{33}\mathbf M
 \right]\Xi_s,\\
-\int d\theta\,\mathcal J\,\mathbf X^*\cdot\mathbf Z
+\int d\theta\,\mathcal J\,\mathbf L^*\cdot\mathbf N
 &=
 \Xi_s^\dagger
 \left\{
@@ -1719,6 +1686,88 @@ The same projection rule gives \(\mathbf C_1,\mathbf C_2,\mathbf D,\mathbf E_1,\
 \left[\mathbf Q\cdot\mathbf V^* + \mathbf V \cdot \mathbf Q^*
 \right]+|\mathbf V|^2\} .
 \end{aligned}
+\end{equation}
+
+\paragraph{Blocks from \(\mathbf Q^*\cdot\mathbf Q\)}
+
+Applying the projection rule above to the products that do not contain \(\mathbf V\) gives the following blocks:
+\begin{equation}
+|\mathbf L|^2 \leadsto \Xi_s^\dagger \mathbf A \Xi_s,
+\qquad
+\mathbf A=(2\pi)^2\left[n^2 \mathbf G_{22}+n \mathbf G_{23}\mathbf M+n \mathbf M \mathbf G_{23}+\mathbf M \mathbf G_{33}\mathbf M\right].
+\end{equation}
+\begin{equation}
+\mathbf L^* \cdot \mathbf N + \mathbf N^* \cdot \mathbf L
+\leadsto
+\Xi_s^\dagger \mathbf B \Xi_\psi^\prime + \Xi_\psi^{\prime\dagger} \mathbf B^\dagger \Xi_s,
+\qquad
+\mathbf B=-2\pi i\chi' \left[n(\mathbf G_{22}+q\mathbf G_{23})+\mathbf M(\mathbf G_{23}+q\mathbf G_{33})\right].
+\end{equation}
+\begin{equation}
+\mathbf L^* \cdot \mathbf M + \mathbf M^* \cdot \mathbf L
+\leadsto
+\Xi_s^\dagger \mathbf C_1 \Xi_\psi + \Xi_\psi^\dagger \mathbf C_1^\dagger \Xi_s,
+\qquad
+\mathbf C_1=-(2\pi)^2\chi'(\mathbf M \mathbf G_{31}+n\mathbf G_{12})\mathbf Q.
+\end{equation}
+\begin{equation}
+\mathbf L^* \cdot \mathbf O + \mathbf O^* \cdot \mathbf L
+\leadsto
+\Xi_s^\dagger \mathbf C_2 \Xi_\psi + \Xi_\psi^\dagger \mathbf C_2^\dagger \Xi_s,
+\qquad
+\mathbf C_2=-2\pi i \left[\chi''(n\mathbf G_{22}+\mathbf M \mathbf G_{23})+(q\chi')'(n\mathbf G_{23}+\mathbf M \mathbf G_{33})\right].
+\end{equation}
+\begin{equation}
+|\mathbf M|^2 \leadsto \Xi_\psi^\dagger \mathbf H_1 \Xi_\psi,
+\qquad
+\mathbf H_1=(2\pi\chi')^2\mathbf Q\mathbf G_{11}\mathbf Q.
+\end{equation}
+\begin{equation}
+\mathbf M^* \cdot \mathbf N + \mathbf N^* \cdot \mathbf M
+\leadsto
+\Xi_\psi^{\prime\dagger}\mathbf E_1 \Xi_\psi + \Xi_\psi^\dagger \mathbf E_1^\dagger \Xi_\psi^\prime,
+\qquad
+\mathbf E_1=-2\pi i\chi'^2(\mathbf G_{12}+q\mathbf G_{31})\mathbf Q.
+\end{equation}
+\begin{equation}
+\mathbf M^* \cdot \mathbf O + \mathbf O^* \cdot \mathbf M
+\leadsto
+\Xi_\psi^\dagger \mathbf H_2 \Xi_\psi,
+\qquad
+\mathbf H_2=2\pi i\chi'\left[\chi''(\mathbf M \mathbf G_{12}-\mathbf G_{12}\mathbf M)+(q\chi')'(\mathbf M \mathbf G_{31}-\mathbf G_{31}\mathbf M)\right].
+\end{equation}
+\begin{equation}
+|\mathbf N|^2 \leadsto \Xi_\psi^{\prime\dagger} \mathbf D \Xi_\psi^\prime,
+\qquad
+\mathbf D=\chi'^2\left[(\mathbf{G}_{22}+q\,\mathbf{G}_{23})+q(\mathbf{G}_{23}+q\,\mathbf{G}_{33})\right].
+\end{equation}
+\begin{equation}
+\mathbf N^* \cdot \mathbf O + \mathbf O^* \cdot \mathbf N
+\leadsto
+\Xi_\psi^{\prime\dagger}\mathbf E_2 \Xi_\psi + \Xi_\psi^\dagger \mathbf E_2^\dagger \Xi_\psi^\prime,
+\qquad
+\mathbf E_2=\chi'\left[\chi''(\mathbf{G}_{22}+q\,\mathbf{G}_{23})+(q\chi')'(\mathbf{G}_{23}+q\,\mathbf{G}_{33})\right].
+\end{equation}
+
+Finally,
+\begin{equation}
+|\mathbf O|^2 \leadsto \Xi_\psi^\dagger \mathbf H_3 \Xi_\psi,
+\qquad
+\mathbf{H}_3
+=
+\chi''
+\left[
+\chi''\,\mathbf{G}_{22}
++
+(q\chi')'\,\mathbf{G}_{23}
+\right]
++
+(q\chi')'
+\left[
+\chi''\,\mathbf{G}_{23}
++
+(q\chi')'\,\mathbf{G}_{33}
+\right]
 \end{equation}
 
 \paragraph{Correction of the $\mu_0\vec j\times\nabla\psi$ decomposition}
@@ -1809,99 +1858,17 @@ g_{12}g_{33}-g_{31}g_{23}
 }
 \end{equation}
 
-\paragraph{Blocks from \(\mathbf Q^*\cdot\mathbf Q\)}
-
-Applying the projection rule above to the products that do not contain \(\mathbf V\) gives the following blocks:
-\begin{equation}
-|\mathbf X|^2 \leadsto \Xi_s^\dagger \mathbf A \Xi_s,
-\qquad
-\mathbf A=(2\pi)^2\left[n^2 \mathbf G_{22}+n \mathbf G_{23}\mathbf M+n \mathbf M \mathbf G_{23}+\mathbf M \mathbf G_{33}\mathbf M\right].
-\end{equation}
-\begin{equation}
-\mathbf X^* \cdot \mathbf Z + \mathbf Z^* \cdot \mathbf X
-\leadsto
-\Xi_s^\dagger \mathbf B \Xi_\psi^\prime + \Xi_\psi^{\prime\dagger} \mathbf B^\dagger \Xi_s,
-\qquad
-\mathbf B=-2\pi i\chi' \left[n(\mathbf G_{22}+q\mathbf G_{23})+\mathbf M(\mathbf G_{23}+q\mathbf G_{33})\right].
-\end{equation}
-\begin{equation}
-\mathbf X^* \cdot \mathbf Y + \mathbf Y^* \cdot \mathbf X
-\leadsto
-\Xi_s^\dagger \mathbf C_1 \Xi_\psi + \Xi_\psi^\dagger \mathbf C_1^\dagger \Xi_s,
-\qquad
-\mathbf C_1=-(2\pi)^2\chi'(\mathbf M \mathbf G_{31}+n\mathbf G_{12})\mathbf Q.
-\end{equation}
-\begin{equation}
-\mathbf X^* \cdot \mathbf U + \mathbf U^* \cdot \mathbf X
-\leadsto
-\Xi_s^\dagger \mathbf C_2 \Xi_\psi + \Xi_\psi^\dagger \mathbf C_2^\dagger \Xi_s,
-\qquad
-\mathbf C_2=-2\pi i \left[\chi''(n\mathbf G_{22}+\mathbf M \mathbf G_{23})+(q\chi')'(n\mathbf G_{23}+\mathbf M \mathbf G_{33})\right].
-\end{equation}
-\begin{equation}
-|\mathbf Y|^2 \leadsto \Xi_\psi^\dagger \mathbf H_1 \Xi_\psi,
-\qquad
-\mathbf H_1=(2\pi\chi')^2\mathbf Q\mathbf G_{11}\mathbf Q.
-\end{equation}
-\begin{equation}
-\mathbf Y^* \cdot \mathbf Z + \mathbf Z^* \cdot \mathbf Y
-\leadsto
-\Xi_\psi^{\prime\dagger}\mathbf E_1 \Xi_\psi + \Xi_\psi^\dagger \mathbf E_1^\dagger \Xi_\psi^\prime,
-\qquad
-\mathbf E_1=-2\pi i\chi'^2(\mathbf G_{12}+q\mathbf G_{31})\mathbf Q.
-\end{equation}
-\begin{equation}
-\mathbf Y^* \cdot \mathbf U + \mathbf U^* \cdot \mathbf Y
-\leadsto
-\Xi_\psi^\dagger \mathbf H_2 \Xi_\psi,
-\qquad
-\mathbf H_2=2\pi i\chi'\left[\chi''(\mathbf M \mathbf G_{12}-\mathbf G_{12}\mathbf M)+(q\chi')'(\mathbf M \mathbf G_{31}-\mathbf G_{31}\mathbf M)\right].
-\end{equation}
-\begin{equation}
-|\mathbf Z|^2 \leadsto \Xi_\psi^{\prime\dagger} \mathbf D \Xi_\psi^\prime,
-\qquad
-\mathbf D=\chi'^2\left[(\mathbf{G}_{22}+q\,\mathbf{G}_{23})+q(\mathbf{G}_{23}+q\,\mathbf{G}_{33})\right].
-\end{equation}
-\begin{equation}
-\mathbf Z^* \cdot \mathbf U + \mathbf U^* \cdot \mathbf Z
-\leadsto
-\Xi_\psi^{\prime\dagger}\mathbf E_2 \Xi_\psi + \Xi_\psi^\dagger \mathbf E_2^\dagger \Xi_\psi^\prime,
-\qquad
-\mathbf E_2=\chi'\left[\chi''(\mathbf{G}_{22}+q\,\mathbf{G}_{23})+(q\chi')'(\mathbf{G}_{23}+q\,\mathbf{G}_{33})\right].
-\end{equation}
-
-Finally,
-\begin{equation}
-|\mathbf U|^2 \leadsto \Xi_\psi^\dagger \mathbf H_3 \Xi_\psi,
-\qquad
-\mathbf{H}_3
-=
-\chi''
-\left[
-\chi''\,\mathbf{G}_{22}
-+
-(q\chi')'\,\mathbf{G}_{23}
-\right]
-+
-(q\chi')'
-\left[
-\chi''\,\mathbf{G}_{23}
-+
-(q\chi')'\,\mathbf{G}_{33}
-\right]
-\end{equation}
-
 \paragraph{Bernstein-current correction terms}
 
 The vector $\mathbf V$ is not an additional physical term.  It appears only because the Bernstein form rewrites the original current--pressure contribution into
 \[
 \vec C=\vec Q+\frac{\xi_\psi}{|\nabla\psi|^2}\mu_0\vec j\times\nabla\psi
-=\mathbf X+\mathbf Y+\mathbf Z+\mathbf U+\mathbf V.
+=\mathbf L+\mathbf M+\mathbf N+\mathbf O+\mathbf V.
 \]
 Therefore the $\mathbf V$-dependent pieces from $|\vec C|^2$ must be combined with the scalar term
 $-\mu_0K|\xi_\psi|^2/|\nabla\psi|^2$.  After this recombination, the same $\mathbf C$, $\mathbf E$, and $\mathbf H$ blocks in the DCON matrix form are obtained.
 
-The cross term $\mathbf X^* \cdot \mathbf V + \mathbf V^* \cdot \mathbf X$ produces the current part of the $\mathbf C$ block:
+The cross term $\mathbf L^* \cdot \mathbf V + \mathbf V^* \cdot \mathbf L$ produces the current part of the $\mathbf C$ block:
 \[
 \Xi_s^\dagger \mathbf C_3 \Xi_\psi + \Xi_\psi^\dagger \mathbf C_3^\dagger \Xi_s,
 \]
@@ -1919,7 +1886,7 @@ u_m' \nabla\psi
 \right]e^{2\pi i(m\theta-n\zeta)}
 \end{align}
 \begin{align}
-\mathbf X
+\mathbf L
 &=
 \nabla\xi_s\times\nabla\psi \\
 &=
@@ -1930,7 +1897,7 @@ m\,\nabla\theta\times\nabla\psi
 -
 n\,\nabla\zeta\times\nabla\psi
 \right)\\
-\mathbf X^*
+\mathbf L^*
 &=
 \sum_m
 (-2\pi i)\,u_m^* e^{-2\pi i(m\theta-n\zeta)}
@@ -1959,7 +1926,7 @@ v_{m'}^* e^{-2\pi i(m'\theta-n\zeta)}
 
 Therefore
 \begin{align}
-\mathbf X^*\cdot \mathbf V
+\mathbf L^*\cdot \mathbf V
 &=
 \sum_{m,m'}
 (-2\pi i)\,
@@ -1980,11 +1947,12 @@ with $\mathbf c=\nabla\psi$, together with $\mathbf j\cdot\nabla\psi=0$. Then
 (\nabla\theta\times\nabla\psi)\cdot(\mathbf j\times\nabla\psi)
 &=(\nabla\theta\cdot\mathbf j)|\nabla\psi|^2-(\nabla\theta\cdot\nabla\psi)(\mathbf j\cdot\nabla\psi) &=j^\theta |\nabla\psi|^2\\
 (\nabla\zeta\times\nabla\psi)\cdot(\mathbf j\times\nabla\psi)&=j^\zeta |\nabla\psi|^2
+\label{eq:Vtriple}
 \end{align}
 
 Hence
 \begin{align}
-\mathbf X^*\cdot \mathbf V
+\mathbf L^*\cdot \mathbf V
 &=
 \sum_{m,m'}
 (-2\pi i)\,
@@ -1998,6 +1966,7 @@ Now substitute the equilibrium current components. In the normalization used her
 \mu_0 j^\theta = -\frac{2\pi f'}{\mathcal J},
 \qquad
 \mu_0 j^\zeta = -\frac{\mu_0 p'}{\chi'}-\frac{2\pi f' q}{\mathcal J}
+\label{eq:dconcurrents}
 \end{equation}
 \begin{align}
 \mu_0(mj^\theta-nj^\zeta)
@@ -2053,12 +2022,12 @@ n\frac{\mu_0 p'}{\chi'}\mathbf J
 \noindent\rule{\linewidth}{0.4pt}
 \medskip
 
-Next, the $\mathbf Z$--$\mathbf V$ block produces the pressure part of the $\mathbf E$ block:
+Next, the $\mathbf N$--$\mathbf V$ block produces the pressure part of the $\mathbf E$ block:
 \[
 \Xi_\psi^{\prime\dagger}\mathbf E_3 \Xi_\psi + \Xi_\psi^\dagger \mathbf E_3^\dagger \Xi_\psi^\prime.
 \]
 \begin{align}
-\mathbf Z^*\cdot \mathbf V
+\mathbf N^*\cdot \mathbf V
 &=
 \sum_{m,m'}
 v_m^{\prime *}v_{m'}\,e^{2\pi i(m'-m)\theta}
@@ -2083,7 +2052,7 @@ v_m^{\prime *}v_{m'}\,e^{2\pi i(m'-m)\theta}
 (\mu_0j^\zeta-q\mu_0j^\theta)\mathcal J^2|\nabla\psi|^2 .
 \end{align}
 \begin{align}
-\mathbf Z^*\cdot \mathbf V
+\mathbf N^*\cdot \mathbf V
 &=
 -\chi'(\mu_0j^\zeta-q\mu_0j^\theta)
 \sum_{m,m'}v_m^{\prime *}v_{m'}\,e^{2\pi i(m'-m)\theta} \\
@@ -2093,7 +2062,7 @@ v_m^{\prime *}v_{m'}\,e^{2\pi i(m'-m)\theta}
 \begin{equation}
 \boxed{
 \begin{aligned}
-\mathbf Z^*\cdot \mathbf V+\mathbf V^*\cdot\mathbf Z
+\mathbf N^*\cdot \mathbf V+\mathbf V^*\cdot\mathbf N
 \leadsto\;
 \Xi_\psi^{\prime\dagger}\mathbf E_3 \Xi_\psi
 +
@@ -2106,511 +2075,6 @@ v_m^{\prime *}v_{m'}\,e^{2\pi i(m'-m)\theta}
 }
 \end{equation}
 
-\medskip
-\noindent\rule{\linewidth}{0.4pt}
-\medskip
-
-The term $\mathbf Y^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf Y$ is also a
-pure-$\Xi_\psi$ contribution, but it is not closed as an independent DCON
-block.  It must be combined with the other pure scalar current--pressure terms
-before the final $\mathbf H_4$ block is obtained.
-
-\begin{align}
-\mathbf Y
-&=
-(\nabla\theta\times\nabla\zeta)\,\mathcal J\,\mathbf B\cdot\nabla\xi_\psi=
-2\pi i\,\chi'
-\sum_m (m-nq)\,v_m\,e^{2\pi i(m\theta-n\zeta)}\,\vec v_1 \\
-\mathbf Y^*&=
-(-2\pi i)\chi'
-\sum_m (m-nq)\,v_m^*\,e^{-2\pi i(m\theta-n\zeta)}\,\vec v_1
-\end{align}
-
-Using the corrected form of $\mathbf V$,
-\begin{align}
-\mathbf Y^*\cdot\mathbf V
-&=
-(-2\pi i)\chi'
-\sum_{m,m'}
-v_m^*(m-nq)v_{m'}
-e^{2\pi i(m'-m)\theta}
-\;
-\frac{1}{|\nabla\psi|^2}\,
-\vec v_1\cdot(\mathcal A_2\vec v_2-\mathcal A_3\vec v_3) \\
-&=
-(-2\pi i)\chi'
-\sum_{m,m'}
-v_m^*(m-nq)v_{m'}
-e^{2\pi i(m'-m)\theta}
-\;
-\frac{1}{\mathcal J^2|\nabla\psi|^2}
-\big(
-\mathcal A_2 g_{12}-\mathcal A_3 g_{31}
-\big)
-\end{align}
-
-Now expand the bracket:
-\begin{align}
-\mathcal A_2 g_{12}-\mathcal A_3 g_{31}
-&=
-(\mu_0j^\theta g_{23}+\mu_0j^\zeta g_{33})g_{12}
--
-(\mu_0j^\theta g_{22}+\mu_0j^\zeta g_{23})g_{31} \\
-&=
-\mu_0j^\theta(g_{12}g_{23}-g_{31}g_{22})
-+
-\mu_0j^\zeta(g_{12}g_{33}-g_{31}g_{23}) \\
-&=
-\mathcal J^2
-\left[
-\mu_0j^\theta(\nabla\zeta\cdot\nabla\psi)
--
-\mu_0j^\zeta(\nabla\theta\cdot\nabla\psi)
-\right]
-\end{align}
-\begin{equation}
-\boxed{
-\begin{aligned}
-\mathbf Y^*\cdot\mathbf V
-&=
-(-2\pi i)\chi'
-\sum_{m,m'}
-v_m^*(m-nq)v_{m'}e^{2\pi i(m'-m)\theta} \\
-&\qquad\times
-\mu_0
-\frac{
-j^\theta(\nabla\zeta\cdot\nabla\psi)
--
-j^\zeta(\nabla\theta\cdot\nabla\psi)
-}{
-|\nabla\psi|^2
-}.
-\end{aligned}
-}
-\end{equation}
-
-It is more useful to rewrite this in field form. Since
-\begin{equation}
-\mathcal J\,\mathbf B\cdot\nabla
-=
-\chi'\left(\partial_\theta+q\partial_\zeta\right),
-\end{equation}
-we may write
-\begin{align}
-\mathcal J(\mathbf Y^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf Y)
-&=
-\chi'
-\left[
-(\partial_\theta+q\partial_\zeta)\xi_\psi^*
-\right]
-\xi_\psi\,
-\mathcal F
-+
-\chi'\,
-\xi_\psi^*
-\left[
-(\partial_\theta+q\partial_\zeta)\xi_\psi
-\right]\mathcal F,
-\end{align}
-where
-\begin{equation}
-\mathcal F
-\equiv
-\mathcal J
-\frac{
-(\mu_0 j^\theta)(\nabla\zeta\cdot\nabla\psi)
--
-(\mu_0 j^\zeta)(\nabla\theta\cdot\nabla\psi)
-}{
-|\nabla\psi|^2
-}.
-\end{equation}
-
-Because the equilibrium is axisymmetric and periodic in $\theta,\zeta$, we may integrate by parts in $\theta$ and drop the boundary term:
-\begin{align}
-\int d\theta\,d\zeta\;\mathcal J(\mathbf Y^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf Y)
-&= 
-\chi'\int d\theta\,d\zeta\;
-\partial_\theta(|\xi_\psi|^2)\,\mathcal F \\
-&=
--\chi' \int d\theta\,d\zeta\;
-|\xi_\psi|^2\,\partial_\theta \mathcal F.
-\end{align}
-
-Substituting $\mu_0 j^\theta$ and $\mu_0 j^\zeta$,
-\begin{align}
-\mathcal F
-&=
-\mathcal J
-\left[
--\frac{2\pi f'}{\mathcal J}
-\frac{\nabla\zeta\cdot\nabla\psi}{|\nabla\psi|^2}
-+
-\left(
-\frac{\mu_0p'}{\chi'}
-+
-\frac{2\pi f'q}{\mathcal J}
-\right)
-\frac{\nabla\theta\cdot\nabla\psi}{|\nabla\psi|^2}
-\right] \\
-&=
-2\pi f'
-\frac{
-q(\nabla\psi\cdot\nabla\theta)-(\nabla\psi\cdot\nabla\zeta)
-}{
-|\nabla\psi|^2
-}
-+
-\frac{\mu_0p'}{\chi'}\,
-\mathcal J\,
-\frac{\nabla\psi\cdot\nabla\theta}{|\nabla\psi|^2}.
-\end{align}
-
-Therefore
-\begin{align}
-\partial_\theta \mathcal F
-&=
-2\pi f'\,
-\partial_\theta
-\left[
-\frac{
-q(\nabla\psi\cdot\nabla\theta)-(\nabla\psi\cdot\nabla\zeta)
-}{
-|\nabla\psi|^2
-}
-\right]
-+
-\frac{\mu_0p'}{\chi'}\,
-\partial_\theta
-\left[
-\mathcal J\frac{\nabla\psi\cdot\nabla\theta}{|\nabla\psi|^2}
-\right].
-\end{align}
-
-Using the DCON-normalized shear parameter,
-\begin{equation}
-S_\psi
-=
-\frac{\chi'^2}{\mathcal J}
-\left[
-q'
-+
-\partial_\theta
-\left(
-\frac{
-q(\nabla\psi\cdot\nabla\theta)-(\nabla\psi\cdot\nabla\zeta)
-}{
-|\nabla\psi|^2
-}
-\right)
-\right],
-\end{equation}
-we obtain
-\begin{equation}
-\partial_\theta
-\left[
-\frac{
-q(\nabla\psi\cdot\nabla\theta)-(\nabla\psi\cdot\nabla\zeta)
-}{
-|\nabla\psi|^2
-}
-\right]
-=
-\frac{\mathcal J}{\chi'^2}S_\psi-q'.
-\end{equation}
-
-Hence
-\begin{align}
-\partial_\theta\mathcal F
-&=
-\frac{2\pi f'}{\chi'^2}\,\mathcal J\,S_\psi
--
-2\pi f'q'
-+
-\frac{\mu_0p'}{\chi'}\,
-\partial_\theta
-\left[
-\mathcal J\frac{\nabla\psi\cdot\nabla\theta}{|\nabla\psi|^2}
-\right].
-\end{align}
-
-The last derivative,
-\begin{equation}
-\partial_\theta
-\left[
-\mathcal J\frac{\nabla\psi\cdot\nabla\theta}{|\nabla\psi|^2}
-\right],
-\end{equation}
-is not a general coordinate identity and is not reduced here as a standalone
-matrix block.  Therefore
-$\mathbf Y^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf Y$ is kept as an
-intermediate pure-$\Xi_\psi$ Bernstein scalar term.  The closed DCON block is
-obtained only after this term is combined below with
-$\mathbf U^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf U$, $|\mathbf V|^2$, and
-the scalar $-\mu_0K|\xi_\psi|^2/|\nabla\psi|^2$ contribution.
-
-\medskip
-\noindent\rule{\linewidth}{0.4pt}
-\medskip
-
-\paragraph{The term $\mathbf U^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf U$.}
-
-Since both $\mathbf U$ and $\mathbf V$ are proportional to $\xi_\psi$, this contribution is a pure-$\Xi_\psi$ block and can be written as
-\[
-\Xi_\psi^\dagger \mathbf H_{UV} \Xi_\psi.
-\]
-
-Recall
-\begin{equation}
-\mathbf U
-=
--\left(
-\chi''\vec v_2+(q\chi')'\vec v_3
-\right)\xi_\psi.
-\end{equation}
-Hence
-\begin{align}
-\mathbf U^*\cdot\mathbf V
-&=
--\frac{|\xi_\psi|^2}{|\nabla\psi|^2}
-\left(
-\chi''\vec v_2+(q\chi')'\vec v_3
-\right)\cdot
-\left(
-\mathcal A_2\vec v_2-\mathcal A_3\vec v_3
-\right) \\
-&=
--\frac{|\xi_\psi|^2}{\mathcal J^2|\nabla\psi|^2}
-\left[
-\chi''(\mathcal A_2 g_{22}-\mathcal A_3 g_{23})
-+
-(q\chi')'(\mathcal A_2 g_{23}-\mathcal A_3 g_{33})
-\right].
-\end{align}
-
-Now simplify each bracket:
-\begin{align}
-\mathcal A_2 g_{22}-\mathcal A_3 g_{23}
-&=
-(\mu_0j^\theta g_{23}+\mu_0j^\zeta g_{33})g_{22}
--
-(\mu_0j^\theta g_{22}+\mu_0j^\zeta g_{23})g_{23} \\
-&=
-\mu_0j^\zeta(g_{22}g_{33}-g_{23}^2) \\
-&=
-\mu_0j^\zeta \mathcal J^2 |\nabla\psi|^2,
-\end{align}
-and
-\begin{align}
-\mathcal A_2 g_{23}-\mathcal A_3 g_{33}
-&=
-(\mu_0j^\theta g_{23}+\mu_0j^\zeta g_{33})g_{23}
--
-(\mu_0j^\theta g_{22}+\mu_0j^\zeta g_{23})g_{33} \\
-&=
--\mu_0j^\theta(g_{22}g_{33}-g_{23}^2) \\
-&=
--\mu_0j^\theta \mathcal J^2 |\nabla\psi|^2.
-\end{align}
-Therefore
-\begin{align}
-\mathbf U^*\cdot\mathbf V
-&=
--|\xi_\psi|^2
-\left[
-\mu_0j^\zeta\chi''
--
-\mu_0j^\theta(q\chi')'
-\right].
-\end{align}
-
-Substituting $j^\theta$ and $j^\zeta$,
-\begin{align}
-\mathbf U^*\cdot\mathbf V
-&=
--|\xi_\psi|^2
-\left[
-\left(
--\frac{\mu_0p'}{\chi'}-\frac{2\pi f'q}{\mathcal J}
-\right)\chi''
--
-\left(
--\frac{2\pi f'}{\mathcal J}
-\right)(q\chi')'
-\right] \\
-&=
-|\xi_\psi|^2
-\left[
-\mu_0p'\frac{\chi''}{\chi'}
-+
-\frac{2\pi f'}{\mathcal J}
-\left(
-q\chi''-(q\chi')'
-\right)
-\right].
-\end{align}
-Using
-\begin{equation}
-(q\chi')'=q'\chi'+q\chi'',
-\end{equation}
-we obtain
-\begin{equation}
-\boxed{
-\mathbf U^*\cdot\mathbf V
-=
-|\xi_\psi|^2
-\left[
-\mu_0p'\frac{\chi''}{\chi'}
--
-\frac{2\pi f' q'\chi'}{\mathcal J}
-\right].
-}
-\end{equation}
-
-\begin{equation}
-\boxed{
-\begin{aligned}
-\mathbf U^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf U
-\leadsto\;
-\Xi_\psi^\dagger \mathbf H_{UV}\Xi_\psi, \\
-\qquad
-\mathbf H_{UV}
-&=
-2\mu_0p'\frac{\chi''}{\chi'}\,\mathbf J
--4\pi f'q'\chi'\,\mathbf I.
-\end{aligned}
-}
-\end{equation}
-
-\medskip
-\noindent\rule{\linewidth}{0.4pt}
-\medskip
-
-\paragraph{The term $|\mathbf V|^2$.}
-
-This is again a pure-$\Xi_\psi$ contribution, so we write
-\[
-\Xi_\psi^\dagger \mathbf H_V \Xi_\psi.
-\]
-
-From
-\begin{equation}
-\mathbf V
-=
-\frac{\xi_\psi}{|\nabla\psi|^2}
-(\mathcal A_2\vec v_2-\mathcal A_3\vec v_3),
-\end{equation}
-we have
-\begin{align}
-|\mathbf V|^2
-&=
-\frac{|\xi_\psi|^2}{|\nabla\psi|^4}
-(\mathcal A_2\vec v_2-\mathcal A_3\vec v_3)\cdot
-(\mathcal A_2\vec v_2-\mathcal A_3\vec v_3) \\
-&=
-\frac{|\xi_\psi|^2}{\mathcal J^2|\nabla\psi|^4}
-\left[
-\mathcal A_2^2 g_{22}
--2\mathcal A_2\mathcal A_3 g_{23}
-+\mathcal A_3^2 g_{33}
-\right].
-\end{align}
-
-Now expand the quadratic form:
-\begin{align}
-&\mathcal A_2^2 g_{22}
--2\mathcal A_2\mathcal A_3 g_{23}
-+\mathcal A_3^2 g_{33} \\
-&=
-(\mu_0j^\theta g_{23}+\mu_0j^\zeta g_{33})^2 g_{22}
--2(\mu_0j^\theta g_{23}+\mu_0j^\zeta g_{33})
-(\mu_0j^\theta g_{22}+\mu_0j^\zeta g_{23})g_{23} \\
-&\qquad
-+(\mu_0j^\theta g_{22}+\mu_0j^\zeta g_{23})^2 g_{33} \\
-&=
-(g_{22}g_{33}-g_{23}^2)
-\left[
-\mu_0^2g_{22}(j^\theta)^2
-+
-2\mu_0^2g_{23}j^\theta j^\zeta
-+
-\mu_0^2g_{33}(j^\zeta)^2
-\right].
-\end{align}
-Therefore
-\begin{align}
-|\mathbf V|^2
-&=
-\frac{|\xi_\psi|^2}{\mathcal J^2|\nabla\psi|^4}
-(g_{22}g_{33}-g_{23}^2)
-\left[
-\mu_0^2g_{22}(j^\theta)^2
-+
-2\mu_0^2g_{23}j^\theta j^\zeta
-+
-\mu_0^2g_{33}(j^\zeta)^2
-\right] \\
-&=
-\frac{|\xi_\psi|^2}{|\nabla\psi|^2}
-\left[
-\mu_0^2g_{22}(j^\theta)^2
-+
-2\mu_0^2g_{23}j^\theta j^\zeta
-+
-\mu_0^2g_{33}(j^\zeta)^2
-\right].
-\end{align}
-
-This is the completely explicit covariant-form result.
-
-It is also useful to rewrite it invariantly. Since
-\begin{equation}
-\mathbf j
-=
-\sigma \mathbf B
-+\frac{p'}{B^2}\mathbf B\times \nabla\psi,
-\qquad
-\sigma\equiv \frac{\mathbf j\cdot\mathbf B}{B^2},
-\end{equation}
-one finds
-\begin{equation}
-\frac{|\mu_0\mathbf j\times\nabla\psi|^2}{|\nabla\psi|^2}
-=
-\mu_0\sigma\,(\mu_0\mathbf j\cdot\mathbf B)
-+
-\frac{(\mu_0p')^2}{B^2}|\nabla\psi|^2.
-\end{equation}
-Hence
-\begin{equation}
-\boxed{
-|\mathbf V|^2
-=
-|\xi_\psi|^2
-\left[
-\frac{\mu_0\sigma\,(\mu_0\mathbf j\cdot\mathbf B)}{|\nabla\psi|^2}
-+
-\frac{(\mu_0p')^2}{B^2}
-\right].
-}
-\end{equation}
-
-\begin{equation}
-\boxed{
-\begin{aligned}
-|\mathbf V|^2
-\leadsto\;
-\Xi_\psi^\dagger \mathbf H_V \Xi_\psi, \\
-\qquad
-(\mathbf H_V)_{mm'}
-&\equiv
-\left\langle
-\frac{\mu_0\sigma\,(\mu_0\mathbf j\cdot\mathbf B)}{|\nabla\psi|^2}
-+
-\frac{(\mu_0p')^2}{B^2}
-\right\rangle_{mm'}.
-\end{aligned}
-}
-\end{equation}
 
 \medskip
 \noindent\rule{\linewidth}{0.4pt}
@@ -2618,7 +2082,7 @@ Hence
 
 The four pure-$\Xi_\psi$ contributions assemble into
 \begin{equation}
-\boxed{\;\mathbf H_4=\mathbf H_{YV}+\mathbf H_{UV}+\mathbf H_V+\mathbf H_K\;,}
+\boxed{\;\mathbf H_4=\mathbf H_{MV}+\mathbf H_{OV}+\mathbf H_V+\mathbf H_K\;,}
 \end{equation}
 equal, term by term, to the $\mathbf V$-sector of the Bernstein form
 \eqref{eq:ep_bernsteinK} without invoking any equilibrium identity.  The
@@ -2634,24 +2098,24 @@ The complete term-to-matrix assignment is therefore
 \begin{equation}
 \boxed{
 \begin{aligned}
-\mathbf A &: \quad \mathbf X^*\!\cdot\mathbf X,\\
-\mathbf B &: \quad \mathbf X^*\!\cdot\mathbf Z,\\
+\mathbf A &: \quad \mathbf L\!\cdot\mathbf L,\\
+\mathbf B &: \quad \mathbf L\!\cdot\mathbf N,\\
 \mathbf C &: \quad
-\mathbf X^*\!\cdot\mathbf Y\to\mathbf C_1,\quad
-\mathbf X^*\!\cdot\mathbf U\to\mathbf C_2,\quad
-\mathbf X^*\!\cdot\mathbf V\to\mathbf C_3,\\
-\mathbf D &: \quad \mathbf Z^*\!\cdot\mathbf Z,\\
+\mathbf L\!\cdot\mathbf M\to\mathbf C_1,\quad
+\mathbf L\!\cdot\mathbf O\to\mathbf C_2,\quad
+\mathbf L\!\cdot\mathbf V\to\mathbf C_3,\\
+\mathbf D &: \quad \mathbf N\!\cdot\mathbf N,\\
 \mathbf E &: \quad
-\mathbf Z^*\!\cdot\mathbf Y\to\mathbf E_1,\quad
-\mathbf Z^*\!\cdot\mathbf U\to\mathbf E_2,\quad
-\mathbf Z^*\!\cdot\mathbf V\to\mathbf E_3,\\
+\mathbf N\!\cdot\mathbf M\to\mathbf E_1,\quad
+\mathbf N\!\cdot\mathbf O\to\mathbf E_2,\quad
+\mathbf N\!\cdot\mathbf V\to\mathbf E_3,\\
 \mathbf H &: \quad
-\mathbf Y^*\!\cdot\mathbf Y\to\mathbf H_1,\quad
-\mathbf Y^*\!\cdot\mathbf U+\mathbf U^*\!\cdot\mathbf Y\to\mathbf H_2,\quad
-\mathbf U^*\!\cdot\mathbf U\to\mathbf H_3,\\
+\mathbf M\!\cdot\mathbf M\to\mathbf H_1,\quad
+\mathbf M\!\cdot\mathbf O+\to\mathbf H_2,\quad
+\mathbf O\!\cdot\mathbf O\to\mathbf H_3,\\
 &\quad
-\mathbf Y^*\!\cdot\mathbf V+\mathbf V^*\!\cdot\mathbf Y
-+\mathbf U^*\!\cdot\mathbf V+\mathbf V^*\!\cdot\mathbf U
+\mathbf M\!\cdot\mathbf V
++\mathbf O\!\cdot\mathbf V
 +|\mathbf V|^2
 -\mu_0K\frac{|\xi_\psi|^2}{|\nabla\psi|^2}
 \to\mathbf H_4 .
@@ -2746,6 +2210,28 @@ diagnostics.  The three blocks correspond to the input flags
 $\to$ \texttt{gpeq\_firstform}), and \texttt{recon\_flag3}
 (\texttt{GPEC\_RECON3}, driver \texttt{gpout\_recon3} $\to$
 \texttt{gpeq\_recon3}).
+
+Three further switches in \texttt{\&GPEC\_OUTPUT} control how these
+diagnostics run:
+\begin{itemize}
+\item \texttt{recon\_out} (default \texttt{.TRUE.}) gates the
+  \emph{file} output.  When true, each route writes its per-surface
+  ASCII tables and appends its summary block to \texttt{gpec.log};
+  when false the terminal summary is still printed, but no files are
+  written.
+\item \texttt{recon\_int} (default \texttt{"spline"}, alternative
+  \texttt{"trapezoid"}) selects the quadrature used for the radial
+  $\psi$ integration on the \texttt{psifac} grid.  Every
+  $\delta W_p$ total reported below is built with this scheme, so the
+  choice affects the reported numbers at the level of the quadrature
+  error.
+\item \texttt{cveri\_flag} (default \texttt{.FALSE.}) enables the
+  $(\nabla\times\vec C)\cdot\nabla\psi=0$ verification of
+  \S\ref{par:cveri} alongside \texttt{recon\_flag}.  The pointwise
+  residual is accumulated over all surfaces and reported as a status
+  of \texttt{PASS}, \texttt{WARN} or \texttt{SKIP} against a fixed
+  tolerance of $10^{-10}$, together with its maximum and rms.
+\end{itemize}
 
 The DCON normalization factor that converts the GPEC energy to the
 DCON-normalized $\delta W$, used in the normalized outputs below, is
@@ -2865,9 +2351,12 @@ Jacobian-weighted contravariant components,
 \texttt{int\_J\_jQxixi\_over\_mu0}
 &=\int\! d\psi\,\frac{1}{\mu_0}\oint\frac{1}{\mathcal J}
   \Big[-\mu_0 j^\theta\bigl(\tilde Q^\psi\,\tilde\xi^{\zeta*}-\tilde Q^\zeta\,\tilde\xi^{\psi*}\bigr)
+  \notag\\
+&\qquad\qquad
        +\mu_0 j^\zeta\bigl(\tilde Q^\psi\,\tilde\xi^{\theta*}-\tilde Q^\theta\,\tilde\xi^{\psi*}\bigr)
   \Big]\mathcal J\,d\theta
- =\int\! d\psi\oint \vec j\cdot(\vec Q\times\vec\xi^{\,*})\,\mathcal J\,d\theta,\\
+  \notag\\
+&=\int\! d\psi\oint \vec j\cdot(\vec Q\times\vec\xi^{\,*})\,\mathcal J\,d\theta,\\
 \texttt{int\_J\_pdiv\_term}
 &=\int\! d\psi\oint
   (\nabla\!\cdot\!\vec\xi)^{*}\,p'\,\xi^{\psi}\,
@@ -3044,7 +2533,7 @@ example ($n=1$, \texttt{gpec.log}):
 
 This appendix proves the $\mathbf H_4$ ($\mathbf V$-sector) identity quoted in
 the main text at two levels: (i)~the equilibrium-free Bernstein form
-$\mathbf H_4=\mathbf H_{YV}+\mathbf H_{UV}+\mathbf H_V+\mathbf H_K$, equal term by
+$\mathbf H_4=\mathbf H_{MV}+\mathbf H_{OV}+\mathbf H_V+\mathbf H_K$, equal term by
 term to \eqref{eq:ep_bernsteinK}; and (ii)~its collapse to the compact block
 $\mathbf H_4=\mu_0p'\!\left(\tfrac{\chi''}{\chi'}\mathbf J+\mathbf J'\right)-2\pi
 f'q'\chi'\,\mathbf I$, whose only equilibrium input is the Grad--Shafranov
@@ -3052,148 +2541,498 @@ equation.  The steps that invoke an equilibrium relation (force balance, the
 magnetic-surface condition $\mathbf B\cdot\nabla\psi=0$, Grad--Shafranov) are
 noted where they occur.
 
-\subsection{Setup: the $\mathbf V$-sector pieces and the single geometric rule}
+\subsection{Explicit pure-$\Xi_\psi$ term reductions}\label{app:reductions}
 
-We work in DCON straight-field-line flux coordinates $(\psi,\theta,\zeta)$, all
-normalized to $[0,1]$, with $e_m\equiv e^{2\pi i(m\theta-n\zeta)}$ and the
-Jacobian-scaled basis $\vec v_i=\vec e_i/\mathcal J$, so that
-$\vec v_i\cdot\vec v_j=g_{ij}/\mathcal J^2$.  We start from
+The following term-by-term reductions of the pure-$\Xi_\psi$ contributions
+were relocated here from the main text; they build the four pieces
+$\mathbf H_{MV},\mathbf H_{OV},\mathbf H_V,\mathbf H_K$ assembled in the
+closed form of Sec.~\ref{app:h4}.
+
+The term $\mathbf M^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf M$ is also a
+pure-$\Xi_\psi$ contribution, but it is not closed as an independent DCON
+block.  It must be combined with the other pure scalar current--pressure terms
+before the final $\mathbf H_4$ block is obtained.
+
+\begin{align}
+\mathbf M
+&=
+(\nabla\theta\times\nabla\zeta)\,\mathcal J\,\mathbf B\cdot\nabla\xi_\psi=
+2\pi i\,\chi'
+\sum_m (m-nq)\,v_m\,e^{2\pi i(m\theta-n\zeta)}\,\vec v_1 \\
+\mathbf M^*&=
+(-2\pi i)\chi'
+\sum_m (m-nq)\,v_m^*\,e^{-2\pi i(m\theta-n\zeta)}\,\vec v_1
+\end{align}
+
+Using the corrected form of $\mathbf V$,
+\begin{align}
+\mathbf M^*\cdot\mathbf V
+&=
+(-2\pi i)\chi'
+\sum_{m,m'}
+v_m^*(m-nq)v_{m'}
+e^{2\pi i(m'-m)\theta}
+\;
+\frac{1}{|\nabla\psi|^2}\,
+\vec v_1\cdot(\mathcal A_2\vec v_2-\mathcal A_3\vec v_3) \\
+&=
+(-2\pi i)\chi'
+\sum_{m,m'}
+v_m^*(m-nq)v_{m'}
+e^{2\pi i(m'-m)\theta}
+\;
+\frac{1}{\mathcal J^2|\nabla\psi|^2}
+\big(
+\mathcal A_2 g_{12}-\mathcal A_3 g_{31}
+\big)
+\end{align}
+
+Now expand the bracket:
+\begin{align}
+\mathcal A_2 g_{12}-\mathcal A_3 g_{31}
+&=
+(\mu_0j^\theta g_{23}+\mu_0j^\zeta g_{33})g_{12}
+-
+(\mu_0j^\theta g_{22}+\mu_0j^\zeta g_{23})g_{31} \\
+&=
+\mu_0j^\theta(g_{12}g_{23}-g_{31}g_{22})
++
+\mu_0j^\zeta(g_{12}g_{33}-g_{31}g_{23}) \\
+&=
+\mathcal J^2
+\left[
+\mu_0j^\theta(\nabla\zeta\cdot\nabla\psi)
+-
+\mu_0j^\zeta(\nabla\theta\cdot\nabla\psi)
+\right]
+\end{align}
 \begin{equation}
-\mathbf Q \equiv \mathbf X+\mathbf Y+\mathbf Z+\mathbf U,
-\qquad
-\vec C = \mathbf Q+\mathbf V,
-\end{equation}
-so that $|\vec C|^2$ expands into $5$ diagonal and $10$ cross products.  The scalar
-Bernstein term $-\mu_0K|\xi_\psi|^2/|\nabla\psi|^2$ is a \emph{separate} piece of the energy
-$2\mu_0\delta W=\int[\,|\vec C|^2+\mu_0\gamma p|\nabla\cdot\vec\xi|^2-\mu_0K|\xi_\psi|^2/|\nabla\psi|^2\,]$;
-the purpose of this appendix is to show that the $\mathbf H_4$ part of the
-$\mathbf V$-sector --- the products
-$2\,\mathrm{Re}(\mathbf V^{*}\!\cdot\mathbf Y)
- +2\,\mathrm{Re}(\mathbf V^{*}\!\cdot\mathbf U)+|\mathbf V|^2$,
-together with that scalar --- collapses to the compact block
-$\mathbf H_4=\mu_0p'(\tfrac{\chi''}{\chi'}\mathbf J+\mathbf J')-2\pi f'q'\chi'\mathbf I$.
-(The other two $\mathbf V$-cross products, $\mathbf V^{*}\!\cdot\mathbf X$ and
-$\mathbf V^{*}\!\cdot\mathbf Z$, are \emph{not} part of $\mathbf H_4$; see below.)
-The field pieces are
-\begin{equation}
+\boxed{
 \begin{aligned}
-\mathbf X &= -2\pi i\sum_m u_m e_m\,(n\vec v_2+m\vec v_3),
-&
-\mathbf Y &= 2\pi i\chi'\sum_m (m-nq)v_m e_m\,\vec v_1,\\
-\mathbf Z &= -\chi'\sum_m v_m' e_m\,(\vec v_2+q\vec v_3),
-&
-\mathbf U &= -\sum_m v_m e_m\left[\chi''\vec v_2+(q\chi')'\vec v_3\right],\\
-\mathbf V &= \frac{\xi_\psi}{|\nabla\psi|^2}\left(\mathcal A_2\vec v_2-\mathcal A_3\vec v_3\right),
+\mathbf M^*\cdot\mathbf V
+&=
+(-2\pi i)\chi'
+\sum_{m,m'}
+v_m^*(m-nq)v_{m'}e^{2\pi i(m'-m)\theta} \\
+&\qquad\times
+\mu_0
+\frac{
+j^\theta(\nabla\zeta\cdot\nabla\psi)
+-
+j^\zeta(\nabla\theta\cdot\nabla\psi)
+}{
+|\nabla\psi|^2
+}.
 \end{aligned}
-\end{equation}
-with
-\begin{equation}
-\mathcal A_2 \equiv \mu_0j^\theta g_{23}+\mu_0j^\zeta g_{33},
-\qquad
-\mathcal A_3 \equiv \mu_0j^\theta g_{22}+\mu_0j^\zeta g_{23}.
+}
 \end{equation}
 
-Physically $\mathbf V$ is simply the edge current rotated into the flux surface,
-$\mathbf V=\frac{\xi_\psi}{|\nabla\psi|^2}\,\mu_0\mathbf j\times\nabla\psi$ --- a
-concrete field on the $(\psi,\theta)$ grid --- and the components
-$\mathcal A_2=\mathcal J(\mu_0\mathbf j\times\nabla\psi)^{\theta}$,
-$\mathcal A_3=-\mathcal J(\mu_0\mathbf j\times\nabla\psi)^{\zeta}$ are just its
-Jacobian-weighted contravariant entries (the expansion is in the main text).
-Because $\mathbf V$ is a cross product, every \emph{in-surface} product with it
-collapses in one line by a scalar triple product: for any surface vector
-$\mathbf W=a\vec v_2+b\vec v_3$,
+It is more useful to rewrite this in field form. Since
 \begin{equation}
-\mathbf W\cdot\mathbf V
-=\frac{\xi_\psi}{|\nabla\psi|^2}\,\mu_0\,\nabla\psi\cdot(\mathbf W\times\mathbf j)
-=\xi_\psi\,(a\,\mu_0 j^\zeta-b\,\mu_0 j^\theta),
-\label{eq:app_Vrule}
-\end{equation}
-since $\mathbf W\times\mathbf j=(a\,j^\zeta-b\,j^\theta)\nabla\psi$ for two
-in-surface vectors.  This is the cofactor identity
-$g_{22}g_{33}-g_{23}^2=\mathcal J^2|\nabla\psi|^2$ in coordinate-free form, and is
-the only tool needed for $\mathbf X^*\!\cdot\mathbf V$, $\mathbf Z^*\!\cdot\mathbf V$,
-and $\mathbf U^*\!\cdot\mathbf V$ below; likewise
-$|\mathbf V|^2=|\xi_\psi|^2\mu_0^2|\mathbf j|^2/|\nabla\psi|^2$ follows from
-$|\mu_0\mathbf j\times\nabla\psi|^2=\mu_0^2|\mathbf j|^2|\nabla\psi|^2$
-($\mathbf j\cdot\nabla\psi=0$).
-All dot products are reduced with the single geometric rule
-\begin{equation}
-\vec v_i\cdot\vec v_j=\frac{g_{ij}}{\mathcal J^2},
-\qquad
-e_m^*e_{m'}=e^{2\pi i(m'-m)\theta}.
-\end{equation}
-
-Throughout, the only current data are the DCON contravariant current densities
-\begin{equation}
-\mu_0 j^\theta=-\frac{2\pi f'}{\mathcal J},
-\qquad
-\mu_0 j^\zeta=-\frac{\mu_0p'}{\chi'}-\frac{2\pi f'q}{\mathcal J},
-\label{eq:app_dconcurrents}
-\end{equation}
-and the equilibrium is a magnetic surface, $\mathbf B\cdot\nabla\psi=0$, so that
-$\mathbf B=\chi'\,(q\,\nabla\psi\times\nabla\theta-\nabla\psi\times\nabla\zeta)$
-lies in the surface and $\mu_0\mathbf j\cdot\mathbf B=\mu_0\sigma B^2$ with
-$\sigma\equiv\mathbf j\cdot\mathbf B/B^2$.  Because the perturbation carries a
-single toroidal mode number $n$,
-$|\xi_\psi|^2=\sum_{m,m'}v_m^*v_{m'}\,e^{2\pi i(m'-m)\theta}$ is independent of
-$\zeta$; this is used in Sec.~\ref{app:assembly}.
-
-\subsection{The five diagonal and ten cross products}
-
-Every $|\mathbf C|^2$ product is reduced with
-$\vec v_i\cdot\vec v_j=g_{ij}/\mathcal J^2$ and the cofactor identity
-$g_{22}g_{33}-g_{23}^2=\mathcal J^2|\nabla\psi|^2$.  Of the $\mathbf V$-touching
-products, only $\mathbf Y^*\!\cdot\mathbf V$, $\mathbf U^*\!\cdot\mathbf V$, and
-$|\mathbf V|^2$ --- together with the scalar $-\mu_0K$ term --- enter
-$\mathbf H_4$.  The other two route elsewhere:
-$\mathbf X^*\!\cdot\mathbf V$ (a $\xi_s$--$\xi_\psi$ coupling) feeds the
-$\mathbf C$ block and
-$\mathbf Z^*\!\cdot\mathbf V=\mu_0p'\,\xi_\psi^{\prime *}\xi_\psi$ (a
-$\xi_\psi'$--$\xi_\psi$ coupling) the $\mathbf E$ block; the remaining
-$\mathbf Q$-sector diagonals and cross products are listed for completeness and
-feed the blocks
-$\mathbf A,\mathbf B,\mathbf D,\mathbf H_{1\text{--}3}$ of the main text.
-
-\medskip\noindent\emph{Diagonal products.}
-
-\begin{equation}
-|\mathbf X|^2
+\mathcal J\,\mathbf B\cdot\nabla
 =
-\frac{(2\pi)^2}{\mathcal J^2}
-\sum_{m,m'} u_m^* u_{m'}\,e^{2\pi i(m'-m)\theta}
+\chi'\left(\partial_\theta+q\partial_\zeta\right),
+\end{equation}
+we may write
+\begin{align}
+\mathcal J(\mathbf M^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf M)
+&=
+\chi'
 \left[
-n^2 g_{22}+n(m+m')g_{23}+m m' g_{33}
+(\partial_\theta+q\partial_\zeta)\xi_\psi^*
+\right]
+\xi_\psi\,
+\mathcal F
++
+\chi'\,
+\xi_\psi^*
+\left[
+(\partial_\theta+q\partial_\zeta)\xi_\psi
+\right]\mathcal F,
+\end{align}
+where
+\begin{equation}
+\mathcal F
+\equiv
+\mathcal J
+\frac{
+(\mu_0 j^\theta)(\nabla\zeta\cdot\nabla\psi)
+-
+(\mu_0 j^\zeta)(\nabla\theta\cdot\nabla\psi)
+}{
+|\nabla\psi|^2
+}.
+\end{equation}
+
+Because the equilibrium is axisymmetric and periodic in $\theta,\zeta$, we may integrate by parts in $\theta$ and drop the boundary term:
+\begin{align}
+\int d\theta\,d\zeta\;\mathcal J(\mathbf M^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf M)
+&= 
+\chi'\int d\theta\,d\zeta\;
+\partial_\theta(|\xi_\psi|^2)\,\mathcal F \\
+&=
+-\chi' \int d\theta\,d\zeta\;
+|\xi_\psi|^2\,\partial_\theta \mathcal F.
+\end{align}
+
+Substituting $\mu_0 j^\theta$ and $\mu_0 j^\zeta$,
+\begin{align}
+\mathcal F
+&=
+\mathcal J
+\left[
+-\frac{2\pi f'}{\mathcal J}
+\frac{\nabla\zeta\cdot\nabla\psi}{|\nabla\psi|^2}
++
+\left(
+\frac{\mu_0p'}{\chi'}
++
+\frac{2\pi f'q}{\mathcal J}
+\right)
+\frac{\nabla\theta\cdot\nabla\psi}{|\nabla\psi|^2}
+\right] \\
+&=
+2\pi f'
+\frac{
+q(\nabla\psi\cdot\nabla\theta)-(\nabla\psi\cdot\nabla\zeta)
+}{
+|\nabla\psi|^2
+}
++
+\frac{\mu_0p'}{\chi'}\,
+\mathcal J\,
+\frac{\nabla\psi\cdot\nabla\theta}{|\nabla\psi|^2}.
+\end{align}
+
+Therefore
+\begin{align}
+\partial_\theta \mathcal F
+&=
+2\pi f'\,
+\partial_\theta
+\left[
+\frac{
+q(\nabla\psi\cdot\nabla\theta)-(\nabla\psi\cdot\nabla\zeta)
+}{
+|\nabla\psi|^2
+}
+\right]
++
+\frac{\mu_0p'}{\chi'}\,
+\partial_\theta
+\left[
+\mathcal J\frac{\nabla\psi\cdot\nabla\theta}{|\nabla\psi|^2}
+\right].
+\end{align}
+
+Using the DCON-normalized shear parameter,
+\begin{equation}
+S_\psi
+=
+\frac{\chi'^2}{\mathcal J}
+\left[
+q'
++
+\partial_\theta
+\left(
+\frac{
+q(\nabla\psi\cdot\nabla\theta)-(\nabla\psi\cdot\nabla\zeta)
+}{
+|\nabla\psi|^2
+}
+\right)
 \right],
 \end{equation}
-
+we obtain
 \begin{equation}
-|\mathbf Y|^2
-=
-\frac{(2\pi\chi')^2}{\mathcal J^2}
-\sum_{m,m'} (m-nq)(m'-nq)\,v_m^* v_{m'}\,e^{2\pi i(m'-m)\theta}\,
-g_{11},
-\end{equation}
-
-\begin{equation}
-|\mathbf Z|^2
-=
-\frac{\chi'^2}{\mathcal J^2}
-\sum_{m,m'} v_m^{\prime *} v_{m'}'\,e^{2\pi i(m'-m)\theta}
+\partial_\theta
 \left[
-g_{22}+2q\,g_{23}+q^2 g_{33}
-\right],
+\frac{
+q(\nabla\psi\cdot\nabla\theta)-(\nabla\psi\cdot\nabla\zeta)
+}{
+|\nabla\psi|^2
+}
+\right]
+=
+\frac{\mathcal J}{\chi'^2}S_\psi-q'.
+\end{equation}
+
+Hence
+\begin{align}
+\partial_\theta\mathcal F
+&=
+\frac{2\pi f'}{\chi'^2}\,\mathcal J\,S_\psi
+-
+2\pi f'q'
++
+\frac{\mu_0p'}{\chi'}\,
+\partial_\theta
+\left[
+\mathcal J\frac{\nabla\psi\cdot\nabla\theta}{|\nabla\psi|^2}
+\right].
+\end{align}
+
+\medskip
+\noindent\rule{\linewidth}{0.4pt}
+\medskip
+
+\paragraph{The term $\mathbf O^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf O$.}
+
+Since both $\mathbf O$ and $\mathbf V$ are proportional to $\xi_\psi$, this contribution is a pure-$\Xi_\psi$ block and can be written as
+\[
+\Xi_\psi^\dagger \mathbf H_{UV} \Xi_\psi.
+\]
+
+Recall
+\begin{equation}
+\mathbf O
+=
+-\left(
+\chi''\vec v_2+(q\chi')'\vec v_3
+\right)\xi_\psi.
+\end{equation}
+Hence
+\begin{align}
+\mathbf O^*\cdot\mathbf V
+&=
+-\frac{|\xi_\psi|^2}{|\nabla\psi|^2}
+\left(
+\chi''\vec v_2+(q\chi')'\vec v_3
+\right)\cdot
+\left(
+\mathcal A_2\vec v_2-\mathcal A_3\vec v_3
+\right) \\
+&=
+-\frac{|\xi_\psi|^2}{\mathcal J^2|\nabla\psi|^2}
+\left[
+\chi''(\mathcal A_2 g_{22}-\mathcal A_3 g_{23})
++
+(q\chi')'(\mathcal A_2 g_{23}-\mathcal A_3 g_{33})
+\right].
+\end{align}
+
+Now simplify each bracket:
+\begin{align}
+\mathcal A_2 g_{22}-\mathcal A_3 g_{23}
+&=
+(\mu_0j^\theta g_{23}+\mu_0j^\zeta g_{33})g_{22}
+-
+(\mu_0j^\theta g_{22}+\mu_0j^\zeta g_{23})g_{23} \\
+&=
+\mu_0j^\zeta(g_{22}g_{33}-g_{23}^2) \\
+&=
+\mu_0j^\zeta \mathcal J^2 |\nabla\psi|^2,
+\end{align}
+and
+\begin{align}
+\mathcal A_2 g_{23}-\mathcal A_3 g_{33}
+&=
+(\mu_0j^\theta g_{23}+\mu_0j^\zeta g_{33})g_{23}
+-
+(\mu_0j^\theta g_{22}+\mu_0j^\zeta g_{23})g_{33} \\
+&=
+-\mu_0j^\theta(g_{22}g_{33}-g_{23}^2) \\
+&=
+-\mu_0j^\theta \mathcal J^2 |\nabla\psi|^2.
+\end{align}
+Therefore
+\begin{align}
+\mathbf O^*\cdot\mathbf V
+&=
+-|\xi_\psi|^2
+\left[
+\mu_0j^\zeta\chi''
+-
+\mu_0j^\theta(q\chi')'
+\right].
+\end{align}
+
+Substituting $j^\theta$ and $j^\zeta$,
+\begin{align}
+\mathbf O^*\cdot\mathbf V
+&=
+-|\xi_\psi|^2
+\left[
+\left(
+-\frac{\mu_0p'}{\chi'}-\frac{2\pi f'q}{\mathcal J}
+\right)\chi''
+-
+\left(
+-\frac{2\pi f'}{\mathcal J}
+\right)(q\chi')'
+\right] \\
+&=
+|\xi_\psi|^2
+\left[
+\mu_0p'\frac{\chi''}{\chi'}
++
+\frac{2\pi f'}{\mathcal J}
+\left(
+q\chi''-(q\chi')'
+\right)
+\right].
+\end{align}
+Using
+\begin{equation}
+(q\chi')'=q'\chi'+q\chi'',
+\end{equation}
+we obtain
+\begin{equation}
+\boxed{
+\mathbf O^*\cdot\mathbf V
+=
+|\xi_\psi|^2
+\left[
+\mu_0p'\frac{\chi''}{\chi'}
+-
+\frac{2\pi f' q'\chi'}{\mathcal J}
+\right].
+}
 \end{equation}
 
 \begin{equation}
-|\mathbf U|^2
-=
-\frac{1}{\mathcal J^2}
-\sum_{m,m'} v_m^* v_{m'}\,e^{2\pi i(m'-m)\theta}
-\left[
-\chi''^2 g_{22}+2\chi''(q\chi')' g_{23}+(q\chi')'^2 g_{33}
-\right],
+\boxed{
+\begin{aligned}
+\mathbf O^*\cdot\mathbf V+\mathbf V^*\cdot\mathbf O
+\leadsto\;
+\Xi_\psi^\dagger \mathbf H_{UV}\Xi_\psi, \\
+\qquad
+\mathbf H_{UV}
+&=
+2\mu_0p'\frac{\chi''}{\chi'}\,\mathbf J
+-4\pi f'q'\chi'\,\mathbf I.
+\end{aligned}
+}
 \end{equation}
 
+\medskip
+\noindent\rule{\linewidth}{0.4pt}
+\medskip
+
+\paragraph{The term $|\mathbf V|^2$.}
+
+This is again a pure-$\Xi_\psi$ contribution, so we write
+\[
+\Xi_\psi^\dagger \mathbf H_V \Xi_\psi.
+\]
+
+From
+\begin{equation}
+\mathbf V
+=
+\frac{\xi_\psi}{|\nabla\psi|^2}
+(\mathcal A_2\vec v_2-\mathcal A_3\vec v_3),
+\end{equation}
+we have
+\begin{align}
+|\mathbf V|^2
+&=
+\frac{|\xi_\psi|^2}{|\nabla\psi|^4}
+(\mathcal A_2\vec v_2-\mathcal A_3\vec v_3)\cdot
+(\mathcal A_2\vec v_2-\mathcal A_3\vec v_3) \\
+&=
+\frac{|\xi_\psi|^2}{\mathcal J^2|\nabla\psi|^4}
+\left[
+\mathcal A_2^2 g_{22}
+-2\mathcal A_2\mathcal A_3 g_{23}
++\mathcal A_3^2 g_{33}
+\right].
+\end{align}
+
+Now expand the quadratic form:
+\begin{align}
+&\mathcal A_2^2 g_{22}
+-2\mathcal A_2\mathcal A_3 g_{23}
++\mathcal A_3^2 g_{33} \\
+&=
+(\mu_0j^\theta g_{23}+\mu_0j^\zeta g_{33})^2 g_{22}
+-2(\mu_0j^\theta g_{23}+\mu_0j^\zeta g_{33})
+(\mu_0j^\theta g_{22}+\mu_0j^\zeta g_{23})g_{23} \\
+&\qquad
++(\mu_0j^\theta g_{22}+\mu_0j^\zeta g_{23})^2 g_{33} \\
+&=
+(g_{22}g_{33}-g_{23}^2)
+\left[
+\mu_0^2g_{22}(j^\theta)^2
++
+2\mu_0^2g_{23}j^\theta j^\zeta
++
+\mu_0^2g_{33}(j^\zeta)^2
+\right].
+\end{align}
+Therefore
+\begin{align}
+|\mathbf V|^2
+&=
+\frac{|\xi_\psi|^2}{\mathcal J^2|\nabla\psi|^4}
+(g_{22}g_{33}-g_{23}^2)
+\left[
+\mu_0^2g_{22}(j^\theta)^2
++
+2\mu_0^2g_{23}j^\theta j^\zeta
++
+\mu_0^2g_{33}(j^\zeta)^2
+\right] \\
+&=
+\frac{|\xi_\psi|^2}{|\nabla\psi|^2}
+\left[
+\mu_0^2g_{22}(j^\theta)^2
++
+2\mu_0^2g_{23}j^\theta j^\zeta
++
+\mu_0^2g_{33}(j^\zeta)^2
+\right].
+\end{align}
+
+This is the completely explicit covariant-form result.
+
+It is also useful to rewrite it invariantly. Since
+\begin{equation}
+\mathbf j
+=
+\sigma \mathbf B
++\frac{p'}{B^2}\mathbf B\times \nabla\psi,
+\qquad
+\sigma\equiv \frac{\mathbf j\cdot\mathbf B}{B^2},
+\end{equation}
+one finds
+\begin{equation}
+\frac{|\mu_0\mathbf j\times\nabla\psi|^2}{|\nabla\psi|^2}
+=
+\mu_0\sigma\,(\mu_0\mathbf j\cdot\mathbf B)
++
+\frac{(\mu_0p')^2}{B^2}|\nabla\psi|^2.
+\end{equation}
+Hence
+\begin{equation}
+\boxed{
+|\mathbf V|^2
+=
+|\xi_\psi|^2
+\left[
+\frac{\mu_0\sigma\,(\mu_0\mathbf j\cdot\mathbf B)}{|\nabla\psi|^2}
++
+\frac{(\mu_0p')^2}{B^2}
+\right].
+}
+\end{equation}
+
+With the Lagrange identity
+$|\mathbf j|^2B^2=(\mathbf j\cdot\mathbf B)^2+|\mathbf j\times\mathbf B|^2$ and
+$\sigma\equiv\mathbf j\cdot\mathbf B/B^2$ (so the bracket
+$\mu_0^2[g_{22}(j^\theta)^2+2g_{23}j^\theta j^\zeta+g_{33}(j^\zeta)^2]=\mu_0^2|\mathbf j|^2$),
+the difference between the two forms of $|\mathbf V|^2/|\xi_\psi|^2$ is an exact
+equality, not a proportionality:
+\begin{equation}
+\frac{\mu_0^2|\mathbf j|^2}{|\nabla\psi|^2}
+-\left[\frac{\mu_0^2\sigma(\mathbf j\cdot\mathbf B)}{|\nabla\psi|^2}
++\frac{(\mu_0p')^2}{B^2}\right]
+=\frac{\mu_0^2|\mathbf j\times\mathbf B|^2-(\mu_0p')^2|\nabla\psi|^2}
+       {B^2|\nabla\psi|^2}
+=0 ,
+\end{equation}
+the numerator vanishing identically by force balance
+$\mu_0\mathbf j\times\mathbf B=\mu_0\nabla p=\mu_0 p'\nabla\psi$. 
 \begin{equation}
 \begin{aligned}
 |\mathbf V|^2
@@ -3212,181 +3051,18 @@ g_{22}+2q\,g_{23}+q^2 g_{33}
 \right].
 \end{aligned}
 \end{equation}
-
-The second equality for $|\mathbf V|^2$ is \emph{not} a generic metric identity:
-it uses force balance.  With the Lagrange identity
-$|\mathbf j|^2B^2=(\mathbf j\cdot\mathbf B)^2+|\mathbf j\times\mathbf B|^2$ and
-$\sigma\equiv\mathbf j\cdot\mathbf B/B^2$ (so the bracket
-$\mu_0^2[g_{22}(j^\theta)^2+2g_{23}j^\theta j^\zeta+g_{33}(j^\zeta)^2]=\mu_0^2|\mathbf j|^2$),
-the difference between the two forms of $|\mathbf V|^2/|\xi_\psi|^2$ is an exact
-equality, not a proportionality:
-\begin{equation}
-\frac{\mu_0^2|\mathbf j|^2}{|\nabla\psi|^2}
--\left[\frac{\mu_0\sigma(\mu_0\mathbf j\cdot\mathbf B)}{|\nabla\psi|^2}
-+\frac{(\mu_0p')^2}{B^2}\right]
-=\frac{\mu_0^2|\mathbf j\times\mathbf B|^2-(\mu_0p')^2|\nabla\psi|^2}
-       {B^2|\nabla\psi|^2}
-=0 ,
-\end{equation}
-the numerator vanishing identically by force balance
-$\mu_0\mathbf j\times\mathbf B=\mu_0\nabla p=\mu_0 p'\nabla\psi$.  Equivalently, in
-the DCON currents~\eqref{eq:app_dconcurrents} the $2\pi f'q/\mathcal J$ pieces
+Equivalently, in
+the DCON currents~\eqref{eq:dconcurrents} the $2\pi f'q/\mathcal J$ pieces
 cancel and $\chi'(q\,\mu_0 j^\theta-\mu_0 j^\zeta)=\mu_0p'$, whence
 $\mu_0^2|\mathbf j\times\mathbf B|^2
 =\chi'^2(q\,\mu_0 j^\theta-\mu_0 j^\zeta)^2|\nabla\psi|^2=(\mu_0p')^2|\nabla\psi|^2$:
 the parallel ($f'$) current supplies the
-$\mu_0\sigma(\mu_0\mathbf j\cdot\mathbf B)$ term and the in-surface pressure
+$\mu_0^2\sigma(\mathbf j\cdot\mathbf B)$ term and the in-surface pressure
 current supplies the $(\mu_0p')^2/B^2$ term.
 
-\medskip\noindent\emph{Cross products.}
-
-\begin{equation}
-\mathbf X^*\!\cdot\mathbf Z
-=
--\frac{2\pi i\chi'}{\mathcal J^2}
-\sum_{m,m'} u_m^* v_{m'}'\,e^{2\pi i(m'-m)\theta}
-\left[
-n(g_{22}+q g_{23})+m(g_{23}+q g_{33})
-\right],
-\end{equation}
-
-\begin{equation}
-\mathbf X^*\!\cdot\mathbf Y
-=
--\frac{(2\pi)^2\chi'}{\mathcal J^2}
-\sum_{m,m'} (m'-nq)\,u_m^* v_{m'}\,e^{2\pi i(m'-m)\theta}
-\left[
-n\,g_{12}+m\,g_{31}
-\right],
-\end{equation}
-
-\begin{equation}
-\begin{aligned}
-\mathbf X^*\!\cdot\mathbf U
-&=
--\frac{2\pi i}{\mathcal J^2}
-\sum_{m,m'} u_m^* v_{m'}\,e^{2\pi i(m'-m)\theta} \\
-&\qquad\times
-\left[
-\chi''(n g_{22}+m g_{23})+(q\chi')'(n g_{23}+m g_{33})
-\right],
-\end{aligned}
-\end{equation}
-
-\begin{equation}
-\begin{aligned}
-\mathbf X^*\!\cdot\mathbf V
-&=
--2\pi i
-\sum_{m,m'} u_m^* v_{m'}\,e^{2\pi i(m'-m)\theta}\,
-\mu_0\!\left(m j^\theta-n j^\zeta\right) \\
-&=
--2\pi i
-\sum_{m,m'} u_m^* v_{m'}\,e^{2\pi i(m'-m)\theta}
-\left[
--\frac{2\pi f'}{\mathcal J}(m-nq)+n\frac{\mu_0p'}{\chi'}
-\right],
-\end{aligned}
-\end{equation}
-
-Here $\mathbf W=n\vec v_2+m\vec v_3$, so the triple-product
-rule~\eqref{eq:app_Vrule} gives the coefficient
-$n\,\mu_0 j^\zeta-m\,\mu_0 j^\theta=-(m\,\mu_0 j^\theta-n\,\mu_0 j^\zeta)$ directly.
-
-\begin{equation}
-\mathbf Y^*\!\cdot\mathbf Z
-=
-\frac{2\pi i\chi'^2}{\mathcal J^2}
-\sum_{m,m'} (m-nq)\,v_m^* v_{m'}'\,e^{2\pi i(m'-m)\theta}
-\left[
-g_{12}+q\,g_{31}
-\right],
-\end{equation}
-
-\begin{equation}
-\mathbf Y^*\!\cdot\mathbf U
-=
-\frac{2\pi i\chi'}{\mathcal J^2}
-\sum_{m,m'} (m-nq)\,v_m^* v_{m'}\,e^{2\pi i(m'-m)\theta}
-\left[
-\chi''\,g_{12}+(q\chi')'\,g_{31}
-\right],
-\end{equation}
-
-\begin{equation}
-\mathbf Z^*\!\cdot\mathbf U
-=
-\frac{\chi'}{\mathcal J^2}
-\sum_{m,m'} v_m^{\prime *} v_{m'}\,e^{2\pi i(m'-m)\theta}
-\left[
-\chi''(g_{22}+q g_{23})+(q\chi')'(g_{23}+q g_{33})
-\right],
-\end{equation}
-
-\begin{equation}
-\mathbf Z^*\!\cdot\mathbf V
-=
-\mu_0p'\,\xi_\psi^{\prime *}\xi_\psi
-\qquad(\text{pointwise}),
-\end{equation}
-
-For $\mathbf Z^*\!\cdot\mathbf V$ the rule~\eqref{eq:app_Vrule} with
-$\mathbf W=\vec v_2+q\vec v_3$ gives, before inserting currents,
-$\mathbf Z^*\!\cdot\mathbf V=\chi'\,\xi_\psi^{\prime *}\xi_\psi\,
-(q\,\mu_0 j^\theta-\mu_0 j^\zeta)$; inserting~\eqref{eq:app_dconcurrents},
-$q\,\mu_0 j^\theta-\mu_0 j^\zeta
-=-\tfrac{2\pi f'q}{\mathcal J}+\tfrac{\mu_0p'}{\chi'}+\tfrac{2\pi f'q}{\mathcal J}
-=\tfrac{\mu_0p'}{\chi'}$ (the $2\pi f'q/\mathcal J$ terms cancel), so
-$\mathbf Z^*\!\cdot\mathbf V=\mu_0p'\,\xi_\psi^{\prime *}\xi_\psi$.
-
-\begin{equation}
-\mathbf U^*\!\cdot\mathbf V
-=
-|\xi_\psi|^2
-\left[
-\mu_0p'\frac{\chi''}{\chi'}-\frac{2\pi f'q'\chi'}{\mathcal J}
-\right]
-\qquad(\text{pointwise}),
-\end{equation}
-
-For $\mathbf U^*\!\cdot\mathbf V$ the rule~\eqref{eq:app_Vrule} with
-$\mathbf W=\chi''\vec v_2+(q\chi')'\vec v_3$ leaves the pointwise
-coefficient $|\xi_\psi|^2[-\chi''\mu_0 j^\zeta+(q\chi')'\mu_0 j^\theta]$;
-inserting~\eqref{eq:app_dconcurrents} and expanding $(q\chi')'=q'\chi'+q\chi''$,
-the $\pm2\pi f'q\chi''/\mathcal J$ cross terms cancel, leaving
-$|\xi_\psi|^2[\mu_0p'\tfrac{\chi''}{\chi'}-\tfrac{2\pi f'q'\chi'}{\mathcal J}]$.
-
-\begin{equation}
-\begin{aligned}
-\mathcal J\,(\mathbf Y^*\!\cdot\mathbf V+\mathbf V^*\!\cdot\mathbf Y)
-&=
-\chi'\,\mathcal F
-\left\{
-\left[(\partial_\theta+q\partial_\zeta)\xi_\psi^*\right]\xi_\psi
-+\xi_\psi^*\left[(\partial_\theta+q\partial_\zeta)\xi_\psi\right]
-\right\}, \\
-\mathcal F
-&\equiv
-\mathcal J\,
-\frac{(\mu_0 j^\theta)(\nabla\zeta\cdot\nabla\psi)-(\mu_0 j^\zeta)(\nabla\theta\cdot\nabla\psi)}{|\nabla\psi|^2}.
-\end{aligned}
-\end{equation}
-
-\medskip\noindent\emph{Scalar Bernstein term.}
-
-\begin{equation}
--\mu_0\,\mathcal J\,K\frac{|\xi_\psi|^2}{|\nabla\psi|^2}
-=
-|\xi_\psi|^2
-\left[
--\mathcal J\mu_0\sigma S_\psi
--\mathcal J\frac{\mu_0^2\sigma^2B^2}{|\nabla\psi|^2}
--2\mu_0p'\mathcal J\frac{\kappa_\psi}{|\nabla\psi|^2}
-\right].
-\end{equation}
-
-\subsection{Assembly of the $\mathbf V$-sector and the $\theta$-integration by parts}
-\label{app:assembly}
+\medskip
+\noindent\rule{\linewidth}{0.4pt}
+\medskip
 
 The four $\mathbf V$-touching contributions combine, under a common
 $\mathcal J$ weight and before any equilibrium input, as
@@ -3395,131 +3071,31 @@ $\mathcal J$ weight and before any equilibrium input, as
 \begin{aligned}
 &\int d\theta\,d\zeta\;\mathcal J
 \left[
-(\mathbf Y^*\!\cdot\mathbf V+\mathbf V^*\!\cdot\mathbf Y)
-+(\mathbf U^*\!\cdot\mathbf V+\mathbf V^*\!\cdot\mathbf U)
+(\mathbf M^*\!\cdot\mathbf V+\mathbf V^*\!\cdot\mathbf M)
++(\mathbf O^*\!\cdot\mathbf V+\mathbf V^*\!\cdot\mathbf O)
 +|\mathbf V|^2
 -\mu_0K\frac{|\xi_\psi|^2}{|\nabla\psi|^2}
 \right]\\
 &=\int d\theta\,d\zeta\,
-\bigg[
-\underbrace{\chi'\,\mathcal F\,\partial_\theta|\xi_\psi|^2}_{\mathbf Y^*\mathbf V+\text{c.c.}}
-+|\xi_\psi|^2\Big(
-\underbrace{2\mu_0p'\mathcal J\tfrac{\chi''}{\chi'}-4\pi f'q'\chi'}_{\mathbf U^*\mathbf V+\text{c.c.}}
-+\underbrace{\mathcal J\tfrac{\mu_0^2\sigma(\mathbf j\cdot\mathbf B)}{|\nabla\psi|^2}
-+\mathcal J\tfrac{(\mu_0p')^2}{B^2}}_{|\mathbf V|^2}\\
-&\hspace{5em}
-\underbrace{
--\,\mathcal J\mu_0\sigma S_\psi
--\mathcal J\tfrac{\mu_0^2\sigma^2B^2}{|\nabla\psi|^2}
+\bigg[|\xi_\psi|^2\Big(
+\underbrace{-\frac{2\pi f'}{\chi'}\,\mathcal J\,S_\psi+{\color{red}\cancel{2\pi \chi' f'q'}}
+-\mu_0p'\partial_\theta\left[\mathcal J\frac{\nabla\psi\cdot\nabla\theta}{|\nabla\psi|^2}\right]}_{\mathbf M^*\mathbf V+\mathbf V^*\mathbf M}
++\underbrace{2\mu_0p'\mathcal J\tfrac{\chi''}{\chi'}-2\pi f'q'\chi'\,{\color{red}\cancel{-\,2\pi f'q'\chi'}}}_{\mathbf O^*\mathbf V+\mathbf V^*\mathbf O}\\
+&+\underbrace{{\color{blue}\cancel{\mathcal J\tfrac{\mu_0^2\sigma(\mathbf j\cdot\mathbf B)}{|\nabla\psi|^2}}}
++\mathcal J\tfrac{(\mu_0p')^2}{B^2}}_{|\mathbf V|^2}
+\underbrace{-\,\mathcal J\mu_0\sigma S_\psi
+\,{\color{blue}\cancel{-\,\mathcal J\tfrac{\mu_0^2\sigma^2B^2}{|\nabla\psi|^2}}}
 -2\mu_0p'\mathcal J\tfrac{\kappa_\psi}{|\nabla\psi|^2}}_{-\mu_0K|\xi_\psi|^2/|\nabla\psi|^2}
 \Big)
-\bigg],
-\quad
-\mathcal F\equiv
-\mathcal J\frac{\mu_0 j^\theta(\nabla\zeta\cdot\nabla\psi)-\mu_0 j^\zeta(\nabla\theta\cdot\nabla\psi)}{|\nabla\psi|^2}.
-\end{aligned}
-\end{equation}
-
-Only $\partial_\theta|\xi_\psi|^2$ appears (not the full
-$(\partial_\theta+q\partial_\zeta)|\xi_\psi|^2$ that
-$\mathbf Y^*\!\cdot\mathbf V+\text{c.c.}$ produces) because $|\xi_\psi|^2$ is
-$\zeta$-independent for a single-$n$ perturbation, so
-$\partial_\zeta|\xi_\psi|^2=0$ pointwise and the $q\,\partial_\zeta$ piece drops
-identically.
-
-Only $\mathbf Y^*\!\cdot\mathbf V$ carries a $\theta$ derivative.  Integrating
-it by parts (the boundary term vanishes because $\chi'$ is a flux function and
-$\mathcal F,|\xi_\psi|^2$ are $\theta$-periodic), its $|\xi_\psi|^2$
-coefficient becomes $-\chi'\,\partial_\theta\mathcal F$:
-\begin{equation}
-\int d\theta\,\chi'\mathcal F\,\partial_\theta|\xi_\psi|^2
-=-\int d\theta\;|\xi_\psi|^2\,\chi'\,\partial_\theta\mathcal F,
-\qquad
--\chi'\,\partial_\theta\mathcal F
-=-\frac{2\pi f'}{\chi'}\mathcal J S_\psi
-+2\pi f'q'\chi'
--\mu_0p'\,\partial_\theta\!\left(\mathcal J\frac{\nabla\psi\cdot\nabla\theta}{|\nabla\psi|^2}\right),
-\end{equation}
-
-A $\theta$ derivative cannot generate $q'=dq/d\psi$; the explicit
-$+2\pi f'q'\chi'$ above only compensates the $q'$ introduced by rewriting part
-of $-\chi'\partial_\theta\mathcal F$ through
-$S_\psi=\tfrac{\chi'^2}{\mathcal J}[q'+\partial_\theta(\cdots)]$, so the net
-$q'$ content of $-\chi'\partial_\theta\mathcal F$ is zero.  As written, the
-$+2\pi f'q'\chi'$ pairs below with the $-4\pi f'q'\chi'$ of
-$\mathbf U^*\!\cdot\mathbf V$ to give $-2\pi f'q'\chi'\,\mathbf I$.
-
-Three immediate cancellations follow:
-
-\begin{equation}
--\frac{2\pi f'}{\chi'}\mathcal J S_\psi-\mathcal J\mu_0\sigma S_\psi
-=-\mathcal J S_\psi\!\left(\frac{2\pi f'}{\chi'}+\mu_0\sigma\right),
-\quad
-\frac{\mu_0^2\sigma(\mathbf j\cdot\mathbf B)-\mu_0^2\sigma^2B^2}{|\nabla\psi|^2}=0,
-\quad
-2\pi f'q'\chi'-4\pi f'q'\chi'=-2\pi f'q'\chi',
-\end{equation}
-and substituting the DCON shear and curvature
-\begin{equation}
-S_\psi=\frac{\chi'^2}{\mathcal J}\left[q'+\partial_\theta\!\left(\frac{q \nabla\psi\cdot\nabla\theta-\nabla\psi\cdot\nabla\zeta}{|\nabla\psi|^2}\right)\right],
-\qquad
-\kappa_\psi=\frac{|\nabla\psi|^2}{B^2}\left[\mu_0 p'+\tfrac12\partial_\psi B^2+\tfrac12\partial_\theta B^2\frac{\nabla\psi\cdot\nabla\theta}{|\nabla\psi|^2}\right]
-\end{equation}
-(so that $\mathcal J$ cancels in $-\mathcal J S_\psi$ and the two $(\mu_0p')^2/B^2$ pieces combine), the whole sector becomes the single fully expanded identity
-\begin{equation}
-\begin{aligned}
-&\int d\theta\,d\zeta\;\mathcal J
-\left[
-(\mathbf Y^*\!\cdot\mathbf V+\mathbf V^*\!\cdot\mathbf Y)
-+(\mathbf U^*\!\cdot\mathbf V+\mathbf V^*\!\cdot\mathbf U)
-+|\mathbf V|^2
--\mu_0K\frac{|\xi_\psi|^2}{|\nabla\psi|^2}
-\right]\\
-&=\int d\theta\,d\zeta\;|\xi_\psi|^2
-\bigg[
--2\pi f'q'\chi'
-+2\mu_0p'\mathcal J\frac{\chi''}{\chi'}
--\mu_0p'\,\partial_\theta\!\left(\mathcal J\frac{\nabla\psi\cdot\nabla\theta}{|\nabla\psi|^2}\right)
--\mathcal J\frac{(\mu_0p')^2}{B^2}\\
-&\hspace{4em}
--\frac{\mu_0p'\mathcal J}{B^2}\partial_\psi B^2
--\frac{\mu_0p'\mathcal J}{B^2}\partial_\theta B^2\frac{\nabla\psi\cdot\nabla\theta}{|\nabla\psi|^2}
--\chi'^2\!\left(\frac{2\pi f'}{\chi'}+\mu_0\sigma\right)\!
-\left[q'+\partial_\theta\!\left(\frac{q \nabla\psi\cdot\nabla\theta-\nabla\psi\cdot\nabla\zeta}{|\nabla\psi|^2}\right)\right]
-\bigg].
-\end{aligned}
-\label{eq:H4_expanded}
-\end{equation}
-
-Up to \eqref{eq:H4_expanded} no equilibrium input beyond the DCON currents has
-been used.  The first two terms give $-2\pi f'q'\chi'\mathbf I$ and
-$\mu_0p'(\chi''/\chi')\mathbf J$; it remains to show, for arbitrary Fourier
-amplitudes $\{v_m\}$, that the rest closes,
-\begin{equation}
-\begin{aligned}
-&\int d\theta\,d\zeta\;|\xi_\psi|^2
-\bigg[
--\chi'^2\!\left(\frac{2\pi f'}{\chi'}+\mu_0\sigma\right)\!
-\left[q'+\partial_\theta\!\left(\frac{q \nabla\psi\cdot\nabla\theta-\nabla\psi\cdot\nabla\zeta}{|\nabla\psi|^2}\right)\right]
--\mu_0p'\,\partial_\theta\!\left(\mathcal J\frac{\nabla\psi\cdot\nabla\theta}{|\nabla\psi|^2}\right)\\
-&\hspace{4em}
--\mathcal J\frac{(\mu_0p')^2}{B^2}
--\frac{\mu_0p'\mathcal J}{B^2}\partial_\psi B^2
--\frac{\mu_0p'\mathcal J}{B^2}\partial_\theta B^2\frac{\nabla\psi\cdot\nabla\theta}{|\nabla\psi|^2}
 \bigg]\\
-&=\int d\theta\,d\zeta\;|\xi_\psi|^2
-\bigg[
--2\pi f'q'\chi'
--\mu_0\sigma\chi'^2 q'
--2\pi f'\chi'\,\partial_\theta\!\left(\frac{q \nabla\psi\cdot\nabla\theta-\nabla\psi\cdot\nabla\zeta}{|\nabla\psi|^2}\right)\\
-&\hspace{4em}
--\mu_0\sigma\chi'^2\,\partial_\theta\!\left(\frac{q \nabla\psi\cdot\nabla\theta-\nabla\psi\cdot\nabla\zeta}{|\nabla\psi|^2}\right)
--\mu_0p'\,\partial_\theta\!\left(\mathcal J\frac{\nabla\psi\cdot\nabla\theta}{|\nabla\psi|^2}\right)
--\mathcal J\frac{(\mu_0p')^2}{B^2}\\
-&\hspace{4em}
--\frac{\mu_0p'\mathcal J}{B^2}\partial_\psi B^2
--\frac{\mu_0p'\mathcal J}{B^2}\partial_\theta B^2\frac{\nabla\psi\cdot\nabla\theta}{|\nabla\psi|^2}
-\bigg].
+&=\int d\theta\,d\zeta\,
+\bigg[|\xi_\psi|^2\Big(
+-\mu_0p'\partial_\theta\left[\mathcal J\frac{\nabla\psi\cdot\nabla\theta}{|\nabla\psi|^2}\right]
++2\mu_0p'\mathcal J\tfrac{\chi''}{\chi'}-2\pi f'q'\chi'\,
++\mathcal J\tfrac{(\mu_0p')^2}{B^2}
+-\,\big(\mu_0\sigma +\frac{2\pi f'}{\chi'}\big)\mathcal JS_\psi
+-2\mu_0p'\mathcal J\tfrac{\kappa_\psi}{|\nabla\psi|^2}
+\Big)\bigg].
 \end{aligned}
 \end{equation}
 
@@ -3565,16 +3141,12 @@ so the parallel-current coefficient collapses to a pure-$p'$ form,
 Applying the cross-product identity
 $(\mathbf A\times\mathbf B)\cdot(\mathbf C\times\mathbf D)=(\mathbf A\cdot\mathbf C)(\mathbf B\cdot\mathbf D)-(\mathbf A\cdot\mathbf D)(\mathbf B\cdot\mathbf C)$
 to the two cross-product factors,
-\begin{equation}
-\begin{aligned}
-|q\,\nabla\psi\times\nabla\theta-\nabla\psi\times\nabla\zeta|^2
-&=(\nabla\psi\cdot\nabla\psi)(q^2\nabla\theta\cdot\nabla\theta-2q\,\nabla\theta\cdot\nabla\zeta+\nabla\zeta\cdot\nabla\zeta)
--(q\,\nabla\psi\cdot\nabla\theta-\nabla\psi\cdot\nabla\zeta)^2,\\
-(\nabla\psi\times\nabla\theta)\cdot(q\,\nabla\psi\times\nabla\theta-\nabla\psi\times\nabla\zeta)
-&=(\nabla\psi\cdot\nabla\psi)(q\,\nabla\theta\cdot\nabla\theta-\nabla\theta\cdot\nabla\zeta)
--(\nabla\psi\cdot\nabla\theta)(q\,\nabla\psi\cdot\nabla\theta-\nabla\psi\cdot\nabla\zeta).
-\end{aligned}
-\end{equation}
+
+$|q\,\nabla\psi\times\nabla\theta-\nabla\psi\times\nabla\zeta|^2=(\nabla\psi\cdot\nabla\psi)(q^2\nabla\theta\cdot\nabla\theta-2q\,\nabla\theta\cdot\nabla\zeta+\nabla\zeta\cdot\nabla\zeta)
+-(q\,\nabla\psi\cdot\nabla\theta-\nabla\psi\cdot\nabla\zeta)^2,$
+$(\nabla\psi\times\nabla\theta)\cdot(q\,\nabla\psi\times\nabla\theta-\nabla\psi\times\nabla\zeta)=(\nabla\psi\cdot\nabla\psi)(q\,\nabla\theta\cdot\nabla\theta-\nabla\theta\cdot\nabla\zeta)
+-(\nabla\psi\cdot\nabla\theta)(q\,\nabla\psi\cdot\nabla\theta-\nabla\psi\cdot\nabla\zeta).$
+
 The first is $B^2/\chi'^2$; the second turns the collapse into the pure-$p'$, dot-product form
 \begin{equation}
 \frac{2\pi f'}{\chi'}+\mu_0\sigma
@@ -3582,77 +3154,38 @@ The first is $B^2/\chi'^2$; the second turns the collapse into the pure-$p'$, do
 \big[(\nabla\psi\cdot\nabla\psi)(q\,\nabla\theta\cdot\nabla\theta-\nabla\theta\cdot\nabla\zeta)
 -(\nabla\psi\cdot\nabla\theta)(q\,\nabla\psi\cdot\nabla\theta-\nabla\psi\cdot\nabla\zeta)\big].
 \end{equation}
-Write the local shorthands
-$\mathcal D\equiv(\nabla\psi\cdot\nabla\psi)(q\,\nabla\theta\cdot\nabla\theta-\nabla\theta\cdot\nabla\zeta)
--(\nabla\psi\cdot\nabla\theta)(q\,\nabla\psi\cdot\nabla\theta-\nabla\psi\cdot\nabla\zeta)$
-and
-$G_s\equiv\dfrac{q\,\nabla\psi\cdot\nabla\theta-\nabla\psi\cdot\nabla\zeta}{|\nabla\psi|^2}$.
-Inserting $\mu_0\sigma=-\tfrac{2\pi f'}{\chi'}-\tfrac{\mu_0 p'\mathcal J\,\mathcal D}{B^2}$ into the two $-\mu_0\sigma\chi'^2(\cdots)$ pieces of the distributed form, each $f'$ part \emph{exactly} cancels the existing $-2\pi f'\chi'(\cdots)$ partner:
+
+and define $\mathcal D\equiv\big[(\nabla\psi\cdot\nabla\psi)(q\,\nabla\theta\cdot\nabla\theta-\nabla\theta\cdot\nabla\zeta)
+-(\nabla\psi\cdot\nabla\theta)(q\,\nabla\psi\cdot\nabla\theta-\nabla\psi\cdot\nabla\zeta)\big]$ to obtain the final form
+
+\begin{equation}
+\frac{2\pi f'}{\chi'}+\mu_0\sigma=-\frac{\mu_0p'\mathcal J\,\mathcal D}{B^2}.
+\end{equation}
+This $\mathcal D$ can be expressed in terms of the metric coefficients as
 \begin{equation}
 \begin{aligned}
-\cancel{-\,2\pi f'q'\chi'}\;-\,\mu_0\sigma\chi'^2 q'
-&=\cancel{-\,2\pi f'q'\chi'}\;\cancel{+\,2\pi f'q'\chi'}\;+\;\frac{\mu_0p'\chi'^2\mathcal J\,q'\,\mathcal D}{B^2},\\
-\cancel{-\,2\pi f'\chi'\,\partial_\theta G_s}\;-\,\mu_0\sigma\chi'^2\,\partial_\theta G_s
-&=\cancel{-\,2\pi f'\chi'\,\partial_\theta G_s}\;\cancel{+\,2\pi f'\chi'\,\partial_\theta G_s}\;+\;\frac{\mu_0p'\chi'^2\mathcal J\,\mathcal D}{B^2}\,\partial_\theta G_s.
+\mathcal D
+&\equiv g^{\psi\psi}(q\,g^{\theta\theta}-g^{\theta\zeta})
+-g^{\psi\theta}(q\,g^{\psi\theta}-g^{\psi\zeta})=\frac{q\,g_{\zeta\zeta}+g_{\theta\zeta}}{\mathcal J^2}.
+%=\frac{\partial_q G_\alpha}{2\mathcal J^2},
 \end{aligned}
 \end{equation}
-The crossed-out $f'$ pairs vanish identically, so the entire $\mathbf V$-sector
-residual reduces to pure $\mu_0p'$ pieces; the surviving geometric
-$\theta$-derivatives are closed by the Grad--Shafranov identity of
-Sec.~\ref{app:master}.
 
-\subsection{Master identity, cofactor form, and the Grad--Shafranov closure}
+\begin{equation}
+G_\alpha\equiv g_{\theta\theta}+2q\,g_{\theta\zeta}+q^2g_{\zeta\zeta}=\frac{\mathcal J^2B^2}{\chi'^2}.
+\end{equation}
+
+\subsection{Master identity and the Grad--Shafranov closure}
 \label{app:master}
 
-The closure is most transparent pointwise in $\theta$.
-
-\paragraph{Four weights and target.}
-Write the sector as $\int d\theta\,\mathcal W\,|\xi_\psi|^2$ with
-$\mathcal W=W_{UV}+W_V+W_K+W_{YV}$ ($\mathbf Y^*\!\cdot\mathbf V$ already
-integrated by parts), abbreviating $g^{\psi\psi}=|\nabla\psi|^2$:
-\begin{align}
-W_{UV}&=2\mu_0p'\tfrac{\chi''}{\chi'}\mathcal J-4\pi f'q'\chi',
-\label{eq:WUV}\\
-W_{V}&=\mathcal J\tfrac{\mu_0^2\sigma(\mathbf j\cdot\mathbf B)}{g^{\psi\psi}}
-        +\mathcal J\tfrac{(\mu_0p')^2}{B^2},
-\label{eq:WV}\\
-W_{K}&=-\mathcal J\mu_0\sigma S_\psi
-        -\mathcal J\tfrac{\mu_0^2\sigma^2B^2}{g^{\psi\psi}}
-        -\tfrac{2\mu_0p'\mathcal J\kappa_\psi}{g^{\psi\psi}},
-\label{eq:WK}\\
-W_{YV}&=-\tfrac{2\pi f'}{\chi'}\mathcal J S_\psi+2\pi f'q'\chi'
-        -\mu_0p'\,\partial_\theta\!\big(\mathcal J\tfrac{g^{\psi\theta}}{g^{\psi\psi}}\big).
-\label{eq:WYV}
-\end{align}
-Target
-$\;W_\star=\mu_0p'\tfrac{\chi''}{\chi'}\mathcal J+\mu_0p'\mathcal J'-2\pi f'q'\chi'$,
-i.e.\ $\mathbf H_4=\mu_0p'(\tfrac{\chi''}{\chi'}\mathbf J+\mathbf J')-2\pi f'q'\chi'\mathbf I$.
-
-\paragraph{Step 1 — parallel current ($\mu_0\mathbf j\cdot\mathbf B=\mu_0\sigma B^2$).}
-The first term of \eqref{eq:WV} and the second of \eqref{eq:WK} cancel pointwise:
-\begin{equation}
-\mathcal J\tfrac{\mu_0^2\sigma(\mathbf j\cdot\mathbf B)}{g^{\psi\psi}}
--\mathcal J\tfrac{\mu_0^2\sigma^2B^2}{g^{\psi\psi}}=0
-\;\Longrightarrow\;
-W_V+W_K=\mathcal J\tfrac{(\mu_0p')^2}{B^2}
--\mathcal J\mu_0\sigma S_\psi
--\tfrac{2\mu_0p'\mathcal J\kappa_\psi}{g^{\psi\psi}}.
-\label{eq:step1}
-\end{equation}
-
-\paragraph{Step 2 — $\sigma$ identity
-$\;\mu_0\sigma=-\tfrac{2\pi f'}{\chi'}-\tfrac{\mu_0p'\mathcal J\,\mathcal D}{B^2}$.}
-The shear term of \eqref{eq:step1} splits:
-\begin{equation}
--\mathcal J\mu_0\sigma S_\psi
-=\underbrace{\tfrac{2\pi f'}{\chi'}\mathcal J S_\psi}_{\text{cancels \eqref{eq:WYV}}}
-+\tfrac{\mu_0p'\mathcal J^2\mathcal D}{B^2}\,S_\psi .
-\label{eq:step2}
-\end{equation}
-
-\paragraph{Step 3 — sum $\mathcal W=\eqref{eq:WUV}+\eqref{eq:step1}+\eqref{eq:WYV}$.}
-The $\tfrac{2\pi f'}{\chi'}\mathcal J S_\psi$ pair cancels and
-$-4\pi f'q'\chi'+2\pi f'q'\chi'=-2\pi f'q'\chi'$, leaving
+The closure is most transparent pointwise in $\theta$.  Write the sector as
+$\int d\theta\,\mathcal W\,|\xi_\psi|^2$, abbreviating $g^{\psi\psi}=|\nabla\psi|^2$.  The
+assembled pointwise weight $\mathcal W$ was obtained at the end of
+Sec.~\ref{app:reductions}; inserting the $\sigma$ identity of
+Sec.~\ref{app:sigma},
+$\tfrac{2\pi f'}{\chi'}+\mu_0\sigma=-\tfrac{\mu_0p'\mathcal J\,\mathcal D}{B^2}$,
+into its shear term $-\big(\mu_0\sigma+\tfrac{2\pi f'}{\chi'}\big)\mathcal J S_\psi$
+gives
 \begin{equation}
 \mathcal W=-2\pi f'q'\chi'
 +2\mu_0p'\tfrac{\chi''}{\chi'}\mathcal J
@@ -3662,9 +3195,12 @@ $-4\pi f'q'\chi'+2\pi f'q'\chi'=-2\pi f'q'\chi'$, leaving
 +\tfrac{\mu_0p'\mathcal J^2\mathcal D}{B^2}\,S_\psi .
 \label{eq:step3}
 \end{equation}
+The target is
+$\;W_\star=\mu_0p'\tfrac{\chi''}{\chi'}\mathcal J+\mu_0p'\mathcal J'-2\pi f'q'\chi'$,
+i.e.\ $\mathbf H_4=\mu_0p'(\tfrac{\chi''}{\chi'}\mathbf J+\mathbf J')-2\pi f'q'\chi'\mathbf I$.
 
-\paragraph{Step 4 — $\mathcal W=W_\star$, divide by $\mu_0p'$ (master identity).}
-Subtracting $W_\star$ (the $-2\pi f'q'\chi'$ and one $\mu_0p'\tfrac{\chi''}{\chi'}\mathcal J$ match):
+\paragraph{Master identity ($\mathcal W=W_\star$, divided by $\mu_0p'$).}
+Subtracting $W_\star$ from \eqref{eq:step3} (the $-2\pi f'q'\chi'$ and one $\mu_0p'\tfrac{\chi''}{\chi'}\mathcal J$ match):
 \begin{equation}
 \boxed{\;
 \mathcal J\frac{\chi''}{\chi'}
@@ -3677,194 +3213,135 @@ Subtracting $W_\star$ (the $-2\pi f'q'\chi'$ and one $\mu_0p'\tfrac{\chi''}{\chi
 \end{equation}
 with the inputs
 \begin{equation}
-\mathcal D
-\equiv g^{\psi\psi}(q\,g^{\theta\theta}-g^{\theta\zeta})
--g^{\psi\theta}(q\,g^{\psi\theta}-g^{\psi\zeta}),
-\qquad
 S_\psi=\frac{\chi'^2}{\mathcal J}\Big[q'+\partial_\theta G_s\Big],
 \qquad
-G_s\equiv\frac{q\,g^{\psi\theta}-g^{\psi\zeta}}{g^{\psi\psi}} .
+G_s\equiv\frac{q\,g^{\psi\theta}-g^{\psi\zeta}}{g^{\psi\psi}},
 \label{eq:DSdef}
 \end{equation}
+and $\mathcal D$ as defined in Sec.~\ref{app:sigma}.
 
-\paragraph{Cofactor form of $\mathcal D$ ($g^{ij}=(g_{ij})^{-1}$, $\det g_{ij}=\mathcal J^2$).}
-The minors are
-$g^{\psi\psi}g^{\theta\theta}-(g^{\psi\theta})^2=g_{\zeta\zeta}/\mathcal J^2$,
-$\;g^{\psi\psi}g^{\theta\zeta}-g^{\psi\theta}g^{\psi\zeta}=-g_{\theta\zeta}/\mathcal J^2$, hence
-\begin{equation}
-\boxed{\;
-\mathcal D=\frac{q\,g_{\zeta\zeta}+g_{\theta\zeta}}{\mathcal J^2}
-=\frac{\partial_q G_\alpha}{2\mathcal J^2},
-\qquad
-\frac{\chi'^2\mathcal D}{B^2}
-=\frac{q\,g_{\zeta\zeta}+g_{\theta\zeta}}{G_\alpha},
-\;}
-\qquad
-G_\alpha\equiv g_{\theta\theta}+2q\,g_{\theta\zeta}+q^2g_{\zeta\zeta}=\frac{\mathcal J^2B^2}{\chi'^2}.
-\label{eq:cofactor}
-\end{equation}
-
-\paragraph{Step 5 — insert $\kappa_\psi$ and $S_\psi$ into \eqref{eq:master}.}
-With
-$\kappa_\psi=\tfrac{g^{\psi\psi}}{B^2}\big[\mu_0p'
-+\tfrac12\partial_\psi B^2+\tfrac12\partial_\theta B^2\,\tfrac{g^{\psi\theta}}{g^{\psi\psi}}\big]$,
-\begin{equation}
--\frac{2\mathcal J\kappa_\psi}{g^{\psi\psi}}
-=-\frac{2\mathcal J\mu_0p'}{B^2}
- -\frac{\mathcal J\,\partial_\psi B^2}{B^2}
- -\frac{\mathcal J\,g^{\psi\theta}\,\partial_\theta B^2}{g^{\psi\psi}B^2},
-\qquad
-\frac{\mathcal J^2\mathcal D}{B^2}\,S_\psi
-=\mathcal J\,\frac{q\,g_{\zeta\zeta}+g_{\theta\zeta}}{G_\alpha}\,\big(q'+\partial_\theta G_s\big).
-\label{eq:step5a}
-\end{equation}
-Using $\beta^2\equiv B^2/\chi'^2=G_\alpha/\mathcal J^2$,
-\begin{equation}
-\frac{\partial_\psi B^2}{B^2}=2\frac{\chi''}{\chi'}+\frac{\partial_\psi\beta^2}{\beta^2},
-\qquad
-\frac{\partial_\theta B^2}{B^2}=\frac{\partial_\theta G_\alpha}{G_\alpha}-2\frac{\partial_\theta\mathcal J}{\mathcal J},
-\qquad
-\frac{\mathcal J\mu_0p'}{B^2}-\frac{2\mathcal J\mu_0p'}{B^2}=-\frac{\mathcal J\mu_0p'}{B^2},
-\label{eq:step5b}
-\end{equation}
-so $\mathcal J\tfrac{\chi''}{\chi'}-2\mathcal J\tfrac{\chi''}{\chi'}=-\mathcal J\tfrac{\chi''}{\chi'}$ and \eqref{eq:master} becomes
-\begin{equation}
-\boxed{\;
-\begin{aligned}
-&-\mathcal J\frac{\chi''}{\chi'}
--\frac{\mathcal J\mu_0p'}{B^2}
--\mathcal J\frac{\partial_\psi\beta^2}{\beta^2}
--\frac{\mathcal J\,g^{\psi\theta}}{g^{\psi\psi}}\Big(\frac{\partial_\theta G_\alpha}{G_\alpha}-2\frac{\partial_\theta\mathcal J}{\mathcal J}\Big)\\
-&\qquad
--\partial_\theta\!\Big(\mathcal J\frac{g^{\psi\theta}}{g^{\psi\psi}}\Big)
-+\frac{\mathcal J\,(q\,g_{\zeta\zeta}+g_{\theta\zeta})}{G_\alpha}\big(q'+\partial_\theta G_s\big)
-=\mathcal J' .
-\end{aligned}\;}
-\label{eq:gsstep}
-\end{equation}
-
-Equation~\eqref{eq:gsstep} is the remaining Grad--Shafranov input.  It can be
-derived directly from the covariant-component form of
-\(\nabla\times\mathbf B=\mu_0\mathbf j\), as follows.  Define
-\begin{equation}
-A\equiv\frac{g^{\psi\theta}}{g^{\psi\psi}},
-\qquad
-H\equiv qg_{\zeta\zeta}+g_{\theta\zeta},
-\qquad
-\mathcal C_B\equiv B_\theta+qB_\zeta .
-\end{equation}
-Since \(B^\theta=\chi'/\mathcal J\) and \(B^\zeta=q\chi'/\mathcal J\),
+\paragraph{Direct proof from Amp\`ere's law.}
+The master identity \eqref{eq:master} is proved directly from
+\(\nabla\times\mathbf B=\mu_0\mathbf j\); nothing beyond the covariant field
+components $B_i$ is needed.  Since $B^\theta=\chi'/\mathcal J$,
+$B^\zeta=q\chi'/\mathcal J$, and $B^\psi=0$,
 \begin{equation}
 B_i=g_{i\theta}B^\theta+g_{i\zeta}B^\zeta
-=\frac{\chi'}{\mathcal J}(g_{i\theta}+qg_{i\zeta}),
+=\frac{\chi'}{\mathcal J}\,(g_{i\theta}+qg_{i\zeta}),
 \qquad
-B_\zeta=\frac{\chi'}{\mathcal J}H,
+B^2=B_\theta B^\theta+B_\zeta B^\zeta
+=\frac{\chi'}{\mathcal J}\,\big(B_\theta+qB_\zeta\big),
+\label{eq:Bcov_GS}
+\end{equation}
+so that
+\begin{equation}
+B_\theta+qB_\zeta=\frac{\mathcal J B^2}{\chi'},
 \qquad
-\mathcal C_B=\frac{\chi'}{\mathcal J}G_\alpha
-=\frac{\mathcal J B^2}{\chi'} .
+\mathcal D
+=\frac{q\,g_{\zeta\zeta}+g_{\theta\zeta}}{\mathcal J^2}
+=\frac{B_\zeta}{\mathcal J\chi'},
+\label{eq:Dzeta_GS}
 \end{equation}
-The inverse-metric cofactor identities give
+the second using the cofactor form of $\mathcal D$ from
+Sec.~\ref{app:sigma} together with
+$B_\zeta=\tfrac{\chi'}{\mathcal J}(g_{\theta\zeta}+qg_{\zeta\zeta})$
+from \eqref{eq:Bcov_GS}.  Moreover, raising the index with $B^\psi=0$,
 \begin{equation}
-g_{\psi\theta}+qg_{\psi\zeta}
-=-A\,G_\alpha+G_s\,H,
+0=B^\psi=g^{\psi\psi}B_\psi+g^{\psi\theta}B_\theta+g^{\psi\zeta}B_\zeta
+\;\Longrightarrow\;
+B_\psi
+=-\frac{g^{\psi\theta}}{g^{\psi\psi}}\,\frac{\mathcal J B^2}{\chi'}
++G_s\,B_\zeta ,
+\label{eq:Bpsi_GS}
 \end{equation}
-and therefore
-\begin{equation}
-B_\psi=-A\,\mathcal C_B+G_s B_\zeta .
-\label{eq:Bpsi_GS_closure}
-\end{equation}
+where the definition \eqref{eq:DSdef} of $G_s$ supplies
+$g^{\psi\zeta}/g^{\psi\psi}=q\,g^{\psi\theta}/g^{\psi\psi}-G_s$ and
+\eqref{eq:Dzeta_GS} recombines $B_\theta+qB_\zeta$.
 
-For an axisymmetric equilibrium the contravariant curl components are
+For an axisymmetric equilibrium ($\partial_\zeta=0$) the contravariant
+components of $\mu_0\mathbf j=\nabla\times\mathbf B$ are
 \begin{equation}
-\mu_0j^\theta=-\frac{1}{\mathcal J}\partial_\psi B_\zeta,
+\mu_0\mathcal J\,j^\psi=\partial_\theta B_\zeta,
 \qquad
-\mu_0j^\zeta=
-\frac{1}{\mathcal J}\left(\partial_\psi B_\theta-\partial_\theta B_\psi\right).
-\label{eq:covcurl_GS_closure}
+\mu_0\mathcal J\,j^\theta=-\partial_\psi B_\zeta,
+\qquad
+\mu_0\mathcal J\,j^\zeta=\partial_\psi B_\theta-\partial_\theta B_\psi .
 \end{equation}
-Using the physical-\(f'\) current convention of
-\eqref{eq:app_dconcurrents}, the first of \eqref{eq:covcurl_GS_closure} gives
+With the currents \eqref{eq:dconcurrents} and the magnetic-surface condition
+$\mathbf j\cdot\nabla\psi=0$,
 \begin{equation}
+\partial_\theta B_\zeta=0,
+\qquad
 \partial_\psi B_\zeta=2\pi f',
 \qquad
-B_\zeta=2\pi f(\psi),
-\qquad
-\partial_\theta B_\zeta=0 .
-\end{equation}
-Here the last two statements are the usual Grad--Shafranov convention that the
-covariant toroidal-field function \(f\) is a flux function; this is the same
-convention encoded in \eqref{eq:app_dconcurrents}.  The second of
-\eqref{eq:covcurl_GS_closure} gives
-\begin{equation}
 \partial_\psi B_\theta-\partial_\theta B_\psi
-=-\frac{\mathcal J\mu_0p'}{\chi'}-2\pi qf' .
+=-\frac{\mathcal J\mu_0p'}{\chi'}-2\pi qf' ,
+\label{eq:ampere_GS}
 \end{equation}
-Substituting \(\mathcal C_B=B_\theta+qB_\zeta\) and
-\(\partial_\psi B_\zeta=2\pi f'\) cancels the explicit \(2\pi qf'\) terms and
-leaves
-\begin{equation}
-\partial_\psi\mathcal C_B-\partial_\theta B_\psi
-=q'B_\zeta-\frac{\mathcal J\mu_0p'}{\chi'} .
-\end{equation}
-Using \eqref{eq:Bpsi_GS_closure} and \(\partial_\theta B_\zeta=0\), this becomes
-\begin{equation}
-\partial_\psi\mathcal C_B+\partial_\theta(A\mathcal C_B)
--B_\zeta(q'+\partial_\theta G_s)
-+\frac{\mathcal J\mu_0p'}{\chi'}=0 .
-\label{eq:CB_GS_closure}
-\end{equation}
+i.e.\ $B_\zeta=2\pi f(\psi)$ is a flux function and the $j^\zeta$ component
+carries the Grad--Shafranov force balance.
 
-Multiply \eqref{eq:CB_GS_closure} by
-\(\chi'/B^2=\mathcal J/\mathcal C_B\).  The three geometric factors reduce as
-\begin{align}
-\frac{\chi'}{B^2}\partial_\psi\mathcal C_B
-&=
-\mathcal J'
-+\mathcal J\frac{\partial_\psi B^2}{B^2}
--\mathcal J\frac{\chi''}{\chi'},\\
-\frac{\chi'}{B^2}\partial_\theta(A\mathcal C_B)
-&=
-\partial_\theta(\mathcal J A)
-+\mathcal J A\frac{\partial_\theta B^2}{B^2},\\
-\frac{\chi'}{B^2}B_\zeta
-&=
-\mathcal J\frac{H}{G_\alpha}.
-\end{align}
-Thus Grad--Shafranov gives
+Now differentiate $\mathcal JB^2/\chi'=B_\theta+qB_\zeta$ radially and insert
+\eqref{eq:ampere_GS}; the explicit $2\pi qf'$ terms cancel:
 \begin{equation}
-\begin{aligned}
+\partial_\psi\!\Big(\frac{\mathcal JB^2}{\chi'}\Big)
+=\partial_\psi B_\theta+q'B_\zeta+2\pi qf'
+=\partial_\theta B_\psi+q'B_\zeta-\frac{\mathcal J\mu_0p'}{\chi'} .
+\end{equation}
+Expanding the left side by the product rule and multiplying through by
+$\chi'/B^2$,
+\begin{equation}
 \mathcal J'
-&=
-\mathcal J\frac{\chi''}{\chi'}
+=\mathcal J\frac{\chi''}{\chi'}
 -\mathcal J\frac{\partial_\psi B^2}{B^2}
--\partial_\theta(\mathcal J A)
--\mathcal J A\frac{\partial_\theta B^2}{B^2}\\
-&\quad
-+\mathcal J\frac{H}{G_\alpha}(q'+\partial_\theta G_s)
--\frac{\mathcal J\mu_0p'}{B^2}.
-\end{aligned}
-\label{eq:GS_before_beta}
+-\frac{\mathcal J\mu_0p'}{B^2}
++\frac{\chi'}{B^2}\big(\partial_\theta B_\psi+q'B_\zeta\big) .
+\label{eq:Jprime_GS}
 \end{equation}
-Finally use
-\[
-\frac{\partial_\psi B^2}{B^2}
-=2\frac{\chi''}{\chi'}+\frac{\partial_\psi\beta^2}{\beta^2},
-\qquad
-\frac{\partial_\theta B^2}{B^2}
-=\frac{\partial_\theta G_\alpha}{G_\alpha}
--2\frac{\partial_\theta\mathcal J}{\mathcal J},
-\qquad
-H=qg_{\zeta\zeta}+g_{\theta\zeta}.
-\]
-Equation~\eqref{eq:GS_before_beta} is then exactly \eqref{eq:gsstep}.  Hence the
-master identity \eqref{eq:master} is an analytic consequence of the
-Grad--Shafranov equilibrium, not a numerical closure.
+The $\theta$-derivative of \eqref{eq:Bpsi_GS} (with $\partial_\theta B_\zeta=0$)
+gives
+\begin{equation}
+\frac{\chi'}{B^2}\,\partial_\theta B_\psi
+=-\partial_\theta\!\Big(\mathcal J\frac{g^{\psi\theta}}{g^{\psi\psi}}\Big)
+-\mathcal J\frac{g^{\psi\theta}}{g^{\psi\psi}}\,\frac{\partial_\theta B^2}{B^2}
++\frac{\chi' B_\zeta}{B^2}\,\partial_\theta G_s ,
+\end{equation}
+while \eqref{eq:Dzeta_GS} and the definition \eqref{eq:DSdef} of $S_\psi$
+combine the $q'$ and $\partial_\theta G_s$ pieces into
+\begin{equation}
+\frac{\chi' B_\zeta}{B^2}\,\big(q'+\partial_\theta G_s\big)
+=\frac{\mathcal J^2\mathcal D}{B^2}\,S_\psi .
+\end{equation}
+Hence \eqref{eq:Jprime_GS} becomes
+\begin{equation}
+\mathcal J'
+=\mathcal J\frac{\chi''}{\chi'}
+-\frac{\mathcal J\mu_0p'}{B^2}
+-\frac{\mathcal J}{B^2}\Big(\partial_\psi B^2
++\frac{g^{\psi\theta}}{g^{\psi\psi}}\,\partial_\theta B^2\Big)
+-\partial_\theta\!\Big(\mathcal J\frac{g^{\psi\theta}}{g^{\psi\psi}}\Big)
++\frac{\mathcal J^2\mathcal D}{B^2}\,S_\psi .
+\label{eq:Jprime_GS2}
+\end{equation}
+Finally, the curvature
+$\kappa_\psi=\tfrac{g^{\psi\psi}}{B^2}\big[\mu_0p'
++\tfrac12\partial_\psi B^2+\tfrac12\partial_\theta B^2\,\tfrac{g^{\psi\theta}}{g^{\psi\psi}}\big]$
+identifies
+\begin{equation}
+-\frac{\mathcal J}{B^2}\Big(\partial_\psi B^2
++\frac{g^{\psi\theta}}{g^{\psi\psi}}\,\partial_\theta B^2\Big)
+=-\frac{2\mathcal J\kappa_\psi}{g^{\psi\psi}}
++\frac{2\mathcal J\mu_0p'}{B^2},
+\end{equation}
+which turns \eqref{eq:Jprime_GS2} into exactly \eqref{eq:master}.  Hence the
+master identity is an analytic consequence of the Grad--Shafranov
+equilibrium, not a numerical closure.
 
-This closes the residual of Sec.~\ref{app:assembly}: multiplying~\eqref{eq:gsstep} by $\mu_0p'$
+This closes the reduction: multiplying~\eqref{eq:master} by $\mu_0p'$
 converts the geometric $\theta$-derivative
 $-\mu_0p'\partial_\theta(\mathcal J\,g^{\psi\theta}/g^{\psi\psi})$, the
 $(\mu_0p')^2/B^2$ term of $|\mathbf V|^2$, and the pressure--curvature part of
-$K$ into $\mu_0p'\mathcal J'$, so the bracket of~\eqref{eq:H4_expanded} becomes
+$K$ into $\mu_0p'\mathcal J'$, so the corresponding bracket of~\eqref{eq:step3} becomes
 $\mu_0p'(\mathcal J'-\mathcal J\chi''/\chi')$.  Together with the clean
 \(\mu_0p'\mathcal J\chi''/\chi'\) piece already isolated in
 \eqref{eq:step3}, this gives
@@ -3878,7 +3355,7 @@ and the compact $\mathbf H_4$ follows by Fourier projection.
 \subsection{The two equivalent final forms of $\mathbf H_4$}
 
 \paragraph{Equilibrium-free form.}
-Projecting \eqref{eq:WUV}--\eqref{eq:WYV} directly,
+Projecting the reduced pointwise weights of Sec.~\ref{app:reductions} directly,
 \begin{equation}
 \boxed{\;\mathbf H_4=\mathbf H_{YV}+\mathbf H_{UV}+\mathbf H_V+\mathbf H_K\;,}
 \end{equation}
@@ -3895,8 +3372,8 @@ Projecting \eqref{eq:WUV}--\eqref{eq:WYV} directly,
 exact term by term ($=$ Eq.~\eqref{eq:ep_bernsteinK}), with no equilibrium
 identity invoked.  The compact form
 $\mathbf H_4=\mu_0p'(\tfrac{\chi''}{\chi'}\mathbf J+\mathbf J')-2\pi f'q'\chi'\mathbf I$
-is the same matrix, obtained from \eqref{eq:WUV}--\eqref{eq:WYV} through the
-Grad--Shafranov closure \eqref{eq:gsstep} derived above.  The global
+is the same matrix, obtained through the
+Grad--Shafranov closure \eqref{eq:master} derived above.  The global
 term-to-matrix assignment and the resulting $\mathbf C,\mathbf E,\mathbf H$
 matrices are collected in the main text.
 
