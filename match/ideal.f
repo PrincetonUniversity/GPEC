@@ -313,15 +313,25 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(mpert) :: ipiv
       COMPLEX(r8), DIMENSION(mpert) :: uedge,temp1
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp2
+      CHARACTER(128) :: message
 c-----------------------------------------------------------------------
 c     construct uedge.
 c-----------------------------------------------------------------------
       WRITE(*,*)"Construct ideal eigenfunctions."
       IF(ripple_flag)THEN
+         IF(mripple < mlow .OR. mripple > mhigh)THEN
+            WRITE(message,'(a,i6,a,i6,a,i6)')"mripple = ",mripple,
+     $           " out of range ",mlow," to ",mhigh
+            CALL program_stop(message)
+         ENDIF
          uedge=0
          uedge(mripple-mlow+1)=1
       ELSE
-         WRITE(*,*)"sol_num = ",sol_num
+         IF(sol_num < 1 .OR. sol_num > mpert)THEN
+            WRITE(message,'(a,i6,a,i6)')"sol_num = ",sol_num,
+     $           " out of range 1 to ",mpert
+            CALL program_stop(message)
+         ENDIF
          uedge=wt(:,sol_num)
       ENDIF
       temp2=soltype(mstep)%u(:,1:mpert,1)

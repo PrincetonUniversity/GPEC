@@ -56,7 +56,13 @@ c-----------------------------------------------------------------------
       IF(ideal_flag)THEN
          CALL ideal_transform
          CALL ideal_build(sol_num)
-         CALL ideal_write(sol_num)
+c     ripple_flag builds a unit-vector uedge and ignores sol_num, so
+c     keep the default output name rather than a sol_num-labeled one.
+         IF(ripple_flag)THEN
+            CALL ideal_write(1)
+         ELSE
+            CALL ideal_write(sol_num)
+         ENDIF
          CALL ideal_chord
          IF(contour_flag)CALL ideal_contour
       ENDIF
