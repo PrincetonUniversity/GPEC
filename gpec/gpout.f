@@ -1556,7 +1556,7 @@ c-----------------------------------------------------------------------
      $           a_id,pp_id,cp_id,wp_id,np_id,dp_id,dd_id,pr_id,wc_id,
      $           bc_id,ti_id,te_id,ni_id,ne_id,we_id,wi_id,q1_id,rh_id,
      $           r1_id,ssp_id,lq_id,rt_id,at_id,wmin_id,wsat_id,pm_id,
-     $           ps_id,astat
+     $           ps_id,pcc_id,astat
 
       INTEGER :: itheta,ising,icoup
       REAL(r8) :: respsi,lpsi,rpsi,shear,hdist,sbnosurf
@@ -1588,7 +1588,7 @@ c-----------------------------------------------------------------------
       TYPE(spline_type) :: sr
 
       REAL(r8), DIMENSION(msing) :: b_crit, ti_r, te_r, ni_r, ne_r,
-     $    q1_r, we_r, wi_r, rh_r, r1_r, dP_r, P_r
+     $    q1_r, we_r, wi_r, rh_r, r1_r, dP_r, P_r, phi_crit_callen
       REAL(r8) :: omega_i,omega_e,jxb,omega_sol,br_th,slayer_shear,
      $     pleft, pright, psileft, psiright
       REAL(r8) :: slayer_inpr_loc
@@ -1715,6 +1715,7 @@ c-----------------------------------------------------------------------
          hw_sat(ising) = 0.0_r8
          hw_min(ising) = 0.0_r8
          b_crit(ising) = 0.0_r8
+         phi_crit_callen(ising) = 0.0_r8
          dP_r(ising) = 0.0_r8
          P_r(ising) = sq%f(2) / mu0
          IF (callen_threshold_flag. OR. slayer_threshold_flag) THEN
@@ -1843,6 +1844,16 @@ c-----------------------------------------------------------------------
             ! convert from meters to psi_n for clear comparision to hw_isl
             hw_v_crit(ising) = hw_v_crit(ising) / sr%f1(1)
 
+            ! Critical resonant flux for w_vac = w_v_crit (Callen); the
+            ! analog of the SLAYER Phi_res_crit (b_crit) for direct
+            ! model comparison. Since w_vac ~ sqrt(Phi_res), the flux
+            ! needed to reach the critical width is Phi_res*(w_crit/w_vac)^2
+            ! (hw_v and hw_v_crit are both in psi_n here).
+            IF (ALLOCATED(vsingfld) .AND. hw_v(ising) > 0.0_r8) THEN
+               phi_crit_callen(ising) = ABS(vsingfld(ising))
+     $              * (hw_v_crit(ising) / hw_v(ising))**2
+            ENDIF
+
             ! If we are above hw_v_crit then we can estimate the pressure lost assuming flat
             ! pressure inside the island. NOTE: this per-surface dP_r/P_r
             ! estimate uses the unmodified equilibrium pressure (sq) for
@@ -1884,13 +1895,14 @@ c-----------------------------------------------------------------------
          IF (verbose) THEN
 
             IF (callen_threshold_flag .OR. slayer_threshold_flag) THEN
-               IF(ising == 1) WRITE(*,'(1x,11a13)')
-     $              "psi","q","singflx","singlfx_crit","chirikov",
+               IF(ising == 1) WRITE(*,'(1x,12a13)')
+     $              "psi","q","singflx","singlfx_crit","Phi_crit_cal",
+     $              "chirikov",
      $              "w_island", "w_v", "w_v_crit",
      $              "w_sat","w_min","dP/P"
-               WRITE(*,'(1x,es13.3,f13.3,2es13.3,f13.3,6es13.3)')
+               WRITE(*,'(1x,es13.3,f13.3,3es13.3,f13.3,6es13.3)')
      $              respsi,sq%f(4),ABS(singflx_mn(resnum(ising),ising)),
-     $              ABS(b_crit(ising)),
+     $              ABS(b_crit(ising)),ABS(phi_crit_callen(ising)),
      $              chirikov(ising),2*hw_isl(ising),
      $              2*hw_v(ising),2*hw_v_crit(ising),
      $              2*hw_sat(ising),2*hw_min(ising),
@@ -1967,16 +1979,16 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,a12,1x,I4)')"msing =",msing
          WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a6,18(1x,a16))')"q","psi","spot",
+         WRITE(out_unit,'(1x,a6,19(1x,a16))')"q","psi","spot",
      $        "real(singflx)","imag(singflx)",
      $        "real(singcur)","imag(singcur)",
      $        "real(singbwp)","imag(singbwp)",
      $        "real(Delta)","imag(Delta)",
      $        "half_w_isl","chirikov",
-     $        "half_w_isl_v_crit","singflx_crit",
+     $        "half_w_isl_v_crit","singflx_crit","Phi_crit_callen",
      $        "half_w_sat","half_w_min","dP","P"
          DO ising=1,msing
-            WRITE(out_unit,'(1x,f6.3,18(es17.8e3))')
+            WRITE(out_unit,'(1x,f6.3,19(es17.8e3))')
      $           singtype(ising)%q,singtype(ising)%psifac,
      $           spots(ising),
      $           REAL(singflx_mn(resnum(ising),ising)),
@@ -1985,7 +1997,7 @@ c-----------------------------------------------------------------------
      $           REAL(singbwp(ising)),AIMAG(singbwp(ising)),
      $           REAL(delta(ising)),AIMAG(delta(ising)),
      $           hw_isl(ising),chirikov(ising),
-     $           hw_v_crit(ising),b_crit(ising),
+     $           hw_v_crit(ising),b_crit(ising),phi_crit_callen(ising),
      $           hw_sat(ising),hw_min(ising),
      $           dP_r(ising),P_r(ising)
          ENDDO
@@ -2077,6 +2089,12 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(fncid, bc_id, "units", "T") )
          CALL check( nf90_put_att(fncid, bc_id, "long_name",
      $     "Critical resonant field for island growth from SLAYER") )
+         CALL check( nf90_def_var(fncid, "Phi_res_crit_callen",
+     $      nf90_double, (/q_id/), pcc_id) )
+         CALL check( nf90_put_att(fncid, pcc_id, "units", "T") )
+         CALL check( nf90_put_att(fncid, pcc_id, "long_name",
+     $     "Critical resonant field for island growth from Callen "//
+     $     "model") )
          CALL check( nf90_def_var(fncid, "K_isl", nf90_double,
      $      (/q_id/), k_id) )
          CALL check( nf90_put_att(fncid, k_id, "long_name",
@@ -2165,6 +2183,7 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_var(fncid, dp_id, dP_r) )
          CALL check( nf90_put_var(fncid, pr_id, P_r) )
          CALL check( nf90_put_var(fncid, bc_id, b_crit) )
+         CALL check( nf90_put_var(fncid, pcc_id, phi_crit_callen) )
          CALL check( nf90_put_var(fncid, k_id, chirikov) )
          CALL check( nf90_put_var(fncid, ti_id, ti_r) )
          CALL check( nf90_put_var(fncid, te_id, te_r) )
