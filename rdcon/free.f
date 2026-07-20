@@ -102,7 +102,7 @@ c-----------------------------------------------------------------------
          temp=CONJG(TRANSPOSE(u(:,1:mpert,1)))
          wp=u(:,1:mpert,2)
          wp=CONJG(TRANSPOSE(wp))
-         CALL zgetrf(mpert,mpert,temp,mpert,ipiv,info)  
+         CALL zgetrf(mpert,mpert,temp,mpert,ipiv,info)
          CALL zgetrs('N',mpert,mpert,temp,mpert,ipiv,wp,mpert,info)
          wp=(wp+CONJG(TRANSPOSE(wp)))/(2*psio**2)
       ELSE
@@ -140,7 +140,7 @@ c-----------------------------------------------------------------------
       ENDIF
       IF(wv_farwall_flag)THEN
          temp=wv
-      ENDIF         
+      ENDIF
 
       farwal_flag=.FALSE. ! self-inductance with the wall.
       kernelsignin=-1.0
@@ -208,7 +208,7 @@ c-----------------------------------------------------------------------
          wt(:,isol)=wt(:,isol)*phase
          star(:,isol)=' '
          star(imax(1,isol),isol)='*'
-      ENDDO      
+      ENDDO
 c-----------------------------------------------------------------------
 c     compute plasma and vacuum contributions.
 c-----------------------------------------------------------------------
@@ -292,7 +292,6 @@ c-----------------------------------------------------------------------
 
       ! IF (.NOT.ALLOCATED(galwt)) ALLOCATE(galwt(mpert,mpert))
       ! galwt=wt*psio*twopi*1e-3
-      
 
 
 
@@ -300,7 +299,8 @@ c-----------------------------------------------------------------------
 
 
 
-      lwork=2*mpert+1      
+
+      lwork=2*mpert+1
       CALL zgeev('V','V',mpert,wp,mpert,ep,
      $     vl,mpert,vr,mpert,work2,lwork,rwork2,info)
       eindex(1:mpert)=(/(ipert,ipert=1,mpert)/)
@@ -310,7 +310,7 @@ c-----------------------------------------------------------------------
          wp(:,ipert)=vr(:,eindex(mpert+1-ipert))
          ep(ipert)=tt(eindex(mpert+1-ipert))
       ENDDO
-      CALL zheev('V','U',mpert,wv,mpert,ev,work,lwork,rwork,info) 
+      CALL zheev('V','U',mpert,wv,mpert,ev,work,lwork,rwork,info)
 
 c-----------------------------------------------------------------------
 c     optionally write netcdf file.
@@ -350,13 +350,13 @@ c-----------------------------------------------------------------------
       ELSE
          inmemory = .FALSE.
       ENDIF
-   
+
       IF(PRESENT(ahgstr_op))THEN
          ahgstr = ahgstr_op
       ELSE
          ahgstr = "ahg2msc_rdcon.out"
       ENDIF
-   
+
 c-----------------------------------------------------------------------
 c     compute output.
 c-----------------------------------------------------------------------
@@ -666,7 +666,7 @@ c     get vacuum response matrix.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       SUBROUTINE free_get_wvac()
       LOGICAL, PARAMETER :: complex_flag=.FALSE.
       INTEGER :: ipert
@@ -678,7 +678,7 @@ c-----------------------------------------------------------------------
 
 c-----------------------------------------------------------------------
 c     allocate vacuum matrix.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       IF (ALLOCATED(wvac)) RETURN
       ALLOCATE (wvac(mpert,mpert))
 c-----------------------------------------------------------------------
@@ -699,10 +699,10 @@ c-----------------------------------------------------------------------
       DO ipert=1,mpert
          wvac(ipert,:)=wvac(ipert,:)*singfac
          wvac(:,ipert)=wvac(:,ipert)*singfac
-      ENDDO      
+      ENDDO
 c-----------------------------------------------------------------------
 c     terminate.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE free_get_wvac
       END MODULE rdcon_free_mod

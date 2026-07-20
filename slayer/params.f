@@ -20,7 +20,7 @@ c-----------------------------------------------------------------------
      $            lbeta,tau_i,tau_h,tau_r,tau_v
 
       ! mu_i: ion mass ratio to proton
-      tau= t_i/t_e ! ratio of ion to electron temperature 
+      tau= t_i/t_e ! ratio of ion to electron temperature
       tau_i = 6.6e17*mu_i**0.5*(t_i/1e3)**1.5/(n_e*lnLamb) ! ion colls.
       eta= 1.65e-9*lnLamb/(t_e/1e3)**1.5 ! spitzer resistivity (wesson)
       rho=(mu_i*m_p)*n_e ! mass density
@@ -32,21 +32,21 @@ c-----------------------------------------------------------------------
       tau_h=R0*(mu0*rho)**0.5/(nn*sval*bt) ! alfven time across surface
       tau_r=mu0*rs**2.0/eta ! resistive time scale
       tau_v=tau_r/pr !rho*rs**2.0/visc ! viscous time scale
-      
+
       ! this one must be anomalous. calculated back from pr.
-      visc= rho*rs**2.0/tau_v 
-      
-      lu=tau_r/tau_h ! Lundquist number 
+      visc= rho*rs**2.0/tau_v
+
+      lu=tau_r/tau_h ! Lundquist number
 !      pr=tau_r/tau_v ! Prandtl number. Only place needs viscosity.
-      
+
       omega_e=-t_e/(bt*R0)*(1.0/l_n+1.0/l_t)*qval ! elec. diamag
       omega_i=t_i/(bt*R0)*(1.0/l_n+1.0/l_t)*qval ! ion diamag
 
       ! now calculate the main 7 normalized parameters.
 
       Qconv=lu**(1.0/3.0)*tau_h ! conversion to Qs based on Cole
-      
-      ! note Q depends on Qconv even if omega is fixed.     
+
+      ! note Q depends on Qconv even if omega is fixed.
       Q=Qconv*omega
       Q_e=-Qconv*omega_e
       Q_i=-Qconv*omega_i
@@ -67,10 +67,10 @@ c-----------------------------------------------------------------------
          WRITE(*,*)"Q_e=",Q_e
          WRITE(*,*)"Q_i=",Q_i
          WRITE(*,*)"ds=",ds
-         WRITE(*,*)"c_beta=",c_beta     
+         WRITE(*,*)"c_beta=",c_beta
       ENDIF
 
       RETURN
-      END SUBROUTINE params  
-      
+      END SUBROUTINE params
+
       END MODULE params_mod

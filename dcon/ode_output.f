@@ -27,7 +27,7 @@ c-----------------------------------------------------------------------
 
       CHARACTER(6), DIMENSION(:), POINTER :: name
       INTEGER, DIMENSION(:), POINTER :: sol_out_unit,sol_bin_unit
-      
+
       INTEGER :: neq,ising,istep,m1,nzero
       REAL(r8) :: psifac,psizero,singfac,q,psi_save,psimax,singfac_old,
      $     psifac_old
@@ -279,13 +279,13 @@ c-----------------------------------------------------------------------
       temp=CONJG(TRANSPOSE(u(:,1:mpert,1)))
       wp=u(:,1:mpert,2)
       wp=CONJG(TRANSPOSE(wp))
-      CALL zgetrf(mpert,mpert,temp,mpert,ipiv,info)  
+      CALL zgetrf(mpert,mpert,temp,mpert,ipiv,info)
       CALL zgetrs('N',mpert,mpert,temp,mpert,ipiv,wp,mpert,info)
       wp=(wp+CONJG(TRANSPOSE(wp)))/2
 c-----------------------------------------------------------------------
 c     compute and sort eigenvalues.
 c-----------------------------------------------------------------------
-      lwork=2*mpert-1  
+      lwork=2*mpert-1
       CALL zheev('N','U',mpert,wp,mpert,evals,work,lwork,rwork,info)
       index=(/(ipert,ipert=1,mpert)/)
       key=-ABS(1/evals)
@@ -431,13 +431,13 @@ c-----------------------------------------------------------------------
       wp=CONJG(TRANSPOSE(uu(:,:,1)))
       temp=uu(:,:,2)
       temp=CONJG(TRANSPOSE(temp))
-      CALL zgetrf(mpert,mpert,temp,mpert,ipiv,info)  
+      CALL zgetrf(mpert,mpert,temp,mpert,ipiv,info)
       CALL zgetrs('N',mpert,mpert,temp,mpert,ipiv,wp,mpert,info)
       wp=(wp+CONJG(TRANSPOSE(wp)))/2
 c-----------------------------------------------------------------------
 c     compute and sort inverse eigenvalues.
 c-----------------------------------------------------------------------
-      lwork=2*mpert-1  
+      lwork=2*mpert-1
       CALL zheev('N','U',mpert,wp,mpert,evalsi,work,lwork,rwork,info)
       indexi=(/(ipert,ipert=1,mpert)/)
       key=-ABS(evalsi)
@@ -468,7 +468,7 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psifac
       COMPLEX(r8), DIMENSION(mpert,msol,2), INTENT(IN) :: u
       REAL(r8), DIMENSION(:), INTENT(IN) :: unorm
-      
+
       INTEGER :: isol,ipert,iunit,jsing
       REAL(r8) :: psil,psir,psiminl,psiminr,a,b,x,singlog
       REAL(r8), DIMENSION(mpert) :: logunorm
