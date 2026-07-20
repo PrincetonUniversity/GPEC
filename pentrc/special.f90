@@ -15,7 +15,7 @@ module special
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
-    ! EMAIL: nlogan@pppl.gov
+    ! EMAIL: nikolas.logan@columbia.edu
     !-----------------------------------------------------------------------
 
     use utilities, only: get_free_file_unit

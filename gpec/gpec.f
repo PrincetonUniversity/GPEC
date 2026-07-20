@@ -603,6 +603,16 @@ c-----------------------------------------------------------------------
      $     power_rout,power_bpout,power_bout,power_rcout,tmag_out,
      $     jsurf_out,filter_types,filter_modes,filter_flag)
 
+      IF (singthresh_callen_flag) THEN
+         IF(coil_flag) THEN
+            PRINT *, "singthresh_callen_flag is enabled: setting "//
+     $               "vsingfld_flag to true for use in Callen cubic"
+            vsingfld_flag = .TRUE.
+         ELSE
+            PRINT *, "!! WARNING: singthresh_callen_flag requires "//
+     $              "coil_flag to get the vacuum island width." 
+         ENDIF
+      ENDIF
       IF (coil_flag .AND. vsingfld_flag) THEN
          CALL gpout_vsingfld()
       ENDIF

@@ -18,6 +18,8 @@ First, add your release of GPEC to your PYTHONPATH environment variable.
 In an open ipython session, import the data module
 
 >>> from pypec import data, post
+>>> import numpy as np
+>>> from numpy import *
 
 To get a typical GPEC output into python, use the open_dataset function.
 
@@ -28,7 +30,7 @@ First, 3D equilibrium calculations lend themselves naturally to 3D figures. This
 has a helpful function for forming the necessary x,y,z meshes from the 2D boundary.
 After adding the requisite geometry to the control surface output,
 
->>> con = add_3dsurface(con, phi_lim=pi * 1.5)
+>>> con = post.add_3dsurface(con, phi_lim=pi * 1.5)
 
 it is easy to make 3D surface plots using mayavi,
 
@@ -68,7 +70,7 @@ to do all sorts of post-processing tasks.
 """
     @package pypec
     @author NC Logan
-    @email nlogan@pppl.gov
+    @email nikolas.logan@columbia.edu
 """
 
 import numpy as np  # math
@@ -106,63 +108,65 @@ def update_name_conventions(dataset, version=None, inplace=False):
         newset = dataset.copy(deep=True)
     # version number
     if version is None:
-        version = dataset.attrs.get('version', None)
+        version = dataset.attrs.get("version", None)
         if version is None:
-            raise ValueError('Must specify version')
+            raise ValueError("Must specify version")
     version = version.split()[-1]  # just the major.minor.patch numbers
-    version = np.sum(np.array([1, 0.1, 0.001]) * map(np.float, version.split('.')))  # float representation
+    version = np.sum(
+        np.array([1, 0.1, 0.001]) * map(np.float, version.split("."))
+    )  # float representation
 
     translator = OrderedDict()
     if version < 0.3:
         # profile output changes
-        translator['xi_psi1'] = 'xigradpsi_dpsi'
-        translator['xi_psi'] = 'xigradpsi'
-        translator['xi_alpha'] = 'xigradalpha'
+        translator["xi_psi1"] = "xigradpsi_dpsi"
+        translator["xi_psi"] = "xigradpsi"
+        translator["xi_alpha"] = "xigradalpha"
     if version < 0.5:
         # control output changes
-        translator['b_xn'] = 'b_n_x_fun'
-        translator['b_n'] = 'b_n_fun'
-        translator['xi_xn'] = 'xi_n_x_fun'
-        translator['xi_n'] = 'xi_n_fun'
-        translator['dphi'] = 'delta_phi'
-        translator['b_xnm'] = 'b_n_x'
-        translator['b_nm'] = 'b_n'
-        translator['xi_xnm'] = 'xi_n_x'
-        translator['xi_nm'] = 'xi_n'
-        translator['Phi_X'] = 'Phi_x'
-        translator['Phi_EX'] = 'Phi_xe'
-        translator['Phi_T'] = 'Phi'
-        translator['Phi_ET'] = 'Phi_e'
-        translator['X_EVT'] = 'X_eigenvalue'
-        translator['X_EDT'] = 'X_eigenvector'
-        translator['W_EVX'] = 'W_xe_eigenvalue'
-        translator['R_EVX'] = 'R_xe_eigenvalue'
-        translator['P_EVX'] = 'P_xe_eigenvalue'
-        translator['C_EVX'] = 'C_xe_eigenvalue'
-        translator['W_EDX'] = 'W_xe_eigenvector'
-        translator['R_EDX'] = 'R_xe_eigenvector'
-        translator['P_EDX'] = 'P_xe_eigenvector'
-        translator['C_EDX'] = 'C_xe_eigenvector'
-        translator['W_EVX_energyv'] = 'W_xe_energyv'
-        translator['W_EVX_energys'] = 'W_xe_energys'
-        translator['W_EVX_energyp'] = 'W_xe_energyp'
-        translator['R_EVX_energyv'] = 'R_xe_energyv'
-        translator['R_EVX_energys'] = 'R_xe_energys'
-        translator['R_EVX_energyp'] = 'R_xe_energyp'
-        translator['W_EVX_A'] = 'W_xe_amp'
-        translator['R_EVX_RL'] = 'R_xe_RL'
-        translator['O_XT'] = 'O_Xxi_n'
-        translator['O_WX'] = 'O_WPhi_xe'
-        translator['O_PX'] = 'O_PPhi_xe'
-        translator['O_RX'] = 'O_RPhi_xe'
+        translator["b_xn"] = "b_n_x_fun"
+        translator["b_n"] = "b_n_fun"
+        translator["xi_xn"] = "xi_n_x_fun"
+        translator["xi_n"] = "xi_n_fun"
+        translator["dphi"] = "delta_phi"
+        translator["b_xnm"] = "b_n_x"
+        translator["b_nm"] = "b_n"
+        translator["xi_xnm"] = "xi_n_x"
+        translator["xi_nm"] = "xi_n"
+        translator["Phi_X"] = "Phi_x"
+        translator["Phi_EX"] = "Phi_xe"
+        translator["Phi_T"] = "Phi"
+        translator["Phi_ET"] = "Phi_e"
+        translator["X_EVT"] = "X_eigenvalue"
+        translator["X_EDT"] = "X_eigenvector"
+        translator["W_EVX"] = "W_xe_eigenvalue"
+        translator["R_EVX"] = "R_xe_eigenvalue"
+        translator["P_EVX"] = "P_xe_eigenvalue"
+        translator["C_EVX"] = "C_xe_eigenvalue"
+        translator["W_EDX"] = "W_xe_eigenvector"
+        translator["R_EDX"] = "R_xe_eigenvector"
+        translator["P_EDX"] = "P_xe_eigenvector"
+        translator["C_EDX"] = "C_xe_eigenvector"
+        translator["W_EVX_energyv"] = "W_xe_energyv"
+        translator["W_EVX_energys"] = "W_xe_energys"
+        translator["W_EVX_energyp"] = "W_xe_energyp"
+        translator["R_EVX_energyv"] = "R_xe_energyv"
+        translator["R_EVX_energys"] = "R_xe_energys"
+        translator["R_EVX_energyp"] = "R_xe_energyp"
+        translator["W_EVX_A"] = "W_xe_amp"
+        translator["R_EVX_RL"] = "R_xe_RL"
+        translator["O_XT"] = "O_Xxi_n"
+        translator["O_WX"] = "O_WPhi_xe"
+        translator["O_PX"] = "O_PPhi_xe"
+        translator["O_RX"] = "O_RPhi_xe"
         # profile output changes
-        translator['derxi_m_contrapsi'] = 'xigradpsi_dpsi'
-        translator['xi_m_contrapsi'] = 'xigradpsi'
-        translator['xi_m_contraalpha'] = 'xigradalpha'
+        translator["derxi_m_contrapsi"] = "xigradpsi_dpsi"
+        translator["xi_m_contrapsi"] = "xigradpsi"
+        translator["xi_m_contraalpha"] = "xigradalpha"
         # cylindrical output changes
-        translator['b_r_plas'] = 'b_r_plasma'
-        translator['b_z_plas'] = 'b_z_plasma'
-        translator['b_t_plas'] = 'b_t_plasma'
+        translator["b_r_plas"] = "b_r_plasma"
+        translator["b_z_plas"] = "b_z_plasma"
+        translator["b_t_plas"] = "b_t_plasma"
 
     # do this in an explicit loop because some names already exist and need to get replaced in order
     for okey, nkey in translator.items():
@@ -175,7 +179,9 @@ def update_name_conventions(dataset, version=None, inplace=False):
 ######################################################## Post Processing Control Output
 
 
-def add_3dsurface(control_output, phi_lim=2 * pi, nphi=180, overwrite=False, inplace=False):
+def add_3dsurface(
+    control_output, phi_lim=2 * pi, nphi=180, overwrite=False, inplace=False
+):
     """
     Add 3D geometric dimensions to dataset from gpec_control_output_n#.nc.
 
@@ -253,24 +259,26 @@ def add_3dsurface(control_output, phi_lim=2 * pi, nphi=180, overwrite=False, inp
         ds = control_output.copy(deep=True)
 
     # machine toroidal angle
-    if 'phi_surf' not in ds or overwrite:
+    if "phi_surf" not in ds or overwrite:
         phi = np.linspace(0, phi_lim, nphi)
-        phi = xarray.DataArray(phi, coords={'phi_surf': phi}, dims=('phi_surf',), name='phi_surf')
-        ds['phi_surf'] = phi
-        ds['phase_surf'] = np.exp(-1j * ds.attrs['n'] * ds['phi_surf'])
+        phi = xarray.DataArray(
+            phi, coords={"phi_surf": phi}, dims=("phi_surf",), name="phi_surf"
+        )
+        ds["phi_surf"] = phi
+        ds["phase_surf"] = np.exp(-1j * ds.attrs["n"] * ds["phi_surf"])
 
     # 3D cartesian coords for 3D plots
-    if 'x_surf' not in ds or overwrite:
-        xy = (ds['R'] * np.exp(1j * ds['phi_surf'])).to_dataset(name='xy')
-        ds['x_surf'] = xy.apply(np.real)['xy']
-        ds['y_surf'] = xy.apply(np.imag)['xy']
-        ds['z_surf'] = ds['z'] * (1 + 0 * ds['phi_surf'])
+    if "x_surf" not in ds or overwrite:
+        xy = (ds["R"] * np.exp(1j * ds["phi_surf"])).to_dataset(name="xy")
+        ds["x_surf"] = xy.apply(np.real)["xy"]
+        ds["y_surf"] = xy.apply(np.imag)["xy"]
+        ds["z_surf"] = ds["z"] * (1 + 0 * ds["phi_surf"])
 
         # normal vectors
-        xy = (ds['R_n'] * np.exp(1j * ds['phi_surf'])).to_dataset(name='xy')
-        ds['x_surf_n'] = xy.apply(np.real)['xy']
-        ds['y_surf_n'] = xy.apply(np.imag)['xy']
-        ds['z_surf_n'] = ds['z_n'] * (1 + 0 * ds['phi_surf'])
+        xy = (ds["R_n"] * np.exp(1j * ds["phi_surf"])).to_dataset(name="xy")
+        ds["x_surf_n"] = xy.apply(np.real)["xy"]
+        ds["y_surf_n"] = xy.apply(np.imag)["xy"]
+        ds["z_surf_n"] = ds["z_n"] * (1 + 0 * ds["phi_surf"])
 
     return ds
 
@@ -323,24 +331,27 @@ def add_fun(control_output, keys=None, tmag=False, inplace=True):
 
     # default to all spectral variables
     if keys is None:
-        keys = [k for k, v in ds.data_vars.items() if v.dims == ('m',)]
+        keys = [k for k, v in ds.data_vars.items() if v.dims == ("m",)]
 
     # calculate functions
     for k in keys:
         # inverse fourier transform
-        fun = (ds[k] * np.exp(1j * (ds['m'] * ds['theta'] * 2 * pi))).sum('m')
+        fun = (ds[k] * np.exp(1j * (ds["m"] * ds["theta"] * 2 * pi))).sum("m")
         # convert to machine toroidal angle
         if not tmag:
-            fun *= np.exp(1j * ds.attrs['n'] * ds['delta_phi'])
+            fun *= np.exp(1j * ds.attrs["n"] * ds["delta_phi"])
         # add to the dataset
-        ds[k + '_fun'] = fun
+        ds[k + "_fun"] = fun
 
     return ds
 
 
 ######################################################## Post Processing Control Output
 
-def optimize_torque(matrixprofile, psilow=0, psihigh=1, normalize=False, energy=False, minimize=False):
+
+def optimize_torque(
+    matrixprofile, psilow=0, psihigh=1, normalize=False, energy=False, minimize=False
+):
     """
     Calculate the eigenvalue and eigenvector corresponding to maximum the torque
     within the specified range of normalized poloidal flux.
@@ -391,12 +402,14 @@ def optimize_torque(matrixprofile, psilow=0, psihigh=1, normalize=False, energy=
 
     """
     # enforce correct order (default)
-    if 'm' in matrixprofile.dims:
-        mprof = matrixprofile.transpose('psi_n', 'm', 'm_prime')
-    elif 'coil_index' in matrixprofile.dims:
-        mprof = matrixprofile.transpose('psi_n', 'coil_index', 'coil_index_prime')
+    if "m" in matrixprofile.dims:
+        mprof = matrixprofile.transpose("psi_n", "m", "m_prime")
+    elif "coil_index" in matrixprofile.dims:
+        mprof = matrixprofile.transpose("psi_n", "coil_index", "coil_index_prime")
     else:
-        raise ValueError("Expected m by m_prime or coil_index by coil_index_prime matrix")
+        raise ValueError(
+            "Expected m by m_prime or coil_index by coil_index_prime matrix"
+        )
 
     # the torque response matrix and energy response matrix are both hermitian
     # note the input must be a numpy matrix. xarray will un-transpose when summing.
@@ -406,12 +419,12 @@ def optimize_torque(matrixprofile, psilow=0, psihigh=1, normalize=False, energy=
         hermitian_response_matrix = lambda mat: (mat + mat.T.conj()) / 2
 
     # total torque matrix
-    T1 = hermitian_response_matrix(mprof.sel(method='nearest', psi_n=1).values)
+    T1 = hermitian_response_matrix(mprof.sel(method="nearest", psi_n=1).values)
     T1inv = np.linalg.inv(T1)
 
     # hermitian response matrices on either end of the range
-    Th = hermitian_response_matrix(mprof.sel(method='nearest', psi_n=psihigh).values)
-    Tl = hermitian_response_matrix(mprof.sel(method='nearest', psi_n=psilow).values)
+    Th = hermitian_response_matrix(mprof.sel(method="nearest", psi_n=psihigh).values)
+    Tl = hermitian_response_matrix(mprof.sel(method="nearest", psi_n=psilow).values)
     if psilow <= 0:
         Tl *= 0  # explicitly remove lower range
 

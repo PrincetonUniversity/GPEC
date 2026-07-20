@@ -22,13 +22,13 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE rdcon_ode_output_mod
       USE rdcon_sing_mod
-      USE rdcon_mod, ONLY : shotnum,shottime
+      USE rdcon_mod, ONLY : shotnum,shottime,nzero
       IMPLICIT NONE
 
       CHARACTER(6), DIMENSION(:), POINTER :: name
       INTEGER, DIMENSION(:), POINTER :: sol_out_unit,sol_bin_unit
       
-      INTEGER :: neq,ising,istep,m1,nzero
+      INTEGER :: neq,ising,istep,m1
       REAL(r8) :: psifac,psizero,singfac,q,psi_save,psimax,singfac_old,
      $     psifac_old
       REAL(r8) :: singfac_min=1e-5,singfac_max=1e-4

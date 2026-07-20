@@ -20,7 +20,8 @@ c-----------------------------------------------------------------------
       IMPLICIT NONE
 
       LOGICAL :: lsymz,check1,check2,lanal,lkdis,lpest1,lpless,wall,
-     $     lnova,checks,lfunin,checke,checkd,symvac,verbose_timer_output
+     $     lnova,checks,lfunin,checke,checkd,symvac,
+     $     verbose_timer_output, use_legacy_greens_function
 
       INTEGER, PARAMETER :: nc31=31,maxc1=100,maxa1=200,max2=3,
      $     nccl3=72,numvar=100,ndima=2,ndim0=5,neqv1=1
@@ -114,6 +115,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     define derived sizes.
 c-----------------------------------------------------------------------
+      use_legacy_greens_function = .false.
       ntsin=ntsin0+5
       nsf=nsf0+1
       nfe=1+nsf/2

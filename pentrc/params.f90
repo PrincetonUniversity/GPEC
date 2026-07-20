@@ -15,7 +15,7 @@ module params
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
-    ! EMAIL: nlogan@pppl.gov
+    ! EMAIL: nikolas.logan@columbia.edu
     !-----------------------------------------------------------------------
     use local_mod, only: r4, r8
     implicit none

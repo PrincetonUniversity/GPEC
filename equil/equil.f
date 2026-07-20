@@ -39,7 +39,7 @@ c-----------------------------------------------------------------------
       NAMELIST/equil_control/eq_filename,eq_type,grid_type,mpsi,mtheta,
      $     newq0,psihigh,psilow,input_only,jac_type,power_bp,power_r,
      $     power_b,jac_method,convert_type,power_flag,ns1,
-     $     sp_pfac,sp_nx,sp_dx1,sp_dx2,use_galgrid,etol,
+     $     sp_pfac,sp_nx,sp_dx1,sp_dx2,use_galgrid,etol,enstep,
      $     use_classic_splines
       NAMELIST/equil_output/bin_2d,bin_eq_1d,bin_eq_2d,out_2d,out_eq_1d,
      $     out_eq_2d,bin_fl,out_fl,interp,gse_flag,dump_flag,verbose
@@ -122,9 +122,13 @@ c-----------------------------------------------------------------------
       CASE("galkin")
          CALL read_eq_galkin
       CASE("chease")
-         CALL read_eq_chease
+         CALL read_eq_chease_inp1
       CASE("chease2")
-         CALL read_eq_chease2
+         WRITE(*,*) "   !! Warning: eq_type chease2 is deprecated, "//
+     $      "use chease_ascii instead"
+         CALL read_eq_chease_inp1_ascii
+      CASE("chease_ascii")
+         CALL read_eq_chease_inp1_ascii
       CASE("chease3")
          CALL read_eq_chease3
       CASE("chease4")
@@ -174,10 +178,13 @@ c-----------------------------------------------------------------------
       CASE("t7")
          CALL read_eq_t7
       CASE("marklin_direct")
+         CALL program_stop("Error: Deprecated eq_type "//TRIM(eq_type))
          CALL read_eq_marklin_direct
       CASE("marklin_inverse")
+         CALL program_stop("Error: Deprecated eq_type "//TRIM(eq_type))
          CALL read_eq_marklin_inverse
       CASE("hansen_inverse")
+         CALL program_stop("Error: Deprecated eq_type "//TRIM(eq_type))
          CALL read_eq_hansen_inverse
       CASE("pfrc")
          CALL read_eq_pfrc

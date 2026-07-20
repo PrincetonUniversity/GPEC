@@ -8,16 +8,16 @@ GPEC & PENT
 :Author:
     Jong-Kyu Park
 :Location:
-    Princeton Plasma Physics Laboratory
+    Seoul National University
 :Email:
-    jpark@pppl.gov
+    jkpark@snu.ac.kr
 
 :Author:
     Nikolas Logan
 :Location:
-    Princeton Plasma Physics Laboratory
+    Columbia University
 :Email:
-    nlogan@pppl.gov
+    nikolas.logan@columbia.edu
 
 
 DCON & RDCON
@@ -26,16 +26,16 @@ DCON & RDCON
 :Author:
     Alan H. Glasser
 :Location:
-    Los Alamos National Laboratory
+    Fusion Theory and Computation, Inc.
 :Email:
-    ahg@lanl.gov
+    aglasser5@gmail.com 
 
 :Author:
     Zhirui Wang
 :Location:
-    Princeton Plasma Physics Laboratory
+    Formerly of Princeton Plasma Physics Laboratory
 :Email:
-    zwang@pppl.gov
+    unavailable
 
 
 STRIDE
