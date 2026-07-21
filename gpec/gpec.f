@@ -635,7 +635,7 @@ c-----------------------------------------------------------------------
       ENDIF
       IF (recon_flag) THEN
          CALL gpout_recon(mode,xspmn)
-      ENDIF      
+      ENDIF
       IF (recon_flag2) THEN
          CALL gpout_recon2(mode,xspmn)
       ENDIF

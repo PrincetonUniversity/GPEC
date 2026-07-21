@@ -6897,7 +6897,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE gpout_close_netcdf
 
 c-----------------------------------------------------------------------
-c     subprogram 20. gpout_recon
+c     subprogram 21. gpout_recon
 c     reconstruction diagnostics: shear, curvature, K, field C and
 c     the integrals epf, dst giving delta-W_p.
 c-----------------------------------------------------------------------
@@ -6908,9 +6908,14 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: mode
       COMPLEX(r8), DIMENSION(:), INTENT(IN) :: xspmn
       
-      INTEGER :: ipsi, itheta, ipert, ushear_fun, ucurv, uk, ucveri,
-     $     uk_sigma, ucw_fun, ucw_mn, ucv_fun, ucv_mn, ucv2_fun,
-     $     ucv2_mn, uqv_mn, u_int, u_log, u_terms
+      INTEGER :: ipsi, itheta, ipert
+c     recon output units: 72-99 are reserved for the recon diagnostics
+c     (gpout_recon/2/3) and are not opened elsewhere in the GPEC
+c     executable.
+      INTEGER, PARAMETER :: ushear_fun=82, ucurv=72, ucveri=74, uk=73,
+     $     uk_sigma=85, ucw_fun=86, ucw_mn=87, ucv_fun=88, ucv_mn=89,
+     $     ucv2_fun=90, ucv2_mn=91, u_int=92, u_log=93, u_terms=94,
+     $     uqv_mn=95
       REAL(r8), DIMENSION(0:mthsurf) :: epf_den_fun, epf_p_fun,
      $     epf_t_fun, epf_z_fun, dst1_den_fun, dst2_den_fun,
      $     dst3_den_fun
@@ -6918,8 +6923,6 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:mthsurf) :: rvals, zvals
       REAL(r8) :: epf_int, epf_p_int, epf_t_int, epf_z_int
       COMPLEX(r8) :: dst_int
-      COMPLEX(r8), DIMENSION(mpert) :: curv_mn, 
-     $     term_mn
       COMPLEX(r8), DIMENSION(0:mthsurf) :: shear_fun, curv_fun, K_fun,
      $     cveri_fun
       COMPLEX(r8), DIMENSION(0:mthsurf,3) :: cw_fun, cv_fun, cv2_fun
@@ -6938,7 +6941,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: epf_p_prev, epf_t_prev, epf_z_prev
       REAL(r8) :: epf_p_curr, epf_t_curr, epf_z_curr
       REAL(r8) :: epf_int_total_hr, epf_p_total_hr,
-     $     epf_t_total_hr, epf_z_total_hr, dcon_fac
+     $     epf_t_total_hr, epf_z_total_hr
       REAL(r8) :: cveri_abs, cveri_max, cveri_rms, cveri_sumsq,
      $     cveri_tol
       COMPLEX(r8) :: dst_prev, dst_curr, dst1_prev, dst2_prev,
@@ -6974,22 +6977,6 @@ c-----------------------------------------------------------------------
       qv_mn_file = "gpec_recon_qvmn_sol"//TRIM(smode)//".out"
       int_file = "gpec_recon_integration_sol"//TRIM(smode)//".out"
       terms_file = "gpec_recon_terms_sol"//TRIM(smode)//".out"
-
-      ushear_fun = 82
-      ucurv = 72
-      ucveri = 74
-      uk = 73
-      uk_sigma = 85
-      ucw_fun = 86
-      ucw_mn = 87
-      ucv_fun = 88
-      ucv_mn = 89
-      ucv2_fun = 90
-      ucv2_mn = 91
-      u_int = 92
-      u_log = 93
-      u_terms = 94
-      uqv_mn = 95
 
       IF (recon_out) THEN
          OPEN(UNIT=ushear_fun, FILE=shear_fun_file, STATUS="UNKNOWN")
@@ -7073,15 +7060,15 @@ c-----------------------------------------------------------------------
          psi = rzphi%xs(ipsi)
          IF (psi > psilim) EXIT
 
-c        Compute the J|C|^2/mu0 state once so C fields below use
-c        the current psi. This keeps the psi-local reconstruction path
-c        identical to the original logic.
+c        Build the psi-local perturbed equilibrium and C state once;
+c        gpeq_epf, gpeq_cveri and gpeq_dst below all reuse it.
+         CALL gpeq_prep_c(psi)
          CALL gpeq_epf(psi, epf_int, epf_den_fun=epf_den_fun,
      $        epf_p_fun=epf_p_fun, epf_t_fun=epf_t_fun,
      $        epf_z_fun=epf_z_fun)
 
 c        Capture covariant bare-Q components (Q_i) set by gpeq_cova
-c        inside gpeq_epf, before gpeq_K/gpeq_dst run. These are the
+c        inside gpeq_prep_c, before gpeq_K/gpeq_dst run. These are the
 c        genuine perturbed-field covariant components delta-B_i; the
 c        effective field is cvmn = C_i = Q_i + V_i. Writing qvmn lets
 c        (curl Q).grad(psi) be formed from covariant components, the
@@ -7096,22 +7083,10 @@ c        Reconstruct detailed K diagnostics for output. Keep this on
 c        the original path so recon terminal totals remain unchanged.
          CALL gpeq_K(psi, K_fun, K_term1, K_term2, K_term3,
      $        sigma_vals, jdotb_vals, shear_fun, curv_fun)
-c        Verify (curl C).grad(psi)=0 using the same psi-local C state
-c        already prepared by gpeq_epf. This avoids rebuilding the
-c        full equilibrium/C reconstruction a second time at each psi.
-c        Same identity as gpeq_cveri, inlined; keep the two in sync.
+c        Verify (curl C).grad(psi)=0 using the C state prepared above.
          IF (cveri_flag) THEN
-            DO ipert = 1, mpert
-               curv_mn(ipert) = twopi * ifac * mfac(ipert)
-     $              * cvz_mn(ipert)
-               term_mn(ipert) = curv_mn(ipert) +
-     $              twopi * ifac * nn * cvt_mn(ipert)
-            ENDDO
-            CALL iscdftb(mfac, mpert, cveri_fun, mthsurf, term_mn)
+            CALL gpeq_cveri(psi, cveri_fun)
             DO itheta = 0, mthsurf
-               CALL bicube_eval(rzphi, psi, theta(itheta), 0)
-               jac = rzphi%f(4)
-               cveri_fun(itheta) = cveri_fun(itheta) / jac
                cveri_abs = ABS(cveri_fun(itheta))
                cveri_max = MAX(cveri_max, cveri_abs)
                cveri_sumsq = cveri_sumsq + cveri_abs**2
@@ -7219,7 +7194,6 @@ c-----------------------------------------------------------------------
 c     Perform the energy check on the DCON solution grid.  Do not use
 c     rzphi%xs for this comparison; it is a coarse geometry grid.
 c-----------------------------------------------------------------------
-      dcon_fac = (mu0*2.0_r8) / psio**2 / (chi1*1.0e-3_r8)**2
       epf_int_total_hr = 0.0_r8
       epf_p_total_hr = 0.0_r8
       epf_t_total_hr = 0.0_r8
@@ -7229,6 +7203,7 @@ c-----------------------------------------------------------------------
       dst2_total_hr = CMPLX(0.0_r8, 0.0_r8, r8)
       dst3_total_hr = CMPLX(0.0_r8, 0.0_r8, r8)
       psi_prev = MAX(psifac(0), rzphi%xs(0))
+      CALL gpeq_prep_c(psi_prev)
       CALL gpeq_epf(psi_prev, epf_prev, epf_p_prev, epf_t_prev,
      $     epf_z_prev)
       CALL gpeq_dst(psi_prev, dst_prev, dst1_prev, dst2_prev,
@@ -7266,6 +7241,7 @@ c-----------------------------------------------------------------------
          psi_curr = psifac(istep+1)
          IF (psi_curr < rzphi%xs(0)) CYCLE
          IF (psi_curr > rzphi%xs(mpsi)) EXIT
+         CALL gpeq_prep_c(psi_curr)
          CALL gpeq_epf(psi_curr, epf_curr, epf_p_curr,
      $        epf_t_curr, epf_z_curr)
          CALL gpeq_dst(psi_curr, dst_curr, dst1_curr, dst2_curr,
@@ -7371,7 +7347,8 @@ c-----------------------------------------------------------------------
      $   epf_z_vals, dst_vals, dst1_vals, dst2_vals, dst3_vals)
       dw_raw_k_hr = 0.5_r8 *
      $     (CMPLX(epf_int_total_hr, 0.0_r8, r8) - dst_int_total_k_hr)
-      dw_dcon_k_hr = dw_raw_k_hr * dcon_fac
+      dw_dcon_k_hr = dw_raw_k_hr *
+     $     (mu0*2.0_r8) / psio**2 / (chi1*1.0e-3_r8)**2
 
       IF (recon_out) THEN
          WRITE(u_int,*)
@@ -7418,7 +7395,7 @@ c-----------------------------------------------------------------------
       WRITE(*,'(a,a,a,es17.8e3)') "  GPEC ep(", TRIM(smode), ") = ",
      $     ep_selected
       WRITE(*,'(a,a,a,es17.8e3)') "  DCON ep(", TRIM(smode), ") = ",
-     $     ep_selected*dcon_fac
+     $     ep_selected * (mu0*2.0_r8) / psio**2 / (chi1*1.0e-3_r8)**2
       IF (cveri_flag) THEN
          cveri_stat = "PASS"
          IF (cveri_count > 0) THEN
@@ -7465,7 +7442,8 @@ c-----------------------------------------------------------------------
          WRITE(u_log,'(a,a,a,es17.8e3)') "  GPEC ep(", TRIM(smode),
      $        ") = ", ep_selected
          WRITE(u_log,'(a,a,a,es17.8e3)') "  DCON ep(", TRIM(smode),
-     $        ") = ", ep_selected*dcon_fac
+     $        ") = ", ep_selected *
+     $        (mu0*2.0_r8) / psio**2 / (chi1*1.0e-3_r8)**2
          IF (cveri_flag) THEN
             WRITE(u_log,'(a,a)') "  C verify: ", TRIM(cveri_stat)
             WRITE(u_log,'(a,es17.8e3)') "    max = ", cveri_max
@@ -7515,7 +7493,9 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: mode
       COMPLEX(r8), DIMENSION(:), INTENT(IN) :: xspmn
 
-      INTEGER :: ipsi, itheta, usurf, u_int, u_log
+      INTEGER :: ipsi, itheta
+c     recon2 output units, within the reserved recon range 72-99.
+      INTEGER, PARAMETER :: usurf=94, u_int=95, u_log=96
       INTEGER :: istep, nint_pts, iint
       REAL(r8) :: psi, eta, rfac, dpsi_local, q2_hr
       REAL(r8), DIMENSION(0:mthsurf) :: rvals, zvals
@@ -7525,7 +7505,6 @@ c-----------------------------------------------------------------------
      $     total_fun
       CHARACTER(8) :: smode
       CHARACTER(128) :: surf_file, int_file
-      REAL(r8) :: dcon_fac
       INTEGER :: ep_index
       REAL(r8) :: ep_selected, ep_dcon
       REAL(r8), DIMENSION(:), ALLOCATABLE :: psi_int_pts, q2_vals_r
@@ -7542,9 +7521,6 @@ c-----------------------------------------------------------------------
       smode = ADJUSTL(smode)
       surf_file = "gpec_recon2_terms_sol"//TRIM(smode)//".out"
       int_file = "gpec_recon2_integration_sol"//TRIM(smode)//".out"
-      usurf = 94
-      u_int = 95
-      u_log = 96
 
       IF (recon_out) THEN
          OPEN(UNIT=usurf, FILE=surf_file, STATUS="UNKNOWN")
@@ -7591,9 +7567,9 @@ c     fail fast on an out-of-range mode selection.
          ENDIF
       ENDDO
 
-      dcon_fac = (mu0*2.0_r8) / psio**2 / (chi1*1.0e-3_r8)**2
       ep_selected = REAL(ep(ep_index))
-      ep_dcon = ep_selected * dcon_fac
+      ep_dcon = ep_selected *
+     $     (mu0*2.0_r8) / psio**2 / (chi1*1.0e-3_r8)**2
       q2_hr = 0.0_r8
       jqx_hr = CMPLX(0.0_r8, 0.0_r8, r8)
       pdiv_hr = CMPLX(0.0_r8, 0.0_r8, r8)
@@ -7684,7 +7660,8 @@ c     below rzphi%xs(0) are skipped (gpout_recon clamps instead).
       ENDIF
 
       dw_raw_hr = 0.5_r8 * total_hr
-      dw_dcon_hr = dw_raw_hr * dcon_fac
+      dw_dcon_hr = dw_raw_hr *
+     $     (mu0*2.0_r8) / psio**2 / (chi1*1.0e-3_r8)**2
 
       IF (recon_out) THEN
          WRITE(u_int,*)
@@ -7778,7 +7755,9 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: mode
       COMPLEX(r8), DIMENSION(:), INTENT(IN) :: xspmn
 
-      INTEGER :: ipsi, itheta, usurf, u_int, u_log
+      INTEGER :: ipsi, itheta
+c     recon3 output units, within the reserved recon range 72-99.
+      INTEGER, PARAMETER :: usurf=97, u_int=98, u_log=99
       INTEGER :: istep, nint_pts, iint
       REAL(r8) :: psi, dpsi_local
       REAL(r8) :: A_hr, B_hr, Iperp_hr, Cpar_hr, epf_hr
@@ -7795,7 +7774,6 @@ c-----------------------------------------------------------------------
       INTEGER :: kcol
       CHARACTER(8) :: smode
       CHARACTER(128) :: surf_file, int_file
-      REAL(r8) :: dcon_fac
       REAL(r8), DIMENSION(:), ALLOCATABLE :: psi_int_pts
       REAL(r8), DIMENSION(:), ALLOCATABLE :: A_vals, B_vals,
      $     Iperp_vals, Cpar_vals, epf_vals, dst1_vals, dst3_vals
@@ -7809,9 +7787,6 @@ c-----------------------------------------------------------------------
       smode = ADJUSTL(smode)
       surf_file = "gpec_recon3_terms_sol"//TRIM(smode)//".out"
       int_file = "gpec_recon3_integration_sol"//TRIM(smode)//".out"
-      usurf = 97
-      u_int = 98
-      u_log = 99
 
       IF (recon_out) THEN
          OPEN(UNIT=usurf, FILE=surf_file, STATUS="UNKNOWN")
@@ -7840,6 +7815,7 @@ c     fail fast on an out-of-range mode selection.
       DO ipsi = 0, mpsi
          psi = rzphi%xs(ipsi)
          IF (psi > psilim) EXIT
+         CALL gpeq_prep_c(psi)
          CALL gpeq_epfterms(psi, A_hr, B_hr, Iperp_hr, Cpar_hr, epf_hr,
      $        A_fun, B_fun, Iperp_fun, Cpar_fun, surf_extra)
          IF (recon_out) THEN
@@ -7858,8 +7834,6 @@ c     fail fast on an out-of-range mode selection.
          ENDIF
       ENDDO
 
-      dcon_fac = (mu0*2.0_r8) / psio**2 / (chi1*1.0e-3_r8)**2
-
 c     integrate on psifac points inside the spline domain; points
 c     below rzphi%xs(0) are skipped (gpout_recon clamps instead).
       nint_pts = 0
@@ -7876,6 +7850,7 @@ c     below rzphi%xs(0) are skipped (gpout_recon clamps instead).
          psi = psifac(istep)
          IF (psi < rzphi%xs(0)) CYCLE
          IF (psi > rzphi%xs(mpsi)) EXIT
+         CALL gpeq_prep_c(psi)
          CALL gpeq_epfterms(psi, A_hr, B_hr, Iperp_hr, Cpar_hr, epf_hr)
 c        dst1 (=K1 xi_n^2) and dst3 (=K3 xi_n^2) for the C-free dW form
 c        2 dW_p = A + B + Iperp - dst1 - dst3 (dst2 = Cpar cancels).
@@ -7974,9 +7949,11 @@ c     C-free reconstructed dW_p: 2 dW = A + B + Iperp - dst1 - dst3
 c     (the parallel-current piece dst2 = Cpar cancels identically).
       dw_raw3 = 0.5_r8 * (A_total + B_total + Iperp_total
      $     - dst1_total - dst3_total)
-      dw_dcon3 = dw_raw3 * dcon_fac
+      dw_dcon3 = dw_raw3 *
+     $     (mu0*2.0_r8) / psio**2 / (chi1*1.0e-3_r8)**2
       ep_selected = REAL(ep(ep_index))
-      ep_dcon = ep_selected * dcon_fac
+      ep_dcon = ep_selected *
+     $     (mu0*2.0_r8) / psio**2 / (chi1*1.0e-3_r8)**2
 
       IF (recon_out) THEN
          WRITE(u_int,*)

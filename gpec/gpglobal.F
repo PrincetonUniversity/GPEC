@@ -157,7 +157,7 @@ c-----------------------------------------------------------------------
      $     plas_indevmats,permeabevmats,chxmats,chwmats,
      $     mutual_indmats,mutual_indevmats,mutual_indinvmats,
      $     mutual_indinvevmats)
-     
+
       CALL spline_dealloc(sq)
       CALL bicube_dealloc(eqfun)
       CALL bicube_dealloc(rzphi)

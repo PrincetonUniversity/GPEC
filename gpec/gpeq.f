@@ -14,23 +14,27 @@ c      5. gpeq_tangent
 c      6. gpeq_parallel
 c      7. gpeq_rzphi
 c      8. gpeq_surface
-c      9. gpeq_epf          (reconstruction: C vector for EPF)
-c     10. gpeq_dst          (reconstruction: C vector for DST)
-c     11. gpeq_shear        (reconstruction: magnetic shear)
-c     12. gpeq_curvature    (reconstruction: curvature)
-c     13. gpeq_K            (reconstruction: Bernstein K quantity)
-c    13b. gpeq_epfterms       (reconstruction: |C|^2 decomposition)
-c     14. gpeq_fcoords
-c     15. gpeq_fcoordsout
-c     16. gpeq_bcoords
-c     17. gpeq_bcoordsout
-c     18. gpeq_weight
-c     19. gpeq_rzpgrid
-c     20. gpeq_rzpdiv
-c     21. gpeq_alloc
-c     22. gpeq_dealloc
-c     23. gpeq_interp_singsurf
-c     24. gpeq_interp_sol
+c      9. gpeq_prep_c       (reconstruction: build psi-local C state)
+c     10. gpeq_c            (reconstruction: C vector components)
+c     11. gpeq_cveri        (reconstruction: (curl C).grad(psi) check)
+c     12. gpeq_firstform    (reconstruction: first-form energy terms)
+c     13. gpeq_epf          (reconstruction: |C|^2 surface integral)
+c     14. gpeq_dst          (reconstruction: K xi_n^2 surface integral)
+c     15. gpeq_shear        (reconstruction: magnetic shear)
+c     16. gpeq_curvature    (reconstruction: curvature)
+c     17. gpeq_K            (reconstruction: Bernstein K quantity)
+c     18. gpeq_epfterms     (reconstruction: |C|^2 decomposition)
+c     19. gpeq_fcoords
+c     20. gpeq_fcoordsout
+c     21. gpeq_bcoords
+c     22. gpeq_bcoordsout
+c     23. gpeq_weight
+c     24. gpeq_rzpgrid
+c     25. gpeq_rzpdiv
+c     26. gpeq_alloc
+c     27. gpeq_dealloc
+c     28. gpeq_interp_singsurf
+c     29. gpeq_interp_sol
 c-----------------------------------------------------------------------
 c     subprogram 0. gpeq_mod.
 c     module declarations.
@@ -652,7 +656,30 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_surface
 c-----------------------------------------------------------------------
-c     subprogram 9. gpeq_c.
+c     subprogram 9. gpeq_prep_c.
+c     build the psi-local perturbed equilibrium state and the C vector
+c     in one pass: gpeq_sol/contra/cova/normal followed by gpeq_c.
+c     The recon kernels gpeq_cveri, gpeq_epf, gpeq_dst and
+c     gpeq_epfterms assume this has been called for the current psi.
+c-----------------------------------------------------------------------
+      SUBROUTINE gpeq_prep_c(psi)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      REAL(r8), INTENT(IN) :: psi
+
+      CALL gpeq_sol(psi)
+      CALL gpeq_contra(psi)
+      CALL gpeq_cova(psi)
+      CALL gpeq_normal(psi)
+      CALL gpeq_c(psi, 0)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpeq_prep_c
+c-----------------------------------------------------------------------
+c     subprogram 10. gpeq_c.
 c     compute C vector (covariant + contravariant) for EPF calculation.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_c(psi, ipsi)
@@ -664,18 +691,17 @@ c-----------------------------------------------------------------------
 
       INTEGER :: itheta, ipert, jpert, m1, dm
       
-      REAL(r8) :: q, q1, f1raw, p1, chi1, jac
+      REAL(r8) :: q, f1raw, p1, chi1, jac
       REAL(r8) :: eta, rfac, v21, v22, v23, v33
-      REAL(r8), DIMENSION(0:mthsurf) :: jacs, dphi, r_vec, z_vec
+      REAL(r8), DIMENSION(0:mthsurf) :: jacs, r_vec
 
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun, xno_fun, bno_fun
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun
       COMPLEX(r8), DIMENSION(0:mthsurf) :: bwp_fun, bmt_fun, bmz_fun
       COMPLEX(r8), DIMENSION(0:mthsurf) :: bvp_fun, bvt_fun, bvz_fun
 
 c     Local temporal arrays for computation
       COMPLEX(r8), DIMENSION(0:mthsurf) :: cwp_fun, cwt_fun, cwz_fun
       COMPLEX(r8), DIMENSION(0:mthsurf) :: cvp_fun, cvt_fun, cvz_fun
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: cvp_funp, cvt_funp, cvz_funp
 
 c     Supporting variables for Fourier reconstruction
       REAL(r8) :: jwt, jwz
@@ -692,7 +718,6 @@ c-----------------------------------------------------------------------
       CALL spline_eval(sq, psi, 1)
       CALL cspline_eval(metric%cs, psi, 0)
       q = sq%f(4)
-      q1 = sq%f1(4)
       f1raw = sq%f1(1)
       p1 = sq%f1(2) / mu0
       chi1 = psio * twopi
@@ -719,9 +744,7 @@ c-----------------------------------------------------------------------
          rfac = SQRT(rzphi%f(1))
          eta = twopi*(theta(itheta) + rzphi%f(2))
          r_vec(itheta) = ro + rfac*COS(eta)
-         z_vec(itheta) = zo + rfac*SIN(eta)
          jacs(itheta) = jac
-         dphi(itheta) = rzphi%f(3)
 
          w(1,1) = (1.0+ rzphi%fy(2))*twopi**2*rfac*r_vec(itheta)/jac
          w(1,2) = -rzphi%fy(1)*pi*r_vec(itheta)/(rfac*jac)
@@ -749,9 +772,6 @@ c     metric tensor: g_ij = sum(v_i * v_j)
          g_33(itheta) = (v33**2) 
          g_23(itheta) = (v23*v33) 
       ENDDO
-
-      xno_fun=xwp_fun/(jacs*delpsi)
-      bno_fun=bwp_fun/(jacs*delpsi)
 c-----------------------------------------------------------------------
 c     6) Compute C components.
 c     bwp stores J Q^psi, while bmt/bmz store the modified
@@ -850,10 +870,6 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
 
-      CALL iscdftb(mfac, mpert, cvp_funp, mthsurf, c2vp_mn)
-      CALL iscdftb(mfac, mpert, cvt_funp, mthsurf, c2vt_mn)
-      CALL iscdftb(mfac, mpert, cvz_funp, mthsurf, c2vz_mn)
-
       IF(debug_flag) PRINT *, "->Leaving gpeq_c at ipsi=", ipsi
 c-----------------------------------------------------------------------
 c     terminate.
@@ -861,7 +877,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_c
 c-----------------------------------------------------------------------
-c     subprogram 9c. gpeq_cveri.
+c     subprogram 11. gpeq_cveri.
 c     verify the C-vector identity
 c
 c        (curl C) · grad(psi)
@@ -881,8 +897,8 @@ c
 c        (curl C) · grad(psi)
 c        = (d_theta C_zeta + 2*pi*i*n*C_theta)/J.
 c
-c     Self-contained; gpout_recon inlines the same identity to reuse
-c     gpeq_epf's state. Keep the two in sync.
+c     Assumes gpeq_prep_c(psi) has been called for this psi, so the
+c     module cvt_mn/cvz_mn hold the covariant C state.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_cveri(psi, cveri_fun)
 c-----------------------------------------------------------------------
@@ -896,15 +912,6 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert) :: curlpsi_mn
 
       IF(debug_flag) PRINT *, "Entering gpeq_cveri"
-c-----------------------------------------------------------------------
-c     prepare psi-local equilibrium and reconstruct C.
-c-----------------------------------------------------------------------
-      CALL gpeq_sol(psi)
-      CALL gpeq_contra(psi)
-      CALL gpeq_cova(psi)
-      CALL gpeq_normal(psi)
-      CALL gpeq_c(psi, 0)
-
 c-----------------------------------------------------------------------
 c     exact theta/zeta derivatives in mode space.
 c-----------------------------------------------------------------------
@@ -933,7 +940,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_cveri
 c-----------------------------------------------------------------------
-c     subprogram 9d. gpeq_firstform.
+c     subprogram 12. gpeq_firstform.
 c     evaluate the first-form plasma energy density components on one
 c     flux surface with gamma term omitted:
 c
@@ -1067,12 +1074,13 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_firstform
 c-----------------------------------------------------------------------
-c     subprogram 9b. gpeq_epf.
+c     subprogram 13. gpeq_epf.
 c     compute the flux-surface integral of the first EPF kernel,
 c
 c        \int dtheta dzeta J |C|^2 / mu0
 c
 c     and return the theta/zeta integrated value for one psi.
+c     Assumes gpeq_prep_c(psi) has been called for this psi.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_epf(psi, epf_int, epf_p, epf_t, epf_z,
      $     epf_den_fun, epf_p_fun, epf_t_fun, epf_z_fun)
@@ -1094,14 +1102,8 @@ c     convention as gpeq_epfterms epf_density: integral = sum den*jac/mth.
       
       IF(debug_flag) PRINT *, "Entering gpeq_epf"
 c-----------------------------------------------------------------------
-c     Prepare psi-local perturbed equilibrium and compute C components.
+c     reconstruct the C components prepared by gpeq_prep_c.
 c-----------------------------------------------------------------------
-      CALL gpeq_sol(psi)
-      CALL gpeq_contra(psi)
-      CALL gpeq_cova(psi)
-      CALL gpeq_normal(psi)
-      CALL gpeq_c(psi, 0)
-
       CALL iscdftb(mfac, mpert, cwp_fun,  mthsurf, cwp_mn)
       CALL iscdftb(mfac, mpert, cwt_fun,  mthsurf, cwt_mn)
       CALL iscdftb(mfac, mpert, cwz_fun,  mthsurf, cwz_mn)
@@ -1146,12 +1148,13 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_epf
 c-----------------------------------------------------------------------
-c     subprogram 10. gpeq_dst.
+c     subprogram 14. gpeq_dst.
 c     compute the flux-surface integral of the destabilizing kernel,
 c
 c        \int dtheta dzeta J * K * xi_n^2
 c
 c     and return the theta/zeta integrated value for one psi.
+c     Assumes gpeq_prep_c(psi) has been called for this psi.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_dst(psi, dst_int, dst_t1, dst_t2, dst_t3,
      $     dst1_den_fun, dst2_den_fun, dst3_den_fun)
@@ -1171,10 +1174,6 @@ c     convention as gpeq_epfterms: integral = sum den*jac/mthsurf.
 c-----------------------------------------------------------------------
 c     DST(psi) = \int dtheta dzeta J * K * xi_n^2
 c-----------------------------------------------------------------------
-      CALL gpeq_sol(psi)
-      CALL gpeq_contra(psi)
-      CALL gpeq_cova(psi)
-      CALL gpeq_normal(psi)
       CALL gpeq_K(psi, K_fun, K_term1, K_term2, K_term3)
       CALL iscdftb(mfac, mpert, xno_fun, mthsurf, xno_mn)
       dst_int = CMPLX(0.0_r8, 0.0_r8, r8)
@@ -1208,7 +1207,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_dst
 c-----------------------------------------------------------------------
-c     subprogram 11. gpeq_shear.
+c     subprogram 15. gpeq_shear.
 c     compute magnetic shear at a single psi level.
 c     approach: compute spatial domain first (theta), then FFT to mode space.
 c-----------------------------------------------------------------------
@@ -1328,7 +1327,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_shear
 c-----------------------------------------------------------------------
-c     subprogram 12. gpeq_curvature.
+c     subprogram 16. gpeq_curvature.
 c     compute curvature in spatial domain.
 c     κ·∇ψ = (|∇ψ|²/B²)[μ₀p' + (1/2)(∂B²/∂ψ) + (1/2)(∂B²/∂θ)(∇ψ·∇θ)/(∇ψ·∇ψ)]
 c-----------------------------------------------------------------------
@@ -1396,7 +1395,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_curvature
 c-----------------------------------------------------------------------
-c     subprogram 13. gpeq_K.
+c     subprogram 17. gpeq_K.
 c     compute Bernstein K quantity (stability indicator).
 c     K = |∇ψ_dcon|^2 * σ * S_dcon
 c       + mu0 * B^2 * σ^2 + 2 p' * κ^psi
@@ -1412,7 +1411,7 @@ c-----------------------------------------------------------------------
      $     shear_out, curv_out
 
       INTEGER :: itheta
-      REAL(r8) :: f1raw, delpsi
+      REAL(r8) :: f1raw, delpsi, chi1
       REAL(r8) :: jwt, jwz, bth, bze, bsq_val, sigma, jdotb_val
       REAL(r8) :: g22, g23, g33, r_val
       REAL(r8), DIMENSION(0:mthsurf) :: K_t1, K_t2, K_t3
@@ -1511,7 +1510,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_K
 c-----------------------------------------------------------------------
-c     subprogram 13b. gpeq_epfterms.
+c     subprogram 18. gpeq_epfterms.
 c     split the epf surface integral of gpeq_epf into terms of
 c     comparable magnitude, using C = Q + V, V = xi_n mu0 j x n_hat:
 c        A     = int |Q|^2 / mu0            B     = int 2 Re(V*.Q) / mu0
@@ -1519,6 +1518,7 @@ c        Cpar  = int mu0 sigma^2 B^2 xin^2  (= gpeq_dst's dst2)
 c        Iperp = int mu0 p'^2 |grad psi|^2 xin^2 / B^2
 c     each on the jac measure, as int (..) J dtheta / mthsurf. The
 c     terms satisfy epf = A + B + Cpar + Iperp to roundoff.
+c     Assumes gpeq_prep_c(psi) has been called for this psi.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_epfterms(psi, A_int, B_int, Iperp_int, Cpar_int,
      $     epf_int, A_fun, B_fun, Iperp_fun, Cpar_fun, surf_extra)
@@ -1537,7 +1537,7 @@ c       21 dst1_den (K1 xin2), 22 dst3_den (K3 xin2).
      $     surf_extra
 
       INTEGER :: itheta
-      REAL(r8) :: f1raw, p1_local
+      REAL(r8) :: f1raw, p1_local, chi1
       REAL(r8) :: A_density, B_density, Iperp_density, Cpar_density,
      $     epf_density
       REAL(r8) :: delpsi_val, bsq_val, sigma_local, jdotb_val
@@ -1557,14 +1557,8 @@ c       21 dst1_den (K1 xin2), 22 dst3_den (K3 xin2).
 
       IF(debug_flag) PRINT *, "Entering gpeq_epfterms"
 c-----------------------------------------------------------------------
-c     prepare psi-local perturbed equilibrium and C, Q.
+c     reconstruct the C, Q state prepared by gpeq_prep_c.
 c-----------------------------------------------------------------------
-      CALL gpeq_sol(psi)
-      CALL gpeq_contra(psi)
-      CALL gpeq_cova(psi)
-      CALL gpeq_normal(psi)
-      CALL gpeq_c(psi, 0)
-
       CALL spline_eval(sq, psi, 1)
       f1raw = sq%f1(1)
       p1_local = sq%f1(2) / mu0
@@ -1746,7 +1740,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_epfterms
 c-----------------------------------------------------------------------
-c     subprogram 14. gpeq_fcoords.
+c     subprogram 19. gpeq_fcoords.
 c     transform coordinates to dcon coordinates.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_fcoords(psi,ftnmn,amf,amp,ri,bpi,bi,rci,ti,ji)
@@ -1880,7 +1874,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_fcoords
 c-----------------------------------------------------------------------
-c     subprogram 14. gpeq_fcoordsout.
+c     subprogram 20. gpeq_fcoordsout.
 c     transform to dcon coordinates. Assumes mpert,lmpert,jac_out
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_fcoordsout(fmo,fmi,psi,ti,ji)
@@ -1943,7 +1937,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_fcoordsout
 c-----------------------------------------------------------------------
-c     subprogram 15. gpeq_bcoords.
+c     subprogram 21. gpeq_bcoords.
 c     transform dcon coordinates to other coordinates.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_bcoords(psi,ftnmn,amf,amp,ri,bpi,bi,rci,ti,ji)
@@ -2082,7 +2076,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_bcoords
 c-----------------------------------------------------------------------
-c     subprogram 16. gpeq_bcoordsout.
+c     subprogram 22. gpeq_bcoordsout.
 c     transform dcon to other coordinates. Assumes mpert,lmpert,jac_out
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_bcoordsout(fmo,fmi,psi,ti,ji)
@@ -2145,7 +2139,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_bcoordsout
 c-----------------------------------------------------------------------
-c     subprogram 17. gpeq_weight.
+c     subprogram 23. gpeq_weight.
 c     switch between a function and a weighted function.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_weight(psi,ftnmn,amf,amp,wegt)
@@ -2216,7 +2210,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_weight
 c-----------------------------------------------------------------------
-c     subprogram 18. gpeq_rzpgrid.
+c     subprogram 24. gpeq_rzpgrid.
 c     find magnetic coordinates for given rz coords.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_rzpgrid(nr,nz,psixy)
@@ -2319,7 +2313,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_rzpgrid
 c-----------------------------------------------------------------------
-c     subprogram 19. gpeq_rzpdiv.
+c     subprogram 25. gpeq_rzpdiv.
 c     make zero divergence of rzphi functions.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_rzpdiv(nr,nz,rval,zval,fr,fz,fp)
@@ -2385,7 +2379,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_rzpdiv
 c-----------------------------------------------------------------------
-c     subprogram 20. gpeq_alloc.
+c     subprogram 26. gpeq_alloc.
 c     allocate essential vectors in fourier space
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_alloc
@@ -2411,7 +2405,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_alloc
 c-----------------------------------------------------------------------
-c     subprogram 21. gpeq_dealloc.
+c     subprogram 27. gpeq_dealloc.
 c     deallocate essential vectors in fourier space
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_dealloc
@@ -2431,7 +2425,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_dealloc
 c-----------------------------------------------------------------------
-c     subprogram 22. gpeq_interp_singsurf.
+c     subprogram 28. gpeq_interp_singsurf.
 c     create spline for interpretation of solution near singular surface.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_interp_singsurf(fsp_sol,spots,npsi)
@@ -2515,7 +2509,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_interp_singsurf
 c-----------------------------------------------------------------------
-c     subprogram 23. gpeq_interp_sol.
+c     subprogram 29. gpeq_interp_sol.
 c     get bwn at psi after calling gpeq_interp_singsurf.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_interp_sol(fsp_sol,psi,interpbwn)
