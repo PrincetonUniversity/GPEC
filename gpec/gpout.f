@@ -1587,8 +1587,9 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:mthsurf) :: r_tmp
       TYPE(spline_type) :: sr
 
-      REAL(r8), DIMENSION(msing) :: b_crit, ti_r, te_r, ni_r, ne_r,
-     $    q1_r, we_r, wi_r, rh_r, r1_r, dP_r, P_r, phi_crit_callen
+      REAL(r8), DIMENSION(msing) :: b_crit_slayer, b_crit_callen,
+     $    ti_r, te_r, ni_r, ne_r,
+     $    q1_r, we_r, wi_r, rh_r, r1_r, dP_r, P_r
       REAL(r8) :: omega_i,omega_e,jxb,omega_sol,br_th,slayer_shear,
      $     pleft, pright, psileft, psiright
       REAL(r8) :: slayer_inpr_loc
@@ -1714,8 +1715,8 @@ c-----------------------------------------------------------------------
          hw_v_crit(ising) = 0.0_r8
          hw_sat(ising) = 0.0_r8
          hw_min(ising) = 0.0_r8
-         b_crit(ising) = 0.0_r8
-         phi_crit_callen(ising) = 0.0_r8
+         b_crit_slayer(ising) = 0.0_r8
+         b_crit_callen(ising) = 0.0_r8
          dP_r(ising) = 0.0_r8
          P_r(ising) = sq%f(2) / mu0
          IF (callen_threshold_flag. OR. slayer_threshold_flag) THEN
@@ -1845,12 +1846,12 @@ c-----------------------------------------------------------------------
             hw_v_crit(ising) = hw_v_crit(ising) / sr%f1(1)
 
             ! Critical resonant flux for w_vac = w_v_crit (Callen); the
-            ! analog of the SLAYER Phi_res_crit (b_crit) for direct
+            ! analog of the SLAYER b_crit_slayer for direct
             ! model comparison. Since w_vac ~ sqrt(Phi_res), the flux
             ! needed to reach the critical width is Phi_res*(w_crit/w_vac)^2
             ! (hw_v and hw_v_crit are both in psi_n here).
             IF (ALLOCATED(vsingfld) .AND. hw_v(ising) > 0.0_r8) THEN
-               phi_crit_callen(ising) = ABS(vsingfld(ising))
+               b_crit_callen(ising) = ABS(vsingfld(ising))
      $              * (hw_v_crit(ising) / hw_v(ising))**2
             ENDIF
 
@@ -1889,20 +1890,21 @@ c-----------------------------------------------------------------------
      $           kin%f(9),kin%f(5),omega_e,omega_i,sq%f(4),slayer_shear,
      $           bt0,sr%f(1),ro,mi,slayer_inpr_loc,resm,nn,ascii_flag,
      $           delta_s,psi0,jxb,omega_sol,br_th)
-            b_crit(ising)=br_th  ! Tesla. Normal resonant field comparable to singflx
+            b_crit_slayer(ising)=br_th  ! Tesla. Normal resonant field comparable to singflx
          ENDIF
 
          IF (verbose) THEN
 
             IF (callen_threshold_flag .OR. slayer_threshold_flag) THEN
-               IF(ising == 1) WRITE(*,'(1x,12a13)')
-     $              "psi","q","singflx","singlfx_crit","Phi_crit_cal",
+               IF(ising == 1) WRITE(*,'(1x,3a13,2a20,7a13)')
+     $              "psi","q","singflx",
+     $              "singflx_crit_slayer","singflx_crit_callen",
      $              "chirikov",
      $              "w_island", "w_v", "w_v_crit",
      $              "w_sat","w_min","dP/P"
-               WRITE(*,'(1x,es13.3,f13.3,3es13.3,f13.3,6es13.3)')
+               WRITE(*,'(1x,es13.3,f13.3,es13.3,2es20.3,f13.3,6es13.3)')
      $              respsi,sq%f(4),ABS(singflx_mn(resnum(ising),ising)),
-     $              ABS(b_crit(ising)),ABS(phi_crit_callen(ising)),
+     $              ABS(b_crit_slayer(ising)),ABS(b_crit_callen(ising)),
      $              chirikov(ising),2*hw_isl(ising),
      $              2*hw_v(ising),2*hw_v_crit(ising),
      $              2*hw_sat(ising),2*hw_min(ising),
@@ -1979,16 +1981,19 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,a12,1x,I4)')"msing =",msing
          WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a6,19(1x,a16))')"q","psi","spot",
+         WRITE(out_unit,'(1x,a6,13(1x,a16),2(1x,a19),4(1x,a16))')
+     $        "q","psi","spot",
      $        "real(singflx)","imag(singflx)",
      $        "real(singcur)","imag(singcur)",
      $        "real(singbwp)","imag(singbwp)",
      $        "real(Delta)","imag(Delta)",
      $        "half_w_isl","chirikov",
-     $        "half_w_isl_v_crit","singflx_crit","Phi_crit_callen",
+     $        "half_w_isl_v_crit",
+     $        "singflx_crit_slayer","singflx_crit_callen",
      $        "half_w_sat","half_w_min","dP","P"
          DO ising=1,msing
-            WRITE(out_unit,'(1x,f6.3,19(es17.8e3))')
+            WRITE(out_unit,
+     $           '(1x,f6.3,13(es17.8e3),2(es20.8e3),4(es17.8e3))')
      $           singtype(ising)%q,singtype(ising)%psifac,
      $           spots(ising),
      $           REAL(singflx_mn(resnum(ising),ising)),
@@ -1997,7 +2002,8 @@ c-----------------------------------------------------------------------
      $           REAL(singbwp(ising)),AIMAG(singbwp(ising)),
      $           REAL(delta(ising)),AIMAG(delta(ising)),
      $           hw_isl(ising),chirikov(ising),
-     $           hw_v_crit(ising),b_crit(ising),phi_crit_callen(ising),
+     $           hw_v_crit(ising),
+     $           b_crit_slayer(ising),b_crit_callen(ising),
      $           hw_sat(ising),hw_min(ising),
      $           dP_r(ising),P_r(ising)
          ENDDO
@@ -2182,8 +2188,8 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_var(fncid, wsat_id, 2*hw_sat) )
          CALL check( nf90_put_var(fncid, dp_id, dP_r) )
          CALL check( nf90_put_var(fncid, pr_id, P_r) )
-         CALL check( nf90_put_var(fncid, bc_id, b_crit) )
-         CALL check( nf90_put_var(fncid, pcc_id, phi_crit_callen) )
+         CALL check( nf90_put_var(fncid, bc_id, b_crit_slayer) )
+         CALL check( nf90_put_var(fncid, pcc_id, b_crit_callen) )
          CALL check( nf90_put_var(fncid, k_id, chirikov) )
          CALL check( nf90_put_var(fncid, ti_id, ti_r) )
          CALL check( nf90_put_var(fncid, te_id, te_r) )
