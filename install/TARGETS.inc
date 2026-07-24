@@ -43,8 +43,9 @@ netcdf-c: v hdf5
 	cd ../; git submodule update --init deps/src/netcdf-c;
 	if [ ! -f ../deps/src/netcdf-c/Makefile ]; then \
 		cd ../deps/src/netcdf-c; \
+			CC="$(CC)" FC="$(FC)" F77="$(FC)" \
 			CPPFLAGS="-I$(realpath $(DEPSINSTALLDIR))/include" \
-			LDFLAGS="-L$(realpath $(DEPSINSTALLDIR))/lib" \
+			LDFLAGS="-L$(realpath $(DEPSINSTALLDIR))/lib -Wl,-rpath,$(realpath $(DEPSINSTALLDIR))/lib" \
 			./configure --prefix=$(realpath $(DEPSINSTALLDIR)); \
 	fi
 	cd ../deps/src/netcdf-c; \
@@ -56,8 +57,9 @@ netcdf-fortran: v netcdf-c
 	cd ../; git submodule update --init deps/src/netcdf-fortran;
 	if [ ! -f ../deps/src/netcdf-fortran/Makefile ]; then \
 		cd ../deps/src/netcdf-fortran; \
+			CC="$(CC)" FC="$(FC)" F77="$(FC)" \
 			CPPFLAGS="-I$(realpath $(DEPSINSTALLDIR))/include" \
-			LDFLAGS="-L$(realpath $(DEPSINSTALLDIR))/lib" \
+			LDFLAGS="-L$(realpath $(DEPSINSTALLDIR))/lib -Wl,-rpath,$(realpath $(DEPSINSTALLDIR))/lib" \
 			./configure --prefix=$(realpath $(DEPSINSTALLDIR)); \
 	fi
 	cd ../deps/src/netcdf-fortran; \
@@ -69,6 +71,8 @@ hdf5: v
 	cd ../; git submodule update --init deps/src/hdf5;
 	if [ ! -f ../deps/src/hdf5/Makefile ]; then \
 		cd ../deps/src/hdf5; \
+		CC="$(CC)" FC="$(FC)" \
+		LDFLAGS="-Wl,-rpath,$(realpath $(DEPSINSTALLDIR))/lib" \
 		./configure --prefix=$(realpath $(DEPSINSTALLDIR)); \
 	fi
 	cd ../deps/src/hdf5; \
