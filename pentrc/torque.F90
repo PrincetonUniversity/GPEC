@@ -738,7 +738,14 @@ module torque
                     ! Bounce averaged Lambda functions
                     fbnce%xs(ilmda-1) = lmda
                     wbbar = ro*twopi/((2-sigma)*bspl%fsi(bspl%mx,1))
-                    wdbar = ro*ro*bo*wdfac*wbbar*2*(2-sigma)*bspl%fsi(bspl%mx,2)
+                    ! wbbar is omega_b/bhat, so it carries one factor of ro that
+                    ! bhat takes back out. dhat removes only the explicit ro**2,
+                    ! so a third ro from wbbar would survive and leave omega_D a
+                    ! velocity rather than a frequency. Hence ro, not ro*ro:
+                    ! wdbar*dhat = 4 pi (T/chrg) I2/I1 = -(1/chrg)(dJ/dpsi)/tau_b,
+                    ! the canonical precession, with I1 in bspl%fsi(:,1) and I2
+                    ! in bspl%fsi(:,2) and d/dpsi taken against chi1.
+                    wdbar = ro*bo*wdfac*wbbar*2*(2-sigma)*bspl%fsi(bspl%mx,2)
                     bhat = sqrt(2*kin_f(s+2)/mass)/ro
                     dhat = (kin_f(s+2)/chrg)/(bo*ro*ro)
                     fbnce%fs(ilmda-1,1) = wbbar*bhat
