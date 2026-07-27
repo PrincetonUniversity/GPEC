@@ -869,6 +869,7 @@ c-----------------------------------------------------------------------
      $                    g23(dm)*cwt_mn(jpert)+g33(dm)*cwz_mn(jpert)
          ENDDO
       ENDDO
+c     (xno/bno and theta-space c2v* were dev-time checks; removed)
 
       IF(debug_flag) PRINT *, "->Leaving gpeq_c at ipsi=", ipsi
 c-----------------------------------------------------------------------
@@ -1216,7 +1217,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(0:mthsurf), INTENT(OUT) :: shear_fun
 
       INTEGER :: itheta
-      REAL(r8) :: r_val, theta_val
+      REAL(r8) :: r_val, theta_val, q, q1
       REAL(r8) :: dpdp, dpdt, dpdz, shear_deriv
       REAL(r8) :: shear_contra
       TYPE(spline_type) :: shear_temp
@@ -1336,7 +1337,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(0:mthsurf), INTENT(OUT) :: curv_fun
 
       INTEGER :: itheta
-      REAL(r8) :: r_val, theta_val
+      REAL(r8) :: r_val, theta_val, p1
       REAL(r8) :: delpsi
       REAL(r8) :: bsq_val, bsq_psi, bsq_theta
       REAL(r8) :: dpdt , kappa_psi
@@ -1411,7 +1412,7 @@ c-----------------------------------------------------------------------
      $     shear_out, curv_out
 
       INTEGER :: itheta
-      REAL(r8) :: f1raw, delpsi, chi1
+      REAL(r8) :: f1raw, delpsi, chi1, p1, q
       REAL(r8) :: jwt, jwz, bth, bze, bsq_val, sigma, jdotb_val
       REAL(r8) :: g22, g23, g33, r_val
       REAL(r8), DIMENSION(0:mthsurf) :: K_t1, K_t2, K_t3
