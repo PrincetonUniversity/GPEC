@@ -51,7 +51,7 @@ c-----------------------------------------------------------------------
       CALL timer(0,out_unit)
       CALL ideal_read(filename)
 c-----------------------------------------------------------------------
-c     reconstruct most unstable ideal solution.
+c     reconstruct the ideal solution selected by sol_num.
 c-----------------------------------------------------------------------
       IF(ideal_flag)THEN
          CALL ideal_transform
