@@ -460,7 +460,7 @@ module torque
                     fbnce%fs(ilmda-1,3) = wbbar*djdj
                     ! bounce locations recorded for optional output
                     vspl%fs(:,1) = 1.0-(lmda/bo)*tspl%fs(:,1)
-                    call spline_fit(vspl,"extrap")
+                    call spline_fit(vspl,"periodic")
                     call spline_roots(vspl,1,nbpts,bpts)
                     if(nbpts<1)then
                         print *, "!! WARNING: Found passing particle in bounce particle integrals"
@@ -597,7 +597,7 @@ module torque
 
                     ! determine bounce points
                     vspl%fs(:,1) = 1.0-(lmda/bo)*tspl%fs(:,1)
-                    call spline_fit(vspl,"extrap")
+                    call spline_fit(vspl,"periodic")
                     if(sigma==0)then ! find trapped particle bounce pts
                         call spline_roots(vspl, 1, nbpts, bpts)
                         if(nbpts < 1)then
