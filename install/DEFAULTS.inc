@@ -329,6 +329,46 @@
 #   Now compile using
 #     $ make 2>&1 | tee make.log
 #
+#   ---------------------------------------------------------------
+# On the SNU 3DST Rocky Linux 9 server (tdst.cluster.master)
+#   Clone the latest development branch at any user-writable location:
+#     $ cd /path/to/parent
+#     $ /usr/bin/git clone --branch develop \
+#         https://github.com/PrincetonUniversity/GPEC.git
+#
+#   Load the public 3DST compile module. It configures a consistent Intel 2026
+#   compiler, MPI, MKL, and NetCDF stack, but deliberately does not set
+#   GPECHOME or depend on the location of the clone:
+#     $ module purge
+#     $ module load gpec/compile
+#
+#   Build directly from the selected clone. Executing,
+#     $ cd /path/to/parent/GPEC/install
+#     $ make v
+#   should produce the following verbose message.
+#
+#   ------------------------------------------------------------
+#   Defaults tailored for platform Linux on host tdst.cluster.master
+#   Compiling with FC = ifx
+#      using math libraries -lmkl_rt
+#      from /opt/intel/oneapi/mkl/2026.0/lib/intel64
+#      including /opt/intel/oneapi/mkl/2026.0/include/intel64/lp64
+#      and netcdf libraries -lnetcdff -lnetcdf
+#      from /APP/libraries/intel/2026.0.0/netcdf-f/lib \
+#           /APP/libraries/intel/2026.0.0/petsc-real/lib
+#      including /APP/libraries/intel/2026.0.0/netcdf-f/include
+#      and compiler libraries
+#      from .
+#      including .
+#      and using OMPFLAG -qopenmp
+#
+#   Set environment FC,LAPACKHOME,NETCDFHOME to change these
+#   ------------------------------------------------------------
+#
+#   Now compile and verify using
+#     $ make -j 16 all 2>&1 | tee ../make.log
+#     $ make checkdeps
+#
 # If your platform is not properly included in this make file
 # contact nikolas.logan@columbia.edu with your operating system, compiler, and
 # library installation details.
