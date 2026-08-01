@@ -1601,7 +1601,7 @@ c-----------------------------------------------------------------------
       LOGICAL, PARAMETER :: debug = .FALSE.
 
       LOGICAL :: extrap
-      INTEGER:: ix, jroot, lx, nzvalid
+      INTEGER:: ix, jroot, lx, nzvalid, ir, ir0, irmx
       REAL(r8)::  f_0, f1_0, f_1, f1_1,
      $  c3, c2, c1, c0, a, b, c, q, r, m, s, t, theta,
      $  z1, z2, z3, x1, x2, x3, last1, last2, last3,
@@ -1774,6 +1774,32 @@ c-----------------------------------------------------------------------
          last3 = roots(max(1,jroot-2))
       ENDDO
       nroots = jroot
+      ! periodic splines duplicate the wrap-around point: xs(0) and
+      ! xs(mx) are the same physical location, so at most one may
+      ! survive as a root
+      IF(spl%periodic .AND. nroots>1)THEN
+         tol = eps*(spl%xs(1)-spl%xs(0))
+         ir0 = 0
+         DO ir=1,nroots
+            IF(ABS(roots(ir)-spl%xs(0))<tol)THEN
+               ir0 = ir
+               EXIT
+            ENDIF
+         ENDDO
+         tol = eps*(spl%xs(spl%mx)-spl%xs(spl%mx-1))
+         irmx = 0
+         DO ir=1,nroots
+            IF(ir/=ir0 .AND.
+     $         ABS(roots(ir)-spl%xs(spl%mx))<tol)THEN
+               irmx = ir
+               EXIT
+            ENDIF
+         ENDDO
+         IF(ir0>0 .AND. irmx>0)THEN
+            roots(irmx:nroots-1) = roots(irmx+1:nroots)
+            nroots = nroots - 1
+         ENDIF
+      ENDIF
       ! sort the roots lowest to highest
       ALLOCATE(index(nroots), tmproots(nroots))
       index=(/(ix,ix=1,nroots)/)
