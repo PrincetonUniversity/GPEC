@@ -819,7 +819,7 @@ c
       else
         ier1=1                  !warning
         ityp='warning       '
-      endif                        
+      endif
       ier2=ier2-ibit(ier1)      !extract *n*
 
 c     print error message

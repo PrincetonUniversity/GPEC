@@ -32,7 +32,7 @@ module pentrc_interface
     use params, only: r8,xj, npsi_out, nmethods, methods, docs, version
     use utilities, only: timer,to_upper,get_free_file_unit
     use special, only: set_fymnl,set_ellip
-    use dcon_interface, only: set_eq, idcon_harvest
+    use dcon_interface, only: set_eq
     use inputs, only : read_kin,read_equil,nn,read_peq,read_pmodb,&
                        set_peq,read_fnml,verbose
     use diagnostics, only: diagnose_all
