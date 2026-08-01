@@ -146,6 +146,9 @@ c-----------------------------------------------------------------------
       CHARACTER(*), INTENT(IN) :: endmode
       IF(.NOT.spl%allocated)
      $   CALL program_stop("spline_fit: spline not allocated")
+      ! reset so refits reflect the current endmode; the periodic
+      ! cases below set it back to true
+      spl%periodic=.FALSE.
 c-----------------------------------------------------------------------
 c     switch between two spline_fit.
 c-----------------------------------------------------------------------
