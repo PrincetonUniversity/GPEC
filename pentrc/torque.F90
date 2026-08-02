@@ -443,10 +443,16 @@ module torque
                         kappa = sqrt((1 - lmda*(1- epsr))/(2*epsr*lmda))
                     endif
                     lnq = 1.0*l
-                    ! cylindrical bounce and precessions
-                    wbbar = pi*SQRT(2*epsr*lmda*bo)/(4*q*ro*ellipk(kappa**2))
+                    ! cylindrical bounce and precessions. These forms come from
+                    ! PENT, where the pitch variable was dimensional (1/Tesla,
+                    ! vpar = 1 - lmda*b). Here lmda is the dimensionless
+                    ! Lambda = lmda_pent*bo, so the PENT expressions map to
+                    ! sqrt(2*epsr*lmda) (no bo) and a bo in the wdbar
+                    ! denominator; keeping the PENT text verbatim inflated
+                    ! omega_b by sqrt(bo) and omega_D by bo.
+                    wbbar = pi*SQRT(2*epsr*lmda)/(4*q*ro*ellipk(kappa**2))
                     wdbar = (2*q*lmda*(ellipe(kappa**2)/ellipk(kappa**2)-0.5)&
-                        /(ro**2*epsr))*wdfac
+                        /(bo*ro**2*epsr))*wdfac
                     bhat = SQRT(2*kin_f(s+2)/mass)
                     dhat = (kin_f(s+2)/chrg)
                     ! perturbed action Eq. (12) [Park, Phys. Rev. Lett. 2009] divided by 2pi for DCON phi normalization
