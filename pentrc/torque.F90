@@ -690,7 +690,7 @@ module torque
                                 cycle
                             else
                                 bspl%fs(i-1:,1) = bspl%fs(i-2,1)
-                                bspl%fs(i-1:,2) = bspl%fs(i-2,1)
+                                bspl%fs(i-1:,2) = bspl%fs(i-2,2)
                                 jvtheta(i:) = jvtheta(i-1)
                                 exit
                             endif
