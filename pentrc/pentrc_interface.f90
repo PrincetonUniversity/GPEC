@@ -113,7 +113,7 @@ module pentrc_interface
 
     !> How much tighter the energy integration is than the pitch integration
     !> when atol_x/rtol_x are left at their derive-me default.
-    real(r8), parameter :: nested_tolerance_margin = 1e-2
+    real(r8), parameter :: nested_tolerance_margin = 1e-2_r8
 
     real(r8) ::    &
         atol_xlmda=1e-6, &
