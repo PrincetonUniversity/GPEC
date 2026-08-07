@@ -17,8 +17,11 @@ setting up kinetic calculations.
 Coordinate System
 =================
 
-GPEC uses right-handed magnetic coordinates :math:`(\psi, \theta, \zeta)` with
-Fourier decomposition :math:`\exp(im\theta - in\phi)`.
+DCON defines its native magnetic chart :math:`(\psi, \theta, \zeta)` and
+Fourier decomposition :math:`\exp[2\pi i(m\theta-n\zeta)]` independently of
+the physical machine embedding.  Do not infer physical handedness from this
+abstract chart alone: GPEC maps its native toroidal coordinate to the
+counter-clockwise machine angle using ``helicity``, as described below.
 
 Poloidal Flux :math:`\psi`
 --------------------------
@@ -46,6 +49,10 @@ Toroidal Coordinate :math:`\zeta` and :math:`\phi`
 - :math:`\phi` is effectively **CCW** (counter-clockwise from above) for
   left-handed (LH) configurations, but **CW** (clockwise) for right-handed
   (RH) configurations.
+- In the laboratory convention where :math:`\phi_{\rm CCW}` increases
+  counter-clockwise viewed from above, the implemented machine embedding is
+  :math:`\phi_{\rm CCW}=-h(2\pi\zeta+\delta\phi)`, with
+  :math:`h=\mathrm{helicity}` (``coil/field.F``).
 
 Working Coordinate Options
 --------------------------
@@ -229,9 +236,13 @@ Rotation Velocity Conventions (PENTRC)
 - Read by the ``read_kin`` subroutine in ``pentrc/inputs.f90``.
 - **Sign convention**: positive :math:`\omega_E` means rotation in the
   direction of the toroidal coordinate :math:`\zeta`.
-- Since :math:`\phi` direction depends on helicity, positive :math:`\omega_E`
-  is effectively **co-current for RH plasmas** and **counter-current for
-  LH plasmas**.
+- In the CCW laboratory frame, positive native :math:`\omega_E` has sign
+  :math:`-h`.  Relative to plasma current its sign is
+  :math:`(-h)/s_I=-s_B`, where :math:`s_I=\mathtt{ipd}` and
+  :math:`s_B=\mathtt{btd}`.  It is therefore co-current exactly when
+  ``bt_direction="negative"`` (clockwise), not according to helicity alone.
+  For ``(ip_direction,bt_direction)=(positive,positive)``, positive native
+  :math:`\omega_E` is clockwise and counter-current.
 
 Diamagnetic Frequencies
 -----------------------
@@ -270,6 +281,12 @@ Rotation Scaling Parameters
 - ``wpfac``: scales the total rotation :math:`\omega_\phi = \omega_E + \omega_{*n} + \omega_{*T}`
   by indirectly adjusting :math:`\omega_E`.
 
+At the current revision, ``read_kin`` replaces every exactly zero
+:math:`\omega_E` knot by :math:`10^{-9}\,\mathrm{rad/s}` before applying
+``wpfac``.  Consequently ``wefac=0,wpfac=1`` is not an exact zero control.
+This behavior is tracked in `issue 275
+<https://github.com/PrincetonUniversity/GPEC/issues/275>`_.
+
 Energy Integral Resonance
 -------------------------
 
@@ -282,7 +299,7 @@ resonance denominator involves:
 
 where :math:`\omega_b` is the bounce frequency divided by :math:`x`,
 :math:`\omega_D` is the magnetic precession frequency,
-:math:`\ell_{\mathrm{eff}} = \ell - \sigma n q` is the effective bounce harmonic,
+:math:`\ell_{\mathrm{eff}} = \ell + \sigma n q` is the effective bounce harmonic,
 and :math:`x = E/T` is the normalized energy. The sign of :math:`\omega_E`
 determines the direction of resonance in velocity space.
 
@@ -362,6 +379,7 @@ Source Code References
 - **Resonant surface finder**: ``sing_find`` in ``dcon/sing.f``
 - **Output sign flips**: ``gpec/gpout.f`` (many locations, search ``helicity``)
 - **omega_E input**: ``read_kin`` in ``pentrc/inputs.f90``
+- **native-to-machine toroidal map**: ``field_bs_psi`` in ``coil/field.F``
 - **Diamagnetic frequencies**: ``tpsi`` in ``pentrc/torque.F90``
 - **Energy integral**: ``xintgrnd`` in ``pentrc/energy.f90``
 - **SURFMN interface**: ``docs/outputs.rst``
