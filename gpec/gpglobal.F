@@ -18,7 +18,8 @@ c-----------------------------------------------------------------------
      $     fun_flag,flux_flag,vsbrzphi_flag,displacement_flag,
      $     chebyshev_flag,coil_flag,eigm_flag,bwp_pest_flag,verbose,
      $     debug_flag,timeit,kin_flag,con_flag,resp_induct_flag,
-     $     netcdf_flag,ascii_flag,wv_farwall_flag,mutual_test_flag
+     $     netcdf_flag,ascii_flag,wv_farwall_flag,mutual_test_flag,
+     $     cveri_flag,recon_out,recon_flag2,recon_flag3
 
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths,nths2,lmpert,lmlow,lmhigh,
@@ -38,8 +39,9 @@ c-----------------------------------------------------------------------
 
       CHARACTER(2) :: sn,ss
       CHARACTER(10) :: date,time,zone
-      CHARACTER(16) :: jac_type,jac_in,jac_out,data_type
-      CHARACTER(128) :: ieqfile,idconfile,ivacuumfile,rdconfile,dcon_dir
+      CHARACTER(16) :: jac_type,jac_in,jac_out,data_type,recon_int
+      CHARACTER(128) :: ieqfile,idconfile,ivacuumfile,rdconfile
+      CHARACTER(128) :: dcon_dir
 
       INTEGER, PARAMETER :: hmnum=128
       REAL(r8), PARAMETER :: gauss=0.0001
@@ -56,8 +58,8 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(:), ALLOCATABLE :: psifac,rhofac,qfac,singfac,
      $     r,z,theta,ee,surfee,surfei,rpsifac,
-     $     surf_indev,vsurf_indev,fsurf_indev,surf_indinvev
-     $     ,eft,efp
+     $     surf_indev,vsurf_indev,fsurf_indev,surf_indinvev,
+     $     eft,efp
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: xzpts,
      $     chperr,chpsqr,grri,grre,griw,grrw,gdr,gdz,gdpsi,gdthe,gdphi
       REAL(r8), DIMENSION(3,3) :: w,v
@@ -72,6 +74,8 @@ c-----------------------------------------------------------------------
      $     chi_mn,che_mn,kax_mn,sbno_mn,sbno_fun,edge_mn,edge_fun,
      $     chy_mn,chx_mn,chw_mn,kaw_mn,mutual_indev,mutual_indinvev,
      $     bwp_mn_rmatch
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: cwp_mn,cwt_mn,
+     $     cwz_mn, cvp_mn,cvt_mn,cvz_mn,c2vp_mn,c2vt_mn, c2vz_mn
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: wt,wt0,chp_mn,kap_mn,
      $     permeabev,chimats,chemats,flxmats,kaxmats,singbno_mn,
      $     plas_indev,plas_indinvev,reluctev,indrelev,permeabsv,
