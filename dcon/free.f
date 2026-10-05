@@ -168,6 +168,8 @@ c-----------------------------------------------------------------------
       IF(wv_farwall_flag)THEN
          wv=temp
       ENDIF
+c     vacuum used the reversed theta grid: conjugate to dcon frame.
+      wv=CONJG(wv)
 
       singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
       DO ipert=1,mpert
@@ -197,7 +199,7 @@ c-----------------------------------------------------------------------
             norm=0
             DO ipert=1,mpert
                DO jpert=1,mpert
-                  norm=norm+jmat(jpert-ipert)
+                  norm=norm+jmat(ipert-jpert)
      $                 *wt(ipert,isol)*CONJG(wt(jpert,isol))
                ENDDO
             ENDDO
@@ -729,7 +731,7 @@ c-----------------------------------------------------------------------
          norm=0
          DO ipert=1,mpert
             DO jpert=1,mpert
-               norm=norm+jmat(jpert-ipert)
+               norm=norm+jmat(ipert-jpert)
      $              *wt(ipert,isol)*CONJG(wt(jpert,isol))
             ENDDO
          ENDDO
@@ -827,6 +829,7 @@ c-----------------------------------------------------------------------
          ALLOCATE(grri(2*(mthvac+5),mpert*2),xzpts(mthvac+5,4))
          CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
      $        wall_flag,farwal_flag,grri,xzpts,ahgstr)
+         wv=CONJG(wv)
          singfac=mlow-nn*sq%f(4)+(/(ipert,ipert=0,mpert-1)/)
          DO ipert=1,mpert
             wv(ipert,:)=wv(ipert,:)*singfac
