@@ -195,7 +195,6 @@ c     fit surface quantities to cubic splines.
 c-----------------------------------------------------------------------
       CALL spline_fit_hermite(sq,"extrap",sq_in_slopes)
       sq%name="  sq  "
-      sq%title=(/" psi  ","  f   ","  p   ","  q   "/)
       q0=sq%fs(0,4)-sq%fs1(0,4)*sq%xs(0)
 c-----------------------------------------------------------------------
 c     revise q profile.
