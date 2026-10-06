@@ -2413,14 +2413,14 @@ c-----------------------------------------------------------------------
       END SUBROUTINE read_eq_marklin_inverse
 c-----------------------------------------------------------------------
 c     subprogram 32. read_eq_profiles_from_derivatives.
-c     uses tabulated derivatives ffp = f*df/dpsifac and
-c     pp = d(mu0 p)/dpsifac for the f and mu0 p columns of sq_in,
-c     according to profile_source:
-c       "values": tabulated values, spline-fitted derivatives.
-c       "hermite": tabulated values and tabulated derivatives.
-c       "integrate": values integrated inward from the boundary
-c          values of f**2/2 and mu0 p, and tabulated derivatives.
-c     falls back to "values" if the derivatives are unusable.
+c     profile_source = "integrate": builds the f and mu0 p columns of
+c     sq_in from ffp = f*df/dpsifac and pp = d(mu0 p)/dpsifac. Values
+c     are integrated inward from the boundary values of f**2/2 and
+c     mu0 p; knot derivatives ffp/f and pp are kept by
+c     spline_fit_hermite. Tabulated values are not paired with the
+c     tabulated derivatives: their rounding noise would set f''.
+c     "values": tabulated values only. Falls back to "values" if the
+c     derivatives are unusable.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
@@ -2439,7 +2439,7 @@ c-----------------------------------------------------------------------
       SELECT CASE(TRIM(profile_source))
       CASE("values")
          RETURN
-      CASE("hermite","integrate")
+      CASE("integrate")
       CASE DEFAULT
          CALL program_stop("Cannot recognize profile_source = "
      $        //TRIM(profile_source))
@@ -2494,11 +2494,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     store values and derivatives.
 c-----------------------------------------------------------------------
-      IF(profile_source == "integrate")THEN
-         sq_in%fs(:,1)=fint
-         sq_in%fs(:,2)=pint
-      ENDIF
-      sq_in%fs1(:,1)=sgn*ffp/sq_in%fs(:,1)
+      sq_in%fs(:,1)=fint
+      sq_in%fs(:,2)=pint
+      sq_in%fs1(:,1)=sgn*ffp/fint
       sq_in%fs1(:,2)=sgn*pp
       sq_in_slopes(1:2)=.TRUE.
 c-----------------------------------------------------------------------
