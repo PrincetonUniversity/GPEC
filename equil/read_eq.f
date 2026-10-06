@@ -2430,7 +2430,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:), INTENT(IN) :: ffp,pp
 
       INTEGER :: mx
-      REAL(r8) :: sgn_f,sgn_p,dfmax,dpmax
+      REAL(r8) :: sf,sp,sgn,dfmax,dpmax
       REAL(r8), DIMENSION(0:SIZE(ffp)-1) :: f,p,f2,fint,pint
       TYPE(spline_type) :: spl
 c-----------------------------------------------------------------------
@@ -2455,10 +2455,11 @@ c-----------------------------------------------------------------------
          CALL read_eq_profiles_warn("non-finite derivatives or f = 0")
          RETURN
       ENDIF
-      sgn_f=SIGN(one,SUM((f(1:mx)-f(0:mx-1))
-     $     *(ffp(1:mx)/f(1:mx)+ffp(0:mx-1)/f(0:mx-1))))
-      sgn_p=SIGN(one,SUM((p(1:mx)-p(0:mx-1))*(pp(1:mx)+pp(0:mx-1))))
-      IF(sgn_f /= sgn_p)THEN
+      sf=SUM((f(1:mx)-f(0:mx-1))
+     $     *(ffp(1:mx)/f(1:mx)+ffp(0:mx-1)/f(0:mx-1)))
+      sp=SUM((p(1:mx)-p(0:mx-1))*(pp(1:mx)+pp(0:mx-1)))
+      sgn=SIGN(one,sf+sp)
+      IF(sf*sp < 0)THEN
          CALL read_eq_profiles_warn("derivative signs disagree with"
      $        //" the values for only one of f and p")
          RETURN
@@ -2468,8 +2469,8 @@ c     integrate derivatives inward from the boundary.
 c-----------------------------------------------------------------------
       CALL spline_alloc(spl,mx,2)
       spl%xs=sq_in%xs
-      spl%fs(:,1)=sgn_f*ffp
-      spl%fs(:,2)=sgn_f*pp
+      spl%fs(:,1)=sgn*ffp
+      spl%fs(:,2)=sgn*pp
       CALL spline_fit(spl,"extrap")
       CALL spline_int(spl)
       f2=f(mx)**2-2*(spl%fsi(mx,1)-spl%fsi(:,1))
@@ -2497,8 +2498,8 @@ c-----------------------------------------------------------------------
          sq_in%fs(:,1)=fint
          sq_in%fs(:,2)=pint
       ENDIF
-      sq_in%fs1(:,1)=sgn_f*ffp/sq_in%fs(:,1)
-      sq_in%fs1(:,2)=sgn_f*pp
+      sq_in%fs1(:,1)=sgn*ffp/sq_in%fs(:,1)
+      sq_in%fs1(:,2)=sgn*pp
       sq_in_slopes(1:2)=.TRUE.
 c-----------------------------------------------------------------------
 c     terminate.

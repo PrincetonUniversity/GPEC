@@ -30,9 +30,9 @@ PROGRAM test_spline_hermite
      mx=mxs(ires)
      CALL spline_alloc(spl,mx,2)
      spl%xs=(/(ix,ix=0,mx)/)/REAL(mx,r8)
-     spl%fs(:,1)=f(spl%xs)
-     spl%fs(:,2)=f(spl%xs)
-     spl%fs1(:,1)=df(spl%xs)
+     spl%fs(:,1)=f1(spl%xs)
+     spl%fs(:,2)=f1(spl%xs)
+     spl%fs1(:,1)=df1(spl%xs)
      CALL spline_fit_hermite(spl,"extrap",(/.TRUE.,.FALSE./))
      err_val(ires)=0
      DO ix=0,mfine
@@ -43,7 +43,6 @@ PROGRAM test_spline_hermite
      err_end(ires)=MAX(ABS(spl%fs1(0,2)-df1(0._r8)),ABS(spl%fs1(mx,2)-df1(1._r8)))
      ALLOCATE(fs1_ref(0:mx,2))
      fs1_ref=spl%fs1
-     spl%fs(:,2)=f(spl%xs)
      CALL spline_fit(spl,"extrap")
      IF(ANY(spl%fs1(:,2) /= fs1_ref(:,2)))THEN
         WRITE(*,*)"FAIL: column not kept differs from spline_fit, mx = ",mx
@@ -91,17 +90,5 @@ CONTAINS
     REAL(r8), INTENT(IN) :: x
     df1=3*COS(3*x)+EXP(-x)*(2*x-x**2)
   END FUNCTION df1
-
-  FUNCTION f(x)
-    REAL(r8), DIMENSION(:), INTENT(IN) :: x
-    REAL(r8), DIMENSION(SIZE(x)) :: f
-    f=f1(x)
-  END FUNCTION f
-
-  FUNCTION df(x)
-    REAL(r8), DIMENSION(:), INTENT(IN) :: x
-    REAL(r8), DIMENSION(SIZE(x)) :: df
-    df=df1(x)
-  END FUNCTION df
 
 END PROGRAM test_spline_hermite
