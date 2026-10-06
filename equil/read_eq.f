@@ -808,7 +808,13 @@ c-----------------------------------------------------------------------
       END SUBROUTINE read_eq_ldp_d
 c-----------------------------------------------------------------------
 c     subprogram 12. read_eq_ldp_i.
-c     reads data from L. Don Pearlstein's inverse equilibrium code.
+c     reads data from L. Don Pearlstein's inverse equilibrium code, also
+c     written by OpenFUSIONToolkit TokaMaker (save_ifile). Sequential
+c     unformatted records, real*8, axis first, theta index fastest:
+c       mx,my (integer*4: number of surfaces, number of angles)
+c       psi(mx) [Wb/rad], f(mx) = R*B_t [T m], p(mx) [Pa], q(mx)
+c       r(my,mx), z(my,mx) [m], periodic point duplicated
+c       optional: f*df/dpsi(mx), dp/dpsi(mx) (see profile_source)
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
@@ -849,7 +855,7 @@ c-----------------------------------------------------------------------
       psio=psi(mx)-psi(0)
       CALL spline_alloc(sq_in,mx,4)
       sq_in%xs=(psi-psi(0))/psio
-      sq_in%fs(:,1)=f
+      sq_in%fs(:,1)=ABS(f)
       sq_in%fs(:,2)=p*mu0
       sq_in%fs(:,3)=q
       IF(ios1 == 0 .AND. ios2 == 0)
