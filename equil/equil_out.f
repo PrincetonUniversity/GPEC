@@ -848,6 +848,11 @@ c-----------------------------------------------------------------------
       WRITE(dump_unit)rzphi%name
       WRITE(dump_unit)rzphi%periodic
 c-----------------------------------------------------------------------
+c     write supplied f, p derivatives and eqfun (read only if present).
+c-----------------------------------------------------------------------
+      WRITE(dump_unit)sq_in_slopes(1:2),sq%fs1(:,1:2)
+      WRITE(dump_unit)eqfun%fs
+c-----------------------------------------------------------------------
 c     close dump file.
 c-----------------------------------------------------------------------
       CALL bin_close(dump_unit)

@@ -1436,7 +1436,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE read_eq_dump
 
-      INTEGER :: nqty
+      INTEGER :: nqty,ios
+      LOGICAL, DIMENSION(2) :: slopes
 
       LOGICAL, PARAMETER :: diagnose=.TRUE.
       INTEGER :: ix,iy,iqty,iside,ipsi
@@ -1468,14 +1469,15 @@ c-----------------------------------------------------------------------
 c     write 1D splines.
 c-----------------------------------------------------------------------
       READ(dump_unit)mpsi,nqty
+      IF(sq%allocated)CALL spline_dealloc(sq)
       CALL spline_alloc(sq,mpsi,nqty)
       READ(dump_unit)sq%xs,sq%fs,
      $     sq%xpower,sq%x0,sq%title,sq%name,sq%periodic
-      CALL spline_fit(sq,"extrap")
 c-----------------------------------------------------------------------
 c     read 2D splines.
 c-----------------------------------------------------------------------
       READ(dump_unit)mpsi,mtheta,nqty
+      IF(rzphi%allocated)CALL bicube_dealloc(rzphi)
       CALL bicube_alloc(rzphi,mpsi,mtheta,nqty)
       READ(dump_unit)rzphi%xs
       READ(dump_unit)rzphi%ys
@@ -1489,6 +1491,24 @@ c-----------------------------------------------------------------------
       READ(dump_unit)rzphi%title
       READ(dump_unit)rzphi%name
       READ(dump_unit)rzphi%periodic
+c-----------------------------------------------------------------------
+c     read supplied f, p derivatives and eqfun if present; fit sq.
+c-----------------------------------------------------------------------
+      READ(dump_unit,IOSTAT=ios)slopes,sq%fs1(:,1:2)
+      IF(ios == 0)sq_in_slopes(1:2)=slopes
+      CALL spline_fit_hermite(sq,"extrap",
+     $     (/sq_in_slopes(1:2),.FALSE.,.FALSE./))
+      IF(eqfun%allocated)CALL bicube_dealloc(eqfun)
+      CALL bicube_alloc(eqfun,mpsi,mtheta,3)
+      READ(dump_unit,IOSTAT=ios)eqfun%fs
+      IF(ios == 0)THEN
+         eqfun%xs=sq%xs
+         eqfun%ys=rzphi%ys
+         eqfun%title=(/"  b0  ","      ","      " /)
+         CALL bicube_fit(eqfun,"extrap","periodic")
+      ELSE
+         CALL bicube_dealloc(eqfun)
+      ENDIF
 c-----------------------------------------------------------------------
 c     restore x powers and fit.
 c-----------------------------------------------------------------------
@@ -1516,10 +1536,12 @@ c-----------------------------------------------------------------------
          DO ipsi=0,mpsi
             ffac=SQRT(1+f0fac/sq%fs(ipsi,1)**2)
             sq%fs(ipsi,1)=sq%fs(ipsi,1)*ffac
+            sq%fs1(ipsi,1)=sq%fs1(ipsi,1)/ffac
             sq%fs(ipsi,4)=sq%fs(ipsi,4)*ffac
             rzphi%fs(ipsi,:,3)=rzphi%fs(ipsi,:,3)*ffac
          ENDDO
-         CALL spline_fit(sq,"extrap")
+         CALL spline_fit_hermite(sq,"extrap",
+     $        (/sq_in_slopes(1:2),.FALSE.,.FALSE./))
       ENDIF
       qa=sq%fs(mpsi,4)+sq%fs1(mpsi,4)*(one-sq%xs(mpsi))
 c-----------------------------------------------------------------------
