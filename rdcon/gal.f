@@ -1399,6 +1399,7 @@ c-----------------------------------------------------------------------
       SUBROUTINE gal_solve
 
       INTEGER :: info,isol,jsol,imap,ising,ix,msol_old
+      CHARACTER(128) :: message
       TYPE(gal_type) :: gal
 c-----------------------------------------------------------------------
 c     allocate and compute arrays.
@@ -1417,12 +1418,23 @@ c-----------------------------------------------------------------------
          WRITE(*,*)"Performing Galerkin matrix LU factorization"
          CALL zgbtrf(gal%ndim,gal%ndim,gal%kl,gal%ku,gal%mat,gal%ldab,
      $        gal%ipiv,info)
+         IF (info /= 0) THEN
+            WRITE(message,'(a,i0,a)')"zgbtrf info = ",info,
+     $           ": Galerkin matrix is singular."
+            CALL program_stop(TRIM(message))
+         ENDIF
          WRITE(*,*)"Calculating Galerkin matrix solution"
          CALL zgbtrs("N",gal%ndim,gal%kl,gal%ku,gal%nsol,gal%mat,
      $        gal%ldab,gal%ipiv,gal%sol,gal%ndim,info )
       ELSEIF (solver == "cholesky") THEN
          WRITE(*,*)"Performing Galerkin matrix Cholesky factorization"
          CALL zpbtrf('L',gal%ndim,gal%kl,gal%mat,gal%ldab,info)
+         IF (info /= 0) THEN
+            WRITE(message,'(a,i0,a)')"zpbtrf info = ",info,
+     $           ": Galerkin matrix is not positive definite;"
+     $           //" use solver='LU'."
+            CALL program_stop(TRIM(message))
+         ENDIF
          WRITE(*,*)"Calculating Galerkin matrix solution"
          CALL zpbtrs('L',gal%ndim,gal%kl,gal%nsol,gal%mat,gal%ldab,
      $        gal%sol,gal%ndim,info)
