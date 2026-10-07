@@ -105,7 +105,7 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(mpert) :: singfac
       INTEGER :: ipert, sTime, fTime, cr
-      LOGICAL, PARAMETER :: complex_flag=.FALSE.
+      LOGICAL, PARAMETER :: complex_flag=.TRUE.
       REAL(r8), DIMENSION(:,:), POINTER :: grri,xzpts
       CHARACTER(128) :: ahg_file
 
@@ -130,6 +130,8 @@ c-----------------------------------------------------------------------
       ALLOCATE(grri(2*(mthvac+5),mpert*2),xzpts(mthvac+5,4))
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,1.0_r8,
      $     .FALSE.,.FALSE.,grri,xzpts,ahg_file)
+c     vacuum used the reversed theta grid: conjugate to dcon frame.
+      wv=CONJG(wv)
       DEALLOCATE(grri,xzpts)
       IF(vac_memory)CALL unset_dcon_params()
       singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
@@ -206,7 +208,7 @@ c-----------------------------------------------------------------------
             norm=0
             DO ipert=1,mpert
                DO jpert=1,mpert
-                  norm=norm+jmat(jpert-ipert)
+                  norm=norm+jmat(ipert-jpert)
      $                 *wt(ipert,isol)*CONJG(wt(jpert,isol))
                ENDDO
             ENDDO

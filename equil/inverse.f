@@ -54,7 +54,7 @@ c-----------------------------------------------------------------------
       sq_in%fs(:,4)=SQRT(sq_in%xs)
       sq_in%name="  sq  "
       sq_in%title=(/"psifac","  f   ","mu0 p ","  q   "," rho  "/)
-      CALL spline_fit(sq_in,"extrap")
+      CALL spline_fit_hermite(sq_in,"extrap",sq_in_slopes)
       rz_in%xs=sq_in%xs
       rz_in%ys=(/(itheta,itheta=0,rz_in%my)/)/REAL(rz_in%my,r8)
       rz_in%name="  rz  "
@@ -230,12 +230,15 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute surface quantities.
 c-----------------------------------------------------------------------
+         CALL spline_eval(sq_in,psifac,1)
          sq%fs(ipsi,1)=sq_in%f(1)*twopi
          sq%fs(ipsi,2)=sq_in%f(2)
+         sq%fs1(ipsi,1)=sq_in%f1(1)*twopi
+         sq%fs1(ipsi,2)=sq_in%f1(2)
          sq%fs(ipsi,3)=spl%fsi(mtheta,3)*twopi*pi
          sq%fs(ipsi,4)=spl%fsi(mtheta,4)*sq%fs(ipsi,1)/(2*twopi*psio)
       ENDDO
-      CALL spline_fit(sq,"extrap")
+      CALL spline_fit_hermite(sq,"extrap",sq_in_slopes)
       q0=sq%fs(0,4)-sq%fs1(0,4)*sq%xs(0)
 c-----------------------------------------------------------------------
 c     revise q profile.
@@ -247,10 +250,11 @@ c-----------------------------------------------------------------------
          DO ipsi=0,mpsi
             ffac=SQRT(1+f0fac/sq%fs(ipsi,1)**2)
             sq%fs(ipsi,1)=sq%fs(ipsi,1)*ffac
+            sq%fs1(ipsi,1)=sq%fs1(ipsi,1)/ffac
             sq%fs(ipsi,4)=sq%fs(ipsi,4)*ffac
             rzphi%fs(ipsi,:,3)=rzphi%fs(ipsi,:,3)*ffac
          ENDDO
-         CALL spline_fit(sq,"extrap")
+         CALL spline_fit_hermite(sq,"extrap",sq_in_slopes)
       ENDIF
       qa=sq%fs(mpsi,4)+sq%fs1(mpsi,4)*(one-sq%xs(mpsi))
 c-----------------------------------------------------------------------

@@ -80,7 +80,10 @@ c-----------------------------------------------------------------------
      $     sing_start=0,nzero=0
       REAL(r8) :: thmax0=1,ucrit=1e4,tol_r=1e-5,tol_nr=1e-5,
      $     crossover=1e-2,mthsurf0=1,prefac=1.0,
-     $     plasma1=0.0,vacuum1=0.0,total1=0.0,Zeff=1.52
+     $     plasma1=0.0,vacuum1=0.0,total1=0.0
+
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: Zeff_, psi_N_Zeff_
+      REAL(r8), DIMENSION(1:1000) :: Zeff=-1.0, psi_N_Zeff=-1.0
 
       REAL(r8) :: dpsi_intvl=0.1,dpsi1_intvl=0.1
       TYPE(spline_type) :: locstab, mreterms

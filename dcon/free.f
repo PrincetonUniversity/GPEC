@@ -61,6 +61,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(mpert) :: singfac
       ! eigenvalues are complex for gpec
       COMPLEX(r8), DIMENSION(mpert) :: ep,ev,et,tt
+      REAL(r8), DIMENSION(mpert) :: evr
 
       REAL(r8), DIMENSION(3*mpert-2) :: rwork
       REAL(r8), DIMENSION(2*mpert) :: rwork2
@@ -168,6 +169,8 @@ c-----------------------------------------------------------------------
       IF(wv_farwall_flag)THEN
          wv=temp
       ENDIF
+c     vacuum used the reversed theta grid: conjugate to dcon frame.
+      wv=CONJG(wv)
 
       singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
       DO ipert=1,mpert
@@ -197,7 +200,7 @@ c-----------------------------------------------------------------------
             norm=0
             DO ipert=1,mpert
                DO jpert=1,mpert
-                  norm=norm+jmat(jpert-ipert)
+                  norm=norm+jmat(ipert-jpert)
      $                 *wt(ipert,isol)*CONJG(wt(jpert,isol))
                ENDDO
             ENDDO
@@ -301,7 +304,10 @@ c-----------------------------------------------------------------------
          wp(:,ipert)=vr(:,eindex(mpert+1-ipert))
          ep(ipert)=tt(eindex(mpert+1-ipert))
       ENDDO
-      CALL zheev('V','U',mpert,wv,mpert,ev,work,lwork,rwork,info)
+c     zheev returns real eigenvalues; work holds 2*mpert-1.
+      lwork=2*mpert-1
+      CALL zheev('V','U',mpert,wv,mpert,evr,work,lwork,rwork,info)
+      ev=evr
 c-----------------------------------------------------------------------
 c     optionally write netcdf file.
 c-----------------------------------------------------------------------
@@ -729,7 +735,7 @@ c-----------------------------------------------------------------------
          norm=0
          DO ipert=1,mpert
             DO jpert=1,mpert
-               norm=norm+jmat(jpert-ipert)
+               norm=norm+jmat(ipert-jpert)
      $              *wt(ipert,isol)*CONJG(wt(jpert,isol))
             ENDDO
          ENDDO
@@ -827,6 +833,7 @@ c-----------------------------------------------------------------------
          ALLOCATE(grri(2*(mthvac+5),mpert*2),xzpts(mthvac+5,4))
          CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
      $        wall_flag,farwal_flag,grri,xzpts,ahgstr)
+         wv=CONJG(wv)
          singfac=mlow-nn*sq%f(4)+(/(ipert,ipert=0,mpert-1)/)
          DO ipert=1,mpert
             wv(ipert,:)=wv(ipert,:)*singfac
