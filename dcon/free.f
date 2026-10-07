@@ -61,6 +61,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(mpert) :: singfac
       ! eigenvalues are complex for gpec
       COMPLEX(r8), DIMENSION(mpert) :: ep,ev,et,tt
+      REAL(r8), DIMENSION(mpert) :: evr
 
       REAL(r8), DIMENSION(3*mpert-2) :: rwork
       REAL(r8), DIMENSION(2*mpert) :: rwork2
@@ -303,7 +304,10 @@ c-----------------------------------------------------------------------
          wp(:,ipert)=vr(:,eindex(mpert+1-ipert))
          ep(ipert)=tt(eindex(mpert+1-ipert))
       ENDDO
-      CALL zheev('V','U',mpert,wv,mpert,ev,work,lwork,rwork,info)
+c     zheev returns real eigenvalues; work holds 2*mpert-1.
+      lwork=2*mpert-1
+      CALL zheev('V','U',mpert,wv,mpert,evr,work,lwork,rwork,info)
+      ev=evr
 c-----------------------------------------------------------------------
 c     optionally write netcdf file.
 c-----------------------------------------------------------------------
