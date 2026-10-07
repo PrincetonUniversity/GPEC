@@ -1398,8 +1398,9 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE gal_solve
 
-      INTEGER :: info,isol,jsol,imap,ising,ix,msol_old
+      INTEGER :: info,isol,jsol,imap,ising,ix,msol_old,i,j,offset
       CHARACTER(128) :: message
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: matl
       TYPE(gal_type) :: gal
 c-----------------------------------------------------------------------
 c     allocate and compute arrays.
@@ -1414,6 +1415,41 @@ c     solve global matrix.
 c-----------------------------------------------------------------------
       gal%sol=gal%rhs
       WRITE(*,*)"Grid generated with ",gal%ndim," DOF"
+c-----------------------------------------------------------------------
+c     Cholesky; if the matrix is not positive definite, warn and solve
+c     the same (Hermitian) matrix by LU.
+c-----------------------------------------------------------------------
+      IF (solver == "cholesky") THEN
+         WRITE(*,*)"Performing Galerkin matrix Cholesky factorization"
+         ALLOCATE(matl(gal%ldab,gal%ndim))
+         matl=gal%mat
+         CALL zpbtrf('L',gal%ndim,gal%kl,gal%mat,gal%ldab,info)
+         IF (info /= 0) THEN
+            WRITE(*,'(a,i0,a)')" WARNING: zpbtrf info = ",info,
+     $           ": Galerkin matrix is not positive definite;"
+     $           //" switching to solver='LU'."
+            DEALLOCATE(gal%mat)
+            gal%ldab=2*gal%kl+gal%ku+1
+            ALLOCATE(gal%mat(gal%ldab,gal%ndim))
+            gal%mat=0
+            offset=gal%kl+gal%ku+1
+            DO j=1,gal%ndim
+               DO i=j,MIN(gal%ndim,j+gal%kl)
+                  gal%mat(offset+i-j,j)=matl(1+i-j,j)
+                  IF (i > j) gal%mat(offset+j-i,i)=CONJG(matl(1+i-j,j))
+               ENDDO
+            ENDDO
+            solver="LU"
+         ELSE
+            WRITE(*,*)"Calculating Galerkin matrix solution"
+            CALL zpbtrs('L',gal%ndim,gal%kl,gal%nsol,gal%mat,gal%ldab,
+     $           gal%sol,gal%ndim,info)
+         ENDIF
+         DEALLOCATE(matl)
+      ENDIF
+c-----------------------------------------------------------------------
+c     LU.
+c-----------------------------------------------------------------------
       IF (solver == "LU") THEN
          WRITE(*,*)"Performing Galerkin matrix LU factorization"
          CALL zgbtrf(gal%ndim,gal%ndim,gal%kl,gal%ku,gal%mat,gal%ldab,
@@ -1426,18 +1462,6 @@ c-----------------------------------------------------------------------
          WRITE(*,*)"Calculating Galerkin matrix solution"
          CALL zgbtrs("N",gal%ndim,gal%kl,gal%ku,gal%nsol,gal%mat,
      $        gal%ldab,gal%ipiv,gal%sol,gal%ndim,info )
-      ELSEIF (solver == "cholesky") THEN
-         WRITE(*,*)"Performing Galerkin matrix Cholesky factorization"
-         CALL zpbtrf('L',gal%ndim,gal%kl,gal%mat,gal%ldab,info)
-         IF (info /= 0) THEN
-            WRITE(message,'(a,i0,a)')"zpbtrf info = ",info,
-     $           ": Galerkin matrix is not positive definite;"
-     $           //" use solver='LU'."
-            CALL program_stop(TRIM(message))
-         ENDIF
-         WRITE(*,*)"Calculating Galerkin matrix solution"
-         CALL zpbtrs('L',gal%ndim,gal%kl,gal%nsol,gal%mat,gal%ldab,
-     $        gal%sol,gal%ndim,info)
       ENDIF
 c-----------------------------------------------------------------------
 c     compute and write delta from small resonant coefficients.
