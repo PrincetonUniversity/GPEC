@@ -52,7 +52,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE dcon_netcdf_out(wp,wv,wt,wt0,ep,ev,et)
 
-      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: ep,ev,et
+      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: ep,et
+      REAL(r8), DIMENSION(mpert), INTENT(IN) :: ev
       COMPLEX(r8), DIMENSION(mpert,mpert), INTENT(IN) :: wp,wv,wt,wt0
 
       INTEGER :: i, ncid,
@@ -182,7 +183,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(ncid, "W_v_eigenvector", nf90_double,
      $    (/m_dim, mo_dim, i_dim/), wv_id) )
       CALL check( nf90_def_var(ncid, "W_v_eigenvalue", nf90_double,
-     $    (/mo_dim, i_dim/), wvv_id) )
+     $    (/mo_dim/), wvv_id) )
       CALL check( nf90_put_att(ncid,wv_id,"long_name",
      $    "Vacuum Energy Eigenmodes") )
       CALL check( nf90_put_att(ncid,wvv_id,"long_name",
@@ -248,8 +249,7 @@ c-----------------------------------------------------------------------
      $             AIMAG(ep)/),(/mpert,2/))) )
       CALL check( nf90_put_var(ncid,wv_id,RESHAPE((/REAL(wv),
      $             AIMAG(wv)/),(/mpert,mpert,2/))) )
-      CALL check( nf90_put_var(ncid,wvv_id,RESHAPE((/REAL(ev),
-     $             AIMAG(ev)/),(/mpert,2/))) )
+      CALL check( nf90_put_var(ncid,wvv_id,ev) )
       CALL check( nf90_put_var(ncid,wt_id,RESHAPE((/REAL(wt),
      $             AIMAG(wt)/),(/mpert,mpert,2/))) )
       CALL check( nf90_put_var(ncid,wtv_id,RESHAPE((/REAL(et),

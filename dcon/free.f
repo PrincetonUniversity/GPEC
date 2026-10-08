@@ -60,7 +60,8 @@ c-----------------------------------------------------------------------
       REAL(r8) :: v1
       REAL(r8), DIMENSION(mpert) :: singfac
       ! eigenvalues are complex for gpec
-      COMPLEX(r8), DIMENSION(mpert) :: ep,ev,et,tt
+      COMPLEX(r8), DIMENSION(mpert) :: ep,et,tt
+      REAL(r8), DIMENSION(mpert) :: ev
 
       REAL(r8), DIMENSION(3*mpert-2) :: rwork
       REAL(r8), DIMENSION(2*mpert) :: rwork2
