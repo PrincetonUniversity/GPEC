@@ -4320,7 +4320,6 @@ c     subprogram 10. gpout_xbrzphi.
 c     write perturbed rzphi components on rzphi grid.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_xbrzphi(egnum,xspmn,nr,nz,bnimn,bnomn)
-      USE vacuum_mod, ONLY: check_cartesian_postprocessors
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -4509,9 +4508,7 @@ c-----------------------------------------------------------------------
      $      "Computing external vacuum fields by surface currents"
          CALL gpvacuum_bnormal(psilim,bnomn,nr,nz)
          CALL mscfld(wv,mpert,mthsurf,mthsurf,complex_flag,
-     $        nr,nz,vgdl,vgdr,vgdz,vbr,vbz,vbp,
-     $        preserve_query_coordinates=.TRUE.,
-     $        query_r=gdr,query_z=gdz)
+     $        nr,nz,vgdl,vgdr,vgdz,vbr,vbz,vbp)
          IF (helicity<0) THEN
             vbr=CONJG(vbr)
             vbz=CONJG(vbz)
@@ -4537,9 +4534,7 @@ c-----------------------------------------------------------------------
          bnomn=bnomn-bnimn
          CALL gpvacuum_bnormal(psilim,bnomn,nr,nz)
          CALL mscfld(wv,mpert,mthsurf,mthsurf,complex_flag,
-     $        nr,nz,vgdl,vgdr,vgdz,vpbr,vpbz,vpbp,
-     $        preserve_query_coordinates=.TRUE.,
-     $        query_r=gdr,query_z=gdz)
+     $        nr,nz,vgdl,vgdr,vgdz,vpbr,vpbz,vpbp)
 
          IF (helicity<0) THEN
             vpbr=CONJG(vpbr)
@@ -4583,8 +4578,6 @@ c-----------------------------------------------------------------------
 
             ENDDO
          ENDDO
-         CALL check_cartesian_postprocessors(btr,btz,btp,
-     $      divzero_flag,chebyshev_flag)
          IF (divzero_flag) THEN
             CALL gpeq_rzpdiv(nr,nz,gdr,gdz,btr,btz,btp)
          ENDIF
@@ -4749,9 +4742,7 @@ c-----------------------------------------------------------------------
          bnomn=bnomn-bnimn
          CALL gpvacuum_bnormal(psilim,bnomn,nr,nz)
          CALL mscfld(wv,mpert,mthsurf,mthsurf,complex_flag,
-     $        nr,nz,vgdl,vgdr,vgdz,vpbr,vpbz,vpbp,
-     $        preserve_query_coordinates=.TRUE.,
-     $        query_r=gdr,query_z=gdz)
+     $        nr,nz,vgdl,vgdr,vgdz,vpbr,vpbz,vpbp)
          IF (helicity<0) THEN
             vpbr=CONJG(vpbr)
             vpbz=CONJG(vpbz)
@@ -4764,9 +4755,7 @@ c-----------------------------------------------------------------------
      $      "Computing vacuum fields by external surface currents"
          CALL gpvacuum_bnormal(psilim,bnimn,nr,nz)
          CALL mscfld(wv,mpert,mthsurf,mthsurf,complex_flag,
-     $        nr,nz,vgdl,vgdr,vgdz,vvbr,vvbz,vvbp,
-     $        preserve_query_coordinates=.TRUE.,
-     $        query_r=gdr,query_z=gdz)
+     $        nr,nz,vgdl,vgdr,vgdz,vvbr,vvbz,vvbp)
          IF (helicity<0) THEN
             vvbr=CONJG(vvbr)
             vvbz=CONJG(vvbz)

@@ -170,8 +170,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine mscfld(wv,mpert,mtheta,mthvac,complex_flag,
-     $     lx,lz,vgdl,vgdx,vgdz,vbx,vbz,vbp,op_ahgfile,
-     $     preserve_query_coordinates,query_r,query_z)
+     $     lx,lz,vgdl,vgdx,vgdz,vbx,vbz,vbp,op_ahgfile)
       USE vglobal_mod
       implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
@@ -187,8 +186,6 @@ c-----------------------------------------------------------------------
       complex(r8), parameter :: ifac=(0,1)
       dimension xi(nfm), xii(nfm), xilnq(nfm), xiilnq(nfm)
       character(128), intent(in), optional :: op_ahgfile
-      logical, intent(in), optional :: preserve_query_coordinates
-      real(r8), intent(in), optional :: query_r(0:,0:),query_z(0:,0:)
 
       if (present(op_ahgfile)) then
          ahgfile = trim(op_ahgfile)
@@ -290,8 +287,7 @@ c-----------------------------------------------------------------------
  99   continue
       call make_bltobp
       call diaplt
-      call pickup(bnlr,bnli,lx,lz,vgdl,vgdx,vgdz,vbx,vbz,vbp,
-     $     preserve_query_coordinates,query_r,query_z)
+      call pickup(bnlr,bnli,lx,lz,vgdl,vgdx,vgdz,vbx,vbz,vbp)
 c-----------------------------------------------------------------------
 c     termination.
 c-----------------------------------------------------------------------
@@ -625,21 +621,14 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      subroutine pickup(blr,bli,lx,lz,vgdl,vgdx,vgdz,vbx,vbz,vbp,
-     $     preserve_query_coordinates,query_r,query_z)
+      subroutine pickup(blr,bli,lx,lz,vgdl,vgdx,vgdz,vbx,vbz,vbp)
       USE vglobal_mod
-      USE, INTRINSIC :: ieee_arithmetic, ONLY:
-     $     ieee_value,ieee_quiet_nan
       implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       INTEGER, DIMENSION(0:lx,0:lz) :: vgdl
       REAL(r8), DIMENSION(0:lx,0:lz) :: vgdx,vgdz
       COMPLEX(r8), DIMENSION(0:lx,0:lz) :: vbx,vbz,vbp
-      logical, intent(in), optional :: preserve_query_coordinates
-      real(r8), intent(in), optional :: query_r(0:,0:),query_z(0:,0:)
-      logical :: keep_query,query_valid(ndimlp)
-      real(r8) :: clearance,unavailable
 
       DIMENSION blr(*), bli(*)
       ! CHARACTER(130), DIMENSION(10) :: string
@@ -653,28 +642,6 @@ c-----------------------------------------------------------------------
      $     bxr(ndimlp),bxi(ndimlp),bzr(ndimlp),bzi(ndimlp),
      $     btr(ndimlp),bti(ndimlp), bpr(ndimlp),bpi(ndimlp),
      $     bphir(ndimlp),bphii(ndimlp)
-
-      keep_query = .false.
-      IF (PRESENT(preserve_query_coordinates))
-     $     keep_query = preserve_query_coordinates
-      IF (keep_query) THEN
-         IF (.NOT. PRESENT(query_r))
-     $        ERROR STOP 'Exact pickup requires query_r'
-         IF (.NOT. PRESENT(query_z))
-     $        ERROR STOP 'Exact pickup requires query_z'
-         IF (SIZE(query_r,1) /= lx+1 .OR.
-     $       SIZE(query_r,2) /= lz+1)
-     $        ERROR STOP 'Exact pickup query_r shape mismatch'
-         IF (SIZE(query_z,1) /= lx+1 .OR.
-     $       SIZE(query_z,2) /= lz+1)
-     $        ERROR STOP 'Exact pickup query_z shape mismatch'
-         IF (nxlpin /= lx+1 .OR. nzlpin /= lz+1)
-     $        ERROR STOP 'Exact pickup grid dimensions mismatch'
-         IF (nloopr /= 0)
-     $        ERROR STOP 'Exact pickup supports the Cartesian grid only'
-      ENDIF
-      query_valid = .true.
-      unavailable = ieee_value(0.0_r8,ieee_quiet_nan)
 
       ndlp = mth / ntloop
 
@@ -713,20 +680,7 @@ c-----------------------------------------------------------------------
         zmax = max(zmxp,zmxw)
       endif
 
-      IF (keep_query) THEN
-c        Bypass both legacy surface snapping and REAL(4) grid
-c        generation.
-         nloop = (lx+1)*(lz+1)
-         DO i = 0, lx
-            DO j = 0, lz
-               indxl = i*(lz+1)+j+1
-               xloop(indxl) = query_r(i,j)
-               zloop(indxl) = query_z(i,j)
-            ENDDO
-         ENDDO
-      ELSE
-         CALL loops
-      ENDIF
+      CALL loops
 
       nobs = nloop + 3*nloopr
 
@@ -740,12 +694,6 @@ c        generation.
       ns = mth
       delx = plrad * deloop
       delz = plrad * deloop
-      IF (keep_query) THEN
-         IF (delx == 0.0_r8 .OR. delz == 0.0_r8)
-     $        ERROR STOP 'Exact pickup requires a nonzero '
-     $        //'derivative step'
-      ENDIF
-      clearance = 2.0_r8*MAX(ABS(delx),ABS(delz))
 
       igdl = 8
       isgchi = -1
@@ -754,23 +702,6 @@ c        generation.
 
          xloops(i) = xloop(i)
          zloops(i) = zloop(i)
-
-         IF (keep_query) THEN
-c           -2: no resolved same-side finite-difference field here.
-            query_valid(i) = pickup_query_clear(xloop(i),zloop(i),
-     $           mth,xpla,zpla,clearance)
-            IF (xloop(i) <= 0.0_r8) query_valid(i) = .false.
-            IF (.NOT. farwal) THEN
-               IF (query_valid(i)) query_valid(i) =
-     $              pickup_query_clear(xloop(i),zloop(i),
-     $              mw,xwal,zwal,clearance)
-            ENDIF
-            IF (.NOT. query_valid(i)) THEN
-               igdl(i) = -2
-               rgdl(i) = 1.0_r8
-               GO TO 239
-            ENDIF
-         ENDIF
 
          fintjj = 0.0
          DO jj  = 1, mth
@@ -800,16 +731,6 @@ c           -2: no resolved same-side finite-difference field here.
 
  238     CONTINUE
 
-         IF (keep_query) THEN
-            IF (igdl(i) == 8) THEN
-               query_valid(i) = .false.
-               igdl(i) = -2
-               rgdl(i) = 1.0_r8
-               GO TO 239
-            ENDIF
-         ENDIF
-
-         IF (.NOT. keep_query) THEN
          DO j = 1, mth
             IF ( (xinf(j)-xloop(i))**2 + (zinf(j)-zloop(i))**2
      $           < (epslp*plrad)**2 )  THEN ! points on surface for these.
@@ -837,7 +758,6 @@ c           -2: no resolved same-side finite-difference field here.
                bphii(i) = - n * zchipr(i) / xloops(i)
             END IF
          END DO
-         ENDIF
 
  239     CONTINUE
 
@@ -900,7 +820,7 @@ c           -2: no resolved same-side finite-difference field here.
          isg = -1
 
          call chi ( xpla,zpla,xplap,zplap,isg, chiwc,chiws, ns,1,
-     $        cwrkr,cwrki,nsew, blr,bli,rgdl,query_valid )
+     $        cwrkr,cwrki,nsew, blr,bli,rgdl )
 
          do  i = 1, nobs
             chir(nsew,i) = cwrkr(nsew,i)
@@ -923,7 +843,7 @@ c           -2: no resolved same-side finite-difference field here.
            isg = 1
 
            call chi ( xwal,zwal,xwalp,zwalp,isg,chiwc,chiws, ns,0,
-     $          cwrkr,cwrki,nsew, blr,bli,rwall,query_valid )
+     $          cwrkr,cwrki,nsew, blr,bli,rwall )
 
            do  i = 1, nobs
              chir(nsew,i) = chir(nsew,i) + cwrkr(nsew,i)
@@ -934,14 +854,7 @@ c           -2: no resolved same-side finite-difference field here.
       END DO
 
       DO i = 1, nobs
-        IF (.NOT. query_valid(i)) THEN
-          bxr(i) = unavailable
-          bxi(i) = unavailable
-          bzr(i) = unavailable
-          bzi(i) = unavailable
-          bphir(i) = unavailable
-          bphii(i) = unavailable
-        ELSE IF (igdl(i) .NE. -1) THEN
+        IF (igdl(i) .NE. -1) THEN
           bxr(i) = ( chir(3,i) - chir(4,i) ) / (2.0*delx)
           bxi(i) = ( chii(3,i) - chii(4,i) ) / (2.0*delx)
           bzr(i) = ( chir(1,i) - chir(2,i) ) / (2.0*delz)
@@ -970,68 +883,6 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-c     Nonlocal postprocessors cannot consume unavailable query fields.
-c     Raw exports retain the mask when both operations are disabled.
-c-----------------------------------------------------------------------
-      subroutine check_cartesian_postprocessors(br,bz,bp,divzero,
-     $     chebyshev)
-      USE local_mod, ONLY: r8
-      USE, INTRINSIC :: ieee_arithmetic, ONLY: ieee_is_finite
-      IMPLICIT NONE
-      complex(r8), intent(in) :: br(:,:),bz(:,:),bp(:,:)
-      logical, intent(in) :: divzero,chebyshev
-      logical :: finite
-
-      finite = ALL(ieee_is_finite(REAL(br))) .AND.
-     $     ALL(ieee_is_finite(AIMAG(br))) .AND.
-     $     ALL(ieee_is_finite(REAL(bz))) .AND.
-     $     ALL(ieee_is_finite(AIMAG(bz))) .AND.
-     $     ALL(ieee_is_finite(REAL(bp))) .AND.
-     $     ALL(ieee_is_finite(AIMAG(bp)))
-      IF (finite) RETURN
-      IF (divzero) ERROR STOP 'Unresolved Cartesian total field: '
-     $     //'disable divzero_flag for raw masked exports'
-      IF (chebyshev) ERROR STOP 'Unresolved Cartesian total field: '
-     $     //'disable chebyshev_flag for raw masked exports'
-      end subroutine check_cartesian_postprocessors
-c-----------------------------------------------------------------------
-c     Clearance from a closed discretized source contour. The margin
-c     excludes source crossings by the central finite-difference
-c     stencil.
-c-----------------------------------------------------------------------
-      pure logical function pickup_query_clear(x,z,nsrc,xsrc,zsrc,
-     $     margin) result(clear)
-      USE local_mod, ONLY: r8
-      USE, INTRINSIC :: ieee_arithmetic, ONLY: ieee_is_finite
-      IMPLICIT NONE
-      integer, intent(in) :: nsrc
-      real(r8), intent(in) :: x,z,xsrc(:),zsrc(:),margin
-      real(r8) :: dx,dz,len2,fraction,distance2,roundoff,limit
-      integer :: j,k
-
-      clear = .false.
-      IF (.NOT. ieee_is_finite(x)) RETURN
-      IF (.NOT. ieee_is_finite(z)) RETURN
-      IF (nsrc < 3) RETURN
-      IF (SIZE(xsrc) < nsrc .OR. SIZE(zsrc) < nsrc) RETURN
-      roundoff = 64.0_r8*EPSILON(1.0_r8)*MAX(1.0_r8,ABS(x),
-     $     ABS(z),MAXVAL(ABS(xsrc(:nsrc))),MAXVAL(ABS(zsrc(:nsrc))))
-      limit = (margin+roundoff)**2
-      DO j = 1, nsrc
-         k = MOD(j,nsrc)+1
-         dx = xsrc(k)-xsrc(j)
-         dz = zsrc(k)-zsrc(j)
-         len2 = dx**2+dz**2
-         fraction = 0.0_r8
-         IF (len2 > 0.0_r8) fraction = MAX(0.0_r8,MIN(1.0_r8,
-     $        ((x-xsrc(j))*dx+(z-zsrc(j))*dz)/len2))
-         distance2 = (x-xsrc(j)-fraction*dx)**2+
-     $        (z-zsrc(j)-fraction*dz)**2
-         IF (distance2 <= limit) RETURN
-      ENDDO
-      clear = .true.
-      end function pickup_query_clear
-c-----------------------------------------------------------------------
 c     subprogram 9. loops.
 c     grid loops.
 c-----------------------------------------------------------------------
@@ -1043,12 +894,12 @@ c-----------------------------------------------------------------------
       implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
-      REAL, DIMENSION(:,:), ALLOCATABLE :: xloopin, zloopin
-      REAL, DIMENSION(:), ALLOCATABLE :: sourcemat
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: xloopin, zloopin
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: sourcemat
 
 
-      dxlin = 1.0 / (nxlpin-1)
-      dzlin = 1.0 / (nzlpin-1)
+      dxlin = 1.0_r8 / (nxlpin-1)
+      dzlin = 1.0_r8 / (nzlpin-1)
       nxzlin = nxlpin * nzlpin
       nloop = nxzlin
 
@@ -1116,7 +967,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine chi(xsce,zsce,xscp,zscp,isg,creal,cimag,ns,ip,
-     $     chir,chii,nsew,blr,bli,rgdl,query_valid)
+     $     chir,chii,nsew,blr,bli,rgdl)
       USE vglobal_mod
       implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
@@ -1124,7 +975,6 @@ c-----------------------------------------------------------------------
       DIMENSION blr(*),bli(*),xsce(*),zsce(*),xscp(*),zscp(*)
       DIMENSION creal(nths,nfm), cimag(nths,nfm)
       DIMENSION chir(5,ndimlp), chii(5,ndimlp), rgdl(ndimlp)
-      logical, intent(in), optional :: query_valid(:)
       REAL nq
 
       factpi = twopi
@@ -1138,10 +988,6 @@ c-----------------------------------------------------------------------
       nobs = nloop + 3*nloopr
 
       do io = 1, nobs
-
-         IF (PRESENT(query_valid)) THEN
-            IF (.NOT. query_valid(io)) CYCLE
-         ENDIF
 
          xs = xobp(io)
          zs = zobp(io)
