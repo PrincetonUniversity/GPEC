@@ -714,7 +714,8 @@ c-----------------------------------------------------------------------
       endif
 
       IF (keep_query) THEN
-c        Bypass both legacy surface snapping and REAL(4) grid generation.
+c        Bypass both legacy surface snapping and REAL(4) grid
+c        generation.
          nloop = (lx+1)*(lz+1)
          DO i = 0, lx
             DO j = 0, lz
@@ -741,7 +742,8 @@ c        Bypass both legacy surface snapping and REAL(4) grid generation.
       delz = plrad * deloop
       IF (keep_query) THEN
          IF (delx == 0.0_r8 .OR. delz == 0.0_r8)
-     $        ERROR STOP 'Exact pickup requires a nonzero derivative step'
+     $        ERROR STOP 'Exact pickup requires a nonzero '
+     $        //'derivative step'
       ENDIF
       clearance = 2.0_r8*MAX(ABS(delx),ABS(delz))
 
@@ -994,7 +996,8 @@ c-----------------------------------------------------------------------
       end subroutine check_cartesian_postprocessors
 c-----------------------------------------------------------------------
 c     Clearance from a closed discretized source contour. The margin
-c     excludes source crossings by the central finite-difference stencil.
+c     excludes source crossings by the central finite-difference
+c     stencil.
 c-----------------------------------------------------------------------
       pure logical function pickup_query_clear(x,z,nsrc,xsrc,zsrc,
      $     margin) result(clear)
