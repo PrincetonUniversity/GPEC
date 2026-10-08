@@ -38,7 +38,7 @@
    ipshp = 0
    xpl = 100
    apl = 1
-   a = 0.2415
+   a = 0.02
    b = 170
    bpl = 1
    dpl = 0

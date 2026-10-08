@@ -73,6 +73,10 @@ c-----------------------------------------------------------------------
       ENDIF
       IF(ALLOCATED(delta)) DEALLOCATE(delta)
       IF(ode_flag.AND.ASSOCIATED(u)) DEALLOCATE(u,du,u_save)
+      IF(ALLOCATED(cellinfos%icell)) THEN
+            DEALLOCATE(cellinfos%icell,cellinfos%iintvl,
+     $  cellinfos%etypes,cellinfos%etypes_int,cellinfos%x1,cellinfos%x2)
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -229,7 +233,7 @@ c-----------------------------------------------------------------------
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
      $     out_fl,bin_fl,out_evals,bin_evals,bin_euler,euler_stride,
      $     bin_vac,ahb_flag,mthsurf0,msol_ahb,diagnose_fixup,verbose,
-     $     out_ahg2msc,MRE_flag,geom_flag
+     $     MRE_flag,geom_flag,netcdf_out
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -256,15 +260,6 @@ c-----------------------------------------------------------------------
          CALL gal_read_input
       ENDIF
       CALL ascii_close(in_unit)
-
-      IF (out_ahg2msc) THEN
-         WRITE(*,*) "WARNING: ahg2msc.out is deprecated and will be " //
-     $        "removed in a future version. Set out_ahg2msc = .FALSE."
-         WRITE(*,*) "         to disable this warning."
-         vac_memory=.FALSE.
-      ELSE
-         vac_memory=.TRUE.
-      ENDIF
 
 c-----------------------------------------------------------------------
 c     open output files, read, process, and diagnose equilibrium.
@@ -435,7 +430,8 @@ c-----------------------------------------------------------------------
          ALLOCATE(mx0(mpert,mpert),vx0(mpert))
          mx0=0
          vx0=0
-         CALL rdcon_netcdf_out(mx0,mx0,mx0,mx0,vx0,vx0,vx0)
+         IF (netcdf_out)
+     $    CALL rdcon_netcdf_out(mx0,mx0,mx0,mx0,vx0,vx0,vx0)
       ENDIF
       IF(mat_flag .OR. ode_flag)DEALLOCATE(amat,bmat,cmat,ipiva,jmat)
       IF(bin_euler)CALL bin_close(euler_bin_unit)
@@ -511,4 +507,4 @@ c-----------------------------------------------------------------------
          ENDIF
          CALL dcon_run
       END SUBROUTINE dcon_interface_run
-      
+

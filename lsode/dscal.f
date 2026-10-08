@@ -1,7 +1,7 @@
       subroutine dscal(n,da,dx,incx)
       USE local_mod, ONLY: r8
-      
-c     
+
+c
 c     scales a vector by a constant.
 c     uses unrolled loops for increment equal to one.
 c     jack dongarra, linpack, 3/11/78.

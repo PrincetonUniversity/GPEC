@@ -22,12 +22,13 @@
 # required only default user path libraries.
 #
 # With the release of 1.2, the options restricted to more modern compilers
-# compatible wth openmp.
+# compatible wth openmp. The present version of GPEC explicitly supports
+# gfortran, ifort, and ifx. 
 # Machine specific instructions are below.
 #
-# Note that GPEC uses git to fetch/update the harvest repository as well as
-# to label the version at compilation time. Thus, you must have a working git
-# command in order to compile.
+# Note that GPEC uses git to label the version at compilation time.
+# Thus, you must have a working git command in order to compile.
+# (Harvest integration was removed in v1.5.7.)
 #
 # On flux.pppl.gov
 #   Users can run GPEC on flux using the public module. Note, flux "hides" such modules behind a mod_* gateway module
@@ -204,7 +205,7 @@
 #   ------------------------------------------------------------
 #
 #   Now compile using
-#     $ make FFLAGS='-fallow-argument-mismatch' 2>&1 | tee make.log
+#     $ make 2>&1 | tee make.log
 #   
 #
 # On intel mac OSX
@@ -228,14 +229,14 @@
 #   --------------------------------------------------------------
 #
 #   Now compile using
-#     $ make FFLAGS='-fallow-argument-mismatch' 2>&1 | tee make.log
+#     $ make 2>&1 | tee make.log
 #
 #
 #   On ARM mac OSX using Apple's optimized accelerate library
 #   The accelerate framework contains the necessary math libraries from
 #   BLAS and LAPACK, so you should compile netcdf-c and netcdf-fortran
 #   locally (or install them via homebrew). 
-#   If you install netcdf-c & -fortran using homebrew, you  
+#   If you install netcdf & netcdf-fortran using homebrew, you  
 #   can do `echo $HOMEBREW_PREFIX` to get the appropriate NETCDFHOME
 #   variable, as it has changed recently. Example with:
 #   CC = /opt/homebrew/bin/gcc-14
@@ -262,7 +263,7 @@
 #   ------------------------------------------------------------
 #   
 #   Now compile using
-#     $ make FFLAGS='-fallow-argument-mismatch' 2>&1 | tee make.log
+#     $ make 2>&1 | tee make.log
 #
 # Some common modifications of the above settings might include,
 #     $ make FFLAGS="-qopt-report -g -O0 -check all"  # for debugging
@@ -327,6 +328,46 @@
 #
 #   Now compile using
 #     $ make 2>&1 | tee make.log
+#
+#   ---------------------------------------------------------------
+# On the SNU 3DST Rocky Linux 9 server (tdst.cluster.master)
+#   Clone the latest development branch at any user-writable location:
+#     $ cd /path/to/parent
+#     $ /usr/bin/git clone --branch develop \
+#         https://github.com/PrincetonUniversity/GPEC.git
+#
+#   Load the public 3DST compile module. It configures a consistent Intel 2026
+#   compiler, MPI, MKL, and NetCDF stack, but deliberately does not set
+#   GPECHOME or depend on the location of the clone:
+#     $ module purge
+#     $ module load gpec/compile
+#
+#   Build directly from the selected clone. Executing,
+#     $ cd /path/to/parent/GPEC/install
+#     $ make v
+#   should produce the following verbose message.
+#
+#   ------------------------------------------------------------
+#   Defaults tailored for platform Linux on host tdst.cluster.master
+#   Compiling with FC = ifx
+#      using math libraries -lmkl_rt
+#      from /opt/intel/oneapi/mkl/2026.0/lib/intel64
+#      including /opt/intel/oneapi/mkl/2026.0/include/intel64/lp64
+#      and netcdf libraries -lnetcdff -lnetcdf
+#      from /APP/libraries/intel/2026.0.0/netcdf-f/lib \
+#           /APP/libraries/intel/2026.0.0/petsc-real/lib
+#      including /APP/libraries/intel/2026.0.0/netcdf-f/include
+#      and compiler libraries
+#      from .
+#      including .
+#      and using OMPFLAG -qopenmp
+#
+#   Set environment FC,LAPACKHOME,NETCDFHOME to change these
+#   ------------------------------------------------------------
+#
+#   Now compile and verify using
+#     $ make -j 16 all 2>&1 | tee ../make.log
+#     $ make checkdeps
 #
 # If your platform is not properly included in this make file
 # contact nikolas.logan@columbia.edu with your operating system, compiler, and
@@ -401,7 +442,7 @@ endif
 
 # List of needed dependencies, will be appended if math or netcdf
 # libraries are not found
-NEEDED_DEPS = harvest
+NEEDED_DEPS = 
 
 # Platform and host information
 PLATFORM := $(shell uname -s)

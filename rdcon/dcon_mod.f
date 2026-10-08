@@ -69,8 +69,6 @@ c-----------------------------------------------------------------------
       LOGICAL :: node_flag=.FALSE.
       LOGICAL :: res_flag=.FALSE.
       LOGICAL :: ahb_flag=.FALSE.
-      LOGICAL :: out_ahg2msc=.TRUE.
-      LOGICAL :: vac_memory=.FALSE.
       LOGICAL :: MRE_flag=.FALSE.
       LOGICAL :: geom_flag=.FALSE.
       LOGICAL :: reform_eq_with_psilim=.FALSE.
@@ -98,6 +96,8 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(2) :: r2
       INTEGER, DIMENSION(:), POINTER :: n1,n2
       REAL(r8) :: psifac,rho,q,q1,di
+      REAL(r8) :: auxextleft,extleft,resleft,resright,extright,
+     $                                               auxextright
       COMPLEX(r8) :: alpha,beta
       COMPLEX(r8), DIMENSION(:), POINTER :: power
       COMPLEX(r8), DIMENSION(:,:,:,:), POINTER :: vmatr,mmatr,
@@ -110,6 +110,14 @@ c-----------------------------------------------------------------------
          INTEGER :: mcoil,m1,m2
       END TYPE coil_type
 
+      TYPE :: cellinfo_type
+         INTEGER, DIMENSION(:), ALLOCATABLE :: iintvl, icell
+         CHARACTER(6), DIMENSION(:), ALLOCATABLE :: etypes
+         INTEGER, DIMENSION(:), ALLOCATABLE :: etypes_int
+         REAL(r8), DIMENSION(:), ALLOCATABLE :: x1, x2
+         INTEGER :: ncell, nintvl
+      END TYPE cellinfo_type
+
       TYPE(coil_type) :: coil
 
       INTEGER :: msing
@@ -120,6 +128,13 @@ c-----------------------------------------------------------------------
       REAL(r8) :: psilim,qlim,q1lim,dmlim=.5_r8,qhigh=1e3,qlow=0
       REAL(r8) :: psilow_tmp, psilim_tmp
 
+      ! for recording dw(q) near the boundary
+      REAL(r8) :: psiedge = 1.0
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: q_edge, psi_edge
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: dw_edge
+      INTEGER :: nperq_edge=20, size_edge=0, pre_edge=1, i_edge=1
+
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: delta
+      TYPE(cellinfo_type) :: cellinfos
 
       END MODULE rdcon_mod

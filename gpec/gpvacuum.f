@@ -25,7 +25,7 @@ c-----------------------------------------------------------------------
       IMPLICIT NONE
 
       REAL(r8), PRIVATE :: prad
-      
+
       CONTAINS
 c-----------------------------------------------------------------------
 c     subprogram 1. gpvacuum_arbsurf.
@@ -68,12 +68,12 @@ c-----------------------------------------------------------------------
      $     vr(0:vmtheta),vz(0:vmtheta),
      $     dphi(0:vmtheta),delte(0:vmtheta))
 
-      vmfac=(/(m,m=vmlow,vmhigh)/)      
+      vmfac=(/(m,m=vmlow,vmhigh)/)
       vtheta=(/(itheta,itheta=0,vmtheta)/)/REAL(vmtheta,r8)
       veta=twopi*vtheta
       rplus=0
       IF(present(dist))rplus=dist
-      IF(present(majr).AND. present(minr)) THEN 
+      IF(present(majr).AND. present(minr)) THEN
          vrfac=minr+rplus
          vr=majr+vrfac*COS(veta)
          vz=0.0+vrfac*SIN(veta)
@@ -103,12 +103,12 @@ c     ENDIF
 c-----------------------------------------------------------------------
 c     invert values for vn < 0.
 c-----------------------------------------------------------------------
-      qa=qlim 
+      qa=qlim
       IF(vn<0) THEN
          qa=-qa
          delte=-delte
          vn=-vn
-      ENDIF  
+      ENDIF
 c-----------------------------------------------------------------------
 c     estimate prad for vacuum.
 c-----------------------------------------------------------------------
@@ -184,8 +184,8 @@ c-----------------------------------------------------------------------
          grri_real=MATMUL(vgrri,(/REAL(rbwp_mn),-AIMAG(rbwp_mn)/))
          grri_imag=MATMUL(vgrri,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/))
          grre_real=MATMUL(vgrre,(/REAL(rbwp_mn),-AIMAG(rbwp_mn)/))
-         grre_imag=MATMUL(vgrre,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/)) 
-                  
+         grre_imag=MATMUL(vgrre,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/))
+
          DO itheta=0,vmtheta-1
             rtheta=vmtheta-itheta
             chi_fun(itheta+1)=(grri_real(rtheta)-
@@ -205,8 +205,8 @@ c-----------------------------------------------------------------------
          flx_fun=vbwp_fun
          kax_fun=(chi_fun-che_fun)/mu0
 
-         CALL iscdftf(vmfac,vmpert,flx_fun,vmtheta,vflxmats(:,i))   
-         CALL iscdftf(vmfac,vmpert,kax_fun,vmtheta,vkaxmats(:,i)) 
+         CALL iscdftf(vmfac,vmpert,flx_fun,vmtheta,vflxmats(:,i))
+         CALL iscdftf(vmfac,vmpert,kax_fun,vmtheta,vkaxmats(:,i))
       ENDDO
 
       temp1=TRANSPOSE(vkaxmats)
@@ -242,7 +242,7 @@ c-----------------------------------------------------------------------
       INTEGER :: i,itheta,rtheta,lwork
       REAL(r8) :: kernelsignin
       CHARACTER(1), PARAMETER :: tab=CHAR(9)
-      LOGICAL, PARAMETER :: complex_flag=.TRUE.,wall_flag=.FALSE.      
+      LOGICAL, PARAMETER :: complex_flag=.TRUE.,wall_flag=.FALSE.
       LOGICAL, PARAMETER :: farwal_flag=.TRUE.
 
       INTEGER, DIMENSION(mpert) :: ipiv
@@ -250,7 +250,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(2*mpert-1) :: work
 
       REAL(r8), DIMENSION(0:mthsurf) :: dphi
-      
+
       COMPLEX(r8), DIMENSION(mpert) :: vbwp_mn,rbwp_mn
       COMPLEX(r8), DIMENSION(0:mthsurf) :: chi_fun,che_fun,kax_fun
       COMPLEX(r8), DIMENSION(mpert,mpert) :: fflxmats,fkaxmats,
@@ -303,8 +303,8 @@ c-----------------------------------------------------------------------
          grri_real=MATMUL(vgrri,(/REAL(rbwp_mn),-AIMAG(rbwp_mn)/))
          grri_imag=MATMUL(vgrri,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/))
          grre_real=MATMUL(vgrre,(/REAL(rbwp_mn),-AIMAG(rbwp_mn)/))
-         grre_imag=MATMUL(vgrre,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/))            
-         
+         grre_imag=MATMUL(vgrre,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/))
+
          DO itheta=0,mthsurf-1
             rtheta=mthsurf-itheta
             chi_fun(itheta+1)=(grri_real(rtheta)-
@@ -316,11 +316,11 @@ c-----------------------------------------------------------------------
          che_fun(0)=che_fun(mthsurf)
          !jacobian with twopi angles.
          chi_fun=chi_fun/(twopi**2)
-         che_fun=-che_fun/(twopi**2)         
+         che_fun=-che_fun/(twopi**2)
          kax_fun=(chi_fun-che_fun)/mu0
 
-         fflxmats(:,i)=vbwp_mn   
-         CALL iscdftf(mfac,mpert,kax_fun,mthsurf,fkaxmats(:,i)) 
+         fflxmats(:,i)=vbwp_mn
+         CALL iscdftf(mfac,mpert,kax_fun,mthsurf,fkaxmats(:,i))
       ENDDO
       temp1=TRANSPOSE(fkaxmats)
       temp2=TRANSPOSE(fflxmats)
@@ -342,7 +342,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE gpvacuum_flxsurf
 c-----------------------------------------------------------------------
 c     subprogram 3. gpvacuum_bnormal.
-c     create bnormal input for vacuum code.  
+c     create bnormal input for vacuum code.
 c-----------------------------------------------------------------------
       SUBROUTINE gpvacuum_bnormal(psi,finmn,nr,nz)
 c-----------------------------------------------------------------------
@@ -380,7 +380,7 @@ c-----------------------------------------------------------------------
          x1 = rmin
          x2 = rmax
          z1 = -zlim
-         z2 = zlim      
+         z2 = zlim
       ENDIF
 
       delte=-dphi/sq%f(4)
@@ -454,7 +454,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE gpvacuum_bnormal
 c-----------------------------------------------------------------------
 c     subprogram 4. gpvacuum_ideal_mutuals.
-c     calculate ideal mutual inductances.  
+c     calculate ideal mutual inductances.
 c-----------------------------------------------------------------------
       SUBROUTINE gpvacuum_ideal_mutuals
 c-----------------------------------------------------------------------
@@ -523,7 +523,7 @@ c-----------------------------------------------------------------------
       temp1=vr
       ipiv=0
       CALL zgetrf(vmpert,vmpert,temp1,vmpert,ipiv,info)
-      CALL zgetri(vmpert,temp1,vmpert,ipiv,work,lwork,info)      
+      CALL zgetri(vmpert,temp1,vmpert,ipiv,work,lwork,info)
       mmat=MATMUL(vr,MATMUL(dmat,temp1))
       mmat=MATMUL(mmat,lmat1)
       ! Here we complete M=(L2#L1^(-1))^(1/2)#L_1 in a matrix form.
@@ -547,14 +547,14 @@ c-----------------------------------------------------------------------
       temp1=vr
       ipiv=0
       CALL zgetrf(vmpert,vmpert,temp1,vmpert,ipiv,info)
-      CALL zgetri(vmpert,temp1,vmpert,ipiv,work,lwork,info)     
+      CALL zgetri(vmpert,temp1,vmpert,ipiv,work,lwork,info)
       immat=MATMUL(vr,MATMUL(dmat,temp1))
       immat=MATMUL(immat,lmat2)
       ! Here we complete M=(L1#L2^(-1))^(1/2)#L_2 in a matrix form.
 
       err1=MAXVAL(ABS(mmat-immat))/MAXVAL(ABS(mmat))
       WRITE(*,*)"mutual_err=",err1
-          
+
       DEALLOCATE(lmat1,lmat2,lmat12,lmat21)
 c-----------------------------------------------------------------------
 c     terminate.
@@ -563,5 +563,5 @@ c-----------------------------------------------------------------------
       END SUBROUTINE gpvacuum_ideal_mutuals
 
       END MODULE gpvacuum_mod
-      
+
 

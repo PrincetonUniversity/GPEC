@@ -35,7 +35,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE inner_run(istep,t,y,done)
-      
+
       INTEGER, INTENT(INOUT) :: istep
       REAL(r8), INTENT(INOUT) :: t
       REAL(r8), DIMENSION(3,2), INTENT(INOUT) :: y
@@ -108,7 +108,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE inner_der(neq,t,y,dy)
-      
+
       INTEGER, INTENT(IN) :: neq
       REAL(r8), INTENT(IN) :: t
       REAL(r8), DIMENSION(3,2), INTENT(IN) :: y

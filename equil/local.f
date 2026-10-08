@@ -50,7 +50,7 @@ c-----------------------------------------------------------------------
 c     delcarations.
 c-----------------------------------------------------------------------
       SUBROUTINE timer(mode,unit,op_cpuseconds,op_wallseconds)
-      
+
       INTEGER, INTENT(IN) :: mode,unit
       REAL(r4), INTENT(OUT), OPTIONAL :: op_cpuseconds,op_wallseconds
 

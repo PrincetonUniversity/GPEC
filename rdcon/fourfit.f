@@ -395,7 +395,7 @@ c-----------------------------------------------------------------------
             DO ipert=MAX(1,jpert-mband),MIN(mpert,jpert+mband)
                dm=ipert-jpert
                IF(m == 1 .AND. dm == -1 .OR. m == -1 .AND. dm == 1)
-     $         THEN     
+     $         THEN
                   kmats%xpower(1,iqty)=-1
                   kmatsp%xpower(1,iqty)=-1
                ENDIF
@@ -595,7 +595,7 @@ c-----------------------------------------------------------------------
       SUBROUTINE fourfit_evals(ipsi,psifac,matrix)
       USE global_mod
       IMPLICIT NONE
-      
+
       INTEGER, INTENT(IN) :: ipsi
       REAL(r8), INTENT(IN) :: psifac
       COMPLEX(r8), DIMENSION(mpert,mpert), INTENT(IN) :: matrix
@@ -674,7 +674,7 @@ c-----------------------------------------------------------------------
       ENDDO
       WRITE(unit,10)
       CALL ascii_close(unit)
-      CALL program_stop("Termination by fourfit_diagnose_1") 
+      CALL program_stop("Termination by fourfit_diagnose_1")
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

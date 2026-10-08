@@ -410,7 +410,7 @@ c-----------------------------------------------------------------------
       CHARACTER(16) :: varname,format,type
       INTEGER :: nvalue
       REAL(r4) :: value0,dvalue
-      
+
       LOGICAL :: sum2_flag=.FALSE.
       INTEGER :: index_in,index_out
       CHARACTER(128) :: dirname,filename,rootname

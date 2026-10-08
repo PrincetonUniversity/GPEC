@@ -131,7 +131,7 @@ c-----------------------------------------------------------------------
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,1.0_r8,
      $     .FALSE.,.FALSE.,grri,xzpts,ahg_file)
       DEALLOCATE(grri,xzpts)
-      IF(stride_vac_memory)CALL unset_dcon_params()
+      IF(vac_memory)CALL unset_dcon_params()
       singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
       DO ipert=1,mpert
          wv(ipert,:)=wv(ipert,:)*singfac
@@ -346,7 +346,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     pass all values in memory instead of over ascii io (faster).
 c-----------------------------------------------------------------------
-      IF(stride_vac_memory) THEN
+      IF(vac_memory) THEN
          CALL set_dcon_params(mtheta,mlow,mhigh,n,qa,r(mtheta:0:-1),
      $                         z(mtheta:0:-1),delta(mtheta:0:-1))
       ELSE

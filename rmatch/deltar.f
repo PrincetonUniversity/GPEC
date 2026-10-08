@@ -1,9 +1,9 @@
 c-----------------------------------------------------------------------
 c     program deltar.
-c     integrates the 4th-order fourier-transformed equations for the 
-c     singular layer from large values to small values of the 
-c     independent variable t, fits the solutions to asymptotic 
-c     solutions to evaluate asymptotic coefficients, and uses these 
+c     integrates the 4th-order fourier-transformed equations for the
+c     singular layer from large values to small values of the
+c     independent variable t, fits the solutions to asymptotic
+c     solutions to evaluate asymptotic coefficients, and uses these
 c     coefficients to construct the asymptotic ratios dlrp and dlrm.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -35,7 +35,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: rtol=1e-6,atol=1e-6,fmax=1,fmin=1
       REAL(r8) :: xvar=-1,sigt,sigil,lam=0.01
       LOGICAL :: insol=.FALSE.
-      
+
       TYPE :: resist_type
       INTEGER :: ising
       REAL(r8) :: e,f,g,h,k,m,taua,taur,v1
@@ -65,7 +65,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE deltar_run(restype,s,deltar,sol)
-      
+
       TYPE(resist_type), INTENT(IN) :: restype
       COMPLEX(r8), INTENT(IN) :: s
       COMPLEX(r8), DIMENSION(2), INTENT(OUT) :: deltar
@@ -183,12 +183,12 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE deltar_der(n,t,y,dy)
-      
+
       INTEGER, INTENT(IN) :: n
       REAL(r8), INTENT(IN) :: t
       COMPLEX(r8), DIMENSION(neqc,nsol), INTENT(IN) :: y
       COMPLEX(r8), DIMENSION(neqc,nsol), INTENT(OUT) :: dy
-      
+
       LOGICAL, PARAMETER :: diagnose=.FALSE.
       INTEGER :: i
 c-----------------------------------------------------------------------
@@ -231,11 +231,11 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE deltar_upsfit(t,y,c0)
-      
+
       REAL(r8), INTENT(IN) :: t
       COMPLEX(r8), DIMENSION(neqc,nsol), INTENT(IN) :: y
       COMPLEX(r8), DIMENSION(neqc,nsol), INTENT(OUT) :: c0
-      
+
       INTEGER :: i,j,k,info
       INTEGER, DIMENSION(neqc) :: ipiv
       REAL(r8) :: t2
@@ -274,11 +274,11 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE deltar_vpsfit(t,y,c1)
-      
+
       COMPLEX(r8), INTENT(IN) :: t
       COMPLEX(r8), DIMENSION(neqc,nsol), INTENT(IN) :: y
       COMPLEX(r8), DIMENSION(neqc,nsol), INTENT(OUT) :: c1
-      
+
       INTEGER :: i,j,k,info
       INTEGER, DIMENSION(neqc) :: ipiv
       REAL(r8) :: err,t2,tfac1,trmrat,trmrat1,trmrat2
@@ -331,7 +331,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE deltar_origin
-      
+
       LOGICAL :: out
       INTEGER :: i,j,k,l
       REAL(r8) :: aminus,aplus,pminus,unmax
@@ -488,7 +488,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE deltar_infinity
-      
+
       INTEGER :: i,j,j1,j2,j3,j4,jlam,k,l
       COMPLEX(r8) :: a1,bb,cc,dd,ddsq,kk1,lamda,lamdaq,lamfac,q3,sigma,
      $     stfac,tau
@@ -754,11 +754,11 @@ c      y(:,:,1)=ytmp
 !      CALL deltar_vpsfit(tmp,y(:,:,3),c1)
 !      y(:,:,3)=MATMUL(d1,v(:,1:neqc))
 !      tmp=-tmax+ifac*lam
-!      CALL deltar_vpsfit(tmp,y(:,:,4),c1)      
+!      CALL deltar_vpsfit(tmp,y(:,:,4),c1)
 !      y(:,:,4)=MATMUL(d1,v(:,1:neqc))
       t=tmax
       tout=0
-      
+
 c-----------------------------------------------------------------------
 c     set up integrator parameters.
 c-----------------------------------------------------------------------
@@ -807,12 +807,12 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE deltar_sol_der(n,t,y,dy)
-      
+
       INTEGER, INTENT(IN) :: n
       REAL(r8), INTENT(IN) :: t
       COMPLEX(r8), DIMENSION(neqc,neqc), INTENT(IN) :: y
       COMPLEX(r8), DIMENSION(neqc,neqc), INTENT(OUT) :: dy
-      
+
       INTEGER :: ieq,isol
       COMPLEX(r8), DIMENSION(4) :: tl,xfac
 c-----------------------------------------------------------------------
@@ -831,7 +831,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE deltar_sol_der      
+      END SUBROUTINE deltar_sol_der
 c-----------------------------------------------------------------------
 c     subprogram 10. deltar_sol_get.
 c     solutions of the resistive layer.
@@ -890,5 +890,5 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE deltar_sol_get      
+      END SUBROUTINE deltar_sol_get
       END MODULE deltar_mod

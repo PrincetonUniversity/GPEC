@@ -481,7 +481,7 @@ c-----------------------------------------------------------------------
          zork1(i+2) = dlenth(i)
       enddo
       zork1(1) = dlenth(mth-1)
-      zork1(2) = dlenth(mth) 
+      zork1(2) = dlenth(mth)
       zork1(mth3) = dlenth(1)
       zork1(mth4) = dlenth(2)
       zork1(mth5) = dlenth(3)
@@ -839,9 +839,9 @@ c-----------------------------------------------------------------------
              cwrkr(nsew,i) = 0.0
              cwrki(nsew,i) = 0.0
            end do
-           
+
            isg = 1
-           
+
            call chi ( xwal,zwal,xwalp,zwalp,isg,chiwc,chiws, ns,0,
      $          cwrkr,cwrki,nsew, blr,bli,rwall )
 
@@ -894,12 +894,12 @@ c-----------------------------------------------------------------------
       implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
-      REAL, DIMENSION(:,:), ALLOCATABLE :: xloopin, zloopin
-      REAL, DIMENSION(:), ALLOCATABLE :: sourcemat
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: xloopin, zloopin
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: sourcemat
 
 
-      dxlin = 1.0 / (nxlpin-1)
-      dzlin = 1.0 / (nzlpin-1)
+      dxlin = 1.0_r8 / (nxlpin-1)
+      dzlin = 1.0_r8 / (nzlpin-1)
       nxzlin = nxlpin * nzlpin
       nloop = nxzlin
 

@@ -1,0 +1,52 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+;rpec_sol_1_out.bin
+;rpec_sol_1_in.bin
+;rpec_sol_2_out.bin
+;rpec_sol_3_out.bin
+;rpec_sol_4_out.bin
+;rpec_sol_5_out.bin
+;rpec_sol_6_out.bin
+;rpec_sol_7_out.bin
+;rpec_sol_8_out.bin
+;rpec_sol_9_out.bin
+;rpec_sol_10_out.bin
+;rpec_sol_11_out.bin
+;rpec_sol_12_out.bin
+;rpec_sol_13_out.bin
+rpec_sol_14_out.bin
+;rpec_sol_14_in.bin
+;rpec_sol_15_out.bin
+;rpec_sol_16_out.bin
+;rpec_sol_17_out.bin
+;rpec_sol_18_out.bin
+;rpec_sol_19_out.bin
+;rpec_sol_20_out.bin
+;rpec_sol_21_out.bin
+;rpec_sol_22_out.bin
+;rpec_sol_23_out.bin
+;rpec_sol_24_out.bin
+;rpec_sol_25_out.bin
+;rpec_sol_26_out.bin
+;rpec_sol_27_out.bin
+;rpec_sol_28_out.bin
+;rpec_sol_29_out.bin
+;rpec_sol_30_out.bin
+;rpec_sol_12_in.bin
+
+graph title:	Perturbed Lagrangian Displacement
+
+variable names
+0	psi
+1       q
+2	re xin
+3	im xin
+4	mylog xin
+
+ix	iy	title
+;1	2
+1	3
+;0	1
+;0	2
+;0	3

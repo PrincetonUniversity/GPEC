@@ -36,14 +36,6 @@ endef
 # Submodule Dependencies
 #------------------------------------------------------------------------------
 
-# Harvest library
-harvest: v
-	cd ../; git submodule update --init deps/src/harvest
-	cd ../deps/src/harvest; $(MAKE) -j1 FC='$(FC)' CC='$(CC)' GACODE_ROOT= -f Makefile libharvest.a
-	mkdir -p $(LIBDIR)
-	cp -f ../deps/src/harvest/libharvest.a $(LIBDIR)
-	$(call print_success,harvest -> $(LIBDIR)/libharvest.a)
-
 netcdf: v netcdf-c netcdf-fortran hdf5
 	$(call print_success,All netcdf components compiled successfully)
 
@@ -92,7 +84,7 @@ OpenBLAS: v
 	$(call print_success,OpenBLAS installed to $(DEPSINSTALLDIR))
 
 # All dependencies
-alldeps: v harvest netcdf OpenBLAS
+alldeps: v netcdf OpenBLAS
 	$(call print_success,All dependencies compiled successfully)
 
 # Needed dependencies based on DEFAULTS.inc
@@ -106,7 +98,7 @@ neededdeps: v $(NEEDED_DEPS)
 
 
 # Equilibrium library
-equil: neededdeps harvest $(EQUIL_OBJS)
+equil: neededdeps $(EQUIL_OBJS)
 	mkdir -p $(LIBDIR)
 	ar -r $(LIBDIR)/libequil.a $(EQUIL_OBJS)
 	$(call print_success,libequil.a -> $(LIBDIR))
@@ -166,7 +158,6 @@ vacuum: v neededdeps $(VACUUM_OBJS) equil lsode
 PENTRC_LIBS = \
 	-llsode \
 	-lequil \
-	-lharvest \
 	$(MATHLIBS) \
 	$(NETCDFLIBS) \
 	$(FCLIBS) \
@@ -176,7 +167,7 @@ PENTRC_LIBDIRS = \
 	-L$(MATHDIR) \
 	-L$(NETCDFDIR) \
 	-L$(FCDIR)
-pentrc: v neededdeps $(PENTRC_OBJS) lsode equil harvest
+pentrc: v neededdeps $(PENTRC_OBJS) lsode equil
 	mkdir -p $(BINDIR)
 	rm -f ../pentrc/pentrc
 	$(FCPENTRC) -o ../pentrc/pentrc $(PENTRC_OBJS) $(PENTRC_LIBDIRS) $(PENTRC_LIBS) $(LDFLAGS)
@@ -191,7 +182,6 @@ DCON_LIBS = \
 	-llsode \
 	-lequil \
 	-lvac \
-	-lharvest \
 	$(MATHLIBS) \
 	$(NETCDFLIBS) \
 	$(FCLIBS) \
@@ -201,7 +191,7 @@ DCON_LIBDIRS = \
 	-L$(MATHDIR) \
 	-L$(NETCDFDIR) \
 	-L$(FCDIR)
-dcon: v neededdeps $(DCON_OBJS) equil lsode vacuum pentrc harvest
+dcon: v neededdeps $(DCON_OBJS) equil lsode vacuum pentrc
 	mkdir -p $(BINDIR)
 	rm -f ../dcon/dcon
 	$(FCDCON) -o ../dcon/dcon $(DCON_OBJS) $(DCON_LIBDIRS) $(DCON_LIBS) $(LDFLAGS)
@@ -384,7 +374,6 @@ GPEC_LIBS = \
 	-llsode \
 	-lequil \
 	-lvac \
-	-lharvest \
 	-lslayer \
 	-lcoil \
 	$(MATHLIBS) \
@@ -394,7 +383,7 @@ GPEC_LIBDIRS = \
 	-L$(LIBDIR) \
 	-L$(MATHDIR) \
 	-L$(NETCDFDIR)
-gpec: v neededdeps $(GPEC_OBJS) pentrc lsode equil vacuum harvest slayer coil
+gpec: v neededdeps $(GPEC_OBJS) pentrc lsode equil vacuum slayer coil
 	mkdir -p $(BINDIR)
 	rm -f ../gpec/gpec
 	$(FCGPEC) -o ../gpec/gpec $(GPEC_OBJS) $(GPEC_LIBDIRS) $(GPEC_LIBS) $(LDFLAGS)

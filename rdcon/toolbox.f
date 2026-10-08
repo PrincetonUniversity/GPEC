@@ -42,8 +42,8 @@ c-----------------------------------------------------------------------
       SUBROUTINE toolbox_hermite(x,x0,x1,hermite)
 
       REAL(r8),INTENT(IN) :: x,x0,x1
-      TYPE(toolbox_hermite_type),INTENT(INOUT) :: hermite 
-      
+      TYPE(toolbox_hermite_type),INTENT(INOUT) :: hermite
+
       REAL(r8) :: dx,t0,t1,t02,t12
 c-----------------------------------------------------------------------
 c     compute variables.

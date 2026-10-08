@@ -6,6 +6,45 @@ on:
     branches: [develop]
 
 jobs:
+  # Keep install/DEPENDENCIES.inc in sync with the Fortran sources. The graph
+  # is regenerated from the actual USE/MODULE relationships; if a contributor's
+  # change makes it stale, this job commits the corrected file back to the PR
+  # branch so nobody needs python/uv locally. (Same-repo PRs only -- a fork PR
+  # can't be pushed to, in which case just merge and fix on the next PR.)
+  deps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Regenerate dependency graph
+        working-directory: install
+        run: python3 gen_deps.py > DEPENDENCIES.inc
+      - name: Commit if the graph changed
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          if git diff --quiet -- install/DEPENDENCIES.inc; then
+            echo "DEPENDENCIES.inc already up to date."
+          elif [ -z "$HEAD_REF" ]; then
+            echo "::warning title=Stale DEPENDENCIES.inc::install/DEPENDENCIES.inc is out of date. No PR head branch is available for auto-update; run 'make deps' in install/ and commit the regenerated graph."
+          else
+            git config user.name  "gpec-deps-bot"
+            git config user.email "actions@github.com"
+            git commit -am "INSTALL - MINOR - regenerate install/DEPENDENCIES.inc"
+            if git push origin "HEAD:refs/heads/${HEAD_REF}"; then
+              echo "DEPENDENCIES.inc was stale; committed the regenerated graph."
+            else
+              echo "::warning title=Stale DEPENDENCIES.inc::install/DEPENDENCIES.inc is out of date and could not be auto-updated (expected on fork PRs, which can't be pushed to). A maintainer should run 'make deps' in install/ and commit, or merge and fix on the next same-repo PR."
+            fi
+          fi
+
   build-netcdf-gfortran:
     runs-on: ubuntu-latest
     env:
@@ -69,7 +108,7 @@ jobs:
       PREFIX: ${{ github.workspace }}/deps
       ONEAPI_ROOT: /opt/intel/oneapi
       FC: ifort
-      
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -102,7 +141,7 @@ jobs:
         if: steps.netcdf-cache.outputs.cache-hit != 'true'
         run: |
           source /opt/intel/oneapi/setvars.sh
-          
+
           mkdir -p $PREFIX/src
           cd $PREFIX/src
           curl -L -o netcdf-fortran.tar.gz https://github.com/Unidata/netcdf-fortran/archive/refs/tags/v4.6.1.tar.gz
@@ -128,12 +167,12 @@ jobs:
           else
             echo "Cache not found. Built from source."
           fi
-          
+
       - name: Confirm all shared libs
         run: |
           ls -lh $PREFIX/lib
           ls -lh $PREFIX/include
-          
+
   make_gpec_gfortran:
     runs-on: ubuntu-latest
     needs: build-netcdf-gfortran
@@ -152,13 +191,11 @@ jobs:
 
       - name: Rewrite .gitmodules to use HTTPS
         run: |
-          git config --file .gitmodules submodule."deps/src/harvest".url https://github.com/gafusion/harvest_client.git
           git config --file .gitmodules submodule."deps/src/netcdf-c".url https://github.com/Unidata/netcdf-c.git
           git config --file .gitmodules submodule."deps/src/netcdf-fortran".url https://github.com/Unidata/netcdf-fortran.git
           git config --file .gitmodules submodule."deps/src/hdf5".url https://github.com/HDFGroup/hdf5.git
           git config --file .gitmodules submodule."deps/src/OpenBLAS".url https://github.com/OpenMathLib/OpenBLAS.git
           git submodule sync
-          git submodule update --init --recursive "deps/src/harvest"
           
       - name: Install Dependencies
         run: |
@@ -233,12 +270,10 @@ jobs:
 
       - name: Rewrite .gitmodules to use HTTPS
         run: |
-          git config --file .gitmodules submodule."deps/src/harvest".url https://github.com/gafusion/harvest_client.git
           git config --file .gitmodules submodule."deps/src/netcdf-c".url https://github.com/Unidata/netcdf-c.git
           git config --file .gitmodules submodule."deps/src/netcdf-fortran".url https://github.com/Unidata/netcdf-fortran.git
           git config --file .gitmodules submodule."deps/src/hdf5".url https://github.com/HDFGroup/hdf5.git
           git config --file .gitmodules submodule."deps/src/OpenBLAS".url https://github.com/OpenMathLib/OpenBLAS.git
-          git submodule update --init --recursive "deps/src/harvest"
 
       - name: Compile
         run: |

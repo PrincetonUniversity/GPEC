@@ -53,7 +53,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), POINTER :: shiftx, shifty, shiftz
       REAL(r8), DIMENSION(:), POINTER :: cur
       REAL(r8), DIMENSION(:,:,:), POINTER :: x,y,z
-      END TYPE coil_type      
+      END TYPE coil_type
 
       TYPE(coil_type), DIMENSION(:), POINTER :: coil
       TYPE(spline_type) :: csq
@@ -68,7 +68,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE coil_read(cdconfile,icoil_num,icoil_name,icoil_cur)
-      
+
       CHARACTER(128), INTENT(IN) :: cdconfile
       INTEGER, OPTIONAL :: icoil_num
       REAL(r8), DIMENSION(500,48), OPTIONAL :: icoil_cur
@@ -301,7 +301,7 @@ c-----------------------------------------------------------------------
                         r = sqrt( z ** 2 + y ** 2)
                         IF(cnpert == 1)THEN  ! want constant tilt angle like tilty case
                            angle = ATAN2(z, y) + tiltx
-                        ELSE 
+                        ELSE
                            ! makes peak tilt angle at y axis where r is maximum, for consistent max vertical displacement
                            ! however, this becomes redundent with tiltx for n=5 which is no good
     !                        angle = ATAN2(z, y) + tiltx*cos((cnpert-1)*(phi-pi/2))
@@ -315,7 +315,7 @@ c-----------------------------------------------------------------------
                      ! petal-like distortions of the shape
                      ! n=0 manually set to rigid shift
                      ! n=1 creates a beaning (one-petal, NOT rigid shift)
-                     ! n=2 creates a peanut shaping (two petal, NOT elliptic), etc. 
+                     ! n=2 creates a peanut shaping (two petal, NOT elliptic), etc.
                      IF(cnpert==0)THEN ! only shift, keep coil same
                         dx = dx + coil_shiftx(ci,cj)
                         dy = dy + coil_shifty(ci,cj)

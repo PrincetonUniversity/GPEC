@@ -33,7 +33,6 @@ gpec/
 ├── equil/        # Equilibrium data processing (EFIT, CHEASE, Miller, etc.)
 ├── gpec/         # Main GPEC code for 3D perturbations
 ├── docs/         # Sphinx documentation and examples
-├── harvest/      # Git submodule for data client
 ├── input/        # Template input namelists
 ├── install/      # Build configuration and Makefile
 ├── lib/          # Compiled library archives
@@ -248,3 +247,18 @@ Count characters in a specific line:
 ```bash
 sed -n 'NUMp' filename.f | wc -c
 ```
+
+## Sign Conventions
+
+GPEC uses right-handed magnetic coordinates (psi, theta, zeta) with Fourier
+decomposition exp(im*theta - in*phi). A comprehensive reference is in
+`docs/sign_conventions.rst`. Key points:
+
+- **helicity** = ipd * btd (+1 = RH, -1 = LH), computed in `gpec_main` (`gpec/gpec.f`)
+- **nn** (toroidal mode number) is always positive; resonant **m** is always positive
+- **F = R*Bt** is forced positive via ABS() in `read_eq_efit` (`equil/read_eq.f`)
+- **q** is recomputed by field-line integration (`direct_run` in `equil/direct.f`; `inverse_run` in `equil/inverse.f` for inverse formats); the input file's q profile is unused, and the recomputed q is always positive
+- **omega_E** is positive for rotation in the direction of the toroidal coordinate zeta
+- The code does NOT use the COCOS standard
+- For SURFMN interface: `m_surfmn = helicity * m_gpec`
+- For real-space output: RH configs take complex conjugate (`-helicity*AIMAG(...)` in `gpec/gpout.f`)

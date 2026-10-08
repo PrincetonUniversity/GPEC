@@ -144,7 +144,7 @@ c-----------------------------------------------------------------------
       ENDIF
       IF(wv_farwall_flag)THEN
          temp=wv
-      ENDIF         
+      ENDIF
 
       farwal_flag=.FALSE. ! self-inductance with the wall.
       kernelsignin=-1.0
@@ -169,7 +169,7 @@ c-----------------------------------------------------------------------
       IF(wv_farwall_flag)THEN
          wv=temp
       ENDIF
-       
+
       singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
       DO ipert=1,mpert
          wv(ipert,:)=wv(ipert,:)*singfac
@@ -834,7 +834,7 @@ c-----------------------------------------------------------------------
             wv(:,ipert)=wv(:,ipert)*singfac
          ENDDO
          wvmats%fs(i,:)=RESHAPE(wv,(/mpert**2/))
-         DEALLOCATE(grri,xzpts)         
+         DEALLOCATE(grri,xzpts)
       ENDDO
       CALL unset_dcon_params
       CALL cspline_fit(wvmats,"extrap")

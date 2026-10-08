@@ -273,7 +273,7 @@ c-----------------------------------------------------------------------
       CHARACTER(16) :: varname,format,type
       INTEGER :: nvalue
       REAL(r8) :: value0,dvalue
-      
+
       INTEGER :: index_in,index_out
       CHARACTER(128) :: dirname,outdir
       TYPE(loop_type) :: inner,outer

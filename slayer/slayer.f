@@ -46,7 +46,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs,jxbl,bal,
      $     prs,n_es,t_es,t_is,omegas,l_ns,l_ts,qvals,svals,
      $        bts,rss,R0s,mu_is,zeffs,Q_soll,br_thl
-      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: 
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE ::
      $     js,ks,psis,jxbs,Q_sols,br_ths
       REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: Q_solss,br_thss
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: deltal
@@ -92,9 +92,9 @@ c-----------------------------------------------------------------------
       inpe=0.0
       inc_beta=0.7 ! c_beta=0.7 for DIII-D example.
       inds=6.0 ! 6.0 for DIII-D example.
-      intau=1.0 ! 1.0 for DIII-D example.     
+      intau=1.0 ! 1.0 for DIII-D example.
       inlu=1e8
-      Q0=4.0     
+      Q0=4.0
       delta_n_p=(1e-2,1e-2)
       inum=400 ! resolution to find error field thresholds.
       jnum=500 ! resolution for 2d scan along with Q,omega.
@@ -193,7 +193,7 @@ c-----------------------------------------------------------------------
      $           bts(k),rss(k),R0s(k),mu_is(k),zeffs(k)
          ENDDO
          CLOSE(input_unit)
-         
+
          DO k=0,inn-1
             WRITE(*,*)k
             mr=REAL(mms(k))
@@ -209,7 +209,7 @@ c-----------------------------------------------------------------------
             inds=ds
             intau=tau
             Q0=Q
- 
+
             IF (Q0>inQ_e) THEN
                inQ_max=2.0*Q0
                inQ_min=1.05*inQ_e
@@ -222,10 +222,10 @@ c-----------------------------------------------------------------------
                ENDIF
             ENDIF
             riccati_out=.FALSE.
-         
+
             ALLOCATE(inQs(0:inum),deltal(0:inum),
-     $           jxbl(0:inum),bal(0:inum)) 
-         
+     $           jxbl(0:inum),bal(0:inum))
+
             DO i=0,inum
                inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
                deltal(i)=riccati(inQs(i),inQ_e,inQ_i,
@@ -233,19 +233,19 @@ c-----------------------------------------------------------------------
                jxbl(i)=-AIMAG(1.0/(deltal(i)+delta_n_p))
                bal(i)=2.0*inpr*(Q0-inQs(i))/jxbl(i)
             ENDDO
-        
+
             index=MAXLOC(bal)
             Q_soll(k)=inQs(index(1))
             br_thl(k)=sqrt(MAXVAL(bal)/lu*(svals(k)**2.0/2.0))*1e4
 
             WRITE(*,*)"Q_sol=",Q_soll(k)
             WRITE(*,*)"br_th=",br_thl(k)
-            DEALLOCATE(inQs,deltal,jxbl,bal)         
+            DEALLOCATE(inQs,deltal,jxbl,bal)
          ENDDO
          OPEN(UNIT=out_unit,FILE="slayer_input_bal_n"//
      $      TRIM(sn)//".out",STATUS="UNKNOWN")
          WRITE(out_unit,'(1x,(2a17))') "Q_sol","br_th"
-         
+
          DO k=0,inn-1
             WRITE(out_unit,'(1x,2(es17.8e3))')
      $           Q_soll(k),br_thl(k)
@@ -272,11 +272,11 @@ c-----------------------------------------------------------------------
          ! just for diagnostics
          inQ_max=10.0
          inQ_min=-10.0
-         
+
          riccati_out=.FALSE.
-         
-         ALLOCATE(inQs(0:inum),deltal(0:inum),jxbl(0:inum),bal(0:inum)) 
-         
+
+         ALLOCATE(inQs(0:inum),deltal(0:inum),jxbl(0:inum),bal(0:inum))
+
          DO i=0,inum
             inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
             deltal(i)=riccati(inQs(i),inQ_e,inQ_i,
@@ -304,7 +304,7 @@ c-----------------------------------------------------------------------
          br_th=sqrt(MAXVAL(bal)/lu*(sval**2.0/2.0))*1e4
          WRITE(*,*)"Q_sol=",Q_sol
          WRITE(*,*)"br_th=",br_th
-         DEALLOCATE(inQs,deltal,jxbl,bal)         
+         DEALLOCATE(inQs,deltal,jxbl,bal)
       ENDIF
 c-----------------------------------------------------------------------
 c     examine delta dependencies on complex Q for stability.
@@ -324,7 +324,7 @@ c-----------------------------------------------------------------------
      $              inds,intau,inpe,iinQ=iinQs(j))
             ENDDO
          ENDDO
-      
+
          IF (ascii_flag) THEN
             OPEN(UNIT=out_unit,FILE="slayer_stability_n"//
      $         TRIM(sn)//".out", STATUS="UNKNOWN")
@@ -391,7 +391,7 @@ c-----------------------------------------------------------------------
          j_max=50.0 ! extended from 20.0
          k_min=-3.0 ! in log scale
          k_max=0.0 ! in log scale
-         DO j=0,jnum            
+         DO j=0,jnum
             js(j,:)=j_min+(j_max-j_min)/jnum*REAL(j)
             DO k=0,knum
                kpower=k_min+(k_max-k_min)/knum*REAL(k)
@@ -446,7 +446,7 @@ c-----------------------------------------------------------------------
          j_max=50.0 ! extended from 20.0
          k_min=-3.0 ! in log scale
          k_max=0.0 ! in log scale
-         DO j=0,jnum            
+         DO j=0,jnum
             js(j,:)=j_min+(j_max-j_min)/jnum*REAL(j)
             DO k=0,knum
                kpower=k_min+(k_max-k_min)/knum*REAL(k)
@@ -499,7 +499,7 @@ c-----------------------------------------------------------------------
 
          j_min=0.05 ! extended from 20.0
          j_max=50.0 ! extended from 20.0
-         DO j=0,jnum            
+         DO j=0,jnum
             js(j,:)=j_min+(j_max-j_min)/jnum*REAL(j)
             deltas(j,0)=riccati(js(j,0),inQ_e,inQ_i,inpr,
      $         inc_beta,inds,intau,inpe)
@@ -588,8 +588,8 @@ c-----------------------------------------------------------------------
      $        deltas(0:jnum,0:knum),psis(0:jnum,0:knum),
      $        jxbs(0:jnum,0:knum))
 
-         j_min=1.0 
-         j_max=100.0 
+         j_min=1.0
+         j_max=100.0
          k_min=1.0 ! in log scale
          k_max=100.0 ! in log scale
          DO j=0,jnum
@@ -637,7 +637,7 @@ c-----------------------------------------------------------------------
 c     (o,n) scan.
 c-----------------------------------------------------------------------
       IF (onscan_flag) THEN
-         ALLOCATE(inQs(0:inum),bal(0:inum)) 
+         ALLOCATE(inQs(0:inum),bal(0:inum))
          ALLOCATE(js(0:jnum,0:knum),ks(0:jnum,0:knum),
      $        Q_sols(0:jnum,0:knum),br_ths(0:jnum,0:knum))
 
@@ -650,7 +650,7 @@ c-----------------------------------------------------------------------
             js(j,:)=j_min+(j_max-j_min)*(REAL(j)/jnum)
             DO k=0,knum
                ks(j,k)=k_min+(k_max-k_min)*(REAL(k)/knum)
-               
+
                CALL params(n_e*ks(j,k),t_e,t_i,omega*js(j,k),
      $              l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
                inQ=Q
@@ -660,7 +660,7 @@ c-----------------------------------------------------------------------
                inds=ds
                intau=tau
                Q0=Q
-               
+
 
                IF (Q0>inQ_e) THEN
                   inQ_max=2.0*Q0
@@ -675,7 +675,7 @@ c-----------------------------------------------------------------------
                ENDIF
 
 
-               
+
                DO i=0,inum
                   inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
                   delta=riccati(inQs(i),inQ_e,inQ_i,
@@ -686,7 +686,7 @@ c-----------------------------------------------------------------------
                index=MAXLOC(bal)
                Q_sols(j,k)=inQs(index(1))
                br_ths(j,k)=sqrt(MAXVAL(bal)/lu)*1e4
-               WRITE(*,*)"br_ths=",br_ths(j,k)               
+               WRITE(*,*)"br_ths=",br_ths(j,k)
             ENDDO
          ENDDO
 
@@ -701,7 +701,7 @@ c-----------------------------------------------------------------------
      $                 omega*js(j,k),n_e*ks(j,k),
      $                 omega_i,omega_e,
      $                 Q_sols(j,k),br_ths(j,k)
-                  
+
                ENDDO
             ENDDO
             CLOSE(out_unit)
@@ -724,7 +724,7 @@ c-----------------------------------------------------------------------
 c     (o,t) scan.
 c-----------------------------------------------------------------------
       IF (otscan_flag) THEN
-         ALLOCATE(inQs(0:inum),bal(0:inum)) 
+         ALLOCATE(inQs(0:inum),bal(0:inum))
          ALLOCATE(js(0:jnum,0:knum),ks(0:jnum,0:knum),
      $        Q_sols(0:jnum,0:knum),br_ths(0:jnum,0:knum))
 
@@ -737,7 +737,7 @@ c-----------------------------------------------------------------------
             js(j,:)=j_min+(j_max-j_min)*(REAL(j)/jnum)
             DO k=0,knum
                ks(j,k)=k_min+(k_max-k_min)*(REAL(k)/knum)
-               
+
                CALL params(n_e,t_e*ks(j,k),t_i*ks(j,k),
      $              omega*js(j,k),l_n,l_t,qval,sval,bt,
      $              rs,R0,mu_i,zeff,params_check)
@@ -748,7 +748,7 @@ c-----------------------------------------------------------------------
                inds=ds
                intau=tau
                Q0=Q
-               
+
                IF (Q0>inQ_e) THEN
                   inQ_max=2.0*Q0
                   inQ_min=1.05*inQ_e
@@ -761,7 +761,7 @@ c-----------------------------------------------------------------------
                   ENDIF
                ENDIF
 
-               
+
                DO i=0,inum
                   inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
                   delta=riccati(inQs(i),inQ_e,inQ_i,
@@ -787,7 +787,7 @@ c-----------------------------------------------------------------------
      $                 omega*js(j,k),t_e*ks(j,k),
      $                 omega_i,omega_e,
      $                 Q_sols(j,k),br_ths(j,k)
-                  
+
                ENDDO
             ENDDO
             CLOSE(out_unit)
@@ -810,7 +810,7 @@ c-----------------------------------------------------------------------
 c     (n,t) scan.
 c-----------------------------------------------------------------------
       IF (ntscan_flag) THEN
-         ALLOCATE(inQs(0:inum),bal(0:inum)) 
+         ALLOCATE(inQs(0:inum),bal(0:inum))
          ALLOCATE(js(0:jnum,0:knum),ks(0:jnum,0:knum),
      $        Q_sols(0:jnum,0:knum),br_ths(0:jnum,0:knum))
 
@@ -823,7 +823,7 @@ c-----------------------------------------------------------------------
             js(j,:)=j_min+(j_max-j_min)*(REAL(j)/jnum)
             DO k=0,knum
                ks(j,k)=k_min+(k_max-k_min)*(REAL(k)/knum)
-               
+
                CALL params(n_e*ks(j,k),t_e*js(j,k),t_i*js(j,k),omega,
      $              l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
                inQ=Q
@@ -833,7 +833,7 @@ c-----------------------------------------------------------------------
                inds=ds
                intau=tau
                Q0=Q
-               
+
                IF (Q0>inQ_e) THEN
                   inQ_max=2.0*Q0
                   inQ_min=1.05*inQ_e
@@ -846,7 +846,7 @@ c-----------------------------------------------------------------------
                   ENDIF
                ENDIF
 
-               
+
                DO i=0,inum
                   inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
                   delta=riccati(inQs(i),inQ_e,inQ_i,
@@ -857,7 +857,7 @@ c-----------------------------------------------------------------------
                index=MAXLOC(bal)
                Q_sols(j,k)=inQs(index(1))
                br_ths(j,k)=sqrt(MAXVAL(bal)/lu)*1e4
-               WRITE(*,*)"br_ths=",br_ths(j,k)               
+               WRITE(*,*)"br_ths=",br_ths(j,k)
             ENDDO
          ENDDO
 
@@ -873,7 +873,7 @@ c-----------------------------------------------------------------------
      $                 omega_i,omega_e,
      $                 Q_sols(j,k),br_ths(j,k)
                ENDDO
-            ENDDO                  
+            ENDDO
             CLOSE(out_unit)
          ENDIF
 
@@ -894,7 +894,7 @@ c-----------------------------------------------------------------------
 c     (n,bt) scan.
 c-----------------------------------------------------------------------
       IF (nbtscan_flag) THEN
-         ALLOCATE(inQs(0:inum),bal(0:inum)) 
+         ALLOCATE(inQs(0:inum),bal(0:inum))
          ALLOCATE(js(0:jnum,0:knum),ks(0:jnum,0:knum),
      $        Q_sols(0:jnum,0:knum),br_ths(0:jnum,0:knum))
 
@@ -908,7 +908,7 @@ c-----------------------------------------------------------------------
             DO k=0,knum
                ks(j,k)=k_min+(k_max-k_min)*(REAL(k)/knum)
 
-             
+
                CALL params(n_e*ks(j,k),t_e,t_i,omega,
      $              l_n,l_t,qval,sval,bt*js(j,k),rs,R0,mu_i,zeff,
      $              params_check)
@@ -919,7 +919,7 @@ c-----------------------------------------------------------------------
                inds=ds
                intau=tau
                Q0=Q
-           
+
 
                IF (Q0>inQ_e) THEN
                   inQ_max=2.0*Q0
@@ -933,7 +933,7 @@ c-----------------------------------------------------------------------
                   ENDIF
                ENDIF
 
-        
+
                DO i=0,inum
                   inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
                   delta=riccati(inQs(i),inQ_e,inQ_i,
@@ -944,7 +944,7 @@ c-----------------------------------------------------------------------
                index=MAXLOC(bal)
                Q_sols(j,k)=inQs(index(1))
                br_ths(j,k)=sqrt(MAXVAL(bal)/lu)*1e4
-               WRITE(*,*)"br_ths=",br_ths(j,k)               
+               WRITE(*,*)"br_ths=",br_ths(j,k)
             ENDDO
          ENDDO
 
@@ -958,7 +958,7 @@ c-----------------------------------------------------------------------
                   WRITE(out_unit,'(1x,4(es17.8e3))')
      $                 bt*js(j,k),n_e*ks(j,k),
      $                 Q_sols(j,k),br_ths(j,k)
-                  
+
                ENDDO
             ENDDO
             CLOSE(out_unit)
@@ -979,4 +979,4 @@ c-----------------------------------------------------------------------
       ENDIF
 
       END PROGRAM slayer
-     
+

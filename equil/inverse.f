@@ -237,7 +237,6 @@ c-----------------------------------------------------------------------
       ENDDO
       CALL spline_fit(sq,"extrap")
       q0=sq%fs(0,4)-sq%fs1(0,4)*sq%xs(0)
-      IF(newq0 == -1)newq0=-q0
 c-----------------------------------------------------------------------
 c     revise q profile.
 c-----------------------------------------------------------------------
@@ -246,7 +245,7 @@ c-----------------------------------------------------------------------
          f0fac=f0**2*((newq0/q0)**2-one)
          q0=newq0
          DO ipsi=0,mpsi
-            ffac=SQRT(1+f0fac/sq%fs(ipsi,1)**2)*SIGN(one,newq0)
+            ffac=SQRT(1+f0fac/sq%fs(ipsi,1)**2)
             sq%fs(ipsi,1)=sq%fs(ipsi,1)*ffac
             sq%fs(ipsi,4)=sq%fs(ipsi,4)*ffac
             rzphi%fs(ipsi,:,3)=rzphi%fs(ipsi,:,3)*ffac
@@ -380,7 +379,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:,:), INTENT(IN) :: xx,ff
       REAL(r8), INTENT(IN) :: x
       REAL(r8), DIMENSION(SIZE(ff,2)) :: f
-      
+
       INTEGER :: i,j,m
       REAL(r8), DIMENSION(SIZE(ff,2)) :: term
 c-----------------------------------------------------------------------
@@ -579,7 +578,11 @@ c-----------------------------------------------------------------------
       ENDDO
       CALL spline_fit(sq,"extrap")
       q0=sq%fs(0,4)-sq%fs1(0,4)*sq%xs(0)
-      IF(newq0 == -1)newq0=-q0
+c-----------------------------------------------------------------------
+c     enforce positive q (chease4 takes q directly from the input file).
+c-----------------------------------------------------------------------
+      IF(MINVAL(sq%fs(:,4)) <= 0)CALL program_stop
+     $     ("chease4 input q must be positive (GPEC requires q > 0).")
 c-----------------------------------------------------------------------
 c     revise q profile.
 c-----------------------------------------------------------------------
@@ -588,7 +591,7 @@ c-----------------------------------------------------------------------
          f0fac=f0**2*((newq0/q0)**2-one)
          q0=newq0
          DO ipsi=0,mpsi
-            ffac=SQRT(1+f0fac/sq%fs(ipsi,1)**2)*SIGN(one,newq0)
+            ffac=SQRT(1+f0fac/sq%fs(ipsi,1)**2)
             sq%fs(ipsi,1)=sq%fs(ipsi,1)*ffac
             sq%fs(ipsi,4)=sq%fs(ipsi,4)*ffac
             rzphi%fs(ipsi,:,3)=rzphi%fs(ipsi,:,3)*ffac
