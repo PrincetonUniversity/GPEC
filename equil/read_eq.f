@@ -37,6 +37,8 @@ c     28. read_eq_pfrc.
 c     29. read_eq_chease4.
 c     30. read_eq_marklin_direct.
 c     31. read_eq_marklin_inverse.
+c     32. read_eq_profiles_from_derivatives.
+c     33. read_eq_profiles_warn.
 c-----------------------------------------------------------------------
 c     subprogram 0. read_eq_mod.
 c     module declarations.
@@ -625,6 +627,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: bcentr,cpasma,rgrid,rmaxis,rzero,ssibry1,
      $     ssibry2,ssimag1,ssimag2,xdim,xdum,zdim,zmaxis,zmid
       REAL(r8) :: tmp
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: ffprim,pprime
       CHARACTER(LEN=7) :: shotstr, timestr
 c-----------------------------------------------------------------------
 c     read equilibrium data.
@@ -636,14 +639,15 @@ c-----------------------------------------------------------------------
       READ(in_unit,'(5e16.9)')cpasma,ssimag2,xdum,rmaxis,xdum
       READ(in_unit,'(5e16.9)')zmaxis,xdum,ssibry2,xdum,xdum
       CALL spline_alloc(sq_in,nw-1,4)
+      ALLOCATE(ffprim(0:nw-1),pprime(0:nw-1))
       READ(in_unit,'(5e16.9)')(sq_in%fs(i,1),i=0,nw-1)
       READ(in_unit,'(5e16.9)')(sq_in%fs(i,2),i=0,nw-1)
-      READ(in_unit,'(5e16.9)')(sq_in%fs(i,3),i=0,nw-1)
-      READ(in_unit,'(5e16.9)')(sq_in%fs(i,3),i=0,nw-1)
+      READ(in_unit,'(5e16.9)')(ffprim(i),i=0,nw-1)
+      READ(in_unit,'(5e16.9)')(pprime(i),i=0,nw-1)
       CALL bicube_alloc(psi_in,nw-1,nh-1,1)
       READ(in_unit,'(5e16.9)')((psi_in%fs(i,j,1),i=0,nw-1),j=0,nh-1)
       READ(in_unit,'(5e16.9)',iostat=ios)(sq_in%fs(i,3),i=0,nw-1)
-      IF(ios /= 0)sq_in%fs(i,3)=0
+      IF(ios /= 0)sq_in%fs(:,3)=0
       CALL ascii_close(in_unit)
 c-----------------------------------------------------------------------
 c     translate to internal quantities.
@@ -667,6 +671,9 @@ c-----------------------------------------------------------------------
       sq_in%xs=(/(ia,ia=0,ma)/)/dfloat(ma)
       sq_in%fs(:,1)=ABS(sq_in%fs(:,1))
       sq_in%fs(:,2)=MAX(sq_in%fs(:,2)*mu0,zero)
+      CALL read_eq_profiles_from_derivatives(ffprim*psio,
+     $     pprime*mu0*psio)
+      DEALLOCATE(ffprim,pprime)
 c-----------------------------------------------------------------------
 c     copy and convert 2D quantities.
 c-----------------------------------------------------------------------
@@ -808,8 +815,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE read_eq_ldp_i
 
-      INTEGER :: mx,my
-      REAL(r8), DIMENSION(:), POINTER :: psi,f,p,q
+      INTEGER :: mx,my,ios1,ios2
+      REAL(r8), DIMENSION(:), POINTER :: psi,f,p,q,ffp,pp
       REAL(r8), DIMENSION(:,:), POINTER :: r,z
 c-----------------------------------------------------------------------
 c     open data file, read scalar data.
@@ -823,9 +830,9 @@ c-----------------------------------------------------------------------
       my=my-1
       mx=mx-1
       ALLOCATE(psi(0:mx),f(0:mx),p(0:mx),q(0:mx),
-     $     r(0:my,0:mx),z(0:my,0:mx))
+     $     r(0:my,0:mx),z(0:my,0:mx),ffp(0:mx),pp(0:mx))
 c-----------------------------------------------------------------------
-c     read binary data.
+c     read binary data; f*df/dpsi and dp/dpsi records are optional.
 c-----------------------------------------------------------------------
       READ(in_unit)psi
       READ(in_unit)f
@@ -833,6 +840,8 @@ c-----------------------------------------------------------------------
       READ(in_unit)q
       READ(in_unit)r
       READ(in_unit)z
+      READ(in_unit,IOSTAT=ios1)ffp
+      READ(in_unit,IOSTAT=ios2)pp
       CALL bin_close(in_unit)
 c-----------------------------------------------------------------------
 c     copy and revise 1D arrays.
@@ -843,6 +852,8 @@ c-----------------------------------------------------------------------
       sq_in%fs(:,1)=f
       sq_in%fs(:,2)=p*mu0
       sq_in%fs(:,3)=q
+      IF(ios1 == 0 .AND. ios2 == 0)
+     $     CALL read_eq_profiles_from_derivatives(ffp*psio,pp*mu0*psio)
       if(psio.lt.0)psio=-psio
 c-----------------------------------------------------------------------
 c     copy and revise 2D arrays.
@@ -855,7 +866,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     process inverse equilibrium and deallocate local arrays.
 c-----------------------------------------------------------------------
-      DEALLOCATE(psi,f,p,q,r,z)
+      DEALLOCATE(psi,f,p,q,r,z,ffp,pp)
       CALL inverse_run
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1425,7 +1436,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE read_eq_dump
 
-      INTEGER :: nqty
+      INTEGER :: nqty,ios
+      LOGICAL, DIMENSION(2) :: slopes
 
       LOGICAL, PARAMETER :: diagnose=.TRUE.
       INTEGER :: ix,iy,iqty,iside,ipsi
@@ -1457,14 +1469,15 @@ c-----------------------------------------------------------------------
 c     write 1D splines.
 c-----------------------------------------------------------------------
       READ(dump_unit)mpsi,nqty
+      IF(sq%allocated)CALL spline_dealloc(sq)
       CALL spline_alloc(sq,mpsi,nqty)
       READ(dump_unit)sq%xs,sq%fs,
      $     sq%xpower,sq%x0,sq%title,sq%name,sq%periodic
-      CALL spline_fit(sq,"extrap")
 c-----------------------------------------------------------------------
 c     read 2D splines.
 c-----------------------------------------------------------------------
       READ(dump_unit)mpsi,mtheta,nqty
+      IF(rzphi%allocated)CALL bicube_dealloc(rzphi)
       CALL bicube_alloc(rzphi,mpsi,mtheta,nqty)
       READ(dump_unit)rzphi%xs
       READ(dump_unit)rzphi%ys
@@ -1478,6 +1491,24 @@ c-----------------------------------------------------------------------
       READ(dump_unit)rzphi%title
       READ(dump_unit)rzphi%name
       READ(dump_unit)rzphi%periodic
+c-----------------------------------------------------------------------
+c     read supplied f, p derivatives and eqfun if present; fit sq.
+c-----------------------------------------------------------------------
+      READ(dump_unit,IOSTAT=ios)slopes,sq%fs1(:,1:2)
+      IF(ios == 0)sq_in_slopes(1:2)=slopes
+      CALL spline_fit_hermite(sq,"extrap",
+     $     (/sq_in_slopes(1:2),.FALSE.,.FALSE./))
+      IF(eqfun%allocated)CALL bicube_dealloc(eqfun)
+      CALL bicube_alloc(eqfun,mpsi,mtheta,3)
+      READ(dump_unit,IOSTAT=ios)eqfun%fs
+      IF(ios == 0)THEN
+         eqfun%xs=sq%xs
+         eqfun%ys=rzphi%ys
+         eqfun%title=(/"  b0  ","      ","      " /)
+         CALL bicube_fit(eqfun,"extrap","periodic")
+      ELSE
+         CALL bicube_dealloc(eqfun)
+      ENDIF
 c-----------------------------------------------------------------------
 c     restore x powers and fit.
 c-----------------------------------------------------------------------
@@ -1505,10 +1536,12 @@ c-----------------------------------------------------------------------
          DO ipsi=0,mpsi
             ffac=SQRT(1+f0fac/sq%fs(ipsi,1)**2)
             sq%fs(ipsi,1)=sq%fs(ipsi,1)*ffac
+            sq%fs1(ipsi,1)=sq%fs1(ipsi,1)/ffac
             sq%fs(ipsi,4)=sq%fs(ipsi,4)*ffac
             rzphi%fs(ipsi,:,3)=rzphi%fs(ipsi,:,3)*ffac
          ENDDO
-         CALL spline_fit(sq,"extrap")
+         CALL spline_fit_hermite(sq,"extrap",
+     $        (/sq_in_slopes(1:2),.FALSE.,.FALSE./))
       ENDIF
       qa=sq%fs(mpsi,4)+sq%fs1(mpsi,4)*(one-sq%xs(mpsi))
 c-----------------------------------------------------------------------
@@ -2378,4 +2411,117 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE read_eq_marklin_inverse
+c-----------------------------------------------------------------------
+c     subprogram 32. read_eq_profiles_from_derivatives.
+c     profile_source = "integrate": builds the f and mu0 p columns of
+c     sq_in from ffp = f*df/dpsifac and pp = d(mu0 p)/dpsifac. Values
+c     are integrated inward from the boundary values of f**2/2 and
+c     mu0 p; knot derivatives ffp/f and pp are kept by
+c     spline_fit_hermite. Tabulated values are not paired with the
+c     tabulated derivatives: their rounding noise would set f''.
+c     "values": tabulated values only. Falls back to "values" if the
+c     derivatives are unusable.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE read_eq_profiles_from_derivatives(ffp,pp)
+
+      REAL(r8), DIMENSION(0:), INTENT(IN) :: ffp,pp
+
+      INTEGER :: mx
+      REAL(r8) :: sf,sp,sgn,dfmax,dpmax
+      REAL(r8), DIMENSION(0:SIZE(ffp)-1) :: f,p,f2,fint,pint
+      TYPE(spline_type) :: spl
+c-----------------------------------------------------------------------
+c     select method.
+c-----------------------------------------------------------------------
+      SELECT CASE(TRIM(profile_source))
+      CASE("values")
+         RETURN
+      CASE("integrate")
+      CASE DEFAULT
+         CALL program_stop("Cannot recognize profile_source = "
+     $        //TRIM(profile_source))
+      END SELECT
+      mx=sq_in%mx
+      f=sq_in%fs(:,1)
+      p=sq_in%fs(:,2)
+c-----------------------------------------------------------------------
+c     check derivatives are finite and agree in sign with the values.
+c-----------------------------------------------------------------------
+      IF(.NOT.(ALL(ABS(ffp) <= HUGE(one)) .AND.
+     $     ALL(ABS(pp) <= HUGE(one)) .AND. ALL(f /= 0)))THEN
+         CALL read_eq_profiles_warn("non-finite derivatives or f = 0")
+         RETURN
+      ENDIF
+      sf=SUM((f(1:mx)-f(0:mx-1))
+     $     *(ffp(1:mx)/f(1:mx)+ffp(0:mx-1)/f(0:mx-1)))
+      sp=SUM((p(1:mx)-p(0:mx-1))*(pp(1:mx)+pp(0:mx-1)))
+      sgn=SIGN(one,sf+sp)
+      IF(sf*sp < 0)THEN
+         CALL read_eq_profiles_warn("derivative signs disagree with"
+     $        //" the values for only one of f and p")
+         RETURN
+      ENDIF
+c-----------------------------------------------------------------------
+c     integrate derivatives inward from the boundary.
+c-----------------------------------------------------------------------
+      CALL spline_alloc(spl,mx,2)
+      spl%xs=sq_in%xs
+      spl%fs(:,1)=sgn*ffp
+      spl%fs(:,2)=sgn*pp
+      CALL spline_fit(spl,"extrap")
+      CALL spline_int(spl)
+      f2=f(mx)**2-2*(spl%fsi(mx,1)-spl%fsi(:,1))
+      pint=p(mx)-(spl%fsi(mx,2)-spl%fsi(:,2))
+      CALL spline_dealloc(spl)
+      IF(ANY(f2 <= 0))THEN
+         CALL read_eq_profiles_warn("integrated f**2 <= 0")
+         RETURN
+      ENDIF
+      fint=SIGN(SQRT(f2),f(mx))
+c-----------------------------------------------------------------------
+c     report consistency of tabulated values and derivatives.
+c-----------------------------------------------------------------------
+      dfmax=MAXVAL(ABS(fint-f))/MAXVAL(ABS(f))
+      dpmax=MAXVAL(ABS(pint-p))/MAX(MAXVAL(ABS(p)),TINY(one))
+      IF(verbose)WRITE(*,'(1x,2a,1p,2(a,es9.2))')"profile_source = ",
+     $     TRIM(profile_source),", max |df|/|f| =",dfmax,
+     $     ", max |dp|/|p| =",dpmax
+      IF(dfmax > 1e-4 .OR. dpmax > 5e-2)WRITE(*,'(1x,a)')
+     $     "WARNING: tabulated values and derivatives of f, p disagree"
+c-----------------------------------------------------------------------
+c     store values and derivatives.
+c-----------------------------------------------------------------------
+      sq_in%fs(:,1)=fint
+      sq_in%fs(:,2)=pint
+      sq_in%fs1(:,1)=sgn*ffp/fint
+      sq_in%fs1(:,2)=sgn*pp
+      sq_in_slopes(1:2)=.TRUE.
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE read_eq_profiles_from_derivatives
+c-----------------------------------------------------------------------
+c     subprogram 33. read_eq_profiles_warn.
+c     warns that profile derivatives are not used.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE read_eq_profiles_warn(reason)
+
+      CHARACTER(*), INTENT(IN) :: reason
+c-----------------------------------------------------------------------
+c     write warning.
+c-----------------------------------------------------------------------
+      WRITE(*,'(1x,3a)')"WARNING: profile_source = values used: ",
+     $     reason,"."
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE read_eq_profiles_warn
       END MODULE read_eq_mod
