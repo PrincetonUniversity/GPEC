@@ -29,7 +29,7 @@ c-----------------------------------------------------------------------
      $     big,small,ns,root,scan_flag,root_flag,contour_flag,full,
      $     z_level_type,phi_level,transform_flag,poly_form_type,
      $     poly_test_type,scan0,scan1,nscan,delta0,delta1,condense,
-     $     ripple_flag,mripple
+     $     ripple_flag,mripple,sol_num
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -51,12 +51,18 @@ c-----------------------------------------------------------------------
       CALL timer(0,out_unit)
       CALL ideal_read(filename)
 c-----------------------------------------------------------------------
-c     reconstruct most unstable ideal solution.
+c     reconstruct the ideal solution selected by sol_num.
 c-----------------------------------------------------------------------
       IF(ideal_flag)THEN
          CALL ideal_transform
-         CALL ideal_build
-         CALL ideal_write
+         CALL ideal_build(sol_num)
+c     ripple_flag builds a unit-vector uedge and ignores sol_num, so
+c     keep the default output name rather than a sol_num-labeled one.
+         IF(ripple_flag)THEN
+            CALL ideal_write(1)
+         ELSE
+            CALL ideal_write(sol_num)
+         ENDIF
          CALL ideal_chord
          IF(contour_flag)CALL ideal_contour
       ENDIF
