@@ -69,7 +69,15 @@ module energy_integration
             energy_wb,&
             energy_nuk,&
             energy_leff
-    !$omp threadprivate(energy_wn,energy_wt,energy_we,energy_wd,energy_wb,&
+    ! energy_imaxis selects the integration contour inside xintgrnd, and
+    ! xintgrl_lsode flips it between its imaginary-axis and real-axis legs.  It
+    ! is per-integration state exactly like the frequencies below it, so it must
+    ! be threadprivate too: shared, one thread's imaginary leg silently switches
+    ! another thread's integrand from x + i*ximag to i*x, turning exp(-cx) from
+    ! a decaying exponential into an oscillation and injecting values orders of
+    ! magnitude too large into the pitch integrand.
+    !$omp threadprivate(energy_imaxis,&
+    !$omp&              energy_wn,energy_wt,energy_we,energy_wd,energy_wb,&
     !$omp&              energy_nuk,energy_leff,energy_n)
 
     type record

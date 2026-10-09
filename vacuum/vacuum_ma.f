@@ -894,12 +894,12 @@ c-----------------------------------------------------------------------
       implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
-      REAL, DIMENSION(:,:), ALLOCATABLE :: xloopin, zloopin
-      REAL, DIMENSION(:), ALLOCATABLE :: sourcemat
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: xloopin, zloopin
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: sourcemat
 
 
-      dxlin = 1.0 / (nxlpin-1)
-      dzlin = 1.0 / (nzlpin-1)
+      dxlin = 1.0_r8 / (nxlpin-1)
+      dzlin = 1.0_r8 / (nzlpin-1)
       nxzlin = nxlpin * nzlpin
       nloop = nxzlin
 
