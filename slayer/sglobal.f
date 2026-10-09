@@ -168,10 +168,18 @@ c     slayer_inputs_type -- per-surface input arrays for SLAYER
           REAL(r8), ALLOCATABLE :: omegas_e_arr(:)    ! omega_e  [rad/s]
           REAL(r8), ALLOCATABLE :: omegas_i_arr(:)    ! omega_i  [rad/s]
           REAL(r8), ALLOCATABLE :: gammafac_arr(:)    ! gamma conversion
-          REAL(r8), ALLOCATABLE :: Re_dp_arr(:)       ! Re(Deltaprime)
-          REAL(r8), ALLOCATABLE :: Im_dp_arr(:)       ! Im(Deltaprime)
+c         Deltaprime used in the layer matching is referenced to the
+c         minor radius r_s (unit x = (r - r_s)/r_s), like every layer
+c         quantity.  The *_psi arrays keep the outer-region value as
+c         STRIDE writes it, referenced to unit normalised poloidal flux.
+          REAL(r8), ALLOCATABLE :: Re_dp_arr(:)       ! Re(Deltaprime), r_s ref.
+          REAL(r8), ALLOCATABLE :: Im_dp_arr(:)       ! Im(Deltaprime), r_s ref.
+          REAL(r8), ALLOCATABLE :: Re_dp_psi_arr(:)   ! Re(Deltaprime), psi_N ref.
+          REAL(r8), ALLOCATABLE :: Im_dp_psi_arr(:)   ! Im(Deltaprime), psi_N ref.
+          REAL(r8), ALLOCATABLE :: k_ref_arr(:)       ! K = r_s*dpsi_N/dr
+          REAL(r8), ALLOCATABLE :: alpha_arr(:)       ! Mercier exponent sqrt(-D_I)
           REAL(r8), ALLOCATABLE :: d_crit_arr(:)      ! Delta_crit
-          COMPLEX(r8), ALLOCATABLE :: dp_matrix(:,:)  ! full Deltaprime matrix
+          COMPLEX(r8), ALLOCATABLE :: dp_matrix(:,:)  ! full Deltaprime matrix, r_s ref.
       END TYPE slayer_inputs_type
 
 c     slayer_outputs_type -- per-surface solver results

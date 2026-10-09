@@ -38,7 +38,7 @@ c     variable IDs are obtained via nf90_inq_varid before use.
 c-----------------------------------------------------------------------
       SUBROUTINE read_stride_netcdf_diagonal(ncfile,msing,dp_mat,
      $   Re_dp_diagonal,Im_dp_diagonal,q_rational,psi_n_rational,dgeo,
-     $   shear,r_o,my_bt0,my_psio,dr_vals,mpsi,nn,resm)
+     $   shear,r_o,my_bt0,my_psio,dr_vals,di_vals,mpsi,nn,resm)
 
 c --- arguments (all INTENT(OUT) except ncfile)
       CHARACTER(512), INTENT(IN) :: ncfile           ! path to STRIDE NetCDF
@@ -58,7 +58,8 @@ c --- arguments (all INTENT(OUT) except ncfile)
      $      my_bt0,            ! toroidal field B_t0
      $      my_psio,           ! poloidal flux psi_0
      $      mpsi,              ! poloidal mode number array
-     $      dr_vals            ! radial width dr at each surface
+     $      dr_vals,           ! resistive interchange index D_R
+     $      di_vals            ! Mercier index D_I
       INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(OUT) ::
      $      nn,                ! toroidal mode number(s)
      $      resm               ! resonant poloidal mode numbers
@@ -70,6 +71,7 @@ c --- locals
       INTEGER(kind=nf90_int) :: dp_id, qr_id, pr_id    ! variable ids
       INTEGER(kind=nf90_int) :: dgeo_id, shear_id      ! variable ids
       INTEGER(kind=nf90_int) :: resm_id, drr_id         ! variable ids
+      INTEGER(kind=nf90_int) :: dir_id                  ! variable id
       INTEGER(kind=nf90_int), DIMENSION(1) :: start, count  ! NetCDF hyperslab
       INTEGER :: i                                      ! loop index
       INTEGER :: bt0_len, ro_len, psio_len              ! attribute lengths
@@ -94,7 +96,8 @@ c --- read msing (number of singular surfaces) from global attribute
 c --- allocate output arrays sized by msing
       ALLOCATE(Re_dp_diagonal(msing), q_rational(msing),
      $         psi_n_rational(msing), shear(msing), dgeo(msing),
-     $         resm(msing), Im_dp_diagonal(msing), dr_vals(msing))
+     $         resm(msing), Im_dp_diagonal(msing), dr_vals(msing),
+     $         di_vals(msing))
       ALLOCATE(dp_mat(msing, msing, 2))
 
 c --- read lengths of scalar / small-array global attributes
@@ -133,6 +136,14 @@ c --- obtain NetCDF variable IDs
       CALL sl_check(stat)
       stat = nf90_inq_varid(ncid, 'dr_rational',   drr_id)
       CALL sl_check(stat)
+      stat = nf90_inq_varid(ncid, 'di_rational',   dir_id)
+      IF (stat /= nf90_noerr) THEN
+         WRITE(*,*) 'ERROR: di_rational is missing from ',TRIM(ncfile)
+         WRITE(*,*) '  Rerun STRIDE from this GPEC version; SLAYER'
+         WRITE(*,*) '  needs D_I to convert Delta_prime to the r_s'
+         WRITE(*,*) '  reference length.'
+      END IF
+      CALL sl_check(stat)
 
 c --- read global attributes (equilibrium scalars)
       stat = nf90_get_att(ncid, NF90_GLOBAL, 'ro',   r_o)
@@ -160,6 +171,8 @@ c --- read variable data: Deltaprime matrix and 1-D surface arrays
       stat = nf90_get_var(ncid, resm_id, resm)
       CALL sl_check(stat)
       stat = nf90_get_var(ncid, drr_id, dr_vals)
+      CALL sl_check(stat)
+      stat = nf90_get_var(ncid, dir_id, di_vals)
       CALL sl_check(stat)
 
 c --- extract diagonal of the complex Deltaprime matrix
@@ -339,7 +352,7 @@ c --- STRIDE data (from read_stride_netcdf_diagonal)
       REAL(r8), DIMENSION(:), ALLOCATABLE :: Re_dp_diagonal,
      $           Im_dp_diagonal, q_rational, psi_n_rational,
      $           shear, dgeo, r_o, my_bt0, my_psio, mpsi_arr,
-     $           dr_vals, dr_arr
+     $           dr_vals, di_vals, dr_arr
 c --- local per-surface kinetic arrays (for future NetCDF diagnostic output)
       REAL(r8), DIMENSION(:), ALLOCATABLE :: ne_arr, te_arr,
      $    ni_arr, ti_arr, zeff_arr, bt_arr, rs_arr, R0_arr,
@@ -357,13 +370,17 @@ c --- Fitzpatrick (r-based) shear workspace
       REAL(r8) :: da_dpsiN                   ! da_surf/dpsiN (Jacobian)
       REAL(r8) :: dpsi_h                     ! finite-diff step for Jacobian
       REAL(r8) :: s_fitz                     ! Fitzpatrick shear r*dq/dr/q
+c --- Deltaprime reference-length conversion (psi_N -> r_s)
+      REAL(r8) :: k_ref                      ! K = r_s*dpsi_N/dr
+      REAL(r8) :: alpha_m                    ! Mercier exponent sqrt(-D_I)
+      INTEGER  :: jsing                      ! second surface index
 c-----------------------------------------------------------------------
 c     read STRIDE NetCDF: Deltaprime matrix, geometry, equilibrium scalars.
 c-----------------------------------------------------------------------
       CALL read_stride_netcdf_diagonal(ncfile,msing,dp_mat,
      $           Re_dp_diagonal,Im_dp_diagonal,q_rational,
      $           psi_n_rational,dgeo,shear,r_o,my_bt0,my_psio,dr_vals,
-     $           mpsi_arr,nn,resm)
+     $           di_vals,mpsi_arr,nn,resm)
 
       mpsi = INT(mpsi_arr(1))
       mthsurf = 512             ! poloidal segments for surface integral
@@ -380,7 +397,9 @@ c --- allocate slayer_inputs_type arrays (one entry per surface)
      $  sl_in%D_norm_arr(msing),
      $  sl_in%d_beta_arr(msing),       sl_in%gammafac_arr(msing),
      $  sl_in%c_beta_arr(msing),       sl_in%lu_arr(msing),
-     $  sl_in%Qconv_arr(msing))
+     $  sl_in%Qconv_arr(msing),
+     $  sl_in%Re_dp_psi_arr(msing),    sl_in%Im_dp_psi_arr(msing),
+     $  sl_in%k_ref_arr(msing),        sl_in%alpha_arr(msing))
 
 c --- allocate local kinetic arrays (for future NetCDF diagnostic output)
       ALLOCATE(ne_arr(msing), te_arr(msing), ni_arr(msing),
@@ -412,8 +431,10 @@ c-----------------------------------------------------------------------
 
       CALL equil_read(out_unit)
 
-c     store full complex Deltaprime matrix in sl_in
-      sl_in%dp_matrix(:,:) = CMPLX(dp_mat(:,:,1), dp_mat(:,:,2))
+c     store full complex Deltaprime matrix in sl_in. It is converted
+c     to the r_s reference length after the surface loop below.
+      sl_in%dp_matrix(:,:) = CMPLX(dp_mat(:,:,1), dp_mat(:,:,2),
+     $                             KIND=r8)
 
       dpsi_h = 0.002               ! finite-difference step for Jacobian
 
@@ -539,6 +560,43 @@ c-----------------------------------------------------------------------
      $        l_n,l_t,my_qval,s_fitz,my_bt,my_rs,R_0,mu_i,
      $        zeff,.false.)
 
+c-----------------------------------------------------------------------
+c        reference-length conversion of the outer Deltaprime.
+c        STRIDE's Deltaprime is referenced to unit normalised poloidal
+c        flux, while the layer response S^(1/3)*Delta(Q), S and the
+c        critical Delta are all referenced to x = (r - r_s)/r_s.
+c        Near the surface the outer solution scales as
+c        |x|^(1/2 -+ alpha) with the Mercier exponent
+c        alpha = sqrt(-D_I) (Glasser, Greene & Johnson 1975), so
+c        rescaling x_psi = K*x with K = r_s*dpsi_N/dr gives
+c           Dp_rs(i,j) = K_i^(1/2+alpha_i) * Dp(i,j) * K_j^(alpha_j-1/2)
+c        whose diagonal factor is K^(2*alpha), reducing to the slab
+c        r_s*Deltaprime at D_I = -1/4. Mercier-unstable surfaces
+c        (D_I >= 0) are left unconverted through alpha = 0, and K = 1
+c        is used if da/dpsi_N is not a usable positive number.
+c-----------------------------------------------------------------------
+         IF (da_dpsiN > 0.0_r8 .AND. da_dpsiN < HUGE(da_dpsiN)) THEN
+            k_ref = my_rs / da_dpsiN
+         ELSE
+            k_ref = 1.0_r8
+            WRITE(*,*) 'WARNING: da/dpsi_N =',da_dpsiN,' at psi_N =',
+     $           respsi,' is not usable;'
+            WRITE(*,*) '  Delta_prime is left unconverted there.'
+         END IF
+         IF (di_vals(ising) < 0.0_r8) THEN
+            alpha_m = SQRT(-di_vals(ising))
+         ELSE
+            alpha_m = 0.0_r8
+         END IF
+         sl_in%k_ref_arr(ising) = k_ref
+         sl_in%alpha_arr(ising) = alpha_m
+         sl_in%Re_dp_psi_arr(ising) = Re_dp_diagonal(ising)
+         sl_in%Im_dp_psi_arr(ising) = Im_dp_diagonal(ising)
+         Re_dp_diagonal(ising) = Re_dp_diagonal(ising)
+     $        * k_ref**(2.0_r8*alpha_m)
+         Im_dp_diagonal(ising) = Im_dp_diagonal(ising)
+     $        * k_ref**(2.0_r8*alpha_m)
+
 c        growth-rate conversion factor: Deltaprime -> gamma
          gammafac = (my_rs * Re_dp_diagonal(ising)) / tau_r
 
@@ -571,6 +629,18 @@ c        Q_e - Q_i -> 0 for ni=ne, Ti=Te (iota_e blows up).
          sl_in%P_tor_arr(ising)   = P_tor
          sl_in%Qconv_arr(ising)   = tauk
       ENDDO
+
+c     convert the full Deltaprime matrix to the r_s reference length
+      DO jsing = 1, msing
+         DO ising = 1, msing
+            sl_in%dp_matrix(ising,jsing) =
+     $           sl_in%k_ref_arr(ising)
+     $              **(0.5_r8 + sl_in%alpha_arr(ising))
+     $           * sl_in%dp_matrix(ising,jsing)
+     $           * sl_in%k_ref_arr(jsing)
+     $              **(sl_in%alpha_arr(jsing) - 0.5_r8)
+         END DO
+      END DO
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

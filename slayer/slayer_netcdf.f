@@ -115,6 +115,9 @@ c-----------------------------------------------------------------------
       INTEGER :: p_tor_id         ! "P_tor"
       INTEGER :: Dnorm_id         ! "D"                  — normalised D
       INTEGER :: dpp_id           ! "Delta_prime_rational" (complex)
+      INTEGER :: dprs_id          ! "Delta_prime_rs_rational" (complex)
+      INTEGER :: kref_id          ! "k_ref"
+      INTEGER :: alpha_id         ! "alpha_mercier"
       INTEGER :: dc_id            ! "Delta_crit_rational"
       INTEGER :: dels_db_id       ! "delta_s_d_b"        (complex)
       INTEGER :: d_b_id           ! "d_beta"
@@ -316,6 +319,23 @@ c-----------------------------------------------------------------------
      $     qsing_dim, Dnorm_id) )
       CALL sl_check( nf90_def_var(ncid, "Delta_prime_rational",
      $     nf90_double, (/qsing_dim, i_dim/), dpp_id) )
+      CALL sl_check( nf90_put_att(ncid, dpp_id, "long_name",
+     $     "Outer-region Delta_prime diagonal, referenced to unit "//
+     $     "normalised poloidal flux (as written by STRIDE)") )
+      CALL sl_check( nf90_def_var(ncid, "Delta_prime_rs_rational",
+     $     nf90_double, (/qsing_dim, i_dim/), dprs_id) )
+      CALL sl_check( nf90_put_att(ncid, dprs_id, "long_name",
+     $     "Delta_prime diagonal referenced to the minor radius "//
+     $     "r_s, K^(2*alpha)*Delta_prime; the value used in the "//
+     $     "layer matching") )
+      CALL sl_check( nf90_def_var(ncid, "k_ref", nf90_double,
+     $     qsing_dim, kref_id) )
+      CALL sl_check( nf90_put_att(ncid, kref_id, "long_name",
+     $     "Reference-length factor K = r_s*dpsi_N/dr") )
+      CALL sl_check( nf90_def_var(ncid, "alpha_mercier", nf90_double,
+     $     qsing_dim, alpha_id) )
+      CALL sl_check( nf90_put_att(ncid, alpha_id, "long_name",
+     $     "Mercier exponent sqrt(-D_I)") )
       CALL sl_check( nf90_def_var(ncid, "Delta_crit_rational",
      $     nf90_double, qsing_dim, dc_id) )
 
@@ -432,8 +452,15 @@ c-----------------------------------------------------------------------
 c     write complex Delta' as a RESHAPE'd (msing, 2) real array.
 c-----------------------------------------------------------------------
       CALL sl_check( nf90_put_var(ncid, dpp_id,
+     $     RESHAPE( (/sl_in%Re_dp_psi_arr, sl_in%Im_dp_psi_arr/),
+     $              (/msing, 2/) )) )
+      CALL sl_check( nf90_put_var(ncid, dprs_id,
      $     RESHAPE( (/sl_in%Re_dp_arr, sl_in%Im_dp_arr/),
      $              (/msing, 2/) )) )
+      CALL sl_check( nf90_put_var(ncid, kref_id,
+     $     sl_in%k_ref_arr) )
+      CALL sl_check( nf90_put_var(ncid, alpha_id,
+     $     sl_in%alpha_arr) )
       CALL sl_check( nf90_put_var(ncid, dc_id,
      $     sl_in%d_crit_arr) )
 

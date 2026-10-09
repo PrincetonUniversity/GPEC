@@ -63,13 +63,13 @@ c-----------------------------------------------------------------------
      $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id,
      $    r_dim, rp_dim, l_dim, lp_dim, r_id, rp_id, l_id, lp_id,
      $    pr_id, qr_id, dp_id, ap_id, bp_id, gp_id, dpp_id,
-     $    shear_id,resm_id,drr_id,dgeo_id
+     $    shear_id,resm_id,drr_id,dgeo_id,dir_id
       COMPLEX(r8), DIMENSION(mpert) :: ep,ev,et
       CHARACTER(2) :: sn
       CHARACTER(64) :: ncfile
 
       REAL(r8) :: respsi
-      REAL(r8), DIMENSION(msing) :: dr_rationals
+      REAL(r8), DIMENSION(msing) :: dr_rationals,di_rationals
       INTEGER, DIMENSION(msing) :: resm
 
       INTEGER :: ising,jsing
@@ -93,10 +93,12 @@ c-----------------------------------------------------------------------
       ev = CMPLX(evi, 0.0)
       et = CMPLX(eti, 0.0)
 
-      ! evaluate resistive interchange parameter on rational surfaces
+      ! evaluate the Mercier (D_I) and resistive interchange (D_R)
+      ! indices on rational surfaces
       DO i=1,msing
          respsi = sing(i)%psifac
          CALL spline_eval(locstab,respsi,0)
+         di_rationals(i)=locstab%f(1)/respsi
          dr_rationals(i)=locstab%f(2)/respsi
       END DO
 c-----------------------------------------------------------------------
@@ -209,6 +211,12 @@ c-----------------------------------------------------------------------
      $                            resm_id) )
          CALL check( nf90_def_var(ncid, "dr_rational", nf90_double,
      $                            r_dim, drr_id) )
+         CALL check( nf90_put_att(ncid,drr_id,"long_name",
+     $       "Resistive Interchange Index D_R at Rational Surfaces") )
+         CALL check( nf90_def_var(ncid, "di_rational", nf90_double,
+     $                            r_dim, dir_id) )
+         CALL check( nf90_put_att(ncid,dir_id,"long_name",
+     $       "Mercier Index D_I at Rational Surfaces") )
       ENDIF
       ! define variables
       IF(debug_flag) PRINT *," - Defining variables in netcdf"
@@ -276,6 +284,7 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_var(ncid,resm_id, resm) )
          CALL check( nf90_put_var(ncid,dgeo_id, dgeo) )
          CALL check( nf90_put_var(ncid,drr_id, dr_rationals))
+         CALL check( nf90_put_var(ncid,dir_id, di_rationals))
       ENDIF
 
       IF(debug_flag) PRINT *," - Putting profile variables in netcdf"

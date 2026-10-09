@@ -93,7 +93,13 @@ c-----------------------------------------------------------------------
      $  sl_in%P_perp_arr(n_k),sl_in%tau_arr(n_k),
      $  sl_in%D_norm_arr(n_k),
      $  sl_in%d_beta_arr(n_k),sl_in%gammafac_arr(n_k),
-     $  sl_in%c_beta_arr(n_k),sl_in%lu_arr(n_k),sl_in%Qconv_arr(n_k))
+     $  sl_in%c_beta_arr(n_k),sl_in%lu_arr(n_k),sl_in%Qconv_arr(n_k),
+     $  sl_in%Re_dp_psi_arr(n_k),sl_in%Im_dp_psi_arr(n_k),
+     $  sl_in%k_ref_arr(n_k),sl_in%alpha_arr(n_k))
+c     namelist inputs are taken as already r_s-referenced: identity
+c     reference-length conversion (K = 1).
+      sl_in%k_ref_arr = 1.0_r8
+      sl_in%alpha_arr = 0.5_r8
       RETURN
       END SUBROUTINE allocate_inputs
 c-----------------------------------------------------------------------
