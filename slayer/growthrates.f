@@ -20,6 +20,8 @@ c       8. get_or_compute_v2     - hash-cached dispersion eval
 c       9. dispersion_AMR_v2     - AMR scan (cell-based storage)
 c      10. check_cell_crossing_sub - zero-crossing test
 c      11. subdivide_cell_sub    - cell refinement
+c      12. eval_dispersion       - dispersion function at one Q
+c      13. extract_roots         - zeros and poles from the AMR cells
 c-----------------------------------------------------------------------
 
       USE omp_lib
@@ -35,6 +37,7 @@ c-----------------------------------------------------------------------
      $   MAX_PTS,HASH_SZ,HASH_SCALE,                  ! v1 constants
      $   hash_head,hash_next,                          ! v1 hash
      $   MAX_CELLS,                                    ! v2 limit
+     $   MAX_ROOTS,roots_outputs_type,                 ! root output
      $   slayer_inputs_type,slayer_outputs_type,
      $   deltas_outputs_type,
      $   tau_r,dc_tmp,dc_type,
@@ -44,6 +47,7 @@ c-----------------------------------------------------------------------
       USE params_mod
       USE layerinputs_mod
       USE slayer_netcdf_mod
+      USE ieee_arithmetic, ONLY: ieee_value, ieee_quiet_nan
 
       IMPLICIT NONE
 
@@ -345,16 +349,8 @@ c --- 3. not found: evaluate with ifac rotation and store
       idx_out = n_pts
       Q_store(idx_out) = q_in
 
-      IF (coupling_flag) THEN
-c          dispersion_det sets g_tmp per-surface internally;
-c          pass q_in*ifac directly as g_in argument.
-          delta_val = dispersion_det(q_in * ifac, n_k, sl_in,
-     $                               msing_max)
-      ELSE
-          g_tmp = q_in * ifac
-          delta_val = riccati_f()
-          delta_val = delta_val - delta_eff
-      END IF
+      delta_val = eval_dispersion(q_in, n_k, sl_in, msing_max,
+     $                            coupling_flag)
       D_store(idx_out) = delta_val
 
 c --- 4. insert into hash chain (prepend)
@@ -712,5 +708,206 @@ c --- child 4: top-right quadrant (MM, RM, TM, TR)
       
       RETURN
       END SUBROUTINE subdivide_cell_sub
+
+c-----------------------------------------------------------------------
+c     subprogram 12. eval_dispersion.
+c     Dispersion function at one scan-plane point q_in, with the ifac
+c     rotation g = i*q_in applied.  Uncoupled: riccati_f() - delta_eff
+c     using the module-level layer parameters of the current surface.
+c     Coupled: the determinant from dispersion_det.
+c-----------------------------------------------------------------------
+      FUNCTION eval_dispersion(q_in, n_k, sl_in, msing_max,
+     $                         coupling_flag)
+
+      IMPLICIT NONE
+
+      COMPLEX(r8), INTENT(IN) :: q_in
+      INTEGER, INTENT(IN)     :: n_k, msing_max
+      TYPE(slayer_inputs_type), INTENT(IN) :: sl_in
+      LOGICAL, INTENT(IN)     :: coupling_flag
+      COMPLEX(r8) :: eval_dispersion
+
+      IF (coupling_flag) THEN
+c        dispersion_det sets g_tmp per-surface internally;
+c        pass q_in*ifac directly as g_in argument.
+         eval_dispersion = dispersion_det(q_in * ifac, n_k, sl_in,
+     $                                    msing_max)
+      ELSE
+         g_tmp = q_in * ifac
+         eval_dispersion = riccati_f() - delta_eff
+      END IF
+
+      END FUNCTION eval_dispersion
+
+c-----------------------------------------------------------------------
+c     subprogram 13. extract_roots.
+c     Locate the zeros and poles of the dispersion function from the
+c     leaf cells left in amr_cells by dispersion_AMR_v2.
+c
+c     The dispersion function is analytic in the scan variable, so the
+c     phase of D winds by +2*pi counter-clockwise around a cell that
+c     holds a simple zero and by -2*pi around one that holds a simple
+c     pole.  The winding number is taken from the four corner values.
+c     Each zero is then refined by a secant iteration confined to the
+c     neighbourhood of its cell; if that leaves the neighbourhood or
+c     does not converge, the best point evaluated is kept and the root
+c     is marked unpolished.
+c
+c     Roots are returned in the scan plane (q = omega_hat - i*gamma_hat)
+c     sorted by descending growth rate.  No physical filtering of the
+c     roots is attempted here.
+c-----------------------------------------------------------------------
+      SUBROUTINE extract_roots(n_k, sl_in, msing_max, coupling_flag,
+     $                         tauk_ref, roots)
+
+      IMPLICIT NONE
+
+c --- arguments
+      INTEGER, INTENT(IN)  :: n_k, msing_max
+      TYPE(slayer_inputs_type), INTENT(IN) :: sl_in
+      LOGICAL, INTENT(IN)  :: coupling_flag
+      REAL(r8), INTENT(IN) :: tauk_ref      ! tau_k of the scanned Q
+      TYPE(roots_outputs_type), INTENT(OUT) :: roots
+c --- parameters
+      INTEGER, PARAMETER  :: ccw(5) = (/1,2,4,3,1/) ! BL,BR,TR,TL,BL
+      INTEGER, PARAMETER  :: MAXIT_POLISH = 30
+      REAL(r8), PARAMETER :: POLISH_TOL = 1.0e-9_r8
+c --- locals
+      INTEGER     :: c, j, it, nw, i, ins
+      REAL(r8)    :: wsum, h, nan
+      COMPLEX(r8) :: d(4), z, q_c, d_c, slope
+      COMPLEX(r8) :: qa, qb, qn, da, db, dn, q_best, d_best
+      LOGICAL     :: conv, dup
+
+      nan = ieee_value(1.0_r8, ieee_quiet_nan)
+      roots%n_root = 0
+      roots%n_pole = 0
+      roots%q_root = CMPLX(nan, nan, KIND=r8)
+      roots%q_pole = CMPLX(nan, nan, KIND=r8)
+      roots%polished = .FALSE.
+      roots%tauk = tauk_ref
+
+      IF (.NOT. ALLOCATED(amr_cells)) RETURN
+
+      DO c = 1, n_amr_cells
+         d = amr_cells(c)%D
+c        skip cells with a failed (non-finite) or exactly zero corner
+         IF (ANY(d /= d) .OR. ANY(ABS(d) > HUGE(1.0_r8))
+     $       .OR. ANY(ABS(d) == 0.0_r8)) CYCLE
+
+c        winding number of D around the cell, counter-clockwise
+         wsum = 0.0_r8
+         DO j = 1, 4
+            z = (d(ccw(j+1))/ABS(d(ccw(j+1))))
+     $          * CONJG(d(ccw(j))/ABS(d(ccw(j))))
+            wsum = wsum + ATAN2(AIMAG(z), REAL(z))
+         END DO
+         nw = NINT(wsum / (2.0_r8*pi))
+         IF (nw == 0) CYCLE
+
+         q_c = 0.25_r8 * SUM(amr_cells(c)%Q)
+         h   = REAL(amr_cells(c)%Q(2) - amr_cells(c)%Q(1))
+
+c        pole: record the cell centre
+         IF (nw < 0) THEN
+            IF (roots%n_pole < MAX_ROOTS) THEN
+               roots%n_pole = roots%n_pole + 1
+               roots%q_pole(roots%n_pole) = q_c
+            END IF
+            CYCLE
+         END IF
+
+c        zero: linear estimate from the corner values, then secant
+         d_c   = 0.25_r8 * SUM(d)
+         slope = ((d(2) - d(1)) + (d(4) - d(3))) / (2.0_r8*h)
+         qa = q_c
+         da = eval_dispersion(qa, n_k, sl_in, msing_max,
+     $                        coupling_flag)
+         qb = q_c + 0.25_r8*h
+         IF (ABS(slope) > 0.0_r8) THEN
+            qn = q_c - d_c/slope
+            IF (ABS(REAL(qn - q_c)) <= 0.5_r8*h .AND.
+     $          ABS(AIMAG(qn - q_c)) <= 0.5_r8*h .AND.
+     $          ABS(qn - q_c) > 0.0_r8) qb = qn
+         END IF
+         db = eval_dispersion(qb, n_k, sl_in, msing_max,
+     $                        coupling_flag)
+         IF (ABS(db) < ABS(da) .OR. da /= da) THEN
+            q_best = qb
+            d_best = db
+         ELSE
+            q_best = qa
+            d_best = da
+         END IF
+         conv = .FALSE.
+         DO it = 1, MAXIT_POLISH
+            IF (da /= da .OR. db /= db) EXIT
+            IF (ABS(db - da) == 0.0_r8) EXIT
+            qn = qb - db*(qb - qa)/(db - da)
+            IF (qn /= qn) EXIT
+c           stay within 1.5 cell widths of the cell centre
+            IF (ABS(REAL(qn - q_c)) > 1.5_r8*h .OR.
+     $          ABS(AIMAG(qn - q_c)) > 1.5_r8*h) EXIT
+            dn = eval_dispersion(qn, n_k, sl_in, msing_max,
+     $                           coupling_flag)
+            IF (dn /= dn) EXIT
+            qa = qb
+            da = db
+            qb = qn
+            db = dn
+            IF (ABS(db) < ABS(d_best)) THEN
+               q_best = qb
+               d_best = db
+            END IF
+            IF (ABS(qb - qa) <=
+     $          POLISH_TOL*MAX(1.0_r8, ABS(qb))) THEN
+               conv = .TRUE.
+               q_best = qb
+               d_best = db
+               EXIT
+            END IF
+         END DO
+
+c        drop a root already found from a neighbouring cell
+         dup = .FALSE.
+         DO i = 1, roots%n_root
+            IF (ABS(roots%q_root(i) - q_best) < 0.5_r8*ABS(h))
+     $         dup = .TRUE.
+         END DO
+         IF (dup .OR. roots%n_root >= MAX_ROOTS) CYCLE
+
+c        insert, keeping descending growth rate (ascending AIMAG(q))
+         ins = roots%n_root + 1
+         DO i = 1, roots%n_root
+            IF (AIMAG(q_best) < AIMAG(roots%q_root(i))) THEN
+               ins = i
+               EXIT
+            END IF
+         END DO
+         DO i = roots%n_root, ins, -1
+            roots%q_root(i+1)   = roots%q_root(i)
+            roots%polished(i+1) = roots%polished(i)
+         END DO
+         roots%q_root(ins)   = q_best
+         roots%polished(ins) = conv
+         roots%n_root = roots%n_root + 1
+      END DO
+
+c --- report
+      WRITE(*,'(A,I0,A,I0)') '   Dispersion roots found: ',
+     $   roots%n_root, ', poles: ', roots%n_pole
+      DO i = 1, roots%n_root
+         WRITE(*,'(A,I2,A,2ES14.6,A,ES14.6,A,ES14.6,A,L1)')
+     $      '   root', i, ': Q=', REAL(roots%q_root(i)),
+     $      -AIMAG(roots%q_root(i)),
+     $      ' omega[rad/s]=', REAL(roots%q_root(i))/tauk_ref,
+     $      ' gamma[1/s]=', -AIMAG(roots%q_root(i))/tauk_ref,
+     $      ' polished=', roots%polished(i)
+      END DO
+      IF (roots%n_root == 0) WRITE(*,'(A)')
+     $   '   WARNING: no dispersion root in the scan window.'
+
+      RETURN
+      END SUBROUTINE extract_roots
 
       END MODULE growthrates_mod

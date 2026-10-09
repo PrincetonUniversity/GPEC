@@ -127,6 +127,22 @@ c     AMR variable IDs
       INTEGER :: var_d_id         ! "Deltas_AMR" — scan Delta values
       INTEGER :: var_npts_id      ! "n_amr_pts"  — points per surface
 
+c     root variable IDs (zeros and poles of the dispersion function)
+      INTEGER :: root_dim         ! dim: stored roots per scan
+      INTEGER :: nroot_id         ! "n_roots"
+      INTEGER :: npole_id         ! "n_poles"
+      INTEGER :: qroot_id         ! "Q_roots"
+      INTEGER :: qpole_id         ! "Q_poles"
+      INTEGER :: groot_id         ! "gamma_roots"
+      INTEGER :: oroot_id         ! "omega_roots"
+      INTEGER :: proot_id         ! "root_polished"
+      LOGICAL :: have_roots       ! roots_out holds this run's roots
+      REAL(r8), ALLOCATABLE :: buffer_r(:,:,:)  ! (root, surf, Re/Im)
+      REAL(r8), ALLOCATABLE :: buffer_p(:,:,:)  ! (root, surf, Re/Im)
+      REAL(r8), ALLOCATABLE :: buffer_g(:,:)    ! gamma (root, surf)
+      REAL(r8), ALLOCATABLE :: buffer_o(:,:)    ! omega (root, surf)
+      INTEGER,  ALLOCATABLE :: buffer_f(:,:)    ! polished (root, surf)
+
 c-----------------------------------------------------------------------
 c     declarations -- AMR rectangular-buffer workspace.
 c     The ragged per-surface scan data are padded into fixed-size
@@ -217,6 +233,33 @@ c           Delta result (Re and Im parts)
          END DO
       END IF
 
+c     step 4: roots and poles, in the same (omega_hat, gamma_hat)
+c     convention as Q_AMR.
+      have_roots = .FALSE.
+      IF (ALLOCATED(roots_out)) have_roots = SIZE(roots_out) >= m_AMR
+     $                                       .AND. m_AMR > 0
+      IF (have_roots) THEN
+         ALLOCATE(buffer_r(MAX_ROOTS, m_AMR, 2))
+         ALLOCATE(buffer_p(MAX_ROOTS, m_AMR, 2))
+         ALLOCATE(buffer_g(MAX_ROOTS, m_AMR))
+         ALLOCATE(buffer_o(MAX_ROOTS, m_AMR))
+         ALLOCATE(buffer_f(MAX_ROOTS, m_AMR))
+         buffer_f = 0
+         DO s = 1, m_AMR
+            buffer_r(:, s, 1) =  REAL(roots_out(s)%q_root)
+            buffer_r(:, s, 2) = -AIMAG(roots_out(s)%q_root)
+            buffer_p(:, s, 1) =  REAL(roots_out(s)%q_pole)
+            buffer_p(:, s, 2) = -AIMAG(roots_out(s)%q_pole)
+            buffer_g(:, s) = fill_val
+            buffer_o(:, s) = fill_val
+            IF (roots_out(s)%tauk > 0.0_r8) THEN
+               buffer_g(:, s) = buffer_r(:, s, 2)/roots_out(s)%tauk
+               buffer_o(:, s) = buffer_r(:, s, 1)/roots_out(s)%tauk
+            END IF
+            WHERE (roots_out(s)%polished) buffer_f(:, s) = 1
+         END DO
+      END IF
+
 c-----------------------------------------------------------------------
 c     define global file attributes.
 c-----------------------------------------------------------------------
@@ -287,6 +330,10 @@ c-----------------------------------------------------------------------
 
       CALL sl_check( nf90_def_var(ncid, "growth rate",
      $     nf90_double, (/qsing_dim, i_dim/), gs_id) )
+      CALL sl_check( nf90_put_att(ncid, gs_id, "long_name",
+     $     "Most unstable matched root on each surface: gamma [1/s] "//
+     $     "(i=1) and omega [rad/s] (i=2), in that surface's ExB "//
+     $     "frame; NaN where no root was extracted") )
 
       IF (ALLOCATED(sl_out%br_th_arr)) THEN
          CALL sl_check( nf90_def_var(ncid, "br_th",
@@ -304,6 +351,45 @@ c-----------------------------------------------------------------------
      $     (/dim_pts_id, nAMR_dim, i_dim/), var_q_id) )
       CALL sl_check( nf90_def_var(ncid, "Deltas_AMR", NF90_DOUBLE,
      $     (/dim_pts_id, nAMR_dim, i_dim/), var_d_id) )
+
+c     roots and poles of the dispersion function from each AMR scan.
+      IF (have_roots) THEN
+         CALL sl_check( nf90_def_dim(ncid, "root", MAX_ROOTS,
+     $        root_dim) )
+         CALL sl_check( nf90_def_var(ncid, "n_roots", NF90_INT,
+     $        (/nAMR_dim/), nroot_id) )
+         CALL sl_check( nf90_def_var(ncid, "n_poles", NF90_INT,
+     $        (/nAMR_dim/), npole_id) )
+         CALL sl_check( nf90_def_var(ncid, "Q_roots", NF90_DOUBLE,
+     $        (/root_dim, nAMR_dim, i_dim/), qroot_id) )
+         CALL sl_check( nf90_put_att(ncid, qroot_id, "long_name",
+     $        "Zeros of the dispersion function, (omega, gamma)*"//
+     $        "tau_k, sorted by descending gamma") )
+         CALL sl_check( nf90_def_var(ncid, "Q_poles", NF90_DOUBLE,
+     $        (/root_dim, nAMR_dim, i_dim/), qpole_id) )
+         CALL sl_check( nf90_put_att(ncid, qpole_id, "long_name",
+     $        "Poles of the dispersion function, (omega, gamma)*"//
+     $        "tau_k, AMR cell centres") )
+         CALL sl_check( nf90_def_var(ncid, "gamma_roots",
+     $        NF90_DOUBLE, (/root_dim, nAMR_dim/), groot_id) )
+         CALL sl_check( nf90_put_att(ncid, groot_id, "units", "1/s") )
+         CALL sl_check( nf90_def_var(ncid, "omega_roots",
+     $        NF90_DOUBLE, (/root_dim, nAMR_dim/), oroot_id) )
+         CALL sl_check( nf90_put_att(ncid, oroot_id, "units",
+     $        "rad/s") )
+         CALL sl_check( nf90_def_var(ncid, "root_polished", NF90_INT,
+     $        (/root_dim, nAMR_dim/), proot_id) )
+         CALL sl_check( nf90_put_att(ncid, proot_id, "long_name",
+     $        "1 if the secant refinement of the root converged") )
+         CALL sl_check( nf90_put_att(ncid, qroot_id,
+     $        "_FillValue", fill_val) )
+         CALL sl_check( nf90_put_att(ncid, qpole_id,
+     $        "_FillValue", fill_val) )
+         CALL sl_check( nf90_put_att(ncid, groot_id,
+     $        "_FillValue", fill_val) )
+         CALL sl_check( nf90_put_att(ncid, oroot_id,
+     $        "_FillValue", fill_val) )
+      END IF
 
 c     set _FillValue attribute on AMR arrays for proper padding.
       CALL sl_check( nf90_put_att(ncid, var_q_id,
@@ -388,6 +474,19 @@ c-----------------------------------------------------------------------
       CALL sl_check( nf90_put_var(ncid, var_npts_id, n_pts_arr) )
       CALL sl_check( nf90_put_var(ncid, var_q_id,    buffer_q)  )
       CALL sl_check( nf90_put_var(ncid, var_d_id,    buffer_d)  )
+
+      IF (have_roots) THEN
+         CALL sl_check( nf90_put_var(ncid, nroot_id,
+     $        roots_out(1:m_AMR)%n_root) )
+         CALL sl_check( nf90_put_var(ncid, npole_id,
+     $        roots_out(1:m_AMR)%n_pole) )
+         CALL sl_check( nf90_put_var(ncid, qroot_id, buffer_r) )
+         CALL sl_check( nf90_put_var(ncid, qpole_id, buffer_p) )
+         CALL sl_check( nf90_put_var(ncid, groot_id, buffer_g) )
+         CALL sl_check( nf90_put_var(ncid, oroot_id, buffer_o) )
+         CALL sl_check( nf90_put_var(ncid, proot_id, buffer_f) )
+         DEALLOCATE(buffer_r, buffer_p, buffer_g, buffer_o, buffer_f)
+      END IF
 
 c-----------------------------------------------------------------------
 c     deallocate AMR rectangular buffers.

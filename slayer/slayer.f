@@ -17,6 +17,7 @@ c-----------------------------------------------------------------------
       USE gslayer_mod
       USE growthrates_mod
       USE layerinputs_mod
+      USE ieee_arithmetic, ONLY: ieee_value, ieee_quiet_nan
 
       IMPLICIT NONE
 c-----------------------------------------------------------------------
@@ -708,9 +709,16 @@ c     allocate output arrays for AMR delta storage.
 c-----------------------------------------------------------------------
          IF (AMR_flag .AND. .NOT. coupling_flag) THEN
             ALLOCATE(all_deltas_out(n_k))
+            ALLOCATE(roots_out(n_k))
          ELSEIF (AMR_flag .AND. coupling_flag) THEN
             ALLOCATE(all_deltas_out(1))
+            ALLOCATE(roots_out(1))
          END IF
+
+c        growth rates stay NaN on surfaces where no root is extracted
+         sl_out%gamma_sol_arr = CMPLX(
+     $      ieee_value(1.0_r8, ieee_quiet_nan),
+     $      ieee_value(1.0_r8, ieee_quiet_nan), KIND=r8)
 
          IF (AMR_flag) THEN
             IF (coupling_flag) THEN
@@ -756,9 +764,6 @@ c-----------------------------------------------------------------------
      $          sl_in%d_crit_arr(k))/(sl_in%lu_arr(k)**(1.0/3.0))
             pe = 0.0
 
-            ! Placeholder: gamma_sol_arr filled for external root-finder.
-            sl_out%gamma_sol_arr(k) = 0.0
-
 c-----------------------------------------------------------------------
 c     uncoupled AMR scan (one surface at a time).
 c     dispersion_AMR_v2 (growthrates_mod) populates Q_store, D_store.
@@ -769,6 +774,18 @@ c-----------------------------------------------------------------------
      $       sl_in%qval_arr(k),' rational surface:'
                CALL dispersion_AMR_v2(n_k,sl_in,msing_max,scan_width,
      $                  Q_num,AMR_passes,coupling_flag)
+
+               ! Zeros of the dispersion function in this surface's
+               ! own ExB frame; the most unstable one is reported as
+               ! gamma_sol = gamma [1/s] + i*omega [rad/s].
+               CALL extract_roots(n_k,sl_in,msing_max,coupling_flag,
+     $                  sl_in%Qconv_arr(k),roots_out(k))
+               IF (roots_out(k)%n_root > 0) THEN
+                  sl_out%gamma_sol_arr(k) = CMPLX(
+     $               -AIMAG(roots_out(k)%q_root(1)),
+     $               REAL(roots_out(k)%q_root(1)), KIND=r8)
+     $               / sl_in%Qconv_arr(k)
+               END IF
 
                ! Re-allocate output arrays for this surface.
                IF (ALLOCATED(all_deltas_out(k)%inQs))
@@ -885,6 +902,13 @@ c-----------------------------------------------------------------------
 
             CALL dispersion_AMR_v2(n_k,sl_in,msing_max,scan_width,
      $                  Q_num,AMR_passes,coupling_flag)
+
+            ! Zeros of the coupled determinant. Q is normalised by
+            ! the first surface's tau_k. The coupled eigenvalue is
+            ! global, so it is reported through roots_out only and
+            ! the per-surface gamma_sol_arr is left as NaN.
+            CALL extract_roots(n_k,sl_in,msing_max,coupling_flag,
+     $                  sl_in%Qconv_arr(1),roots_out(1))
 
             ! Re-allocate output arrays.
             IF (ALLOCATED(all_deltas_out(1)%inQs))

@@ -190,4 +190,22 @@ c     deltas_outputs_type -- scan output (Q vs Delta)
           REAL(r8), ALLOCATABLE :: imag_deltas(:)  ! Im(Delta)
       END TYPE deltas_outputs_type
 
+c     roots_outputs_type -- zeros and poles of the dispersion function
+c     located in one AMR scan.  Q values are stored in the scan plane,
+c     q = omega_hat - i*gamma_hat (so gamma = -AIMAG(q)/tauk and
+c     omega = REAL(q)/tauk), sorted by descending growth rate.
+      INTEGER, PARAMETER :: MAX_ROOTS = 32         ! max stored per scan
+      TYPE roots_outputs_type
+          INTEGER :: n_root = 0                    ! zeros found
+          INTEGER :: n_pole = 0                    ! poles found
+          COMPLEX(r8) :: q_root(MAX_ROOTS)         ! zeros  (scan plane)
+          COMPLEX(r8) :: q_pole(MAX_ROOTS)         ! poles  (scan plane)
+          LOGICAL :: polished(MAX_ROOTS)           ! secant converged?
+          REAL(r8) :: tauk = 0.0_r8                ! Q -> [1/s] factor
+      END TYPE roots_outputs_type
+
+c     per-scan roots, filled by extract_roots (growthrates_mod) and
+c     written by slayer_netcdf_out
+      TYPE(roots_outputs_type), ALLOCATABLE :: roots_out(:)
+
       END MODULE sglobal_mod
