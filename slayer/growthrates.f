@@ -251,9 +251,12 @@ c           BENCHMARK PATCH: ensure pr is set so riccati_f's
 c           atol = 1e-7*pr**0.4 does not inherit a stale/zero module value.
             pr = P_perp
 
-c           evaluate riccati_f at rescaled growth rate, de-normalise
-c           rescale g_in to this surface's normalisation
-            g_tmp = (g_in*sl_in%Qconv_arr(1))/tauk
+c           evaluate riccati_f at rescaled growth rate, de-normalise.
+c           g_in is normalised by the first surface's tau_k, i.e.
+c           g_in = tau_1*(gamma + i*omega). The same physical
+c           eigenvalue reaches surface k as tau_k*(gamma + i*omega)
+c           = g_in*tau_k/tau_1, the normalisation its Q_e and Q_i use.
+            g_tmp = g_in*(tauk/sl_in%Qconv_arr(1))
             delta_Q(k,k)=riccati_f()
             delta_Q(k,k)=delta_Q(k,k)*
      $         sl_in%lu_arr(k)**(1.0_r8/3.0_r8)
