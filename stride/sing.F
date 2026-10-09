@@ -1118,7 +1118,7 @@ c-----------------------------------------------------------------------
       INTEGER :: ipert,jpert,isol,iqty,info
       REAL(r8) :: q
       REAL(r8), DIMENSION(mpert) :: singfac
-      COMPLEX(r8), PARAMETER :: one=1
+      COMPLEX(r8), PARAMETER :: one=1,zero=0
       COMPLEX(r8), DIMENSION(mpert,mpert) :: fmatb,gmatb
       COMPLEX(r8), DIMENSION(2*mband+1,mpert) :: kmatb
       COMPLEX(r8), DIMENSION(mpert,mpert) :: dTemp
