@@ -400,6 +400,10 @@ else
     $(error "Unsupported C compiler. Must set environment variable CC to a C compiler (e.g. gcc, icc, pgcc)")
 endif
 
+# Pass the selected toolchain to dependency configure scripts and sub-makes.
+export FC CC
+export F77 = $(FC)
+
 # List of needed dependencies, will be appended if math or netcdf
 # libraries are not found
 NEEDED_DEPS = 
@@ -520,12 +524,8 @@ else
     endif
 endif
 
-# Embed the netcdf library directories in the executables.  Without this the
-# codes link against $(NETCDFDIR) but resolve at run time against whatever the
-# loader finds first, which fails with e.g.
-#   symbol lookup error: undefined symbol: netcdf_mp_nf90_create_
-# when a system netcdf shadows the bundled one, and silently mixes libraries
-# when the two were built by different compilers.
+# Embed the configured netcdf library directories for runtime lookup.
+# These paths must remain available when running the executables.
 NETCDF_RPATH = -Wl,-rpath,$(NETCDFDIR)
 ifneq ($(NETCDF_C_DIR),$(NETCDFDIR))
     NETCDF_RPATH += -Wl,-rpath,$(NETCDF_C_DIR)
