@@ -416,7 +416,9 @@ c --- allocate slayer_inputs_type arrays (one entry per surface)
      $  sl_in%c_beta_arr(msing),       sl_in%lu_arr(msing),
      $  sl_in%Qconv_arr(msing),
      $  sl_in%Re_dp_psi_arr(msing),    sl_in%Im_dp_psi_arr(msing),
-     $  sl_in%k_ref_arr(msing),        sl_in%alpha_arr(msing))
+     $  sl_in%k_ref_arr(msing),        sl_in%alpha_arr(msing),
+     $  sl_in%q_shift_arr(msing))
+      sl_in%q_shift_arr = 0.0_r8
 
 c --- allocate local kinetic arrays (for future NetCDF diagnostic output)
       ALLOCATE(ne_arr(msing), te_arr(msing), ni_arr(msing),

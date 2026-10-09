@@ -54,6 +54,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: match_gamma_flag    ! asymptotically matched gamma
       LOGICAL :: Pperp_Ptor_flag     ! use Fitzpatrick layer model
       LOGICAL :: coupling_flag       ! coupled rational surfaces
+      LOGICAL :: rotation_flag       ! ExB Doppler shift when coupled
       LOGICAL :: br_th_flag          ! Br threshold test scan
       LOGICAL :: bal_flag            ! torque balance scan
       LOGICAL :: stability_flag      ! complex-Q delta scan
@@ -101,6 +102,8 @@ c-----------------------------------------------------------------------
       REAL(r8) :: dr_val             ! radial derivative parameter
       REAL(r8) :: dgeo_val           ! geometric factor parameter
       REAL(r8) :: scan_width         ! half-width of complex-Q scan
+      REAL(r8) :: scan_center        ! Re(Q) centre of complex-Q scan
+      REAL(r8) :: q_lo,q_hi,q_br     ! expected coupled-branch Re(Q)
 c-----------------------------------------------------------------------
 c     local scalars — normalized layer parameters (namelist overrides).
 c-----------------------------------------------------------------------
@@ -193,6 +196,7 @@ c-----------------------------------------------------------------------
      $    inds,intau,Q0,delta_prime,delta_n_p,ingamma,
      $    inQ_e_ovr,inQ_i_ovr
       NAMELIST/slayer_control/inum,jnum,knum,Q_num,scan_width,
+     $    scan_center,rotation_flag,
      $    AMR_passes,msing_max,dc_type,read_eq,Pperp_Ptor_flag,
      $    coupling_flag,QPscan_flag,Qscan_flag,QPescan_flag,
      $    Qbscan_flag,onscan_flag,otscan_flag,ntscan_flag,
@@ -266,6 +270,10 @@ c-----------------------------------------------------------------------
       knum       = 100   ! 2-D scan axis-2 resolution
       Q_num      = 100   ! stability scan Re(Q) resolution
       scan_width = 2.0   ! half-width for complex-Q scans
+      ! Re(Q) centre of the scans. Left at HUGE, it is chosen by the
+      ! code: zero, or the middle of the Doppler-shifted branches in
+      ! a coupled scan with rotation.
+      scan_center = HUGE(scan_center)
       AMR_passes = 4     ! AMR refinement levels
       msing_max  = 2     ! max singular surfaces to process
 
@@ -284,6 +292,7 @@ c-----------------------------------------------------------------------
       match_gamma_flag     = .FALSE.
       Pperp_Ptor_flag      = .FALSE.
       coupling_flag        = .FALSE.
+      rotation_flag        = .TRUE.
       params_flag          = .TRUE.
       input_flag           = .FALSE.
 
@@ -735,6 +744,53 @@ c           overridden Q_e, Q_i.
          END IF
 
 c-----------------------------------------------------------------------
+c     ExB Doppler shift and scan-window centre.
+c     Each uncoupled layer is solved in its own ExB frame, where a
+c     rotation only relabels the frequency, so no shift is applied.
+c     In the coupled determinant the surfaces share one lab-frame
+c     eigenvalue and surface k sees it Doppler-shifted by
+c     n*Omega_E,k: q_shift = -tau_k*n*Omega_E,k. In the scanned Q
+c     (normalised by tau_1) branch k then sits near
+c     tau_1*(n*Omega_E,k - Q_e,k/tau_k), taking the electron-drift
+c     frequency as the estimate of its own-frame root.
+c-----------------------------------------------------------------------
+         sl_in%q_shift_arr = 0.0_r8
+         IF (coupling_flag .AND. rotation_flag .AND. read_eq) THEN
+            q_lo = HUGE(q_lo)
+            q_hi = -HUGE(q_hi)
+            DO k = 1, MIN(n_k,msing_max)
+               sl_in%q_shift_arr(k) = -sl_in%Qconv_arr(k)
+     $              * REAL(nn,r8) * sl_in%omegas_arr(k)
+               q_br = sl_in%Qconv_arr(1)*( REAL(nn,r8)
+     $              * sl_in%omegas_arr(k)
+     $              - sl_in%Q_e_arr(k)/sl_in%Qconv_arr(k) )
+               q_lo = MIN(q_lo,q_br)
+               q_hi = MAX(q_hi,q_br)
+               WRITE(*,'(A,I0,A,ES11.4,A,ES11.4)')
+     $            ' ExB rotation, surface ',k,': n*Omega_E [rad/s] =',
+     $            REAL(nn,r8)*sl_in%omegas_arr(k),
+     $            ', branch expected near Re(Q) =',q_br
+            END DO
+            IF (scan_center >= HUGE(scan_center))
+     $         scan_center = 0.5_r8*(q_lo + q_hi)
+            IF (q_lo < scan_center - scan_width .OR.
+     $          q_hi > scan_center + scan_width) THEN
+               WRITE(*,'(A)') ' WARNING: the Doppler-shifted branches'
+     $            //' do not all fit in the scan window'
+               WRITE(*,'(A,2ES11.3,A,2ES11.3,A)')
+     $            '   Re(Q) = [',scan_center-scan_width,
+     $            scan_center+scan_width,'], branches span [',
+     $            q_lo,q_hi,'].'
+               WRITE(*,'(A)') '   Increase scan_width or set '
+     $            //'scan_center, or a coupled root may be missed.'
+            END IF
+         END IF
+         IF (scan_center >= HUGE(scan_center)) scan_center = 0.0_r8
+         WRITE(*,'(A,ES11.4,A,ES11.4)')
+     $      ' Scan window: Re(Q) centre =',scan_center,
+     $      ', half-width =',scan_width
+
+c-----------------------------------------------------------------------
 c     allocate output arrays for AMR delta storage.
 c-----------------------------------------------------------------------
          IF (AMR_flag .AND. .NOT. coupling_flag) THEN
@@ -802,8 +858,17 @@ c-----------------------------------------------------------------------
 
                WRITE(*,'(A,I0,A)') 'Calling uncoupled AMR scan on q = ',
      $       sl_in%qval_arr(k),' rational surface:'
+               ! The tearing root usually sits near the electron
+               ! drift frequency, Re(Q) = -Q_e.
+               IF (ABS(-Q_e - scan_center) > scan_width) THEN
+                  WRITE(*,'(A,ES10.3,A)')
+     $               ' WARNING: Re(Q) = -Q_e =',-Q_e,
+     $               ' is outside the scan window.'
+                  WRITE(*,'(A)') '   Increase scan_width or set '
+     $               //'scan_center, or the root may be missed.'
+               END IF
                CALL dispersion_AMR_v2(n_k,sl_in,msing_max,scan_width,
-     $                  Q_num,AMR_passes,coupling_flag)
+     $                  Q_num,AMR_passes,coupling_flag,scan_center)
 
                ! Zeros of the dispersion function in this surface's
                ! own ExB frame; the most unstable one is reported as
@@ -931,7 +996,7 @@ c-----------------------------------------------------------------------
          IF (AMR_flag .AND. coupling_flag) THEN
 
             CALL dispersion_AMR_v2(n_k,sl_in,msing_max,scan_width,
-     $                  Q_num,AMR_passes,coupling_flag)
+     $                  Q_num,AMR_passes,coupling_flag,scan_center)
 
             ! Zeros of the coupled determinant. Q is normalised by
             ! the first surface's tau_k. The coupled eigenvalue is
@@ -993,8 +1058,12 @@ c-----------------------------------------------------------------------
 
             DO i = 1, (Q_num+1)
                DO j = 1, Q_num
+                  ! This scan passes g = gamma_hat + i*omega_hat
+                  ! directly, so its imaginary axis is the frequency
+                  ! and carries the scan-window centre.
                   ing_coarse = -scan_width + (i - 1) * ing_step
-                  iing_coarse = -scan_width + (j - 1) * ing_step
+                  iing_coarse = scan_center - scan_width
+     $                          + (j - 1) * ing_step
                   inQs(i) = ing_coarse
                   iinQs(j) = iing_coarse
 

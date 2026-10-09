@@ -96,7 +96,8 @@ c-----------------------------------------------------------------------
      $  sl_in%c_beta_arr(n_k),sl_in%lu_arr(n_k),sl_in%Qconv_arr(n_k),
      $  sl_in%Re_dp_psi_arr(n_k),sl_in%Im_dp_psi_arr(n_k),
      $  sl_in%k_ref_arr(n_k),sl_in%alpha_arr(n_k),
-     $  sl_in%D_fac_arr(n_k))
+     $  sl_in%D_fac_arr(n_k),sl_in%q_shift_arr(n_k))
+      sl_in%q_shift_arr = 0.0_r8
 c     namelist inputs are taken as already r_s-referenced: identity
 c     reference-length conversion (K = 1).
       sl_in%k_ref_arr = 1.0_r8
@@ -264,6 +265,12 @@ c           g_in = tau_1*(gamma + i*omega). The same physical
 c           eigenvalue reaches surface k as tau_k*(gamma + i*omega)
 c           = g_in*tau_k/tau_1, the normalisation its Q_e and Q_i use.
             g_tmp = g_in*(tauk/sl_in%Qconv_arr(1))
+c           The layer's Q is the mode frequency in the local ExB
+c           frame, while the coupled scan runs in the lab frame:
+c           Q_layer = tau_k*omega_lab - tau_k*n*Omega_E. q_shift_arr
+c           holds that real offset (zero unless the driver sets it),
+c           and g = i*Q.
+            g_tmp = g_tmp + ifac*sl_in%q_shift_arr(k)
             delta_Q(k,k)=riccati_f()
             delta_Q(k,k)=delta_Q(k,k)*
      $         sl_in%lu_arr(k)**(1.0_r8/3.0_r8)
@@ -386,7 +393,7 @@ c
 c-----------------------------------------------------------------------
       SUBROUTINE dispersion_AMR_v2(n_k, sl_in, msing_max,
      $                             scan_width, Q_num, AMR_passes,
-     $                             coupling_flag)
+     $                             coupling_flag, scan_center)
 
       IMPLICIT NONE
 
@@ -396,6 +403,7 @@ c --- arguments
       INTEGER, INTENT(IN)  :: Q_num         ! grid points per axis
       INTEGER, INTENT(IN)  :: AMR_passes    ! refinement passes
       REAL(r8), INTENT(IN) :: scan_width    ! half-width of Re/Im scan window
+      REAL(r8), INTENT(IN) :: scan_center   ! Re(Q) centre of the window
       TYPE(slayer_inputs_type), INTENT(IN) :: sl_in
       LOGICAL, INTENT(IN)  :: coupling_flag ! coupled dispersion_det?
 c --- locals
@@ -438,7 +446,7 @@ c --- 2. build initial coarse grid of (Q_num-1)^2 cells
 
       DO i = 1, Q_num - 1
           DO j = 1, Q_num - 1
-              x = -scan_width + DBLE(i-1) * step
+              x = scan_center - scan_width + DBLE(i-1) * step
               y = -scan_width + DBLE(j-1) * step
 
               n_amr_cells = n_amr_cells + 1

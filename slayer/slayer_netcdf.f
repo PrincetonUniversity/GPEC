@@ -117,6 +117,7 @@ c-----------------------------------------------------------------------
       INTEGER :: dpp_id           ! "Delta_prime_rational" (complex)
       INTEGER :: dprs_id          ! "Delta_prime_rs_rational" (complex)
       INTEGER :: kref_id          ! "k_ref"
+      INTEGER :: qsh_id           ! "Q_shift"
       INTEGER :: alpha_id         ! "alpha_mercier"
       INTEGER :: dc_id            ! "Delta_crit_rational"
       INTEGER :: dels_db_id       ! "delta_s_d_b"        (complex)
@@ -297,6 +298,13 @@ c     -- scalar per-surface variables --
      $     nf90_double, qsing_dim, qr_id)     )
       CALL sl_check( nf90_def_var(ncid, "omegas",    nf90_double,
      $     qsing_dim, omegas_id) )
+      CALL sl_check( nf90_put_att(ncid, omegas_id, "long_name",
+     $     "ExB rotation frequency per unit n [rad/s]") )
+      CALL sl_check( nf90_def_var(ncid, "Q_shift",   nf90_double,
+     $     qsing_dim, qsh_id)    )
+      CALL sl_check( nf90_put_att(ncid, qsh_id, "long_name",
+     $     "ExB Doppler shift -tau_k*n*Omega_E applied to Q in "//
+     $     "the coupled determinant (zero when not applied)") )
       CALL sl_check( nf90_def_var(ncid, "tau_k",     nf90_double,
      $     qsing_dim, qc_id)     )
       CALL sl_check( nf90_def_var(ncid, "Q_e",       nf90_double,
@@ -435,6 +443,8 @@ c-----------------------------------------------------------------------
      $     sl_in%omegas_arr))
       CALL sl_check( nf90_put_var(ncid, S_id,
      $     sl_in%lu_arr)    )
+      CALL sl_check( nf90_put_var(ncid, qsh_id,
+     $     sl_in%q_shift_arr) )
       CALL sl_check( nf90_put_var(ncid, qc_id,
      $     sl_in%Qconv_arr) )
       CALL sl_check( nf90_put_var(ncid, Q_e_id,

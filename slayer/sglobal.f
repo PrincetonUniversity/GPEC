@@ -166,7 +166,8 @@ c     slayer_inputs_type -- per-surface input arrays for SLAYER
           REAL(r8), ALLOCATABLE :: tau_arr(:)         ! T_i / T_e
           REAL(r8), ALLOCATABLE :: P_perp_arr(:)      ! perp Prandtl number
           REAL(r8), ALLOCATABLE :: P_tor_arr(:)       ! toroidal Prandtl
-          REAL(r8), ALLOCATABLE :: omegas_arr(:)      ! rotation [rad/s]
+          REAL(r8), ALLOCATABLE :: omegas_arr(:)      ! ExB rotation per unit n [rad/s]
+          REAL(r8), ALLOCATABLE :: q_shift_arr(:)     ! ExB Doppler shift of Q
           REAL(r8), ALLOCATABLE :: omegas_e_arr(:)    ! omega_e  [rad/s]
           REAL(r8), ALLOCATABLE :: omegas_i_arr(:)    ! omega_i  [rad/s]
           REAL(r8), ALLOCATABLE :: gammafac_arr(:)    ! gamma conversion
