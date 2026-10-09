@@ -276,7 +276,7 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1x,I4,8(1x,es17.8))') i,
      $     surf_indev(i),REAL(plas_indev(resp_index,i)),
      $     REAL(permeabev(resp_index,i)),AIMAG(permeabev(resp_index,i)),
-     $     REAL(permeabsv(resp_index,i)),REAL(reluctev(resp_index,i)),
+     $     permeabsv(resp_index,i),REAL(reluctev(resp_index,i)),
      $     REAL(et(i)),REAL(plas_indinvev(resp_index,i))
       ENDDO
       WRITE(out_unit,*)
@@ -5985,7 +5985,7 @@ c-----------------------------------------------------------------------
       mat = permeabmats(resp_index,:,:)
       wmat=MATMUL(MATMUL(CONJG(TRANSPOSE(mat)),wmatt),mat)
       ! convert to bsqrtA/|sqrtA|
-      wmat = MATMUL(MATMUL(ptof,wvecs),ptof)
+      wmat = MATMUL(MATMUL(ptof,wmat),ptof)
       wmatt = MATMUL(MATMUL(ptof,wmatt),ptof)
       wvecs = wmat
       wtvecs = wmatt

@@ -431,7 +431,7 @@ c-----------------------------------------------------------------------
          mx0=0
          vx0=0
          IF (netcdf_out)
-     $    CALL rdcon_netcdf_out(mx0,mx0,mx0,mx0,vx0,vx0,vx0)
+     $    CALL rdcon_netcdf_out(mx0,mx0,mx0,mx0,vx0,REAL(vx0,r8),vx0)
       ENDIF
       IF(mat_flag .OR. ode_flag)DEALLOCATE(amat,bmat,cmat,ipiva,jmat)
       IF(bin_euler)CALL bin_close(euler_bin_unit)

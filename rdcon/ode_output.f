@@ -266,6 +266,7 @@ c-----------------------------------------------------------------------
       wp=u(:,1:mpert,2)
       wp=CONJG(TRANSPOSE(wp))
       CALL zgetrf(mpert,mpert,temp,mpert,ipiv,info)
+      IF(info /= 0)RETURN
       CALL zgetrs('N',mpert,mpert,temp,mpert,ipiv,wp,mpert,info)
       wp=(wp+CONJG(TRANSPOSE(wp)))/2
 c-----------------------------------------------------------------------
@@ -276,6 +277,23 @@ c-----------------------------------------------------------------------
       index=(/(ipert,ipert=1,mpert)/)
       key=-ABS(1/evals)
       CALL bubble(key,index,1,mpert)
+c-----------------------------------------------------------------------
+c     compute inverse plasma response matrix (zheev destroys wp).
+c-----------------------------------------------------------------------
+      temp=CONJG(TRANSPOSE(u(:,1:mpert,2)))
+      wp=CONJG(TRANSPOSE(u(:,1:mpert,1)))
+      CALL zgetrf(mpert,mpert,temp,mpert,ipiv,info)
+      IF(info /= 0)RETURN
+      CALL zgetrs('N',mpert,mpert,temp,mpert,ipiv,wp,mpert,info)
+      wp=(wp+CONJG(TRANSPOSE(wp)))/2
+c-----------------------------------------------------------------------
+c     compute and sort inverse eigenvalues.
+c-----------------------------------------------------------------------
+      lwork=2*mpert-1
+      CALL zheev('N','U',mpert,wp,mpert,evalsi,work,lwork,rwork,info)
+      indexi=(/(ipert,ipert=1,mpert)/)
+      key=-ABS(evalsi)
+      CALL bubble(key,indexi,1,mpert)
 c-----------------------------------------------------------------------
 c     write ascii eigenvalues.
 c-----------------------------------------------------------------------
