@@ -1,0 +1,31 @@
+&EQUIL_CONTROL
+    eq_type="efit"       ! Type of the input 2D equilibrium file
+    eq_filename="PLACEHOLDER" ! Overwritten by runner with actual geqdsk path
+
+    jac_type="hamada"
+    power_bp=0
+    power_b=0
+    power_r=0
+
+    grid_type="ldp"
+    psilow=1e-2
+    psihigh=0.995        ! Overridden from default 0.994
+    mpsi=128
+    mtheta=256
+    newq0=0
+    etol = 1e-7
+    use_classic_splines = f
+
+    input_only=f
+    use_galgrid=t
+/
+&EQUIL_OUTPUT
+    gse_flag=f
+    out_eq_1d=f
+    bin_eq_1d=f
+    out_eq_2d=f
+    bin_eq_2d=t
+    out_2d=f
+    bin_2d=f
+    dump_flag=f
+/
