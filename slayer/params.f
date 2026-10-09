@@ -124,7 +124,10 @@ c-----------------------------------------------------------------------
       d_i   = ( (mu_i*m_p) / (n_e*(chag**2)*mu0) )**0.5
                                                     ! ion skin depth [m]
 
-      tau_h = R0*(mu0*rho)**0.5 / (nn*sval*bt)     ! Alfvén time [s]
+c     The layer timescales and widths below depend on the magnitude of
+c     the shear, not its sign: ABS(sval) keeps them positive on a
+c     reverse-shear surface.
+      tau_h = R0*(mu0*rho)**0.5 / (nn*ABS(sval)*bt) ! Alfvén time [s]
       tau_r = mu0*(rs**2.0)*sigma_par               ! resistive time [s] (Fitzpatrick)
       IF (pr > 0.0_r8) THEN
          tau_v = tau_r / pr                         ! viscous time [s]
@@ -222,11 +225,11 @@ c-----------------------------------------------------------------------
           Wd = 0.1              ! initial guess
           DO wit = 1, 100
               chi_par_lmfp = (2.0*R0*vte)
-     $                       / (SQRT(pi)*nr*sval*Wd)
+     $                       / (SQRT(pi)*nr*ABS(sval)*Wd)
               chi_par = (chi_par_smfp*chi_par_lmfp)
      $                  / (chi_par_smfp + chi_par_lmfp)
               Wd_new = SQRT(8.0)*((chis(1)/chi_par)**0.25)
-     $           * (1.0/SQRT((rs/R0)*sval*nr))
+     $           * (1.0/SQRT((rs/R0)*ABS(sval)*nr))
               IF (ABS(Wd_new - Wd) / MAX(ABS(Wd), 1.0e-30_r8)
      $            < 1.0e-10_r8) THEN
                   Wd = Wd_new
@@ -243,7 +246,7 @@ c-----------------------------------------------------------------------
               CASE('lar')
                   dc_tmp = 0.5*(-dr_val)*(pi**1.5)
      $                     *((chi_par/chis(1))**0.25)
-     $                     *( (nr*sval)/(R0*rs) )**0.5
+     $                     *( (nr*ABS(sval))/(R0*rs) )**0.5
               CASE('rfitzp')
                   dc_tmp = -(SQRT(2.0)*(pi**(1.5))*dr_val) / Wd
               CASE('toroidal')
