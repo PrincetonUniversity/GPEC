@@ -95,7 +95,7 @@ c-----------------------------------------------------------------------
          CALL spline_dealloc(sq)
          CALL spline_alloc(sq,mpsi,4)
       ENDIF
-      
+
       sq%name="  sq  "
       sq%title=(/"psifac","twopif","mu0 p ","dvdpsi","  q   "/)
 c-----------------------------------------------------------------------
@@ -195,7 +195,6 @@ c-----------------------------------------------------------------------
       sq%name="  sq  "
       sq%title=(/" psi  ","  f   ","  p   ","  q   "/)
       q0=sq%fs(0,4)-sq%fs1(0,4)*sq%xs(0)
-      IF(newq0 == -1)newq0=-q0
 c-----------------------------------------------------------------------
 c     revise q profile.
 c-----------------------------------------------------------------------
@@ -204,7 +203,7 @@ c-----------------------------------------------------------------------
          f0fac=f0**2*((newq0/q0)**2-1)
          q0=newq0
          DO ipsi=0,mpsi
-            ffac=SQRT(1+f0fac/sq%fs(ipsi,1)**2)*SIGN(one,newq0)
+            ffac=SQRT(1+f0fac/sq%fs(ipsi,1)**2)
             sq%fs(ipsi,1)=sq%fs(ipsi,1)*ffac
             sq%fs(ipsi,4)=sq%fs(ipsi,4)*ffac
             rzphi%fs(ipsi,:,3)=rzphi%fs(ipsi,:,3)*ffac
@@ -388,7 +387,7 @@ c-----------------------------------------------------------------------
             ird=ird+1
             r=((3-0.5*ird)*rmin+ro)/(1+3-0.5*ird)
             ir=0
-            IF (ird==6) THEN 
+            IF (ird==6) THEN
                direct_infinite_loop_flag = .TRUE.
                CALL program_stop("Took too many steps to find inb spx.")
             ENDIF
@@ -412,7 +411,7 @@ c-----------------------------------------------------------------------
             ird=ird+1
             r=(ro+(3-0.5*ird)*rmax)/(1+3-0.5*ird)
             ir=0
-            IF (ird==6) THEN 
+            IF (ird==6) THEN
                direct_infinite_loop_flag = .TRUE.
                CALL program_stop
      $              ("Took too many steps to find outb spx.")

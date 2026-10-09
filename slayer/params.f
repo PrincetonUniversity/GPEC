@@ -134,7 +134,7 @@ c-----------------------------------------------------------------------
 
 c     Lundquist number
       lu = tau_r / tau_h
-      
+
 c-----------------------------------------------------------------------
 c     Diamagnetic frequencies and normalised Q parameters.
 c     Qconv converts dimensional frequencies to the normalised Q

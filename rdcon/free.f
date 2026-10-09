@@ -55,7 +55,8 @@ c-----------------------------------------------------------------------
       REAL(r8) :: v1
       REAL(r8), DIMENSION(mpert) :: singfac
       ! eigenvalues are complex for gpec
-      COMPLEX(r8), DIMENSION(mpert) :: ep,ev,et,tt
+      COMPLEX(r8), DIMENSION(mpert) :: ep,et,tt
+      REAL(r8), DIMENSION(mpert) :: ev
 
       REAL(r8), DIMENSION(3*mpert-1) :: rwork
       REAL(r8), DIMENSION(2*mpert) :: rwork2
@@ -102,7 +103,7 @@ c-----------------------------------------------------------------------
          temp=CONJG(TRANSPOSE(u(:,1:mpert,1)))
          wp=u(:,1:mpert,2)
          wp=CONJG(TRANSPOSE(wp))
-         CALL zgetrf(mpert,mpert,temp,mpert,ipiv,info)  
+         CALL zgetrf(mpert,mpert,temp,mpert,ipiv,info)
          CALL zgetrs('N',mpert,mpert,temp,mpert,ipiv,wp,mpert,info)
          wp=(wp+CONJG(TRANSPOSE(wp)))/(2*psio**2)
       ELSE
@@ -140,7 +141,7 @@ c-----------------------------------------------------------------------
       ENDIF
       IF(wv_farwall_flag)THEN
          temp=wv
-      ENDIF         
+      ENDIF
 
       farwal_flag=.FALSE. ! self-inductance with the wall.
       kernelsignin=-1.0
@@ -208,7 +209,7 @@ c-----------------------------------------------------------------------
          wt(:,isol)=wt(:,isol)*phase
          star(:,isol)=' '
          star(imax(1,isol),isol)='*'
-      ENDDO      
+      ENDDO
 c-----------------------------------------------------------------------
 c     compute plasma and vacuum contributions.
 c-----------------------------------------------------------------------
@@ -219,7 +220,7 @@ c-----------------------------------------------------------------------
          ev(ipert)=wvt(ipert,ipert)
       ENDDO
       plasma1=REAL(ep(1))
-      vacuum1=REAL(ev(1))
+      vacuum1=ev(1)
       total1=REAL(et(1))
 c-----------------------------------------------------------------------
 c     write data for ahb and deallocate.
@@ -242,7 +243,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write to screen and copy to output.
 c-----------------------------------------------------------------------
-      IF(verbose) WRITE(*,10) REAL(ep(1)),REAL(ev(1)),
+      IF(verbose) WRITE(*,10) REAL(ep(1)),ev(1),
      $     REAL(et(1)),AIMAG(et(1))
 c-----------------------------------------------------------------------
 c     write eigenvalues to file.
@@ -250,7 +251,7 @@ c-----------------------------------------------------------------------
       message=""
       WRITE(out_unit,'(/1x,a)')"Total Energy Eigenvalues:"
       WRITE(out_unit,20)
-      WRITE(out_unit,30)(isol,REAL(ep(isol)),REAL(ev(isol)),
+      WRITE(out_unit,30)(isol,REAL(ep(isol)),ev(isol),
      $     REAL(et(isol)),AIMAG(et(isol)),
      $     TRIM(message(isol)),isol=1,mpert)
       WRITE(out_unit,20)
@@ -262,7 +263,7 @@ c-----------------------------------------------------------------------
       DO isol=1,mpert
          WRITE(out_unit,40)
          WRITE(out_unit,50)isol,imax(1,isol),REAL(ep(isol)),
-     $         REAL(ev(isol)),REAL(et(isol)),
+     $         ev(isol),REAL(et(isol)),
      $         AIMAG(et(isol)),TRIM(message(isol))
          WRITE(out_unit,60)
          WRITE(out_unit,70)(ipert,m(ipert),wt(ipert,isol),
@@ -292,7 +293,6 @@ c-----------------------------------------------------------------------
 
       ! IF (.NOT.ALLOCATED(galwt)) ALLOCATE(galwt(mpert,mpert))
       ! galwt=wt*psio*twopi*1e-3
-      
 
 
 
@@ -300,7 +300,8 @@ c-----------------------------------------------------------------------
 
 
 
-      lwork=2*mpert+1      
+
+      lwork=2*mpert+1
       CALL zgeev('V','V',mpert,wp,mpert,ep,
      $     vl,mpert,vr,mpert,work2,lwork,rwork2,info)
       eindex(1:mpert)=(/(ipert,ipert=1,mpert)/)
@@ -310,7 +311,8 @@ c-----------------------------------------------------------------------
          wp(:,ipert)=vr(:,eindex(mpert+1-ipert))
          ep(ipert)=tt(eindex(mpert+1-ipert))
       ENDDO
-      CALL zheev('V','U',mpert,wv,mpert,ev,work,lwork,rwork,info) 
+      lwork=2*mpert-1
+      CALL zheev('V','U',mpert,wv,mpert,ev,work,lwork,rwork,info)
 
 c-----------------------------------------------------------------------
 c     optionally write netcdf file.
@@ -350,13 +352,13 @@ c-----------------------------------------------------------------------
       ELSE
          inmemory = .FALSE.
       ENDIF
-   
+
       IF(PRESENT(ahgstr_op))THEN
          ahgstr = ahgstr_op
       ELSE
          ahgstr = "ahg2msc_rdcon.out"
       ENDIF
-   
+
 c-----------------------------------------------------------------------
 c     compute output.
 c-----------------------------------------------------------------------
@@ -666,7 +668,7 @@ c     get vacuum response matrix.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       SUBROUTINE free_get_wvac()
       LOGICAL, PARAMETER :: complex_flag=.FALSE.
       INTEGER :: ipert
@@ -678,7 +680,7 @@ c-----------------------------------------------------------------------
 
 c-----------------------------------------------------------------------
 c     allocate vacuum matrix.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       IF (ALLOCATED(wvac)) RETURN
       ALLOCATE (wvac(mpert,mpert))
 c-----------------------------------------------------------------------
@@ -699,10 +701,10 @@ c-----------------------------------------------------------------------
       DO ipert=1,mpert
          wvac(ipert,:)=wvac(ipert,:)*singfac
          wvac(:,ipert)=wvac(:,ipert)*singfac
-      ENDDO      
+      ENDDO
 c-----------------------------------------------------------------------
 c     terminate.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE free_get_wvac
       END MODULE rdcon_free_mod

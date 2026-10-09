@@ -1130,7 +1130,7 @@ c-----------------------------------------------------------------------
 
       INTEGER, INTENT(IN) :: ising
       COMPLEX(r8), DIMENSION(:,:,:,0:), INTENT(OUT) :: amat,bmat
-      
+
       INTEGER :: k,k1,info,order,r1,ipert,jpert
       INTEGER, DIMENSION(2) :: ipiv
       INTEGER, DIMENSION(2*mpert) :: p
@@ -1580,7 +1580,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE sing1_delta(ising,psifac,delta)
-      
+
       INTEGER, INTENT(IN) :: ising
       REAL(r8), INTENT(IN) :: psifac
       REAL(r8), DIMENSION(2), INTENT(OUT) :: delta
@@ -1625,7 +1625,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE sing1_delta 
+      END SUBROUTINE sing1_delta
 c-----------------------------------------------------------------------
 c     subprogram 20. sing1_kxscan.
 c     tests convergence of differential equation.

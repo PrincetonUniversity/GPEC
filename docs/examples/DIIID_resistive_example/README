@@ -1,10 +1,40 @@
-The example is used to show how to show the workflow of getting resistive response.
+GPEC DIII-D Resistive Example
+==============================
 
-Note: rpec_flag = t needs to be set in rdcon.in to run resistive plasma response.
-It generates the independent resistive and ideal solutions for rmatch and gpec.
-RMATCH combines ideal and resistive solutions from RDCON, providing mpert individual resistive solutions for the GPEC run.
-GPEC then couples the mpert resistive solutions to the coils to get the resistive plasma response to the applied field.
+This example demonstrates the resistive MHD workflow using the same baseline H-mode DIII-D-like equilibrium as the ideal example. The resistive workflow extends the ideal analysis by computing tearing-stable (resistive) plasma responses near rational surfaces. RDCON generates both the ideal outer-regime solutions and the resistive inner-layer Galerkin solutions; RMATCH then matches them across each singular surface to produce a complete set of resistive eigenfunctions; and finally GPEC computes the resistive plasma response to the applied coil field.
 
-../../../bin/rdcon
-../../../bin/rmatch
-../../../bin/gpec 
+Following a typical workflow we first ``cd`` to the example's directory.
+
+An optional first step is to run DCON (or STRIDE, for which a ``stride.in`` is also provided) to quickly assess the ideal MHD stability before proceeding with the full resistive workflow::
+
+  dcon
+
+  DCON START => ...
+  DCON STOP => Normal termination.
+
+.. note:: When running the full resistive workflow, RDCON will overwrite ``euler.bin`` with its own ideal outer solutions, so the DCON step is optional and serves primarily as a quick stability check.
+
+Next, run RDCON. With ``rpec_flag=t`` and ``gal_flag=t`` set in ``rdcon.in``, RDCON performs both the ideal outer-regime integration and the resonant Galerkin inner-layer computation at each rational surface. The outputs ``gal_solution.dat`` and ``delta_gw.dat`` contain the Galerkin solutions needed by RMATCH, and ``euler.bin`` is updated with the ideal outer solutions for GPEC::
+
+  rdcon
+
+  RDCON START => ...
+  RDCON STOP => Normal termination.
+
+Then run RMATCH to match the resistive inner-layer solutions to the ideal outer solutions. This produces ``globalsol.bin``, which contains the complete set of resistive plasma eigenfunctions::
+
+  rmatch
+
+  RMATCH START => ...
+  RMATCH STOP => Normal termination.
+
+The resistive matching combines the ``mpert`` individual resistive solutions into a single binary file. Key parameters in ``rmatch.in`` include the resistivity (``eta``) and mass density (``massden``) at each rational surface.
+
+Finally, run GPEC with ``gal_flag=t`` to use the Galerkin resistive eigenfunctions for the plasma response calculation. The ``resp_index=1`` setting in ``gpec.in`` selects the inductance matrix formulation appropriate for resistive solutions::
+
+  gpec
+
+  GPEC START => ...
+  GPEC STOP => Normal termination.
+
+The resistive plasma response accounts for field penetration through the tearing layers at each rational surface. Resonant field amplitudes are in ``gpec_singfld_n1.out`` and vacuum resonant fields in ``gpec_vsingfld_n1.out``. Together these allow comparison of screened (plasma) and unscreened (vacuum) resonant fields.

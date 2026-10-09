@@ -443,10 +443,16 @@ module torque
                         kappa = sqrt((1 - lmda*(1- epsr))/(2*epsr*lmda))
                     endif
                     lnq = 1.0*l
-                    ! cylindrical bounce and precessions
-                    wbbar = pi*SQRT(2*epsr*lmda*bo)/(4*q*ro*ellipk(kappa**2))
+                    ! cylindrical bounce and precessions. These forms come from
+                    ! PENT, where the pitch variable was dimensional (1/Tesla,
+                    ! vpar = 1 - lmda*b). Here lmda is the dimensionless
+                    ! Lambda = lmda_pent*bo, so the PENT expressions map to
+                    ! sqrt(2*epsr*lmda) (no bo) and a bo in the wdbar
+                    ! denominator; keeping the PENT text verbatim inflated
+                    ! omega_b by sqrt(bo) and omega_D by bo.
+                    wbbar = pi*SQRT(2*epsr*lmda)/(4*q*ro*ellipk(kappa**2))
                     wdbar = (2*q*lmda*(ellipe(kappa**2)/ellipk(kappa**2)-0.5)&
-                        /(ro**2*epsr))*wdfac
+                        /(bo*ro**2*epsr))*wdfac
                     bhat = SQRT(2*kin_f(s+2)/mass)
                     dhat = (kin_f(s+2)/chrg)
                     ! perturbed action Eq. (12) [Park, Phys. Rev. Lett. 2009] divided by 2pi for DCON phi normalization
@@ -460,7 +466,7 @@ module torque
                     fbnce%fs(ilmda-1,3) = wbbar*djdj
                     ! bounce locations recorded for optional output
                     vspl%fs(:,1) = 1.0-(lmda/bo)*tspl%fs(:,1)
-                    call spline_fit(vspl,"extrap")
+                    call spline_fit(vspl,"periodic")
                     call spline_roots(vspl,1,nbpts,bpts)
                     if(nbpts<1)then
                         print *, "!! WARNING: Found passing particle in bounce particle integrals"
@@ -597,7 +603,7 @@ module torque
 
                     ! determine bounce points
                     vspl%fs(:,1) = 1.0-(lmda/bo)*tspl%fs(:,1)
-                    call spline_fit(vspl,"extrap")
+                    call spline_fit(vspl,"periodic")
                     if(sigma==0)then ! find trapped particle bounce pts
                         call spline_roots(vspl, 1, nbpts, bpts)
                         if(nbpts < 1)then
@@ -690,7 +696,7 @@ module torque
                                 cycle
                             else
                                 bspl%fs(i-1:,1) = bspl%fs(i-2,1)
-                                bspl%fs(i-1:,2) = bspl%fs(i-2,1)
+                                bspl%fs(i-1:,2) = bspl%fs(i-2,2)
                                 jvtheta(i:) = jvtheta(i-1)
                                 exit
                             endif
@@ -738,7 +744,19 @@ module torque
                     ! Bounce averaged Lambda functions
                     fbnce%xs(ilmda-1) = lmda
                     wbbar = ro*twopi/((2-sigma)*bspl%fsi(bspl%mx,1))
-                    wdbar = ro*ro*bo*wdfac*wbbar*2*(2-sigma)*bspl%fsi(bspl%mx,2)
+                    ! wbbar is omega_b/bhat, so it carries one factor of ro that
+                    ! bhat takes back out. dhat removes only the explicit ro**2,
+                    ! so a third ro from wbbar would survive and leave omega_D a
+                    ! velocity rather than a frequency. Hence ro, not ro*ro:
+                    ! |wdbar*dhat| = 4 pi (T/chrg) |I2/I1| = |(1/chrg)(dJ/dpsi)/tau_b|,
+                    ! the canonical precession, with I1 in bspl%fsi(:,1) and I2
+                    ! in bspl%fsi(:,2) and d/dpsi taken against chi1. Magnitudes
+                    ! only: the familiar minus sign needs P_phi = +chrg*psi_p,
+                    ! and GPEC does not fix that convention here -- EFIT signs
+                    ! are normalised away in equil/read_eq.f and the toroidal
+                    ! angle carries a helicity declared in coil.in. This change
+                    ! multiplies by a positive number and alters no sign.
+                    wdbar = ro*bo*wdfac*wbbar*2*(2-sigma)*bspl%fsi(bspl%mx,2)
                     bhat = sqrt(2*kin_f(s+2)/mass)/ro
                     dhat = (kin_f(s+2)/chrg)/(bo*ro*ro)
                     fbnce%fs(ilmda-1,1) = wbbar*bhat
@@ -1851,7 +1869,7 @@ module torque
         integer :: status, ncid,i_did,i_id,p_did,p_id,l_did,l_id, &
             v_id,g_id,c_id,d_id,t_id, b_id,x_id, er_id,q_id,mp_id, &
             ni_id,ne_id,ti_id,te_id,vi_id,ve_id,ze_id,ll_id,we_id, &
-            wn_id,wt_id,ws_id,wg_id,wb_id,wd_id
+            wn_id,wt_id,ws_id,wg_id,wb_id,wd_id,wp_id
         character(16) :: nstring,suffix
         character(128) :: ncfile
 
@@ -1976,6 +1994,9 @@ module torque
         call check( nf90_def_var(ncid, "omega_d_rlar", nf90_double, p_did, wd_id) )
         call check( nf90_put_att(ncid, wd_id, "long_name", "Reduced Magnetic Precession Frequency") )
         call check( nf90_put_att(ncid, wd_id, "units", "rad/s") )
+        call check( nf90_def_var(ncid, "omega_p", nf90_double, p_did, wp_id))
+        call check( nf90_put_att(ncid, wp_id, "long_name", "Plasma Rotation"))
+        call check( nf90_put_att(ncid, wp_id, "units", "rad/s") )
         ! End definitions
         call check( nf90_enddef(ncid) )
         ! store variables
@@ -2001,6 +2022,7 @@ module torque
         call check( nf90_put_var(ncid, wg_id, wgyro) )
         call check( nf90_put_var(ncid, wb_id, wbhat) )
         call check( nf90_put_var(ncid, wd_id, wdhat) )
+        call check( nf90_put_var(ncid, wp_id, wphi) )
         deallocate(epsr,nuk,nueff,nui,nue,ni,ne,ti,te,llmda,&
             welec,wdian,wdiat,wphi,wtran,wgyro,wbhat,wdhat)
 

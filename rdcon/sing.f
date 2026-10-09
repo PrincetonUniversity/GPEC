@@ -801,7 +801,7 @@ c         dpsi=singp%psifac-psifac
          dpsi=singp%psifac-psifac
       ELSE
          vmat => singp%vmatr
-         dpsi=psifac-singp%psifac         
+         dpsi=psifac-singp%psifac
       ENDIF
       r1 => singp%r1
       r2 => singp%r2
@@ -1261,7 +1261,7 @@ c         dpsi=singp%psifac-psifac
          dpsi=singp%psifac-psifac
       ELSE
          vmat => singp%vmatr
-         dpsi=psifac-singp%psifac         
+         dpsi=psifac-singp%psifac
       ENDIF
       r1 => singp%r1
       r2 => singp%r2
@@ -1298,28 +1298,28 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE sing_min
-         INTEGER :: jpsi,it,itmax=50
-         REAL(r8) :: axisPsi,dpsi,q,q1,eps=1e-10
+      INTEGER :: jpsi,it,itmax=50
+      REAL(r8) :: axisPsi,dpsi,q,q1,eps=1e-10
 
-         ! use newton iteration to find starting psi if qlow it is above q0
-         IF(qlow > qmin)THEN
-            ! start check from the edge for robustness in reverse shear cores
-            DO jpsi = sq%mx-1, 1, -1
-               IF(sq%fs(jpsi - 1, 4) < qlow) EXIT
-            ENDDO
-            axisPsi=sq%xs(jpsi)
-            it=0
-            DO
-               it=it+1
-               CALL spline_eval(sq,axisPsi,1)
-               q=sq%f(4)
-               q1=sq%f1(4)
-               dpsi=(qlow-q)/q1
-               axisPsi=axisPsi+dpsi
-               IF(ABS(dpsi) < eps*ABS(axisPsi) .OR. it > itmax)EXIT
-            ENDDO
-            psilow = axisPsi
-         ENDIF
+      ! use newton iteration to find starting psi if qlow it is above q0
+      IF(qlow > qmin)THEN
+      ! start check from the edge for robustness in reverse shear cores
+      DO jpsi = sq%mx-1, 1, -1
+            IF(sq%fs(jpsi - 1, 4) < qlow) EXIT
+      ENDDO
+      axisPsi=sq%xs(jpsi)
+      it=0
+      DO
+            it=it+1
+            CALL spline_eval(sq,axisPsi,1)
+            q=sq%f(4)
+            q1=sq%f1(4)
+            dpsi=(qlow-q)/q1
+            axisPsi=axisPsi+dpsi
+            IF(ABS(dpsi) < eps*ABS(axisPsi) .OR. it > itmax)EXIT
+      ENDDO
+      psilow = axisPsi
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

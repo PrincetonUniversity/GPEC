@@ -71,7 +71,7 @@ c-----------------------------------------------------------------------
      $     dx,dy,dz
 
       REAL(r8), DIMENSION(4) :: crzphi_f, crzphi_fx, crzphi_fy
-      
+
       ! splines are 0:cmtheta, but aspl_f_arr can be 1:cmtheta because
       ! we are repeating the first and last points to
       ! make the spline periodic
@@ -105,7 +105,7 @@ c-----------------------------------------------------------------------
 
 
       area=1.0
-      
+
 c-----------------------------------------------------------------------
 c     for each coil:
 c-----------------------------------------------------------------------
@@ -140,10 +140,10 @@ c-----------------------------------------------------------------------
                   xa(j,k,iseg)=(coil(i)%x(j,k,iseg+1)+
      $                 coil(i)%x(j,k,iseg))/2.0
                   ya(j,k,iseg)=(coil(i)%y(j,k,iseg+1)+
-     $                 coil(i)%y(j,k,iseg))/2.0      
+     $                 coil(i)%y(j,k,iseg))/2.0
                   za(j,k,iseg)=(coil(i)%z(j,k,iseg+1)+
      $                 coil(i)%z(j,k,iseg))/2.0
-                  
+
                   dx(j,k,iseg)=coil(i)%x(j,k,iseg+1)-coil(i)%x(j,k,iseg)
                   dy(j,k,iseg)=coil(i)%y(j,k,iseg+1)-coil(i)%y(j,k,iseg)
                   dz(j,k,iseg)=coil(i)%z(j,k,iseg+1)-coil(i)%z(j,k,iseg)
@@ -194,26 +194,26 @@ c-----------------------------------------------------------------------
                dbx=0
                dby=0
                dbz=0
-               
+
                DO j=1,coil(i)%ncoil
                   DO k=1,coil(i)%s
                      DO iseg=1,nseg
                         rx=xobs(itheta,izeta)-xa(j,k,iseg)
                         ry=yobs(itheta,izeta)-ya(j,k,iseg)
                         rz=zobs(itheta,izeta)-za(j,k,iseg)
-                        
+
                         dl=SQRT(rx**2+ry**2+rz**2)
                         dbx=dbx+coil(i)%cur(j)*coil(i)%nw*1e-7/
      $                       dl**3*(dy(j,k,iseg)*rz-dz(j,k,iseg)*ry)
                         dby=dby+coil(i)%cur(j)*coil(i)%nw*1e-7/
      $                       dl**3*(dz(j,k,iseg)*rx-dx(j,k,iseg)*rz)
                         dbz=dbz+coil(i)%cur(j)*coil(i)%nw*1e-7/
-     $                       dl**3*(dx(j,k,iseg)*ry-dy(j,k,iseg)*rx)               
-                        
+     $                       dl**3*(dx(j,k,iseg)*ry-dy(j,k,iseg)*rx)
+
                      ENDDO
                   ENDDO
                ENDDO
-               
+
                bx(itheta,izeta)=dbx
                by(itheta,izeta)=dby
                bz(itheta,izeta)=dbz
@@ -248,7 +248,7 @@ c-----------------------------------------------------------------------
          tbn=tbn+bn
       ENDDO
 
-         
+
       CALL cspline_alloc(bnzspl,cmzeta,1)
       bnzspl%xs=czeta
       CALL cspline_alloc(bntspl,cmtheta,1)
@@ -265,7 +265,7 @@ c-----------------------------------------------------------------------
          area=aspl%fsi(cmtheta,1)
          CALL spline_dealloc(aspl)
       ENDIF
-            
+
       DO ipert=1,cmpert
          DO izeta=1,cmzeta
             DO itheta=1,cmtheta
@@ -321,7 +321,7 @@ c-----------------------------------------------------------------------
       TYPE(cspline_type) :: bspl
 
       dlmin=2e-3*cro
-      
+
       ! Optional verbosity tells user how many threads we are using
       IF(PRESENT(op_verbose)) THEN
          verbose = op_verbose
@@ -344,7 +344,7 @@ c-----------------------------------------------------------------------
      $        dx(coil(i)%ncoil,coil(i)%s,nseg),
      $        dy(coil(i)%ncoil,coil(i)%s,nseg),
      $        dz(coil(i)%ncoil,coil(i)%s,nseg))
-         
+
          IF(verbose) WRITE(*,'(1x,a,i6,a,i4,a,i4,a,i4,a)') "  >"//
      $      "Mapping ", coil(i)%ncoil*coil(i)%s*nseg,
      $      "filaments from the coil "
@@ -359,10 +359,10 @@ c-----------------------------------------------------------------------
                   xa(j,k,iseg)=(coil(i)%x(j,k,iseg+1)+
      $                 coil(i)%x(j,k,iseg))/2.0
                   ya(j,k,iseg)=(coil(i)%y(j,k,iseg+1)+
-     $                 coil(i)%y(j,k,iseg))/2.0      
+     $                 coil(i)%y(j,k,iseg))/2.0
                   za(j,k,iseg)=(coil(i)%z(j,k,iseg+1)+
      $                 coil(i)%z(j,k,iseg))/2.0
-                  
+
                   dx(j,k,iseg)=coil(i)%x(j,k,iseg+1)-coil(i)%x(j,k,iseg)
                   dy(j,k,iseg)=coil(i)%y(j,k,iseg+1)-coil(i)%y(j,k,iseg)
                   dz(j,k,iseg)=coil(i)%z(j,k,iseg+1)-coil(i)%z(j,k,iseg)
@@ -387,7 +387,7 @@ c-----------------------------------------------------------------------
                   xobs(ir,iz,ip)=gdr(ir,iz)*COS(twopi*phi)
                   yobs(ir,iz,ip)=gdr(ir,iz)*SIN(twopi*phi)
                   zobs(ir,iz,ip)=gdz(ir,iz)
-                  
+
                   dbx=0
                   dby=0
                   dbz=0
@@ -398,20 +398,20 @@ c-----------------------------------------------------------------------
                            rx=xobs(ir,iz,ip)-xa(j,k,iseg)
                            ry=yobs(ir,iz,ip)-ya(j,k,iseg)
                            rz=zobs(ir,iz,ip)-za(j,k,iseg)
-                           
+
                            dl=MAXVAL((/SQRT(rx**2+ry**2+rz**2),dlmin/))
-                           
+
                            dbx=dbx+coil(i)%cur(j)*coil(i)%nw*1e-7/
      $                          dl**3*(dy(j,k,iseg)*rz-dz(j,k,iseg)*ry)
                            dby=dby+coil(i)%cur(j)*coil(i)%nw*1e-7/
      $                          dl**3*(dz(j,k,iseg)*rx-dx(j,k,iseg)*rz)
                            dbz=dbz+coil(i)%cur(j)*coil(i)%nw*1e-7/
-     $                          dl**3*(dx(j,k,iseg)*ry-dy(j,k,iseg)*rx)            
-                           
+     $                          dl**3*(dx(j,k,iseg)*ry-dy(j,k,iseg)*rx)
+
                         ENDDO
                      ENDDO
                   ENDDO
-               
+
                   bx(ir,iz,ip)=dbx
                   by(ir,iz,ip)=dby
                   bz(ir,iz,ip)=dbz
@@ -461,7 +461,6 @@ c-----------------------------------------------------------------------
       END SUBROUTINE field_bs_rzphi
 
       END MODULE field_mod
-     
 
 
 
@@ -469,7 +468,8 @@ c-----------------------------------------------------------------------
 
 
 
-                     
+
+
 
 
 

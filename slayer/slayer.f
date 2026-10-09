@@ -2,8 +2,8 @@ c-----------------------------------------------------------------------
 c     SLAYER: Slab LAYER linear drift-MHD code.
 c     Main driver program.
 c
-c     Computes tearing-mode layer quantities (inner layer Delta, 
-c     growth rates, torque balance, field thresholds) from 
+c     Computes tearing-mode layer quantities (inner layer Delta,
+c     growth rates, torque balance, field thresholds) from
 c     slab-geometry drift-MHD matching via a Riccati integration method.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -409,7 +409,7 @@ c-----------------------------------------------------------------------
      $           bts(k),rss(k),R0s(k),mu_is(k),zeffs(k)
          ENDDO
          CLOSE(input_unit)
-         
+
          DO k=0,inn-1
             WRITE(*,*)k    ! surface index
             mr=REAL(mms(k))
@@ -425,7 +425,7 @@ c-----------------------------------------------------------------------
             inds=ds
             intau=tau
             Q0=Q
- 
+
             IF (Q0>inQ_e) THEN
                inQ_max=2.0*Q0
                inQ_min=1.05*inQ_e
@@ -438,10 +438,10 @@ c-----------------------------------------------------------------------
                ENDIF
             ENDIF
             riccati_out=.FALSE.
-         
+
             ALLOCATE(inQs(0:inum),deltal(0:inum),
-     $           jxbl(0:inum),bal(0:inum)) 
-         
+     $           jxbl(0:inum),bal(0:inum))
+
             DO i=0,inum
                inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
                deltal(i)=riccati(inQs(i),inQ_e,inQ_i,
@@ -449,19 +449,19 @@ c-----------------------------------------------------------------------
                jxbl(i)=-AIMAG(1.0/(deltal(i)+delta_n_p))
                bal(i)=2.0*inpr*(Q0-inQs(i))/jxbl(i)
             ENDDO
-        
+
             iloc=MAXLOC(bal)
             Q_soll(k)=inQs(iloc(1))
             br_thl(k)=sqrt(MAXVAL(bal)/lu*(svals(k)**2.0/2.0))*1e4
 
             IF (verbose) WRITE(*,*)"Q_sol=",Q_soll(k)
             IF (verbose) WRITE(*,*)"br_th=",br_thl(k)
-            DEALLOCATE(inQs,deltal,jxbl,bal)         
+            DEALLOCATE(inQs,deltal,jxbl,bal)
          ENDDO
          OPEN(UNIT=out_unit,FILE="slayer_input_bal_n"//
      $      TRIM(sn_str)//".out",STATUS="UNKNOWN")
          WRITE(out_unit,'(1x,(2a17))') "Q_sol","br_th"
-         
+
          DO k=0,inn-1
             WRITE(out_unit,'(1x,2(es17.8e3))')
      $           Q_soll(k),br_thl(k)
@@ -473,8 +473,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     estimate growth rate via resistive-layer thickness.
 c     Uses riccati_del_s to get delta_s/d_beta, then scales by
-c     d_beta to obtain the layer thickness delta_s and the estimated 
-c     gamma. Inputs may come from equilibrium files (read_eq) or 
+c     d_beta to obtain the layer thickness delta_s and the estimated
+c     gamma. Inputs may come from equilibrium files (read_eq) or
 c     namelist.  Subroutines: build_inputs (layerinputs_mod),
 c     allocate_inputs, allocate_outputs (growthrates_mod).
 c-----------------------------------------------------------------------
@@ -572,7 +572,7 @@ c           precedence (surface k gets inQ_e_ovr(k) if nonzero).
             sl_in%c_beta_arr = (/ c_beta /)
             sl_in%lu_arr = (/ lu /)
             sl_in%Qconv_arr = (/ tauk /)
-         END IF 
+         END IF
 
          ! Loop over rational surfaces to estimate growth rates.
          DO k=1,n_k
@@ -595,7 +595,7 @@ c           precedence (surface k gets inQ_e_ovr(k) if nonzero).
             WRITE(*,*)
             WRITE(*,'(A,F0.3,A)')'Growth rate estimate = ',
      $                 REAL(sl_out%gamma_est_arr(k)),' [Hz]'
-            
+
          ENDDO
 
          IF (.NOT. (match_gamma_flag)) THEN
@@ -617,7 +617,7 @@ c-----------------------------------------------------------------------
          WRITE(*,*)">>> Calculating asymptotically matched growth rate"
 
          IF (read_eq) THEN
-         
+
             IF (.NOT. est_gamma_flag) THEN
                sl_in%chi_p_arr = chi_p_prof
                sl_in%chi_t_arr = chi_t_prof
@@ -701,7 +701,7 @@ c           Apply Q_e/Q_i overrides (same logic as est_gamma path)
             sl_in%Qconv_arr = (/ tauk /)
 
             END IF
-         END IF 
+         END IF
 
 c-----------------------------------------------------------------------
 c     allocate output arrays for AMR delta storage.
@@ -752,7 +752,7 @@ c-----------------------------------------------------------------------
             WRITE(*,*)"Delta_crit: ",sl_in%d_crit_arr(k)
 
             ! Calculate (Deltaprime - D_crit)/S^1/3
-            delta_eff = (sl_in%Re_dp_arr(k) - 
+            delta_eff = (sl_in%Re_dp_arr(k) -
      $          sl_in%d_crit_arr(k))/(sl_in%lu_arr(k)**(1.0/3.0))
             pe = 0.0
 
@@ -771,19 +771,19 @@ c-----------------------------------------------------------------------
      $                  Q_num,AMR_passes,coupling_flag)
 
                ! Re-allocate output arrays for this surface.
-               IF (ALLOCATED(all_deltas_out(k)%inQs)) 
+               IF (ALLOCATED(all_deltas_out(k)%inQs))
      $             DEALLOCATE(all_deltas_out(k)%inQs)
-               IF (ALLOCATED(all_deltas_out(k)%iinQs)) 
+               IF (ALLOCATED(all_deltas_out(k)%iinQs))
      $             DEALLOCATE(all_deltas_out(k)%iinQs)
-               IF (ALLOCATED(all_deltas_out(k)%real_deltas)) 
+               IF (ALLOCATED(all_deltas_out(k)%real_deltas))
      $             DEALLOCATE(all_deltas_out(k)%real_deltas)
-               IF (ALLOCATED(all_deltas_out(k)%imag_deltas)) 
+               IF (ALLOCATED(all_deltas_out(k)%imag_deltas))
      $             DEALLOCATE(all_deltas_out(k)%imag_deltas)
 
                ALLOCATE(all_deltas_out(k)%inQs(n_pts),
      $                  all_deltas_out(k)%iinQs(n_pts))
-               ALLOCATE(all_deltas_out(k)%real_deltas(n_pts), 
-     $         all_deltas_out(k)%imag_deltas(n_pts)) 
+               ALLOCATE(all_deltas_out(k)%real_deltas(n_pts),
+     $         all_deltas_out(k)%imag_deltas(n_pts))
 
                ! Flatten unique AMR points into 1-D output arrays.
                DO i = 1, n_pts
@@ -793,12 +793,12 @@ c-----------------------------------------------------------------------
                   all_deltas_out(k)%real_deltas(i) = REAL(D_store(i))
                   all_deltas_out(k)%imag_deltas(i) = AIMAG(D_store(i))
                END DO
-         
+
                ! Clean up temporary AMR memory.
                DEALLOCATE(Q_store, D_store)
 
                WRITE(*,'(A,I2,A,I7,A,2ES14.6)')
-     $          '   Surface', k, ': n_pts=', 
+     $          '   Surface', k, ': n_pts=',
      $          SIZE(all_deltas_out(k)%real_deltas),
      $          ' out_chksum=',
      $          SUM(all_deltas_out(k)%real_deltas),
@@ -808,7 +808,7 @@ c-----------------------------------------------------------------------
 
 c-----------------------------------------------------------------------
 c     single-surface stability scan on [Re(Q), Im(Q)] grid.
-c     Uses riccati_f() (new Fitzpatrick TJ-like formalism) or 
+c     Uses riccati_f() (new Fitzpatrick TJ-like formalism) or
 c.    riccati() (orig. SLAYER/Waelbroeck).
 c-----------------------------------------------------------------------
             IF ((stabscan_flag)) THEN
@@ -819,7 +819,7 @@ c-----------------------------------------------------------------------
 
                ing_step = (2.0*scan_width) / (Q_num - 1)
                count = 0
-         
+
                ALLOCATE(inQs(1:(Q_num+1)),iinQs(1:Q_num))
                ALLOCATE(deltas(1:(Q_num+1),1:Q_num))
 
@@ -855,7 +855,7 @@ c-----------------------------------------------------------------------
                ENDIF
 
                OPEN(UNIT=out_unit,FILE="slayer_stability_n"//
-     $         TRIM(sn_str)//"m"//TRIM(sm_str)//".out", 
+     $         TRIM(sn_str)//"m"//TRIM(sm_str)//".out",
      $         STATUS="UNKNOWN")
                WRITE(out_unit,'(1x,4(a17))') "RE(Q)",
      $           "IM(Q)","RE(delta)","IM(delta)"
@@ -869,8 +869,8 @@ c-----------------------------------------------------------------------
                CLOSE(out_unit)
 
             DEALLOCATE(inQs,iinQs,deltas)
-            ENDIF 
-         ENDDO 
+            ENDIF
+         ENDDO
 
          IF (.NOT. (est_gamma_flag)) THEN
             sl_in%d_beta_arr = (/ 0. /)
@@ -887,30 +887,30 @@ c-----------------------------------------------------------------------
      $                  Q_num,AMR_passes,coupling_flag)
 
             ! Re-allocate output arrays.
-            IF (ALLOCATED(all_deltas_out(1)%inQs)) 
+            IF (ALLOCATED(all_deltas_out(1)%inQs))
      $             DEALLOCATE(all_deltas_out(1)%inQs)
-            IF (ALLOCATED(all_deltas_out(1)%iinQs)) 
+            IF (ALLOCATED(all_deltas_out(1)%iinQs))
      $             DEALLOCATE(all_deltas_out(1)%iinQs)
-            IF (ALLOCATED(all_deltas_out(1)%real_deltas)) 
+            IF (ALLOCATED(all_deltas_out(1)%real_deltas))
      $             DEALLOCATE(all_deltas_out(1)%real_deltas)
-            IF (ALLOCATED(all_deltas_out(1)%imag_deltas)) 
+            IF (ALLOCATED(all_deltas_out(1)%imag_deltas))
      $             DEALLOCATE(all_deltas_out(1)%imag_deltas)
 
             ALLOCATE(all_deltas_out(1)%inQs(n_pts),
      $                  all_deltas_out(1)%iinQs(n_pts))
-            ALLOCATE(all_deltas_out(1)%real_deltas(n_pts), 
-     $         all_deltas_out(1)%imag_deltas(n_pts)) 
+            ALLOCATE(all_deltas_out(1)%real_deltas(n_pts),
+     $         all_deltas_out(1)%imag_deltas(n_pts))
 
             ! Flatten unique AMR points into 1-D output arrays.
             DO i = 1, n_pts
                all_deltas_out(1)%inQs(i) = REAL(Q_store(i))
-               
+
                all_deltas_out(1)%iinQs(i) = -AIMAG(Q_store(i)) ! verify this sign convention
 
                all_deltas_out(1)%real_deltas(i) = REAL(D_store(i))
                all_deltas_out(1)%imag_deltas(i) = AIMAG(D_store(i))
             END DO
-      
+
             ! Clean up temporary AMR memory.
             DEALLOCATE(Q_store, D_store)
 
@@ -1095,11 +1095,11 @@ c-----------------------------------------------------------------------
          ! just for diagnostics
          inQ_max=10.0
          inQ_min=-10.0
-         
+
          riccati_out=.FALSE.
-         
-         ALLOCATE(inQs(0:inum),deltal(0:inum),jxbl(0:inum),bal(0:inum)) 
-         
+
+         ALLOCATE(inQs(0:inum),deltal(0:inum),jxbl(0:inum),bal(0:inum))
+
          DO i=0,inum
             inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
             deltal(i)=riccati(inQs(i),inQ_e,inQ_i,
@@ -1127,7 +1127,7 @@ c-----------------------------------------------------------------------
          br_th=sqrt(MAXVAL(bal)/lu*(sval**2.0/2.0))*1e4
          WRITE(*,*)"Q_sol=",Q_sol
          WRITE(*,*)"br_th=",br_th
-         DEALLOCATE(inQs,deltal,jxbl,bal)         
+         DEALLOCATE(inQs,deltal,jxbl,bal)
       ENDIF
 c-----------------------------------------------------------------------
 c     examine delta dependencies on complex Q for stability.
@@ -1214,7 +1214,7 @@ c-----------------------------------------------------------------------
          j_max=50.0 ! extended from 20.0
          k_min=-3.0 ! in log scale
          k_max=0.0 ! in log scale
-         DO j=0,jnum            
+         DO j=0,jnum
             js(j,:)=j_min+(j_max-j_min)/jnum*REAL(j)
             DO k=0,knum
                kpower=k_min+(k_max-k_min)/knum*REAL(k)
@@ -1269,7 +1269,7 @@ c-----------------------------------------------------------------------
          j_max=50.0 ! extended from 20.0
          k_min=-3.0 ! in log scale
          k_max=0.0 ! in log scale
-         DO j=0,jnum            
+         DO j=0,jnum
             js(j,:)=j_min+(j_max-j_min)/jnum*REAL(j)
             DO k=0,knum
                kpower=k_min+(k_max-k_min)/knum*REAL(k)
@@ -1322,7 +1322,7 @@ c-----------------------------------------------------------------------
 
          j_min=0.05 ! extended from 20.0
          j_max=50.0 ! extended from 20.0
-         DO j=0,jnum            
+         DO j=0,jnum
             js(j,:)=j_min+(j_max-j_min)/jnum*REAL(j)
             deltas(j,0)=riccati(js(j,0),inQ_e,inQ_i,inpr,
      $         inc_beta,inds,intau,inpe)
@@ -1411,8 +1411,8 @@ c-----------------------------------------------------------------------
      $        deltas(0:jnum,0:knum),psis(0:jnum,0:knum),
      $        jxbs(0:jnum,0:knum))
 
-         j_min=1.0 
-         j_max=100.0 
+         j_min=1.0
+         j_max=100.0
          k_min=1.0 ! in log scale
          k_max=100.0 ! in log scale
          DO j=0,jnum
@@ -1460,7 +1460,7 @@ c-----------------------------------------------------------------------
 c     (o,n) scan.
 c-----------------------------------------------------------------------
       IF (onscan_flag) THEN
-         ALLOCATE(inQs(0:inum),bal(0:inum)) 
+         ALLOCATE(inQs(0:inum),bal(0:inum))
          ALLOCATE(js(0:jnum,0:knum),ks(0:jnum,0:knum),
      $        Q_sols(0:jnum,0:knum),br_ths(0:jnum,0:knum))
 
@@ -1473,7 +1473,7 @@ c-----------------------------------------------------------------------
             js(j,:)=j_min+(j_max-j_min)*(REAL(j)/jnum)
             DO k=0,knum
                ks(j,k)=k_min+(k_max-k_min)*(REAL(k)/knum)
-               
+
                CALL params(n_e*ks(j,k),t_e,t_i,omega*js(j,k),chis,
      $                    dr_val,dgeo_val,l_n,l_t,qval,sval,bt,rs,
      $                    R0,mu_i,zeff,params_check)
@@ -1484,7 +1484,7 @@ c-----------------------------------------------------------------------
                inds=ds
                intau=tau
                Q0=Q
-               
+
 
                IF (Q0>inQ_e) THEN
                   inQ_max=2.0*Q0
@@ -1499,7 +1499,7 @@ c-----------------------------------------------------------------------
                ENDIF
 
 
-               
+
                DO i=0,inum
                   inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
                   delta=riccati(inQs(i),inQ_e,inQ_i,
@@ -1510,7 +1510,7 @@ c-----------------------------------------------------------------------
                iloc=MAXLOC(bal)
                Q_sols(j,k)=inQs(iloc(1))
                br_ths(j,k)=sqrt(MAXVAL(bal)/lu)*1e4
-               WRITE(*,*)"br_ths=",br_ths(j,k)               
+               WRITE(*,*)"br_ths=",br_ths(j,k)
             ENDDO
          ENDDO
 
@@ -1525,7 +1525,7 @@ c-----------------------------------------------------------------------
      $                 omega*js(j,k),n_e*ks(j,k),
      $                 omega_i,omega_e,
      $                 Q_sols(j,k),br_ths(j,k)
-                  
+
                ENDDO
             ENDDO
             CLOSE(out_unit)
@@ -1548,7 +1548,7 @@ c-----------------------------------------------------------------------
 c     (o,t) scan.
 c-----------------------------------------------------------------------
       IF (otscan_flag) THEN
-         ALLOCATE(inQs(0:inum),bal(0:inum)) 
+         ALLOCATE(inQs(0:inum),bal(0:inum))
          ALLOCATE(js(0:jnum,0:knum),ks(0:jnum,0:knum),
      $        Q_sols(0:jnum,0:knum),br_ths(0:jnum,0:knum))
 
@@ -1561,7 +1561,7 @@ c-----------------------------------------------------------------------
             js(j,:)=j_min+(j_max-j_min)*(REAL(j)/jnum)
             DO k=0,knum
                ks(j,k)=k_min+(k_max-k_min)*(REAL(k)/knum)
-               
+
                CALL params(n_e,t_e*ks(j,k),t_i*ks(j,k),
      $              omega*js(j,k),chis,dr_val,dgeo_val,l_n,l_t,qval,
      $              sval,bt,rs,R0,mu_i,zeff,params_check)
@@ -1572,7 +1572,7 @@ c-----------------------------------------------------------------------
                inds=ds
                intau=tau
                Q0=Q
-               
+
                IF (Q0>inQ_e) THEN
                   inQ_max=2.0*Q0
                   inQ_min=1.05*inQ_e
@@ -1585,7 +1585,7 @@ c-----------------------------------------------------------------------
                   ENDIF
                ENDIF
 
-               
+
                DO i=0,inum
                   inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
                   delta=riccati(inQs(i),inQ_e,inQ_i,
@@ -1611,7 +1611,7 @@ c-----------------------------------------------------------------------
      $                 omega*js(j,k),t_e*ks(j,k),
      $                 omega_i,omega_e,
      $                 Q_sols(j,k),br_ths(j,k)
-                  
+
                ENDDO
             ENDDO
             CLOSE(out_unit)
@@ -1634,7 +1634,7 @@ c-----------------------------------------------------------------------
 c     (n,t) scan.
 c-----------------------------------------------------------------------
       IF (ntscan_flag) THEN
-         ALLOCATE(inQs(0:inum),bal(0:inum)) 
+         ALLOCATE(inQs(0:inum),bal(0:inum))
          ALLOCATE(js(0:jnum,0:knum),ks(0:jnum,0:knum),
      $        Q_sols(0:jnum,0:knum),br_ths(0:jnum,0:knum))
 
@@ -1647,7 +1647,7 @@ c-----------------------------------------------------------------------
             js(j,:)=j_min+(j_max-j_min)*(REAL(j)/jnum)
             DO k=0,knum
                ks(j,k)=k_min+(k_max-k_min)*(REAL(k)/knum)
-               
+
                CALL params(n_e*ks(j,k),t_e*js(j,k),t_i*js(j,k),omega,
      $              chis,dr_val,dgeo_val,l_n,l_t,qval,sval,bt,rs,R0,
      $              mu_i,zeff,params_check)
@@ -1658,7 +1658,7 @@ c-----------------------------------------------------------------------
                inds=ds
                intau=tau
                Q0=Q
-               
+
                IF (Q0>inQ_e) THEN
                   inQ_max=2.0*Q0
                   inQ_min=1.05*inQ_e
@@ -1671,7 +1671,7 @@ c-----------------------------------------------------------------------
                   ENDIF
                ENDIF
 
-               
+
                DO i=0,inum
                   inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
                   delta=riccati(inQs(i),inQ_e,inQ_i,
@@ -1682,7 +1682,7 @@ c-----------------------------------------------------------------------
                iloc=MAXLOC(bal)
                Q_sols(j,k)=inQs(iloc(1))
                br_ths(j,k)=sqrt(MAXVAL(bal)/lu)*1e4
-               WRITE(*,*)"br_ths=",br_ths(j,k)               
+               WRITE(*,*)"br_ths=",br_ths(j,k)
             ENDDO
          ENDDO
 
@@ -1698,7 +1698,7 @@ c-----------------------------------------------------------------------
      $                 omega_i,omega_e,
      $                 Q_sols(j,k),br_ths(j,k)
                ENDDO
-            ENDDO                  
+            ENDDO
             CLOSE(out_unit)
          ENDIF
 
@@ -1719,7 +1719,7 @@ c-----------------------------------------------------------------------
 c     (n,bt) scan.
 c-----------------------------------------------------------------------
       IF (nbtscan_flag) THEN
-         ALLOCATE(inQs(0:inum),bal(0:inum)) 
+         ALLOCATE(inQs(0:inum),bal(0:inum))
          ALLOCATE(js(0:jnum,0:knum),ks(0:jnum,0:knum),
      $        Q_sols(0:jnum,0:knum),br_ths(0:jnum,0:knum))
 
@@ -1733,7 +1733,7 @@ c-----------------------------------------------------------------------
             DO k=0,knum
                ks(j,k)=k_min+(k_max-k_min)*(REAL(k)/knum)
 
-             
+
                CALL params(n_e*ks(j,k),t_e,t_i,omega,chis,dr_val,
      $              dgeo_val,l_n,l_t,qval,sval,bt*js(j,k),rs,R0,mu_i,
      $              zeff,params_check)
@@ -1744,7 +1744,7 @@ c-----------------------------------------------------------------------
                inds=ds
                intau=tau
                Q0=Q
-           
+
 
                IF (Q0>inQ_e) THEN
                   inQ_max=2.0*Q0
@@ -1758,7 +1758,7 @@ c-----------------------------------------------------------------------
                   ENDIF
                ENDIF
 
-        
+
                DO i=0,inum
                   inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
                   delta=riccati(inQs(i),inQ_e,inQ_i,
@@ -1769,7 +1769,7 @@ c-----------------------------------------------------------------------
                iloc=MAXLOC(bal)
                Q_sols(j,k)=inQs(iloc(1))
                br_ths(j,k)=sqrt(MAXVAL(bal)/lu)*1e4
-               WRITE(*,*)"br_ths=",br_ths(j,k)               
+               WRITE(*,*)"br_ths=",br_ths(j,k)
             ENDDO
          ENDDO
 
@@ -1783,7 +1783,7 @@ c-----------------------------------------------------------------------
                   WRITE(out_unit,'(1x,4(es17.8e3))')
      $                 bt*js(j,k),n_e*ks(j,k),
      $                 Q_sols(j,k),br_ths(j,k)
-                  
+
                ENDDO
             ENDDO
             CLOSE(out_unit)
@@ -1804,4 +1804,4 @@ c-----------------------------------------------------------------------
       ENDIF
 
       END PROGRAM slayer
-     
+

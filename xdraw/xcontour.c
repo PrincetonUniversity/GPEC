@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #if !defined(__MACH__)
-#include <stdlib.h>
+#include <malloc.h>
 #endif
 #include <string.h>
 #include <math.h>
@@ -69,6 +69,7 @@ typedef struct
 #include "xtools.h"
 #include "setcolor.h"
 #include "ps.h"
+#include "spline1.h"
 
 #define FZ (float)0
 
@@ -157,8 +158,6 @@ extern FloatSc xscale, xoffset, yscale, yoffset;
 static FloatSc rscale, roffset, zscale, zoffset;
 extern int wx0,wy0;
 extern int myscreen;
-extern void splfit(Float *, Float *, Float *, int);
-extern void spleval(Float *, Float *, Float *, Float *, Float *, Float *, Float*, Float, int, int, int, int);
 
 static int isep = -1;
 static int ncurve=32, last_ncurve, hzcurve=0;

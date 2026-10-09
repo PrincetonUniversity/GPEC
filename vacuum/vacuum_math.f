@@ -837,15 +837,15 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE aleg(x,nloc,pm,pn,pp, aleg0,aleg1 )     
+      SUBROUTINE aleg(x,nloc,pm,pn,pp, aleg0,aleg1 )
 c     subroutine to calculate half integral legendre functions.
 c     uses upwards recurrence relations starting from elliptic
 c     integrals evaluated using Bulirsch's algorithm
 c     these expressions are very bad for large values of nloc.
-c     zkisq is ths the 1 - k**2 in Elliptic integeral parlance.     
+c     zkisq is ths the 1 - k**2 in Elliptic integeral parlance.
 
-c     This modified from the old aleg subroutine to use the 
-c     Bulirsch algorithms for the Elliptic functions. 
+c     This modified from the old aleg subroutine to use the
+c     Bulirsch algorithms for the Elliptic functions.
 c     The new integral representation of the Legendre function is used
 c     here for n*rhohat >= 0.1
 
@@ -855,7 +855,7 @@ c     Reference: JCP 221 (2007) 330-348
       REAL(r8), INTENT(IN) :: x
       INTEGER, INTENT(IN) :: nloc
       REAL(r8), INTENT(OUT) :: pm,pn,pp,aleg0,aleg1
-      REAL(r8), PARAMETER :: pye=3.141592653589793_r8, pii=2.0_r8/pye, 
+      REAL(r8), PARAMETER :: pye=3.141592653589793_r8, pii=2.0_r8/pye,
      $            sqpi=SQRT(pye), sqtwo=SQRT(2.0_r8), half=0.5_r8
 
 c...  Sum of ak_i = pi/2. Sum of ae_i = pi/2 - 1.0
@@ -867,8 +867,8 @@ c...  Sum of ak_i = pi/2. Sum of ae_i = pi/2 - 1.0
       REAL(r8), DIMENSION(32):: tg32, wg32, xg32
       REAL(r8), DIMENSION(5):: xu, xl
 
-      REAL(r8) :: gam, xxq, ysq, y, w, rhohatsq, rhohat, zk1i, zk1, 
-     $ zk1sq, zk1sqrt, zk1sqrti, errbu, elipk, elipe, convbu, 
+      REAL(r8) :: gam, xxq, ysq, y, w, rhohatsq, rhohat, zk1i, zk1,
+     $ zk1sq, zk1sqrt, zk1sqrti, errbu, elipk, elipe, convbu,
      $ pnp, ak, ak02, gint, gintp, agaus, bgaus, ginti, gintip, tg0,
      $ tg02, tg1, tg1p, sinhtg1, sinhtg1p, sinhtg12, sinhtg12p, dnom,
      $ dnomp, anumr, pcoef, twopi, gamn, gamp
@@ -876,7 +876,7 @@ c...  Sum of ak_i = pi/2. Sum of ae_i = pi/2 - 1.0
 
 !.... Weights and abscissae for 32 points gaussian quadrature.
 
-      wg32(1)  =  0.007018610009470096600_r8 
+      wg32(1)  =  0.007018610009470096600_r8
       wg32(2)  =  0.016274394730905670605_r8
       wg32(3)  =  0.025392065309262059456_r8
       wg32(4)  =  0.034273862913021433103_r8
@@ -892,26 +892,26 @@ c...  Sum of ak_i = pi/2. Sum of ae_i = pi/2 - 1.0
       wg32(14) =  0.093844399080804565639_r8
       wg32(15) =  0.095638720079274859419_r8
       wg32(16) =  0.096540088514727800567_r8
-      
+
       DO i = 1, 16
          wg32(16+i) = wg32(17-i)
       END DO
 
       xg32(1:16) = (/ -0.997263861849481563545_r8,
-     $ 0.985611511545268335400_r8, 
+     $ 0.985611511545268335400_r8,
      $ 0.964762255587506430774_r8,
-     $ 0.934906075937739689171_r8, 
-     $ 0.896321155766052123965_r8, 
-     $ 0.849367613732569970134_r8, 
-     $ 0.794483795967942406963_r8, 
-     $ 0.732182118740289680387_r8, 
-     $ 0.663044266930215200975_r8, 
-     $ 0.587715757240762329041_r8, 
-     $ 0.506899908932229390024_r8, 
-     $ 0.421351276130635345364_r8, 
-     $ 0.331868602282127649780_r8, 
-     $ 0.239287362252137074545_r8, 
-     $ 0.144471961582796493485_r8, 
+     $ 0.934906075937739689171_r8,
+     $ 0.896321155766052123965_r8,
+     $ 0.849367613732569970134_r8,
+     $ 0.794483795967942406963_r8,
+     $ 0.732182118740289680387_r8,
+     $ 0.663044266930215200975_r8,
+     $ 0.587715757240762329041_r8,
+     $ 0.506899908932229390024_r8,
+     $ 0.421351276130635345364_r8,
+     $ 0.331868602282127649780_r8,
+     $ 0.239287362252137074545_r8,
+     $ 0.144471961582796493485_r8,
      $ 0.048307665687738316235_r8 /)
 
 !     xg32(17:32) = - (/ xg32(16:1) /)
@@ -933,7 +933,7 @@ c-----------------------------------------------------------------------
       rhohatsq = 1.0_r8 / ( 2.0_r8 * y*w )
       rhohat = SQRT (rhohatsq)
 
-      zk1i = w              
+      zk1i = w
       zk1 = 1.0_r8/w        ! This is k1 = SQRT(1-k**2) = SQRT(m_1)
       zk1sq = zk1**2        ! This is m_1
       zk1sqrt = SQRT(zk1)   ! This is m_1^(1/4)
@@ -974,9 +974,9 @@ c... Use Gaussian Integration if ...
 
  100  CONTINUE
 
-c...  use Gauss integration of the new integral representation 
+c...  use Gauss integration of the new integral representation
 c     if n*rhohat >= 0.1
-c...  The integration is done in nng segments [xl(ing),xu(ing)]. 
+c...  The integration is done in nng segments [xl(ing),xu(ing)].
 c     Each stored in gint.
 
       ngauss = 32
@@ -991,12 +991,12 @@ c     Each stored in gint.
 
 !.....xl, xu are the lower and upper limits of the gaussian integration
 !     The integration is done in nng sections
-!     This will calculate P(n) and P(n+1) together. 
+!     This will calculate P(n) and P(n+1) together.
 !        variables for P(n+1) will usually have p appended.
 
          agaus = half*( xu(ing)+xl(ing) )
          bgaus = half*( xu(ing)-xl(ing) )
-         
+
          tg32(1:32) = agaus + xg32(1:32) * bgaus
 
          ginti = 0.0
@@ -1019,7 +1019,7 @@ c     Each stored in gint.
             ginti  = ginti  + wg32(ig)*anumr / dnom
             gintip = gintip + wg32(ig)*anumr / dnomp
          END DO                 ! 32 point Gaussian
-         
+
          ginti  = bgaus * ginti
          gintip = bgaus * gintip
          gint  = gint  + ginti
@@ -1043,7 +1043,7 @@ c   gamp is  Gamma[1/2-(n+1)]
          gamn = sqpi /
      $        PRODUCT( (/ ( -(i-1)-0.5, i = 1, nloc ) /) )
          gamp = - gamn / (nloc+0.5)
-         
+
       END IF
 
       gint  = sqtwo * pcoef**nloc * gint / (nloc*sqpi*gamn)
@@ -1068,14 +1068,14 @@ c-----------------------------------------------------------------------
       SUBROUTINE ek3(eta,ier,error,maxit,cel1,cel2,convg, kounter)
 
 !  Compute the complete elliptic integral of first and second kind
-!      cel(kc,p,a,b).  
-!  Bulirsch's method. Numerical Recipes, modified by Turnbull to 
+!      cel(kc,p,a,b).
+!  Bulirsch's method. Numerical Recipes, modified by Turnbull to
 !    calculate both K and E simultaneously.
 
 !  Returns cel1 = K, cel2 = E.
-!  Precision is error**2, 
+!  Precision is error**2,
 
-!  eta, the complementary parameter, (1 - k^2), is the square of 
+!  eta, the complementary parameter, (1 - k^2), is the square of
 !          the argument kc
 !  p   is 1
 !  a   is 1
@@ -1084,7 +1084,7 @@ c-----------------------------------------------------------------------
       USE local_mod, only: r8
       IMPLICIT NONE
 
-      REAL(r8), PARAMETER :: pi=3.1415926535897932385_r8 , 
+      REAL(r8), PARAMETER :: pi=3.1415926535897932385_r8 ,
      $                       pi2 = pi/2.0_r8
 
       REAL(r8), INTENT(IN) :: eta, error
@@ -1502,7 +1502,7 @@ c-----------------------------------------------------------------------
 c     termination.
 c-----------------------------------------------------------------------
       return
-      end    
+      end
 c-----------------------------------------------------------------------
 c     subprogram 17. lagpe4.
 c     routine used by trans and transdx.
@@ -1665,7 +1665,7 @@ c-----------------------------------------------------------------------
    36 continue
       if(anorm .LE. 0) then
          goto 165
-      else 
+      else
          goto 40
       endif
    40 anorm=1.414*sqrt(anorm)
@@ -1740,7 +1740,7 @@ c-----------------------------------------------------------------------
   140 if(l-(n-1) == 0) goto 150
   145 l=l+1
       go to 55
-  150 if(ind-1 .ne. 0) goto 160 
+  150 if(ind-1 .ne. 0) goto 160
   155 ind=0
       go to 50
   160 if(thr-anrmx .gt. 0) go to 45

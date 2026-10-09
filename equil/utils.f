@@ -60,13 +60,13 @@ c-----------------------------------------------------------------------
       END FUNCTION asinh
 c-----------------------------------------------------------------------
 c     subprogram 2. interpolate.
-c     polynomial interpolation of function and first two derivative 
+c     polynomial interpolation of function and first two derivative
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       FUNCTION interpolate(xs,fs,x) RESULT(f)
-      
+
       REAL(r8), DIMENSION(:), INTENT(IN) :: xs
       REAL(r8), DIMENSION(:,:), INTENT(IN) :: fs
       REAL(r8), INTENT(IN) :: x
@@ -125,13 +125,13 @@ c-----------------------------------------------------------------------
       END FUNCTION interpolate
 c-----------------------------------------------------------------------
 c     subprogram 3. cinterpolate.
-c     polynomial interpolation of complex function and first two derivative 
+c     polynomial interpolation of complex function and first two derivative
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       FUNCTION cinterpolate(xs,fs,x) RESULT(f)
-      
+
       REAL(r8), DIMENSION(:), INTENT(IN) :: xs
       COMPLEX(r8), DIMENSION(:,:), INTENT(IN) :: fs
       REAL(r8), INTENT(IN) :: x

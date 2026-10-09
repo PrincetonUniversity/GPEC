@@ -39,16 +39,6 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), ALLOCATABLE :: psitmp
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: xtmp
 
-      ! harvest variables
-      INCLUDE 'harvest_lib.inc77'
-      INTEGER  :: ierr
-      INTEGER  :: hint = 0
-      REAL(r8) :: hdbl = 0
-      CHARACTER(LEN=16)    :: hkey
-      CHARACTER(LEN=50000) :: hnml
-      CHARACTER(LEN=65507) :: hlog
-      CHARACTER, PARAMETER :: nul = char(0)
-
       NAMELIST/dcon_control/bal_flag,mat_flag,ode_flag,vac_flag,
      $     mer_flag,res_flag,fft_flag,node_flag,mthvac,sing_start,nn,
      $     delta_mlow,delta_mhigh,delta_mband,thmax0,nstep,ksing,
@@ -65,8 +55,7 @@ c-----------------------------------------------------------------------
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
      $     out_fl,bin_fl,out_evals,bin_evals,bin_euler,euler_stride,
-     $     bin_vac,ahb_flag,mthsurf0,msol_ahb,netcdf_out,out_fund,
-     $     out_ahg2msc
+     $     bin_vac,ahb_flag,mthsurf0,msol_ahb,netcdf_out,out_fund
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -86,15 +75,6 @@ c-----------------------------------------------------------------------
       READ(UNIT=in_unit,NML=dcon_control)
       READ(UNIT=in_unit,NML=dcon_output)
       CALL ascii_close(in_unit)
-
-      IF (out_ahg2msc) THEN
-         WRITE(*,*) "WARNING: ahg2msc.out is deprecated and will be " //
-     $          "removed in a future version. Set out_ahg2msc = .FALSE."
-         WRITE(*,*) "         to disable this warning."
-         vac_memory=.FALSE.
-      ELSE
-         vac_memory=.TRUE.
-      ENDIF
 
 c-----------------------------------------------------------------------
 c     set variables
@@ -334,56 +314,6 @@ c-----------------------------------------------------------------------
      $     REAL(bwall,4),REAL(betaj,4)
       CALL bin_close(sum_unit)
 c-----------------------------------------------------------------------
-c     log inputs/outputs with harvest
-c-----------------------------------------------------------------------
-      ierr=init_harvest('CODEDB_DCON'//nul,hlog,LEN(hlog))
-      ierr=set_harvest_verbose(0)
-      ! standard CODEDB records
-      ierr=set_harvest_payload_str(hlog,'CODE'//nul,'DCON'//nul)
-      ierr=set_harvest_payload_str(hlog,'VERSION'//nul,version//nul)
-      if(shotnum>0)
-     $   ierr=set_harvest_payload_int(hlog,'SHOT'//nul,INT(shotnum))
-      if(shottime>0)
-     $   ierr=set_harvest_payload_int(hlog,'TIME'//nul,INT(shottime))
-      ! DCON specifc records
-      ierr=set_harvest_payload_int(hlog,'mpsi'//nul,mpsi)
-      ierr=set_harvest_payload_int(hlog,'mtheta'//nul,mtheta)
-      ierr=set_harvest_payload_int(hlog,'mlow'//nul,mlow)
-      ierr=set_harvest_payload_int(hlog,'mhigh'//nul,mhigh)
-      ierr=set_harvest_payload_int(hlog,'mpert'//nul,mpert)
-      ierr=set_harvest_payload_int(hlog,'mband'//nul,mband)
-      ierr=set_harvest_payload_dbl(hlog,'psilow'//nul,psilow)
-      ierr=set_harvest_payload_dbl(hlog,'psilim'//nul,psilim)
-      ierr=set_harvest_payload_dbl(hlog,'amean'//nul,amean)
-      ierr=set_harvest_payload_dbl(hlog,'rmean'//nul,rmean)
-      ierr=set_harvest_payload_dbl(hlog,'aratio'//nul,aratio)
-      ierr=set_harvest_payload_dbl(hlog,'kappa'//nul,kappa)
-      ierr=set_harvest_payload_dbl(hlog,'delta1'//nul,delta1)
-      ierr=set_harvest_payload_dbl(hlog,'delta2'//nul,delta2)
-      ierr=set_harvest_payload_dbl(hlog,'li1'//nul,li1)
-      ierr=set_harvest_payload_dbl(hlog,'li2'//nul,li2)
-      ierr=set_harvest_payload_dbl(hlog,'li3'//nul,li3)
-      ierr=set_harvest_payload_dbl(hlog,'ro'//nul,ro)
-      ierr=set_harvest_payload_dbl(hlog,'zo'//nul,zo)
-      ierr=set_harvest_payload_dbl(hlog,'psio'//nul,psio)
-      ierr=set_harvest_payload_dbl(hlog,'betap1'//nul,betap1)
-      ierr=set_harvest_payload_dbl(hlog,'betap2'//nul,betap2)
-      ierr=set_harvest_payload_dbl(hlog,'betap3'//nul,betap3)
-      ierr=set_harvest_payload_dbl(hlog,'betat'//nul,betat)
-      ierr=set_harvest_payload_dbl(hlog,'betan'//nul,betan)
-      ierr=set_harvest_payload_dbl(hlog,'bt0'//nul,bt0)
-      ierr=set_harvest_payload_dbl(hlog,'q0'//nul,q0)
-      ierr=set_harvest_payload_dbl(hlog,'qmin'//nul,qmin)
-      ierr=set_harvest_payload_dbl(hlog,'qmax'//nul,qmax)
-      ierr=set_harvest_payload_dbl(hlog,'qa'//nul,qa)
-      ierr=set_harvest_payload_dbl(hlog,'crnt'//nul,crnt)
-      ierr=set_harvest_payload_dbl(hlog,'q95'//nul,q95)
-      ierr=set_harvest_payload_dbl(hlog,'betan'//nul,betan)
-      ierr=set_harvest_payload_dbl(hlog,'plasma1'//nul,REAL(plasma1))
-      ierr=set_harvest_payload_dbl(hlog,'vacuum1'//nul,REAL(vacuum1))
-      ierr=set_harvest_payload_dbl(hlog,'total1'//nul,REAL(total1))
-      ierr=harvest_send(hlog)
-c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       CALL program_stop("Normal termination.")
@@ -428,6 +358,7 @@ c-----------------------------------------------------------------------
          ENDDO
          DEALLOCATE(sing)
       ENDIF
+
       IF(ode_flag)DEALLOCATE(u,du,u_save)
 c-----------------------------------------------------------------------
 c     terminate.
