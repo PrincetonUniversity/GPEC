@@ -440,6 +440,10 @@ else
     $(error "Unsupported C compiler. Must set environment variable CC to a C compiler (e.g. gcc, icc, pgcc)")
 endif
 
+# Pass the selected toolchain to dependency configure scripts and sub-makes.
+export FC CC
+export F77 = $(FC)
+
 # List of needed dependencies, will be appended if math or netcdf
 # libraries are not found
 NEEDED_DEPS = 
@@ -559,6 +563,14 @@ else
         NETCDF_EXTRA_LIBS =
     endif
 endif
+
+# Embed the configured netcdf library directories for runtime lookup.
+# These paths must remain available when running the executables.
+NETCDF_RPATH = -Wl,-rpath,$(NETCDFDIR)
+ifneq ($(NETCDF_C_DIR),$(NETCDFDIR))
+    NETCDF_RPATH += -Wl,-rpath,$(NETCDF_C_DIR)
+endif
+NETCDF_EXTRA_LIBS += $(NETCDF_RPATH)
 
 # Intel specifics
 #----------------
