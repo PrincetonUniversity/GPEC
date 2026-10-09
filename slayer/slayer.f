@@ -339,6 +339,12 @@ c-----------------------------------------------------------------------
       READ(in_unit,NML=slayer_diagnose)
       CLOSE(UNIT=in_unit)
 
+      ! Real copies of the mode numbers, read by params() in every
+      ! namelist-driven branch below. build_inputs resets them from
+      ! the STRIDE run when read_eq is set.
+      mr = mm
+      nr = nn
+
       ! Build toroidal-mode-number string for output filenames.
       IF (nn<10) THEN
          WRITE(UNIT=sn_str,FMT='(I1)') nn

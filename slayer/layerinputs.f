@@ -357,7 +357,9 @@ c --- local per-surface kinetic arrays (for future NetCDF diagnostic output)
       REAL(r8), DIMENSION(:), ALLOCATABLE :: ne_arr, te_arr,
      $    ni_arr, ti_arr, zeff_arr, bt_arr, rs_arr, R0_arr,
      $    mu_i_arr, omegas_e_arr, omegas_i_arr
-      INTEGER, DIMENSION(:), ALLOCATABLE :: nn, resm, nns_arr
+c     nn_arr is STRIDE's toroidal mode number. It must not be named nn:
+c     that would hide the module-level nn that params() reads.
+      INTEGER, DIMENSION(:), ALLOCATABLE :: nn_arr, resm, nns_arr
 c --- surface-integral workspace
       INTEGER  :: msing, i, mthsurf         ! surface count, loop idx, theta pts
       REAL(r8), DIMENSION(0:512) :: unitfun ! unit function for area integral
@@ -380,7 +382,22 @@ c-----------------------------------------------------------------------
       CALL read_stride_netcdf_diagonal(ncfile,msing,dp_mat,
      $           Re_dp_diagonal,Im_dp_diagonal,q_rational,
      $           psi_n_rational,dgeo,shear,r_o,my_bt0,my_psio,dr_vals,
-     $           di_vals,mpsi_arr,nn,resm)
+     $           di_vals,mpsi_arr,nn_arr,resm)
+
+c     The toroidal mode number of the STRIDE run defines the layer
+c     problem: it sets the module-level nn used by params() (Alfven
+c     time) and by the output file names, whatever slayer.in holds.
+      IF (nn /= nn_arr(1) .AND. nn /= 0) THEN
+         WRITE(*,'(1x,a,i0,a,i0)') 'WARNING: slayer.in nn = ',nn,
+     $        ' replaced by the STRIDE toroidal mode number ',nn_arr(1)
+      END IF
+      nn = nn_arr(1)
+      IF (nn < 10) THEN
+         WRITE(UNIT=sn_str,FMT='(I1)') nn
+         sn_str = ADJUSTL(sn_str)
+      ELSE
+         WRITE(UNIT=sn_str,FMT='(I2)') nn
+      ENDIF
 
       mpsi = INT(mpsi_arr(1))
       mthsurf = 512             ! poloidal segments for surface integral
@@ -473,11 +490,16 @@ c-----------------------------------------------------------------------
          CALL spline_eval(kin,respsi,1)
 
 c        diamagnetic frequencies (rad/s) from GPEC kinetic splines.
-c        These compute the ELECTRON diamagnetic frequency directly.
+c        omega_* = k_theta*v_* = (m/r)*(dp/dr)/(e*n*B). In flux
+c        coordinates dpsi/dr = r*B_phi/q absorbs the q of m = n*q and
+c        leaves omega_* = n*(dp/dpsi)/(e*n_e): the toroidal mode
+c        number multiplies the n = 1 expression.
          omega_e =  twopi*kin%f(4)*kin%f1(2)/(e*chi1*kin%f(2))
      $             +twopi*kin%f1(4)/(e*chi1)
          omega_i = -twopi*kin%f(3)*kin%f1(1)/(e*zi*chi1*kin%f(1))
      $             -twopi*kin%f1(3)/(e*zi*chi1)
+         omega_e = REAL(nn,r8)*omega_e
+         omega_i = REAL(nn,r8)*omega_i
          sl_in%omegas_e_arr(ising) = omega_e
          sl_in%omegas_i_arr(ising) = omega_i
 
@@ -542,9 +564,10 @@ c        store local kinetic arrays (for future NetCDF diagnostic output)
          mu_i_arr(ising) = mu_i
 
          mms = resm(ising)
-         nns = nn(1)
-         nns_arr(ising) = nn(1)
-         nr = nn(1)                   ! module-level toroidal mode number
+         nns = nn
+         nns_arr(ising) = nn
+         nr = REAL(nn,r8)             ! module-level mode numbers (real)
+         mr = REAL(mms,r8)
 
          l_n = 0.0
          l_t = 0.0
