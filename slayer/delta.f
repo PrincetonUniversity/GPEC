@@ -69,7 +69,6 @@ c --- lsode solver control
       REAL(r8) :: x,xout         ! current and target x
       REAL(r8) :: xmin           ! inner integration bound
       REAL(r8) :: rtol           ! relative tolerance
-      REAL(r8) :: jac            ! dummy Jacobian (unused for mf=10)
 c --- work arrays
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: y,dy      ! W and dW
       INTEGER, DIMENSION(:), ALLOCATABLE :: iwork          ! lsode int work
@@ -135,7 +134,7 @@ c        profile output: step-by-step integration with file writes
          DO WHILE (x>xout)
             istep=istep+1
             CALL lsode(w_der,neq,y,x,xout,itol,rtol,atol,
-     $           itask,istate,iopt,rwork,lrw,iwork,liw,jac,mf)
+     $           itask,istate,iopt,rwork,lrw,iwork,liw,jac_dummy,mf)
             WRITE(bin_unit)REAL(x,4),REAL(REAL(y),4),REAL(AIMAG(y),4)
             WRITE(out2_unit,'(1x,3(es17.8e3))') x,REAL(y),AIMAG(y)
          ENDDO
@@ -146,7 +145,7 @@ c        single-shot integration to x_min
          istep = 1
          itask = 1
          CALL lsode(w_der,neq,y,x,xout,itol,rtol,atol,
-     $        itask,istate,iopt,rwork,lrw,iwork,liw,jac,mf)
+     $        itask,istate,iopt,rwork,lrw,iwork,liw,jac_dummy,mf)
       ENDIF
 
 c --- extract Delta from final W derivative at x_min
@@ -192,7 +191,6 @@ c --- lsode solver control
       REAL(r8) :: xout           ! target integration endpoint
       REAL(r8) :: xmin           ! inner integration bound
       REAL(r8) :: rtol           ! relative tolerance
-      REAL(r8) :: jac            ! dummy (overridden by jac_del_s)
       REAL(r8) :: my_q           ! integration variable (large -> small)
       REAL(r8) :: P_hat          ! normalized P_perp
       REAL(r8) :: alpha          ! boundary condition coefficient
@@ -274,6 +272,18 @@ c --- extract Delta from final W derivative at q_min
 
       END FUNCTION riccati_del_s
 c-----------------------------------------------------------------------
+c     jac_dummy: placeholder Jacobian for lsode calls whose method flag
+c     does not use a user-supplied Jacobian (mf=10, mf=22). lsode never
+c     calls it; it exists so that every lsode call in this module passes
+c     a subroutine in the JAC position.
+c-----------------------------------------------------------------------
+      SUBROUTINE jac_dummy(neq, x, y, ml, mu, pd, nrpd)
+            INTEGER, INTENT(IN) :: neq, ml, mu, nrpd
+            REAL(r8), INTENT(IN) :: x
+            COMPLEX(r8), DIMENSION(neq), INTENT(IN) :: y
+            COMPLEX(r8), DIMENSION(nrpd,neq), INTENT(INOUT) :: pd
+      END SUBROUTINE jac_dummy
+c-----------------------------------------------------------------------
 c     jacobian for riccati_del_s(): pd = dF/dW for stiff lsode.
 c-----------------------------------------------------------------------
       SUBROUTINE jac_del_s(neq, my_q, W, ml, mu, pd, nrpd)
@@ -335,7 +345,6 @@ c --- lsode solver control
       REAL(r8) :: xout           ! target integration endpoint
       REAL(r8) :: xmin           ! inner integration bound
       REAL(r8) :: rtol           ! relative tolerance
-      REAL(r8) :: jac            ! dummy (overridden by jac_f)
       REAL(r8) :: my_p           ! integration variable p (large -> small)
       REAL(r8) :: bk             ! asymptotic coefficient b_k
 c --- boundary-condition intermediates
@@ -1002,7 +1011,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: istep,neq,itol,itask,istate,liw,lrw,iopt,mf
 
-      REAL(r8) :: xintv,x,xout,rtol,jac,xmax
+      REAL(r8) :: xintv,x,xout,rtol,xmax
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: y,dy
 
       INTEGER, DIMENSION(:), ALLOCATABLE :: iwork
@@ -1042,7 +1051,7 @@ c-----------------------------------------------------------------------
       DO
          istep=istep+1
          CALL lsode(phi_der,neq,y,x,xout,itol,rtol,atol,
-     $        itask,istate,iopt,rwork,lrw,iwork,liw,jac,mf)
+     $        itask,istate,iopt,rwork,lrw,iwork,liw,jac_dummy,mf)
          xout=xout+xintv
          IF (xmax-xout<xintv) EXIT
       ENDDO
