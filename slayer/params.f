@@ -9,6 +9,8 @@ c     Subprograms contained:
 c       1. params -- derive all normalised quantities (Q, ds, c_beta,
 c              D_norm, P_perp, P_tor, lu, delta_crit, ...) for a
 c              single rational surface and store them in sglobal_mod.
+c       2. slayer_d_norm -- D_norm from D_fac and the diamagnetic
+c              frequencies.
 c=======================================================================
       MODULE params_mod
 
@@ -184,10 +186,20 @@ c     effective perpendicular and toroidal Prandtl numbers
 c-----------------------------------------------------------------------
 c     Normalised beta-related width and Delta norm factor.
 c-----------------------------------------------------------------------
-c     d_beta uses Fitzpatrick's definition (tau' form)
+c     d_beta uses Fitzpatrick's definition (tau' form).
+c     D = S^(1/3) * iota_e^(1/2) * d_beta/r_s with
+c     iota_e = Q_e/(Q_e - Q_i), the electron share of the diamagnetic
+c     frequency (see slayer_d_norm). When this call does not set Q_e
+c     and Q_i, the equal-gradient-ratio value iota_e = T_e/(T_e + T_i)
+c     = 1/(1 + tau) is used provisionally; callers that set Q_e and Q_i
+c     afterwards must reset D_norm = slayer_d_norm(D_fac,Q_e,Q_i).
       d_beta = c_beta * d_i
-      D_norm = (d_beta/rs) * lu**(1.0/3.0)
-     $         * (tau/(1+tau))**(0.5)
+      D_fac  = (d_beta/rs) * lu**(1.0/3.0)
+      IF (l_n > 0.0_r8 .AND. l_t > 0.0_r8) THEN
+         D_norm = slayer_d_norm(D_fac,Q_e,Q_i)
+      ELSE
+         D_norm = D_fac * SQRT(1.0_r8/(1.0_r8+tau))
+      END IF
 
       delta_n = lu**(1.0/3.0) / rs  ! normalisation for Delta values
 
@@ -262,5 +274,39 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE params
+c-----------------------------------------------------------------------
+c     subprogram 2. slayer_d_norm.
+c     Normalised ion-sound-radius parameter of the Fitzpatrick layer
+c     equations, D = S^(1/3) * iota_e^(1/2) * d_beta/r_s, from
+c     D_fac = S^(1/3)*d_beta/r_s and iota_e = Q_e/(Q_e - Q_i).
+c     iota_e must be positive, which holds when the electron and ion
+c     diamagnetic frequencies have opposite signs.
+c-----------------------------------------------------------------------
+      FUNCTION slayer_d_norm(D_fac_in,Q_e_in,Q_i_in)
+
+      REAL(r8), INTENT(IN) :: D_fac_in  ! S^(1/3)*d_beta/r_s
+      REAL(r8), INTENT(IN) :: Q_e_in    ! normalised electron diamag.
+      REAL(r8), INTENT(IN) :: Q_i_in    ! normalised ion diamag.
+      REAL(r8) :: slayer_d_norm
+      REAL(r8) :: iota                  ! Q_e/(Q_e - Q_i)
+
+      IF (Q_e_in == Q_i_in) THEN
+         WRITE(*,*) 'ERROR: Q_e = Q_i =',Q_e_in,
+     $        ', so iota_e = Q_e/(Q_e - Q_i) is undefined.'
+         STOP 'slayer_d_norm: Q_e equals Q_i'
+      END IF
+      iota = Q_e_in / (Q_e_in - Q_i_in)
+      IF (.NOT. (iota > 0.0_r8)) THEN
+         WRITE(*,*) 'ERROR: iota_e = Q_e/(Q_e - Q_i) =',iota,
+     $        ' is not positive (Q_e =',Q_e_in,', Q_i =',Q_i_in,').'
+         WRITE(*,*) '  D_norm = S^(1/3)*sqrt(iota_e)*d_beta/r_s is'
+         WRITE(*,*) '  undefined. The electron and ion diamagnetic'
+         WRITE(*,*) '  frequencies are expected to have opposite signs.'
+         STOP 'slayer_d_norm: iota_e is not positive'
+      END IF
+      slayer_d_norm = D_fac_in * SQRT(iota)
+
+      RETURN
+      END FUNCTION slayer_d_norm
 
       END MODULE params_mod

@@ -518,6 +518,13 @@ c           precedence (surface k gets inQ_e_ovr(k) if nonzero).
                   sl_in%Q_i_arr(k) = inQ_i_ovr(k)
                END IF
             END DO
+c           D_norm carries sqrt(iota_e): keep it consistent with the
+c           overridden Q_e, Q_i.
+            DO k = 1, n_k
+               sl_in%D_norm_arr(k) = slayer_d_norm(
+     $            sl_in%D_fac_arr(k),sl_in%Q_e_arr(k),
+     $            sl_in%Q_i_arr(k))
+            END DO
 
          ELSE
             ! Single-surface mode: build inputs from namelist.
@@ -550,6 +557,8 @@ c           precedence (surface k gets inQ_e_ovr(k) if nonzero).
             END IF
             IF (inds > 0.0) THEN
                D_norm = inds ! NAMELIST
+            ELSE
+               D_norm = slayer_d_norm(D_fac,Q_e,Q_i)
             END IF
 
             CALL allocate_inputs(n_k,sl_in)  ! growthrates_mod
@@ -570,6 +579,7 @@ c           precedence (surface k gets inQ_e_ovr(k) if nonzero).
             sl_in%P_tor_arr = (/ P_tor /)
             sl_in%tau_arr = (/ tau /)
             sl_in%D_norm_arr = (/ D_norm /)
+            sl_in%D_fac_arr = (/ D_fac /)
             sl_in%d_beta_arr = (/ d_beta /)
             sl_in%gammafac_arr = (/ gamma_fac /)
             sl_in%c_beta_arr = (/ c_beta /)
@@ -642,6 +652,13 @@ c           Apply Q_e/Q_i overrides (same logic as est_gamma path)
                   sl_in%Q_i_arr(k) = inQ_i_ovr(k)
                END IF
             END DO
+c           D_norm carries sqrt(iota_e): keep it consistent with the
+c           overridden Q_e, Q_i.
+            DO k = 1, n_k
+               sl_in%D_norm_arr(k) = slayer_d_norm(
+     $            sl_in%D_fac_arr(k),sl_in%Q_e_arr(k),
+     $            sl_in%Q_i_arr(k))
+            END DO
          ELSE
             n_k = 1
 
@@ -677,6 +694,8 @@ c           Apply Q_e/Q_i overrides (same logic as est_gamma path)
             END IF
             IF (inds > 0.0) THEN
                D_norm = inds ! NAMELIST
+            ELSE
+               D_norm = slayer_d_norm(D_fac,Q_e,Q_i)
             END IF
 
             IF (.NOT. est_gamma_flag) THEN
@@ -699,6 +718,7 @@ c           Apply Q_e/Q_i overrides (same logic as est_gamma path)
             sl_in%P_tor_arr = (/ P_tor /)
             sl_in%tau_arr = (/ tau /)
             sl_in%D_norm_arr = (/ D_norm /)
+            sl_in%D_fac_arr = (/ D_fac /)
             sl_in%d_beta_arr = (/ d_beta /)
             sl_in%gammafac_arr = (/ gamma_fac /)
             sl_in%c_beta_arr = (/ c_beta /)
@@ -1048,6 +1068,7 @@ c-----------------------------------------------------------------------
             sl_in%P_tor_arr   = (/ P_tor /)
             sl_in%tau_arr     = (/ tau /)
             sl_in%D_norm_arr  = (/ D_norm /)
+            sl_in%D_fac_arr = (/ D_fac /)
             sl_in%d_beta_arr  = (/ d_beta /)
             sl_in%gammafac_arr = (/ gamma_fac /)
             sl_in%c_beta_arr  = (/ c_beta /)

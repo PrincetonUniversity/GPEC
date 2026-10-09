@@ -73,6 +73,7 @@ c --- normalised layer parameters
       REAL(r8) :: ds               ! normalised ion Larmor radius
       REAL(r8) :: c_beta           ! compressional beta parameter
       REAL(r8) :: D_norm           ! normalised beta-weighted ion scale
+      REAL(r8) :: D_fac            ! D_norm / sqrt(iota_e)
       REAL(r8) :: delta_n          ! Delta normalisation factor
       REAL(r8) :: Qconv            ! frequency normalisation (Cole)
 c --- diamagnetic and rotation frequencies
@@ -161,6 +162,7 @@ c     slayer_inputs_type -- per-surface input arrays for SLAYER
           REAL(r8), ALLOCATABLE :: c_beta_arr(:)      ! compressional beta
           REAL(r8), ALLOCATABLE :: d_beta_arr(:)      ! beta-related width
           REAL(r8), ALLOCATABLE :: D_norm_arr(:)      ! normalised D
+          REAL(r8), ALLOCATABLE :: D_fac_arr(:)       ! D / sqrt(iota_e)
           REAL(r8), ALLOCATABLE :: tau_arr(:)         ! T_i / T_e
           REAL(r8), ALLOCATABLE :: P_perp_arr(:)      ! perp Prandtl number
           REAL(r8), ALLOCATABLE :: P_tor_arr(:)       ! toroidal Prandtl

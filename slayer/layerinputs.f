@@ -394,7 +394,7 @@ c --- allocate slayer_inputs_type arrays (one entry per surface)
      $  sl_in%Re_dp_arr(msing),        sl_in%Im_dp_arr(msing),
      $  sl_in%d_crit_arr(msing),       sl_in%P_tor_arr(msing),
      $  sl_in%P_perp_arr(msing),       sl_in%tau_arr(msing),
-     $  sl_in%D_norm_arr(msing),
+     $  sl_in%D_norm_arr(msing),       sl_in%D_fac_arr(msing),
      $  sl_in%d_beta_arr(msing),       sl_in%gammafac_arr(msing),
      $  sl_in%c_beta_arr(msing),       sl_in%lu_arr(msing),
      $  sl_in%Qconv_arr(msing),
@@ -617,7 +617,10 @@ c        Q_e - Q_i -> 0 for ni=ne, Ti=Te (iota_e blows up).
          sl_in%Q_i_arr(ising)     = -tauk * omega_i
          sl_in%c_beta_arr(ising)  = c_beta
          sl_in%d_beta_arr(ising)  = d_beta
-         sl_in%D_norm_arr(ising)  = D_norm
+c        D_norm uses iota_e from the Q_e, Q_i just set above
+         sl_in%D_fac_arr(ising)   = D_fac
+         sl_in%D_norm_arr(ising)  = slayer_d_norm(D_fac,
+     $        sl_in%Q_e_arr(ising),sl_in%Q_i_arr(ising))
          sl_in%tau_arr(ising)     = tau
          sl_in%omegas_arr(ising)  = omega
          sl_in%psi_n_arr(ising)   = respsi
