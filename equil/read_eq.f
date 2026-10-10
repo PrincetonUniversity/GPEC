@@ -807,15 +807,20 @@ c     unformatted records, real*8, axis first, theta index fastest:
 c       mx,my (integer*4: number of surfaces, number of angles)
 c       psi(mx) [Wb/rad], f(mx) = R*B_t [T m], p(mx) [Pa], q(mx)
 c       r(my,mx), z(my,mx) [m], periodic point duplicated
-c       optional: f*df/dpsi(mx), dp/dpsi(mx) (not read here)
+c       optional, each only if present, in this order:
+c       f*df/dpsi(mx), dp/dpsi(mx) (skipped here);
+c       psi_axis, psi_lcfs (2 reals): unpadded plasma bounds, which
+c       normalize psi; the last surface may lie inside the lcfs and
+c       caps psihigh. Optional records are told apart by length (mx, 2).
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE read_eq_ldp_i
 
-      INTEGER :: mx,my
-      REAL(r8), DIMENSION(:), POINTER :: psi,f,p,q
+      INTEGER :: mx,my,irec,ios1,ios2,ios3
+      REAL(r8), DIMENSION(2) :: psib
+      REAL(r8), DIMENSION(:), POINTER :: psi,f,p,q,buf
       REAL(r8), DIMENSION(:,:), POINTER :: r,z
 c-----------------------------------------------------------------------
 c     open data file, read scalar data.
@@ -829,9 +834,12 @@ c-----------------------------------------------------------------------
       my=my-1
       mx=mx-1
       ALLOCATE(psi(0:mx),f(0:mx),p(0:mx),q(0:mx),
-     $     r(0:my,0:mx),z(0:my,0:mx))
+     $     r(0:my,0:mx),z(0:my,0:mx),buf(0:mx))
 c-----------------------------------------------------------------------
-c     read binary data.
+c     read binary data. The psi bounds record follows z, ffp or pp. A
+c     length-mx read of it fails (short record); the file position is
+c     then processor dependent, so rewind and skip the 7 fixed records
+c     and any ffp, pp records before reading it.
 c-----------------------------------------------------------------------
       READ(in_unit)psi
       READ(in_unit)f
@@ -839,13 +847,39 @@ c-----------------------------------------------------------------------
       READ(in_unit)q
       READ(in_unit)r
       READ(in_unit)z
+      READ(in_unit,IOSTAT=ios1)buf
+      ios2=ios1
+      IF(ios1 == 0)READ(in_unit,IOSTAT=ios2)buf
+      ios3=ios2
+      IF(ios2 == 0)READ(in_unit,IOSTAT=ios3)psib
+      IF(ios2 > 0)THEN
+         REWIND(in_unit)
+         DO irec=1,7+COUNT((/ios1,ios2/) == 0)
+            READ(in_unit)
+         ENDDO
+         READ(in_unit,IOSTAT=ios3)psib
+      ENDIF
       CALL bin_close(in_unit)
 c-----------------------------------------------------------------------
 c     copy and revise 1D arrays.
 c-----------------------------------------------------------------------
-      psio=psi(mx)-psi(0)
       CALL spline_alloc(sq_in,mx,4)
-      sq_in%xs=(psi-psi(0))/psio
+      IF(ios3 == 0)THEN
+         psio=psib(2)-psib(1)
+         sq_in%xs=(psi-psib(1))/psio
+         IF(.NOT.(sq_in%xs(mx) > 0 .AND. sq_in%xs(mx) <= 1))
+     $        CALL program_stop("ldp_i psi bounds disagree with psi")
+         IF(verbose)WRITE(*,'(1x,a,1p,2es14.6)')
+     $        "ldp_i psi bounds: psi_axis, psi_lcfs =",psib
+         IF(psihigh > sq_in%xs(mx))THEN
+            WRITE(*,'(1x,2(a,es12.5))')"Note: psihigh =",psihigh,
+     $           " clamped to the last i-file surface",sq_in%xs(mx)
+            psihigh=sq_in%xs(mx)
+         ENDIF
+      ELSE
+         psio=psi(mx)-psi(0)
+         sq_in%xs=(psi-psi(0))/psio
+      ENDIF
       sq_in%fs(:,1)=ABS(f)
       sq_in%fs(:,2)=p*mu0
       sq_in%fs(:,3)=q
@@ -861,7 +895,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     process inverse equilibrium and deallocate local arrays.
 c-----------------------------------------------------------------------
-      DEALLOCATE(psi,f,p,q,r,z)
+      DEALLOCATE(psi,f,p,q,r,z,buf)
       CALL inverse_run
 c-----------------------------------------------------------------------
 c     terminate.
