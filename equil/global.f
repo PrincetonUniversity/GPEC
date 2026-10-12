@@ -16,7 +16,7 @@ c-----------------------------------------------------------------------
 
       CHARACTER(16) :: eq_type="fluxgrid"
       CHARACTER(128) :: eq_filename="fluxgrid.dat"
-      CHARACTER(16) :: profile_source="integrate"
+      CHARACTER(16) :: profile_source="values"
       LOGICAL, DIMENSION(4) :: sq_in_slopes=.FALSE.
 
       LOGICAL :: direct_flag=.FALSE.

@@ -2413,14 +2413,16 @@ c-----------------------------------------------------------------------
       END SUBROUTINE read_eq_marklin_inverse
 c-----------------------------------------------------------------------
 c     subprogram 32. read_eq_profiles_from_derivatives.
-c     profile_source = "integrate": builds the f and mu0 p columns of
-c     sq_in from ffp = f*df/dpsifac and pp = d(mu0 p)/dpsifac. Values
-c     are integrated inward from the boundary values of f**2/2 and
-c     mu0 p; knot derivatives ffp/f and pp are kept by
-c     spline_fit_hermite. Tabulated values are not paired with the
-c     tabulated derivatives: their rounding noise would set f''.
-c     "values": tabulated values only. Falls back to "values" if the
-c     derivatives are unusable.
+c     profile_source = "values" (default): tabulated values only.
+c     "integrate" (opt-in, for single-precision g-files): builds the f
+c     and mu0 p columns of sq_in from ffp = f*df/dpsifac and
+c     pp = d(mu0 p)/dpsifac. Values are integrated inward from the
+c     boundary values of f**2/2 and mu0 p; knot derivatives ffp/f and
+c     pp are kept by spline_fit_hermite. Tabulated values are not
+c     paired with the tabulated derivatives: their rounding noise
+c     would set f''. The quadrature between knots can move outer
+c     surfaces near sharp profile features. Falls back to "values" if
+c     the derivatives are unusable.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
