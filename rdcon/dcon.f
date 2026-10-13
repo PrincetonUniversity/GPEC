@@ -222,6 +222,7 @@ c-----------------------------------------------------------------------
 
       LOGICAL :: cyl_flag=.FALSE.,regrid_flag=.FALSE.,verbose=.TRUE.
       INTEGER :: mmin,ipsi
+      REAL(r8) :: zeff0
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: mx0
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: vx0
 
@@ -346,6 +347,22 @@ c-----------------------------------------------------------------------
       IF(MRE_flag)THEN
          CALL read_var_len(Zeff,Zeff_)
          CALL read_var_len(psi_N_Zeff,psi_N_Zeff_)
+c        one Zeff value (default 1.52) without psi_N_Zeff: flat profile.
+         IF(.NOT.ALLOCATED(psi_N_Zeff_))THEN
+            zeff0=1.52_r8
+            IF(ALLOCATED(Zeff_))THEN
+               IF(SIZE(Zeff_) > 1)
+     $              CALL program_stop("A Zeff profile needs psi_N_Zeff")
+               zeff0=Zeff_(1)
+               DEALLOCATE(Zeff_)
+            ENDIF
+            ALLOCATE(Zeff_(4),psi_N_Zeff_(4))
+            Zeff_=zeff0
+            psi_N_Zeff_=(/0.0_r8,1.0_r8/3,2.0_r8/3,1.0_r8/)
+         ENDIF
+         IF(.NOT.ALLOCATED(Zeff_) .OR. SIZE(Zeff_) /= SIZE(psi_N_Zeff_)
+     $     .OR. SIZE(Zeff_) < 4)
+     $     CALL program_stop("Zeff, psi_N_Zeff: equal sizes, >= 4")
          CALL spline_alloc(mreterms,mpsi,30)
          mreterms%xs=sq%xs
          mreterms%fs=0
