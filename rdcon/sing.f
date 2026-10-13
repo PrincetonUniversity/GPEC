@@ -299,7 +299,7 @@ c-----------------------------------------------------------------------
       WRITE(*,'(3x,a4,es10.3E2,a9,I4)') "di =",di,
      $     ", ising =",ising
       singp%di=di
-      singp%alpha=SQRT(-CMPLX(singp%di))
+      singp%alpha=SQRT(-CMPLX(singp%di,KIND=r8))
 c-----------------------------------------------------------------------
 c     eigenvalues of m0mat: tr/2 -+ sqrtd, sqrtd = SQRT(tr**2/4-det).
 c-----------------------------------------------------------------------

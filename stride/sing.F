@@ -396,7 +396,7 @@ c-----------------------------------------------------------------------
       di=m0mat(1,1)*m0mat(2,2)-m0mat(2,1)*m0mat(1,2)
       WRITE(*, '(1x,i5,1x,es11.3)') ising, di
       singp%di=di
-      singp%alpha=SQRT(-CMPLX(singp%di))
+      singp%alpha=SQRT(-CMPLX(singp%di,KIND=r8))
 c-----------------------------------------------------------------------
 c     eigenvalues of m0mat: tr/2 -+ sqrtd, sqrtd = SQRT(tr**2/4-det).
 c-----------------------------------------------------------------------
