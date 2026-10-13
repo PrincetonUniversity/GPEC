@@ -1371,7 +1371,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE gal_solve
 
-      INTEGER :: info,isol,jsol,imap,ising,ix,msol_old
+      INTEGER :: info,isol,jsol,imap,ising,ix,msol_old,i,j,irow
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: dscale
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: delta
       TYPE(gal_type) :: gal
 c-----------------------------------------------------------------------
@@ -1387,12 +1388,38 @@ c     solve global matrix.
 c-----------------------------------------------------------------------
       gal%sol=gal%rhs
       IF (solver == "LU") THEN
+c-----------------------------------------------------------------------
+c     symmetric diagonal scaling, D^-1/2 A D^-1/2. the unscaled Galerkin
+c     matrix has a condition number near 1e20, so the pivot order of the
+c     LU factorization, and with it the result, depends on roundoff
+c     (e.g. on the BLAS threading). cholesky does not need this.
+c-----------------------------------------------------------------------
+         ALLOCATE(dscale(gal%ndim))
+         DO j=1,gal%ndim
+            dscale(j)=ABS(gal%mat(gal%kl+gal%ku+1,j))
+            IF(dscale(j) > 0)THEN
+               dscale(j)=1/SQRT(dscale(j))
+            ELSE
+               dscale(j)=1
+            ENDIF
+         ENDDO
+         DO j=1,gal%ndim
+            DO i=MAX(1,j-gal%ku),MIN(gal%ndim,j+gal%kl)
+               irow=gal%kl+gal%ku+1+i-j
+               gal%mat(irow,j)=gal%mat(irow,j)*dscale(i)*dscale(j)
+            ENDDO
+            gal%sol(j,:)=gal%sol(j,:)*dscale(j)
+         ENDDO
          WRITE(*,*)"Performing Galerkin matrix LU factorization"
          CALL zgbtrf(gal%ndim,gal%ndim,gal%kl,gal%ku,gal%mat,gal%ldab,
      $        gal%ipiv,info)
          WRITE(*,*)"Calculating Galerkin matrix solution"
          CALL zgbtrs("N",gal%ndim,gal%kl,gal%ku,gal%nsol,gal%mat,
      $        gal%ldab,gal%ipiv,gal%sol,gal%ndim,info )
+         DO j=1,gal%ndim
+            gal%sol(j,:)=gal%sol(j,:)*dscale(j)
+         ENDDO
+         DEALLOCATE(dscale)
       ELSEIF (solver == "cholesky") THEN
          WRITE(*,*)"Performing Galerkin matrix Cholesky factorization"
          CALL zpbtrf('L',gal%ndim,gal%kl,gal%mat,gal%ldab,info)
