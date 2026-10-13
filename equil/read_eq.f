@@ -852,8 +852,11 @@ c-----------------------------------------------------------------------
       sq_in%fs(:,1)=f
       sq_in%fs(:,2)=p*mu0
       sq_in%fs(:,3)=q
-      IF(ios1 == 0 .AND. ios2 == 0)
-     $     CALL read_eq_profiles_from_derivatives(ffp*psio,pp*mu0*psio)
+      IF(ios1 == 0 .AND. ios2 == 0)THEN
+         CALL read_eq_profiles_from_derivatives(ffp*psio,pp*mu0*psio)
+      ELSEIF(TRIM(profile_source) /= "values")THEN
+         CALL read_eq_profiles_warn("no ffp, pp records in the file")
+      ENDIF
       if(psio.lt.0)psio=-psio
 c-----------------------------------------------------------------------
 c     copy and revise 2D arrays.
@@ -1496,8 +1499,7 @@ c     read supplied f, p derivatives and eqfun if present; fit sq.
 c-----------------------------------------------------------------------
       READ(dump_unit,IOSTAT=ios)slopes,sq%fs1(:,1:2)
       IF(ios == 0)sq_in_slopes(1:2)=slopes
-      CALL spline_fit_hermite(sq,"extrap",
-     $     (/sq_in_slopes(1:2),.FALSE.,.FALSE./))
+      CALL spline_fit_hermite(sq,"extrap",sq_in_slopes)
       IF(eqfun%allocated)CALL bicube_dealloc(eqfun)
       CALL bicube_alloc(eqfun,mpsi,mtheta,3)
       READ(dump_unit,IOSTAT=ios)eqfun%fs
@@ -1540,8 +1542,7 @@ c-----------------------------------------------------------------------
             sq%fs(ipsi,4)=sq%fs(ipsi,4)*ffac
             rzphi%fs(ipsi,:,3)=rzphi%fs(ipsi,:,3)*ffac
          ENDDO
-         CALL spline_fit_hermite(sq,"extrap",
-     $        (/sq_in_slopes(1:2),.FALSE.,.FALSE./))
+         CALL spline_fit_hermite(sq,"extrap",sq_in_slopes)
       ENDIF
       qa=sq%fs(mpsi,4)+sq%fs1(mpsi,4)*(one-sq%xs(mpsi))
 c-----------------------------------------------------------------------

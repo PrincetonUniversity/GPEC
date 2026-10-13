@@ -180,7 +180,7 @@ c-----------------------------------------------------------------------
       CALL spline_alloc(spl,mtheta,5)
       DO ipsi=0,mpsi
          psifac=rzphi%xs(ipsi)
-         CALL spline_eval(sq_in,psifac,0)
+         CALL spline_eval(sq_in,psifac,1)
          spl%xs=rzphi%ys
 c-----------------------------------------------------------------------
 c     interpolate to new surface.
@@ -230,7 +230,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute surface quantities.
 c-----------------------------------------------------------------------
-         CALL spline_eval(sq_in,psifac,1)
          sq%fs(ipsi,1)=sq_in%f(1)*twopi
          sq%fs(ipsi,2)=sq_in%f(2)
          sq%fs1(ipsi,1)=sq_in%f1(1)*twopi
