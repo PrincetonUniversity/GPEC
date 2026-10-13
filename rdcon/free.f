@@ -670,7 +670,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE free_get_wvac()
-      LOGICAL, PARAMETER :: complex_flag=.FALSE.
+      LOGICAL, PARAMETER :: complex_flag=.TRUE.
       INTEGER :: ipert
       REAL(r8) :: kernelsignin
       REAL(r8), DIMENSION(mpert) :: singfac
