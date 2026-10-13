@@ -1415,9 +1415,9 @@ c-----------------------------------------------------------------------
       gal%sol=gal%rhs
       WRITE(*,*)"Grid generated with ",gal%ndim," DOF"
 c-----------------------------------------------------------------------
-c     Cholesky; if the matrix is not positive definite, warn and
-c     reassemble the full band from the element matrices for LU.
-c     The boundary rows and columns are already set in cell%mat.
+c     Cholesky (zpbtrf reads the lower band and the real part of the
+c     diagonal). If it fails, reassemble the full band from the element
+c     matrices, which already hold the boundary conditions, and use LU.
 c-----------------------------------------------------------------------
       IF (solver == "cholesky") THEN
          WRITE(*,*)"Performing Galerkin matrix Cholesky factorization"
