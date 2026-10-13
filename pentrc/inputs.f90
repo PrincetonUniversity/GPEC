@@ -215,7 +215,7 @@ module inputs
         do i=1,5
             tmp%fs(0:,i) = table(1:,i+1)
         enddo
-        call spline_fit_pchip(tmp)  ! monotone: no ringing at the pedestal
+        call spline_fit_pchip(tmp)  ! monotone between table points
         if(write_log) print *,"Formed temporary spline"
 
         ! extrapolate to regular spline (helps smooth core??)

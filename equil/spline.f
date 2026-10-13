@@ -1852,10 +1852,10 @@ c-----------------------------------------------------------------------
       END SUBROUTINE spline_refine_root
 c-----------------------------------------------------------------------
 c     subprogram 24. spline_fit_pchip.
-c     fits monotone piecewise cubic Hermite interpolants (Fritsch and
-c     Carlson, SIAM J. Numer. Anal. 17, 238, 1980), with the end slopes
-c     of scipy's PchipInterpolator. For tabulated data without
-c     derivatives: no overshoot or ringing at steep gradients.
+c     monotone piecewise cubic Hermite fit (pchip) for tabulated data
+c     without derivatives: no overshoot between points. Slopes as in
+c     scipy's PchipInterpolator (Fritsch and Butland, SIAM J. Sci.
+c     Stat. Comput. 5, 300, 1984).
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
