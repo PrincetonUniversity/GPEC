@@ -2414,16 +2414,12 @@ c-----------------------------------------------------------------------
       END SUBROUTINE read_eq_marklin_inverse
 c-----------------------------------------------------------------------
 c     subprogram 32. read_eq_profiles_from_derivatives.
-c     profile_source = "values" (default): tabulated values only.
-c     "integrate" (opt-in, for single-precision g-files): builds the f
-c     and mu0 p columns of sq_in from ffp = f*df/dpsifac and
-c     pp = d(mu0 p)/dpsifac. Values are integrated inward from the
-c     boundary values of f**2/2 and mu0 p; knot derivatives ffp/f and
-c     pp are kept by spline_fit_hermite. Tabulated values are not
-c     paired with the tabulated derivatives: their rounding noise
-c     would set f''. The quadrature between knots can move outer
-c     surfaces near sharp profile features. Falls back to "values" if
-c     the derivatives are unusable.
+c     profile_source = "integrate": replaces the f and mu0 p columns
+c     of sq_in by integrals of ffp = f*df/dpsifac and
+c     pp = d(mu0 p)/dpsifac inward from the boundary values, and sets
+c     ffp/f and pp as knot derivatives for spline_fit_hermite. Leaves
+c     sq_in unchanged for "values", or, with a warning, if the
+c     derivatives are unusable.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
@@ -2451,7 +2447,8 @@ c-----------------------------------------------------------------------
       f=sq_in%fs(:,1)
       p=sq_in%fs(:,2)
 c-----------------------------------------------------------------------
-c     check derivatives are finite and agree in sign with the values.
+c     check derivatives are finite and that f and p agree on their sign
+c     relative to the values (that common sign is applied below).
 c-----------------------------------------------------------------------
       IF(.NOT.(ALL(ABS(ffp) <= HUGE(one)) .AND.
      $     ALL(ABS(pp) <= HUGE(one)) .AND. ALL(f /= 0)))THEN

@@ -847,7 +847,7 @@ c-----------------------------------------------------------------------
       WRITE(dump_unit)rzphi%name
       WRITE(dump_unit)rzphi%periodic
 c-----------------------------------------------------------------------
-c     write supplied f, p derivatives and eqfun (read only if present).
+c     write f, p knot derivatives and eqfun; optional for read_eq_dump.
 c-----------------------------------------------------------------------
       WRITE(dump_unit)sq_in_slopes(1:2),sq%fs1(:,1:2)
       IF(eqfun%allocated)WRITE(dump_unit)eqfun%fs
