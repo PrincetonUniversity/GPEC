@@ -493,7 +493,7 @@ c-----------------------------------------------------------------------
       singp%di=di
       singp%alpha=SQRT(-CMPLX(singp%di,KIND=r8))
 c-----------------------------------------------------------------------
-c     eigenvalues of m0mat: tr/2 -+ sqrtd, sqrtd = SQRT(tr**2/4-det).
+c     eigenvalues of m0mat: tr/2 -+ SQRT(tr**2/4-det(m0mat)).
 c-----------------------------------------------------------------------
       tr=m0mat(1,1)+m0mat(2,2)
       sqrtd=SQRT(tr*tr/4-m0mat(1,1)*m0mat(2,2)+m0mat(2,1)*m0mat(1,2))

@@ -54,7 +54,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE msing_read(vmat_filename)
       CHARACTER(*) :: vmat_filename
-      INTEGER :: ising,ios
+      INTEGER :: ising,ios,irec
 c-----------------------------------------------------------------------
 c     read power series data to binary file.
 c-----------------------------------------------------------------------
@@ -68,11 +68,15 @@ c-----------------------------------------------------------------------
          READ(debug_unit,IOSTAT=ios)singp%order,singp%alpha,
      $        singp%psifac,singp%q,singp%r1,singp%r2,singp%power
 c-----------------------------------------------------------------------
-c     files without the powers end this record after r2; for them the
-c     powers are -alpha, +alpha.
+c     files without the powers end this record after r2: reread it (the
+c     position after a failed read is processor dependent, so rewind
+c     and skip) and use -alpha, +alpha.
 c-----------------------------------------------------------------------
          IF(ios /= 0)THEN
-            BACKSPACE(debug_unit)
+            REWIND(debug_unit)
+            DO irec=1,2*ising-1
+               READ(debug_unit)
+            ENDDO
             READ(debug_unit)singp%order,singp%alpha,singp%psifac,
      $           singp%q,singp%r1,singp%r2
             singp%power=(/-singp%alpha,singp%alpha/)
@@ -133,6 +137,7 @@ c     restore powers.
 c-----------------------------------------------------------------------
       ua(r1,:,1)=ua(r1,:,1)/sqrtfac
       ua(r1,:,2)=ua(r1,:,2)*sqrtfac
+c     power(1) as a division keeps the old ua bitwise for old files.
       ua(:,r2(1),:)=ua(:,r2(1),:)/dpsi**(-singp%power(1))
       ua(:,r2(2),:)=ua(:,r2(2),:)*dpsi**singp%power(2)
 c-----------------------------------------------------------------------
