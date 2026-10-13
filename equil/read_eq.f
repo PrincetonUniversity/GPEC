@@ -809,9 +809,9 @@ c       psi(mx) [Wb/rad], f(mx) = R*B_t [T m], p(mx) [Pa], q(mx)
 c       r(my,mx), z(my,mx) [m], periodic point duplicated
 c       optional, each only if present, in this order:
 c       f*df/dpsi(mx), dp/dpsi(mx) (skipped here);
-c       psi_axis, psi_lcfs (2 reals): unpadded plasma bounds, which
-c       normalize psi; the last surface may lie inside the lcfs and
-c       caps psihigh. Optional records are told apart by length (mx, 2).
+c       psi_axis, psi_lcfs (2 reals): psi is normalized to these; the
+c       last surface may lie inside the lcfs and then caps psihigh.
+c       Optional records are told apart by length (mx, 2).
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
@@ -836,10 +836,10 @@ c-----------------------------------------------------------------------
       ALLOCATE(psi(0:mx),f(0:mx),p(0:mx),q(0:mx),
      $     r(0:my,0:mx),z(0:my,0:mx),buf(0:mx))
 c-----------------------------------------------------------------------
-c     read binary data. The psi bounds record follows z, ffp or pp. A
-c     length-mx read of it fails (short record); the file position is
-c     then processor dependent, so rewind and skip the 7 fixed records
-c     and any ffp, pp records before reading it.
+c     read binary data. The psi bounds record follows z, ffp or pp.
+c     Reading it into a profile array fails (short record); the file
+c     position is then processor dependent, so rewind and skip the 7
+c     fixed records and any ffp, pp records before reading it.
 c-----------------------------------------------------------------------
       READ(in_unit)psi
       READ(in_unit)f
