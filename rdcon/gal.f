@@ -1026,8 +1026,8 @@ c-----------------------------------------------------------------------
       q=sq%f(4)
       singfac=mlow-nn*q+(/(ipert,ipert=0,mpert-1)/)
 c-----------------------------------------------------------------------
-c     compute f = (Q L)(Q L)^H from the factored spline used by the
-c     asymptotic series, so the big solution solves this operator.
+c     compute f = (Q L)(Q L)^H from fmats, the spline of L that
+c     sing_mmat uses, so both use the same F.
 c-----------------------------------------------------------------------
       CALL cspline_eval(fmats,psifac,0)
       lmat=0
