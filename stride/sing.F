@@ -347,6 +347,7 @@ c-----------------------------------------------------------------------
       INTEGER :: ipert0,ipert,k,iside
       REAL(r8) :: psifac,di,di0,q,q1,rho,sig
       REAL(r8), PARAMETER :: half=.5_r8
+      COMPLEX(r8) :: tr,sqrtd
       COMPLEX(r8), DIMENSION(:,:,:,:), POINTER :: vmat,mmat
       COMPLEX(r8), DIMENSION(2,2) :: m0mat
       INTEGER, DIMENSION(:), POINTER :: r1,r2,n1,n2
@@ -397,6 +398,11 @@ c-----------------------------------------------------------------------
       singp%di=di
       singp%alpha=SQRT(-CMPLX(singp%di))
 c-----------------------------------------------------------------------
+c     eigenvalues of m0mat: tr/2 -+ sqrtd, sqrtd = SQRT(tr**2/4-det).
+c-----------------------------------------------------------------------
+      tr=m0mat(1,1)+m0mat(2,2)
+      sqrtd=SQRT(tr*tr/4-m0mat(1,1)*m0mat(2,2)+m0mat(2,1)*m0mat(1,2))
+c-----------------------------------------------------------------------
 c     reset order and compute higher-order terms.
 c-----------------------------------------------------------------------
       singp%order=sing_order
@@ -407,8 +413,8 @@ c     compute powers.
 c-----------------------------------------------------------------------
       ALLOCATE(singp%power(2*mpert))
       singp%power=0
-      singp%power(ipert0)=-singp%alpha
-      singp%power(ipert0+mpert)=singp%alpha
+      singp%power(ipert0)=tr/2-sqrtd
+      singp%power(ipert0+mpert)=tr/2+sqrtd
 c-----------------------------------------------------------------------
 c     allocate vmatl and vmatr at singular surface.
 c-----------------------------------------------------------------------
@@ -444,9 +450,9 @@ c-----------------------------------------------------------------------
          vmat(ipert0,ipert0,1,0)=1
          vmat(ipert0,ipert0+mpert,1,0)=1
          vmat(ipert0,ipert0,2,0)
-     $        =-(m0mat(1,1)+sig*singp%alpha)/m0mat(1,2)
+     $        =-(m0mat(1,1)-sig*singp%power(ipert0))/m0mat(1,2)
          vmat(ipert0,ipert0+mpert,2,0)
-     $        =-(m0mat(1,1)-sig*singp%alpha)/m0mat(1,2)
+     $        =-(m0mat(1,1)-sig*singp%power(ipert0+mpert))/m0mat(1,2)
 c-----------------------------------------------------------------------
 c     compute higher-order solutions.
 c-----------------------------------------------------------------------
@@ -857,7 +863,6 @@ c-----------------------------------------------------------------------
       INTEGER :: iorder
       INTEGER, DIMENSION(:), POINTER :: r1,r2
       COMPLEX(r8) :: dpsi,sqrtfac
-      COMPLEX(r8) :: pfac
       COMPLEX(r8), DIMENSION(:,:,:,:), POINTER :: vmat
       TYPE(sing_type), POINTER :: singp
 c-----------------------------------------------------------------------
@@ -877,7 +882,6 @@ c-----------------------------------------------------------------------
 c     compute powers of distance from singular surface.
 c-----------------------------------------------------------------------
       sqrtfac=SQRT(dpsi)
-      pfac=dpsi**singp%alpha
 c-----------------------------------------------------------------------
 c     compute power series by Horner's method.
 c-----------------------------------------------------------------------
@@ -890,8 +894,8 @@ c     restore powers (unshear v->u).
 c-----------------------------------------------------------------------
       ua(r1,:,1)=ua(r1,:,1)/sqrtfac    !<---mult row by shear z^(-1/2)
       ua(r1,:,2)=ua(r1,:,2)*sqrtfac    !<---mult row by shear z^(+1/2)
-      ua(:,r2(1),:)=ua(:,r2(1),:)/pfac !<---mult column by z^alpha-
-      ua(:,r2(2),:)=ua(:,r2(2),:)*pfac !<---mult column by z^alpha+
+      ua(:,r2(1),:)=ua(:,r2(1),:)*dpsi**singp%power(r2(1))
+      ua(:,r2(2),:)=ua(:,r2(2),:)*dpsi**singp%power(r2(2))
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

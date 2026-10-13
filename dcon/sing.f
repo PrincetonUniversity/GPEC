@@ -259,7 +259,7 @@ c-----------------------------------------------------------------------
       INTEGER :: ipert0,ipert,k
       REAL(r8) :: psifac,di,di0,q,q1,rho,dpsi
       REAL(r8), PARAMETER :: half=.5_r8
-      COMPLEX(r8) :: det
+      COMPLEX(r8) :: det,tr,sqrtd
       TYPE(sing_type), POINTER :: singp
 c-----------------------------------------------------------------------
 c     allocate and initialize solution array.
@@ -305,10 +305,15 @@ c-----------------------------------------------------------------------
       di=m0mat(1,1)*m0mat(2,2)-m0mat(2,1)*m0mat(1,2)
       singp%di=di
       singp%alpha=SQRT(-CMPLX(singp%di))
+c-----------------------------------------------------------------------
+c     eigenvalues of m0mat: tr/2 -+ sqrtd, sqrtd = SQRT(tr**2/4-det).
+c-----------------------------------------------------------------------
+      tr=m0mat(1,1)+m0mat(2,2)
+      sqrtd=SQRT(tr*tr/4-m0mat(1,1)*m0mat(2,2)+m0mat(2,1)*m0mat(1,2))
       ALLOCATE(singp%power(2*mpert))
       singp%power=0
-      singp%power(ipert0)=-singp%alpha
-      singp%power(ipert0+mpert)=singp%alpha
+      singp%power(ipert0)=tr/2-sqrtd
+      singp%power(ipert0+mpert)=tr/2+sqrtd
       WRITE(out_unit,'(i3,1p,7e11.3)')ising,psifac,rho,q,q1,di0,
      $     singp%di,singp%di/di0-1
 c-----------------------------------------------------------------------
@@ -325,9 +330,9 @@ c-----------------------------------------------------------------------
       singp%vmat(ipert0,ipert0,1,0)=1
       singp%vmat(ipert0,ipert0+mpert,1,0)=1
       singp%vmat(ipert0,ipert0,2,0)
-     $     =-(m0mat(1,1)+singp%alpha)/m0mat(1,2)
+     $     =-(m0mat(1,1)-singp%power(ipert0))/m0mat(1,2)
       singp%vmat(ipert0,ipert0+mpert,2,0)
-     $     =-(m0mat(1,1)-singp%alpha)/m0mat(1,2)
+     $     =-(m0mat(1,1)-singp%power(ipert0+mpert))/m0mat(1,2)
       det=CONJG(singp%vmat(ipert0,ipert0,1,0))
      $     *singp%vmat(ipert0,ipert0+mpert,2,0)
      $     -CONJG(singp%vmat(ipert0,ipert0+mpert,1,0))
@@ -764,7 +769,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: iorder
       INTEGER, DIMENSION(:), POINTER :: r1,r2
-      COMPLEX(r8) :: dpsi,pfac,sqrtfac
+      COMPLEX(r8) :: dpsi,sqrtfac
       COMPLEX(r8), DIMENSION(:,:,:,:), POINTER :: vmat
       TYPE(sing_type), POINTER :: singp
 c-----------------------------------------------------------------------
@@ -779,7 +784,6 @@ c     compute distance from singular surface and its powers.
 c-----------------------------------------------------------------------
       dpsi=psifac-singp%psifac
       sqrtfac=SQRT(dpsi)
-      pfac=ABS(dpsi)**singp%alpha
 c-----------------------------------------------------------------------
 c     compute power series by Horner's method.
 c-----------------------------------------------------------------------
@@ -792,8 +796,8 @@ c     restore powers.
 c-----------------------------------------------------------------------
       ua(r1,:,1)=ua(r1,:,1)/sqrtfac
       ua(r1,:,2)=ua(r1,:,2)*sqrtfac
-      ua(:,r2(1),:)=ua(:,r2(1),:)/pfac
-      ua(:,r2(2),:)=ua(:,r2(2),:)*pfac
+      ua(:,r2(1),:)=ua(:,r2(1),:)*ABS(dpsi)**singp%power(r2(1))
+      ua(:,r2(2),:)=ua(:,r2(2),:)*ABS(dpsi)**singp%power(r2(2))
 c-----------------------------------------------------------------------
 c     renormalize.
 c-----------------------------------------------------------------------
