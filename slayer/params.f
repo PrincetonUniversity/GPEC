@@ -90,26 +90,26 @@ c-----------------------------------------------------------------------
 c     Coulomb logarithm, basic plasma quantities, and Spitzer
 c     resistivity.
 c-----------------------------------------------------------------------
-      lnLamb = 24 + 3.0*LOG(10.0) - 0.5*LOG(n_e) + LOG(t_e)
+      lnLamb = 24 + 3.0_r8*LOG(10.0_r8) - 0.5_r8*LOG(n_e) + LOG(t_e)
 
       tau   = t_i / t_e                             ! T_i / T_e
-      tau_i = 6.6e17*mu_i**0.5*(t_i/1e3)**1.5
+      tau_i = 6.6e17_r8*mu_i**0.5_r8*(t_i/1e3_r8)**1.5_r8
      $        / (n_e*lnLamb)                         ! ion collision time [s]
-      eta   = 1.65e-9*lnLamb / (t_e/1e3)**1.5       ! Spitzer resistivity (Wesson)
+      eta   = 1.65e-9_r8*lnLamb / (t_e/1e3_r8)**1.5_r8       ! Spitzer resistivity (Wesson)
       rho   = (mu_i*m_p)*n_e                         ! mass density [kg/m^3]
 
 c-----------------------------------------------------------------------
 c     Electron-electron collision time (Braginskii) and Spitzer-Härm
 c     parallel conductivity.
 c-----------------------------------------------------------------------
-      tau_ee_num   = 6.0*SQRT(2.0)*(pi**1.5)
-     $              *(eps0**2.0)*(m_e**0.5)*(t_e**1.5)
-      tau_ee_denom = lnLamb*(chag**2.5)*n_e
+      tau_ee_num   = 6.0_r8*SQRT(2.0_r8)*(pi**1.5_r8)
+     $              *(eps0**2.0_r8)*(m_e**0.5_r8)*(t_e**1.5_r8)
+      tau_ee_denom = lnLamb*(chag**2.5_r8)*n_e
       tau_ee       = tau_ee_num / tau_ee_denom
 
-      sigma_par_1 = ( SQRT(2.0) + 13.0*(Zeff/4.0) )
-     $              / (Zeff*(SQRT(2.0) + Zeff))
-      sigma_par_2 = (n_e * (chag**2.0) * tau_ee) / m_e
+      sigma_par_1 = ( SQRT(2.0_r8) + 13.0_r8*(Zeff/4.0_r8) )
+     $              / (Zeff*(SQRT(2.0_r8) + Zeff))
+      sigma_par_2 = (n_e * (chag**2.0_r8) * tau_ee) / m_e
       sigma_par   = sigma_par_1 * sigma_par_2
 
 c-----------------------------------------------------------------------
@@ -119,16 +119,16 @@ c     Note: mr, nr (rational m/n) and nn (toroidal mode number) are
 c     module-level variables set before calling params().
 c-----------------------------------------------------------------------
       b_l   = (nr/mr)*rs*sval*bt/R0               ! characteristic B [T]
-      v_a   = b_l / (mu0*rho)**0.5                 ! Alfvén velocity [m/s]
-      rho_s = 1.02e-4*(mu_i*t_e)**0.5 / bt        ! ion Larmor at T_e [m]
-      d_i   = ( (mu_i*m_p) / (n_e*(chag**2)*mu0) )**0.5
+      v_a   = b_l / (mu0*rho)**0.5_r8                 ! Alfvén velocity [m/s]
+      rho_s = 1.02e-4_r8*(mu_i*t_e)**0.5_r8 / bt        ! ion Larmor at T_e [m]
+      d_i   = ( (mu_i*m_p) / (n_e*(chag**2)*mu0) )**0.5_r8
                                                     ! ion skin depth [m]
 
 c     The layer timescales and widths below depend on the magnitude of
 c     the shear, not its sign: ABS(sval) keeps them positive on a
 c     reverse-shear surface.
-      tau_h = R0*(mu0*rho)**0.5 / (nn*ABS(sval)*bt) ! Alfvén time [s]
-      tau_r = mu0*(rs**2.0)*sigma_par               ! resistive time [s] (Fitzpatrick)
+      tau_h = R0*(mu0*rho)**0.5_r8 / (nn*ABS(sval)*bt) ! Alfvén time [s]
+      tau_r = mu0*(rs**2.0_r8)*sigma_par               ! resistive time [s] (Fitzpatrick)
       IF (pr > 0.0_r8) THEN
          tau_v = tau_r / pr                         ! viscous time [s]
          visc  = rho*rs**2.0_r8 / tau_v
@@ -145,7 +145,7 @@ c     Diamagnetic frequencies and normalised Q parameters.
 c     Qconv converts dimensional frequencies to the normalised Q
 c     used in the SLAYER dispersion relation (Cole scaling).
 c-----------------------------------------------------------------------
-      Qconv = lu**(1.0/3.0) * tau_h     ! frequency normalisation (Cole)
+      Qconv = lu**(1.0_r8/3.0_r8) * tau_h     ! frequency normalisation (Cole)
       tauk  = Qconv                      ! stored in sglobal_mod
       Q     = Qconv * omega             ! normalised rotation frequency
 
@@ -154,20 +154,20 @@ c     caller does not provide them (l_n <= 0 or l_t <= 0). Callers that
 c     compute omega_e/omega_i by other means must set Q_e and Q_i
 c     themselves afterwards.
       IF (l_n > 0.0_r8 .AND. l_t > 0.0_r8) THEN
-         omega_e = -t_e/(bt*R0)*(1.0/l_n + 1.0/l_t)*qval
-         omega_i =  t_i/(bt*R0)*(1.0/l_n + 1.0/l_t)*qval
+         omega_e = -t_e/(bt*R0)*(1.0_r8/l_n + 1.0_r8/l_t)*qval
+         omega_i =  t_i/(bt*R0)*(1.0_r8/l_n + 1.0_r8/l_t)*qval
          Q_e = -Qconv * omega_e
          Q_i = -Qconv * omega_i
       END IF
 
 c     normalised ion Larmor radius (critical stability parameter)
-      ds = lu**(1.0/3.0) * rho_s / rs
+      ds = lu**(1.0_r8/3.0_r8) * rho_s / rs
 
 c-----------------------------------------------------------------------
 c     Plasma beta and Prandtl-number-like transport ratios.
 c-----------------------------------------------------------------------
-      lbeta  = (5.0/3.0)*mu0*n_e*chag*(t_e+t_i) / bt**2.0
-      c_beta = (lbeta / (1.0+lbeta))**0.5
+      lbeta  = (5.0_r8/3.0_r8)*mu0*n_e*chag*(t_e+t_i) / bt**2.0_r8
+      c_beta = (lbeta / (1.0_r8+lbeta))**0.5_r8
 
 c      kappa-based P_perp (JKP's definition, to implement later if desired)
 c      K_val = chis(3) / eta
@@ -180,10 +180,10 @@ c        tau_perp = (rs**2.0) / chis(1)
 c      END IF
 
 c     effective perpendicular and toroidal Prandtl numbers
-      tau_perp = (rs**2.0) / chis(1)
+      tau_perp = (rs**2.0_r8) / chis(1)
       P_perp   = tau_r / tau_perp           ! perp magnetic Prandtl number
 
-      tau_tor = (rs**2.0) / chis(2)
+      tau_tor = (rs**2.0_r8) / chis(2)
       P_tor   = tau_r / tau_tor             ! toroidal magnetic Prandtl number
 
 c-----------------------------------------------------------------------
@@ -197,14 +197,14 @@ c     and Q_i, the equal-gradient-ratio value iota_e = T_e/(T_e + T_i)
 c     = 1/(1 + tau) is used provisionally; callers that set Q_e and Q_i
 c     afterwards must reset D_norm = slayer_d_norm(D_fac,Q_e,Q_i).
       d_beta = c_beta * d_i
-      D_fac  = (d_beta/rs) * lu**(1.0/3.0)
+      D_fac  = (d_beta/rs) * lu**(1.0_r8/3.0_r8)
       IF (l_n > 0.0_r8 .AND. l_t > 0.0_r8) THEN
          D_norm = slayer_d_norm(D_fac,Q_e,Q_i)
       ELSE
          D_norm = D_fac * SQRT(1.0_r8/(1.0_r8+tau))
       END IF
 
-      delta_n = lu**(1.0/3.0) / rs  ! normalisation for Delta values
+      delta_n = lu**(1.0_r8/3.0_r8) / rs  ! normalisation for Delta values
 
 c-----------------------------------------------------------------------
 c     Critical Deltaprime (dc_tmp) via iterative chi_parallel calculation.
@@ -216,20 +216,20 @@ c       'rfitzp'   -- R. Fitzpatrick
 c       'toroidal' -- toroidal geometry using dgeo_val
 c       default    -- dc_tmp = 0
 c-----------------------------------------------------------------------
-      IF (ABS(dr_val) > 0.0) THEN
+      IF (ABS(dr_val) > 0.0_r8) THEN
 
-          vte = SQRT((2.0*(t_e*chag)) / m_e)
-          chi_par_smfp = (1.581*tau_ee*(vte**2.0))
-     $                   / (1.0 + 0.2535*Zeff)
+          vte = SQRT((2.0_r8*(t_e*chag)) / m_e)
+          chi_par_smfp = (1.581_r8*tau_ee*(vte**2.0_r8))
+     $                   / (1.0_r8 + 0.2535_r8*Zeff)
 
-          Wd = 0.1              ! initial guess
+          Wd = 0.1_r8              ! initial guess
           DO wit = 1, 100
-              chi_par_lmfp = (2.0*R0*vte)
+              chi_par_lmfp = (2.0_r8*R0*vte)
      $                       / (SQRT(pi)*nr*ABS(sval)*Wd)
               chi_par = (chi_par_smfp*chi_par_lmfp)
      $                  / (chi_par_smfp + chi_par_lmfp)
-              Wd_new = SQRT(8.0)*((chis(1)/chi_par)**0.25)
-     $           * (1.0/SQRT((rs/R0)*ABS(sval)*nr))
+              Wd_new = SQRT(8.0_r8)*((chis(1)/chi_par)**0.25_r8)
+     $           * (1.0_r8/SQRT((rs/R0)*ABS(sval)*nr))
               IF (ABS(Wd_new - Wd) / MAX(ABS(Wd), 1.0e-30_r8)
      $            < 1.0e-10_r8) THEN
                   Wd = Wd_new
@@ -244,20 +244,20 @@ c-----------------------------------------------------------------------
 
           SELECT CASE(dc_type)
               CASE('lar')
-                  dc_tmp = 0.5*(-dr_val)*(pi**1.5)
-     $                     *((chi_par/chis(1))**0.25)
-     $                     *( (nr*ABS(sval))/(R0*rs) )**0.5
+                  dc_tmp = 0.5_r8*(-dr_val)*(pi**1.5_r8)
+     $                     *((chi_par/chis(1))**0.25_r8)
+     $                     *( (nr*ABS(sval))/(R0*rs) )**0.5_r8
               CASE('rfitzp')
-                  dc_tmp = -(SQRT(2.0)*(pi**(1.5))*dr_val) / Wd
+                  dc_tmp = -(SQRT(2.0_r8)*(pi**(1.5_r8))*dr_val) / Wd
               CASE('toroidal')
-                  dc_tmp = 0.5*(-dr_val)*(pi**1.5)
-     $                     *((chi_par/chis(1))**0.25)*dgeo_val
+                  dc_tmp = 0.5_r8*(-dr_val)*(pi**1.5_r8)
+     $                     *((chi_par/chis(1))**0.25_r8)*dgeo_val
               CASE default
-                  dc_tmp = 0.0
+                  dc_tmp = 0.0_r8
           END SELECT
 
       ELSE
-          dc_tmp = 0.0
+          dc_tmp = 0.0_r8
       END IF
 
 c-----------------------------------------------------------------------
