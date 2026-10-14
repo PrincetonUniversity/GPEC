@@ -842,12 +842,16 @@ c-----------------------------------------------------------------------
             WRITE(*,*)"D_norm: ",D_norm
             WRITE(*,*)"tauk: ",tauk
             WRITE(*,*)"iota_e: ",iota_e
-            WRITE(*,*)"Delta_prime: ",sl_in%Re_dp_arr(k)
+            WRITE(*,*)"Delta_prime (r_s ref.): ",sl_in%Re_dp_arr(k),
+     $           sl_in%Im_dp_arr(k)
             WRITE(*,*)"Delta_crit: ",sl_in%d_crit_arr(k)
 
-            ! Calculate (Deltaprime - D_crit)/S^1/3
-            delta_eff = (sl_in%Re_dp_arr(k) -
-     $          sl_in%d_crit_arr(k))/(sl_in%lu_arr(k)**(1.0/3.0))
+            ! (Deltaprime - Delta_crit)/S^(1/3), with the complex
+            ! Deltaprime diagonal so that the uncoupled matching is
+            ! the diagonal limit of the coupled determinant.
+            delta_eff = (CMPLX(sl_in%Re_dp_arr(k),sl_in%Im_dp_arr(k),
+     $          KIND=r8) - sl_in%d_crit_arr(k))
+     $          /(sl_in%lu_arr(k)**(1.0_r8/3.0_r8))
             pe = 0.0
 
 c-----------------------------------------------------------------------

@@ -84,8 +84,8 @@ c --- diamagnetic and rotation frequencies
       REAL(r8) :: Q_i              ! normalised ion diamagnetic Q
 c --- stability / Delta_crit
       REAL(r8) :: dc_tmp           ! computed Delta_crit
-      REAL(r8) :: delta_eff        ! effective Deltaprime shift
-      CHARACTER(20) :: dc_type     ! dc formula selector ('lar','rfitzp','toroidal')
+      COMPLEX(r8) :: delta_eff     ! (Deltaprime - Delta_crit)/S^(1/3)
+      CHARACTER(20) :: dc_type     ! dc formula: 'rfitzp','lar','toroidal','none'
 c --- solver workspace / results
       COMPLEX(r8) :: g_tmp         ! temporary complex growth rate
       REAL(r8) :: gamma_fac        ! growth-rate conversion factor
