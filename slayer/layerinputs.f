@@ -316,7 +316,7 @@ c     parameters via params() and populate slayer_inputs_type.
 c
 
 c-----------------------------------------------------------------------
-      SUBROUTINE build_inputs(infile,ncfile,sl_in)
+      SUBROUTINE build_inputs(infile,ncfile,sl_in,zeff_in,mu_i_in)
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
@@ -324,6 +324,8 @@ c --- arguments
       CHARACTER(512), INTENT(IN) :: infile  ! kinetic input file path
       CHARACTER(512), INTENT(IN) :: ncfile  ! STRIDE NetCDF file path
       TYPE(slayer_inputs_type), INTENT(INOUT) :: sl_in
+      REAL(r8), INTENT(IN) :: zeff_in       ! Z_eff from slayer.in
+      REAL(r8), INTENT(IN) :: mu_i_in       ! ion mass / proton mass
 c --- surface-loop control
       LOGICAL  :: firstsurf                 ! first-call flag for issurfint
       REAL(r8) :: respsi                    ! normalised psi at current surface
@@ -417,7 +419,7 @@ c --- allocate slayer_inputs_type arrays (one entry per surface)
      $  sl_in%Qconv_arr(msing),
      $  sl_in%Re_dp_psi_arr(msing),    sl_in%Im_dp_psi_arr(msing),
      $  sl_in%k_ref_arr(msing),        sl_in%alpha_arr(msing),
-     $  sl_in%q_shift_arr(msing))
+     $  sl_in%q_shift_arr(msing),      sl_in%q_arr(msing))
       sl_in%q_shift_arr = 0.0_r8
 
 c --- allocate local kinetic arrays (for future NetCDF diagnostic output)
@@ -442,7 +444,7 @@ c-----------------------------------------------------------------------
       tfac  = 1.0
       wefac = 1.0
       wpfac = 1.0
-      e = 1.6021917e-19         ! elementary charge [C]
+      e = chag                  ! elementary charge [C]
       chi1 = twopi * my_psio(1) ! total poloidal flux (module-level)
 
       CALL read_kin(infile,zi,zimp,mi,mimp,nfac,
@@ -455,7 +457,7 @@ c     to the r_s reference length after the surface loop below.
       sl_in%dp_matrix(:,:) = CMPLX(dp_mat(:,:,1), dp_mat(:,:,2),
      $                             KIND=r8)
 
-      dpsi_h = 0.002               ! finite-difference step for Jacobian
+      dpsi_h = 0.002_r8            ! finite-difference step for Jacobian
 
 c-----------------------------------------------------------------------
 c     loop over singular surfaces: evaluate kinetic/equilibrium
@@ -474,14 +476,14 @@ c        compute flux-surface-averaged minor radius
 
 c        compute Jacobian da_surf/dpsiN by central difference
          a_surf_p = issurfint(unitfun,mthsurf,
-     $        MIN(respsi+dpsi_h, REAL(1.0,r8)),3,1,
+     $        MIN(respsi+dpsi_h, 1.0_r8),3,1,
      $        fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf)
          a_surf_m = issurfint(unitfun,mthsurf,
-     $        MAX(respsi-dpsi_h, REAL(0.001,r8)),3,1,
+     $        MAX(respsi-dpsi_h, 0.001_r8),3,1,
      $        fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf)
          da_dpsiN = (a_surf_p - a_surf_m)
-     $        / (MIN(respsi+dpsi_h, REAL(1.0,r8))
-     $         - MAX(respsi-dpsi_h, REAL(0.001,r8)))
+     $        / (MIN(respsi+dpsi_h, 1.0_r8)
+     $         - MAX(respsi-dpsi_h, 0.001_r8))
 
 c-----------------------------------------------------------------------
 c        evaluate kinetic splines at this surface.
@@ -511,12 +513,15 @@ c        extract local plasma quantities from spline
          n_i = kin%f(1)
          t_i = kin%f(3) / e
 
-c        Z_eff: kinetic spline value may be incorrect if ni=ne in gpeckf
-c        (quasi-neutrality assumption makes Zeff=1). Override to 2.0
-c        for deuterium plasma with carbon impurities (matching TJ).
-c        TODO: fix gpeckf generation to include proper ni for Zeff,
-c        or read Zeff from a namelist parameter.
-         zeff = 2.0
+c        Z_eff and the ion mass ratio come from slayer.in (zeff, mu_i),
+c        not from the kinetic file: its n_i/n_e ratio is often not a
+c        usable Z_eff. Unset (non-positive) values fall back to 2, a
+c        deuterium plasma with carbon impurities.
+         IF (zeff_in > 0.0_r8) THEN
+            zeff = zeff_in
+         ELSE
+            zeff = 2.0_r8
+         END IF
 
          omega    = kin%f(5)
          my_qval  = q_rational(ising)
@@ -525,7 +530,11 @@ c        or read Zeff from a namelist parameter.
          my_bt    = my_bt0(1)
          my_rs    = a_surf
          R_0      = r_o(1)
-         mu_i     = 2.0               ! deuterium
+         IF (mu_i_in > 0.0_r8) THEN
+            mu_i = mu_i_in
+         ELSE
+            mu_i = 2.0_r8             ! deuterium
+         END IF
          dr_val   = dr_vals(ising)
 
 c        convert STRIDE shear (psiN-based) to Fitzpatrick shear (r-based).
@@ -537,7 +546,7 @@ c        ~ 0.7-1.5 -- r-based shear is usually LARGER than psi_N-based
 c        because (r/psi_N) > (dr/dpsi_N) inside the mid-radius region.
          s_fitz = my_sval * my_rs / (respsi * da_dpsiN)
          WRITE(*,'(A,I2,A,F7.4,A,F6.3,A,F8.4,A,F8.4,A,F7.3,A,F7.3)')
-     $        '  [layerinputs] q=', resm(ising),
+     $        '  [layerinputs] m=', resm(ising),
      $        ' psiN=', respsi,
      $        ' r_s=', my_rs,
      $        ' da/dpsiN=', da_dpsiN,
@@ -630,7 +639,8 @@ c        populate sl_in for this surface from params() globals.
 c        Q_e/Q_i use spline-derived omega_e/omega_i normalised by
 c        tauk (= Fitzpatrick S^(1/3) * tau_H, from params()).
 c-----------------------------------------------------------------------
-         sl_in%qval_arr(ising)    = INT(my_qval)
+         sl_in%qval_arr(ising)    = resm(ising)
+         sl_in%q_arr(ising)       = my_qval
          sl_in%lu_arr(ising)      = lu
 c        Use the same -tauk prefactor for both so opposite-signed
 c        spline omega_e, omega_i (electron vs ion diamagnetic

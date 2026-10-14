@@ -21,6 +21,7 @@ c       PeOhmOnly_flag - retain only Pe-Ohm coupling in w_der
 c-----------------------------------------------------------------------
 
       USE sglobal_mod
+      USE ieee_arithmetic, ONLY: ieee_value, ieee_quiet_nan
 
       IMPLICIT NONE
 
@@ -443,6 +444,12 @@ c        single-shot integration to p_min
 c --- extract Delta from final W derivative at p_min
       CALL w_der_f(neq,my_p,W,dWdp)
       riccati_f = pi / dWdp(1)
+c     A failed integration (istate < 0) leaves W short of p_min. Return
+c     NaN so that scans and the root search skip the point instead of
+c     using a Delta built from an unconverged W.
+      IF (istate < 0) riccati_f = CMPLX(
+     $     ieee_value(1.0_r8, ieee_quiet_nan),
+     $     ieee_value(1.0_r8, ieee_quiet_nan), KIND=r8)
 
       END FUNCTION riccati_f
 c-----------------------------------------------------------------------

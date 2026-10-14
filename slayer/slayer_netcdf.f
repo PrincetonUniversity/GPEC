@@ -141,6 +141,7 @@ c     root variable IDs (zeros and poles of the dispersion function)
       INTEGER :: oroot_id         ! "omega_roots"
       INTEGER :: proot_id         ! "root_polished"
       LOGICAL :: have_roots       ! roots_out holds this run's roots
+      LOGICAL :: have_amr         ! AMR scan data are present
       REAL(r8), ALLOCATABLE :: buffer_r(:,:,:)  ! (root, surf, Re/Im)
       REAL(r8), ALLOCATABLE :: buffer_p(:,:,:)  ! (root, surf, Re/Im)
       REAL(r8), ALLOCATABLE :: buffer_g(:,:)    ! gamma (root, surf)
@@ -200,7 +201,11 @@ c-----------------------------------------------------------------------
 
 c     step 1: find the maximum AMR grid size across all surfaces.
       max_pts_all = 0
-      IF (ALLOCATED(all_deltas_out(1)%inQs)) THEN
+      have_amr = .FALSE.
+      IF (m_AMR > 0) THEN
+         have_amr = ALLOCATED(all_deltas_out(1)%inQs)
+      END IF
+      IF (have_amr) THEN
          DO s = 1, m_AMR
             max_pts_all = MAX(max_pts_all,
      $                        SIZE(all_deltas_out(s)%inQs))
@@ -218,7 +223,7 @@ c     step 2: allocate rectangular buffers (pts × surfaces × Re/Im).
       n_pts_arr = 0
 
 c     step 3: flatten the ragged data into the buffers.
-      IF (ALLOCATED(all_deltas_out(1)%inQs)) THEN
+      IF (have_amr) THEN
          DO s = 1, m_AMR
             n_curr       = SIZE(all_deltas_out(s)%inQs)
             n_pts_arr(s) = n_curr
@@ -240,8 +245,8 @@ c           Delta result (Re and Im parts)
 c     step 4: roots and poles, in the same (omega_hat, gamma_hat)
 c     convention as Q_AMR.
       have_roots = .FALSE.
-      IF (ALLOCATED(roots_out)) have_roots = SIZE(roots_out) >= m_AMR
-     $                                       .AND. m_AMR > 0
+      IF (ALLOCATED(roots_out) .AND. have_amr)
+     $   have_roots = SIZE(roots_out) >= m_AMR
       IF (have_roots) THEN
          ALLOCATE(buffer_r(MAX_ROOTS, m_AMR, 2))
          ALLOCATE(buffer_p(MAX_ROOTS, m_AMR, 2))
@@ -288,12 +293,17 @@ c-----------------------------------------------------------------------
 
 c     -- core dimensions --
       CALL sl_check( nf90_def_dim(ncid, "r",     msing, qsing_dim) )
-      CALL sl_check( nf90_def_dim(ncid, "r_AMR", m_AMR, nAMR_dim)  )
+      IF (have_amr) THEN
+         CALL sl_check( nf90_def_dim(ncid, "r_AMR", m_AMR,
+     $        nAMR_dim) )
+      END IF
       CALL sl_check( nf90_def_dim(ncid, "i",     2,     i_dim)     )
 
 c     -- scalar per-surface variables --
       CALL sl_check( nf90_def_var(ncid, "r",         nf90_int,
      $     qsing_dim, qsing_id)  )
+      CALL sl_check( nf90_put_att(ncid, qsing_id, "long_name",
+     $     "Resonant poloidal mode number m of each surface") )
       CALL sl_check( nf90_def_var(ncid, "q_rational",
      $     nf90_double, qsing_dim, qr_id)     )
       CALL sl_check( nf90_def_var(ncid, "omegas",    nf90_double,
@@ -371,14 +381,19 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     define AMR scan dimensions and variables.
 c-----------------------------------------------------------------------
+      IF (have_amr) THEN
       CALL sl_check( nf90_def_dim(ncid, "amr_pts",
      $     max_pts_all, dim_pts_id) )
       CALL sl_check( nf90_def_var(ncid, "n_amr_pts", NF90_INT,
      $     (/nAMR_dim/), var_npts_id) )
       CALL sl_check( nf90_def_var(ncid, "Q_AMR", NF90_DOUBLE,
      $     (/dim_pts_id, nAMR_dim, i_dim/), var_q_id) )
+      CALL sl_check( nf90_put_att(ncid, var_q_id, "long_name",
+     $     "AMR scan points, (omega, gamma)*tau_k") )
       CALL sl_check( nf90_def_var(ncid, "Deltas_AMR", NF90_DOUBLE,
      $     (/dim_pts_id, nAMR_dim, i_dim/), var_d_id) )
+      CALL sl_check( nf90_put_att(ncid, var_d_id, "long_name",
+     $     "Dispersion function at the AMR scan points") )
 
 c     roots and poles of the dispersion function from each AMR scan.
       IF (have_roots) THEN
@@ -424,6 +439,7 @@ c     set _FillValue attribute on AMR arrays for proper padding.
      $     "_FillValue", fill_val) )
       CALL sl_check( nf90_put_att(ncid, var_d_id,
      $     "_FillValue", fill_val) )
+      END IF
 
 c-----------------------------------------------------------------------
 c     end NetCDF define mode.
@@ -436,7 +452,7 @@ c-----------------------------------------------------------------------
       CALL sl_check( nf90_put_var(ncid, qsing_id,
      $     sl_in%qval_arr)  )
       CALL sl_check( nf90_put_var(ncid, qr_id,
-     $     sl_in%qval_arr)  )
+     $     sl_in%q_arr)     )
       CALL sl_check( nf90_put_var(ncid, pr_id,
      $     sl_in%psi_n_arr) )
       CALL sl_check( nf90_put_var(ncid, omegas_id,
@@ -508,9 +524,11 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write AMR scan arrays.
 c-----------------------------------------------------------------------
-      CALL sl_check( nf90_put_var(ncid, var_npts_id, n_pts_arr) )
-      CALL sl_check( nf90_put_var(ncid, var_q_id,    buffer_q)  )
-      CALL sl_check( nf90_put_var(ncid, var_d_id,    buffer_d)  )
+      IF (have_amr) THEN
+         CALL sl_check( nf90_put_var(ncid, var_npts_id, n_pts_arr) )
+         CALL sl_check( nf90_put_var(ncid, var_q_id,    buffer_q)  )
+         CALL sl_check( nf90_put_var(ncid, var_d_id,    buffer_d)  )
+      END IF
 
       IF (have_roots) THEN
          CALL sl_check( nf90_put_var(ncid, nroot_id,

@@ -150,7 +150,8 @@ c     result_type -- torque-scan output bucket
 
 c     slayer_inputs_type -- per-surface input arrays for SLAYER
       TYPE slayer_inputs_type
-          INTEGER, ALLOCATABLE  :: qval_arr(:)        ! safety-factor integers
+          INTEGER, ALLOCATABLE  :: qval_arr(:)        ! resonant poloidal m (labels)
+          REAL(r8), ALLOCATABLE :: q_arr(:)           ! safety factor m/n
           REAL(r8), ALLOCATABLE :: chi_p_arr(:)       ! chi_perp  [m^2/s]
           REAL(r8), ALLOCATABLE :: chi_t_arr(:)       ! chi_tor   [m^2/s]
           REAL(r8), ALLOCATABLE :: kappa_arr(:)       ! kappa (thermal cond.)

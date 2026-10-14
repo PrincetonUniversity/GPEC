@@ -262,7 +262,7 @@ c-----------------------------------------------------------------------
 
       ! global module scalars (sglobal_mod)
       gamma_fac = 0.0
-      dc_type   = ""
+      dc_type   = "rfitzp"
 
       ! scan resolution defaults
       inum       = 400   ! 1-D resolution (error-field threshold scans)
@@ -275,6 +275,7 @@ c-----------------------------------------------------------------------
       ! a coupled scan with rotation.
       scan_center = HUGE(scan_center)
       AMR_passes = 4     ! AMR refinement levels
+      m_AMR      = 0     ! no AMR scan stored yet
       msing_max  = 2     ! max singular surfaces to process
 
       ! I/O unit numbers (sglobal_mod)
@@ -348,6 +349,21 @@ c-----------------------------------------------------------------------
       READ(in_unit,NML=slayer_diagnose)
       CLOSE(UNIT=in_unit)
 
+      ! Critical-Delta model: fail on a misspelt name rather than
+      ! silently running without the stabilising offset.
+      SELECT CASE (TRIM(dc_type))
+         CASE ('rfitzp','lar','none','')
+         CASE ('toroidal')
+            WRITE(*,*) "WARNING: dc_type='toroidal' is experimental."
+            WRITE(*,*) "  Its geometric factor (STRIDE Delta_geo) has"
+            WRITE(*,*) "  not been verified in the r_s reference"
+            WRITE(*,*) "  length; prefer dc_type='rfitzp'."
+         CASE DEFAULT
+            WRITE(*,*) "ERROR: unknown dc_type='",TRIM(dc_type),"'."
+            WRITE(*,*) "  Use 'rfitzp', 'lar', 'toroidal' or 'none'."
+            STOP 'slayer: unknown dc_type'
+      END SELECT
+
       ! Real copies of the mode numbers, read by params() in every
       ! namelist-driven branch below. build_inputs resets them from
       ! the STRIDE run when read_eq is set.
@@ -391,7 +407,9 @@ c     baseline single-surface delta, reconnected flux, & torque.
 c     skipped when the matched-gamma path is active (it computes
 c     its own delta internally).
 c-----------------------------------------------------------------------
-      IF (.NOT. (match_gamma_flag)) THEN
+c     Also skipped for the growth-rate estimate, which does not use
+c     it and is usually run with these namelist inputs unset.
+      IF (.NOT. (match_gamma_flag .OR. est_gamma_flag)) THEN
          delta=riccati(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe)
          psi0=1.0/ABS(delta+delta_n_p)     ! reconnected flux  [a.u.]
          jxb=-AIMAG(1.0/(delta+delta_n_p)) ! j x B torque      [a.u.]
@@ -505,7 +523,7 @@ c-----------------------------------------------------------------------
             sl_in%chi_t_arr = chi_t_prof
             sl_in%kappa_arr = kappa_prof
 
-            CALL build_inputs(infile,ncfile,sl_in)
+            CALL build_inputs(infile,ncfile,sl_in,zeff,mu_i)
 
             n_k = SIZE(sl_in%qval_arr)
             CALL allocate_outputs(n_k,sl_out)
@@ -579,7 +597,8 @@ c           overridden Q_e, Q_i.
             CALL allocate_inputs(n_k,sl_in)  ! growthrates_mod
             CALL allocate_outputs(n_k,sl_out) ! growthrates_mod
 
-            sl_in%qval_arr = (/ qval /)
+            sl_in%qval_arr = (/ mm /)
+            sl_in%q_arr = (/ qval /)
             sl_in%omegas_arr = (/ omega /)
             !sl_in%Q_arr = (/ Q /)
             sl_in%Q_e_arr = (/ Q_e /)
@@ -606,7 +625,7 @@ c           overridden Q_e, Q_i.
          DO k=1,n_k
             WRITE(*,*)
             WRITE(*,'(A,I0,A)') 'Calculating growth rate '//
-     $             'estimate on q = ',
+     $             'estimate on m = ',
      $       sl_in%qval_arr(k),' rational surface'
 
             D_norm = sl_in%D_norm_arr(k)
@@ -627,7 +646,10 @@ c           overridden Q_e, Q_i.
          ENDDO
 
          IF (.NOT. (match_gamma_flag)) THEN
-            sl_out%gamma_sol_arr = (/0./)
+            ! no matched solve in this run
+            sl_out%gamma_sol_arr = CMPLX(
+     $         ieee_value(1.0_r8, ieee_quiet_nan),
+     $         ieee_value(1.0_r8, ieee_quiet_nan), KIND=r8)
             CALL output_gamma(est_gamma_flag,m_AMR,sl_in,sl_out,
      $      all_deltas_out)
          END IF
@@ -651,7 +673,7 @@ c-----------------------------------------------------------------------
                sl_in%chi_t_arr = chi_t_prof
                sl_in%kappa_arr = kappa_prof
 
-               CALL build_inputs(infile,ncfile,sl_in)
+               CALL build_inputs(infile,ncfile,sl_in,zeff,mu_i)
 
                n_k = SIZE(sl_in%qval_arr)
                CALL allocate_outputs(n_k,sl_out)
@@ -718,7 +740,8 @@ c           overridden Q_e, Q_i.
                CALL allocate_outputs(n_k,sl_out)
             END IF
 
-            sl_in%qval_arr = (/ qval /)
+            sl_in%qval_arr = (/ mm /)
+            sl_in%q_arr = (/ qval /)
             sl_in%omegas_arr = (/ omega /)
             !sl_in%Q_arr = (/ Q /)
             sl_in%Q_e_arr = (/ Q_e /)
@@ -741,6 +764,26 @@ c           overridden Q_e, Q_i.
             sl_in%Qconv_arr = (/ tauk /)
 
             END IF
+         END IF
+
+c-----------------------------------------------------------------------
+c     sanity checks on the surface count and the coupling request.
+c-----------------------------------------------------------------------
+         IF (msing_max < 1) THEN
+            WRITE(*,*) 'WARNING: msing_max < 1; using msing_max = 1'
+            msing_max = 1
+         END IF
+         IF (msing_max > n_k) THEN
+            WRITE(*,'(A,I0,A,I0,A)') ' NOTE: msing_max = ',msing_max,
+     $         ' exceeds the ',n_k,' rational surfaces available;'
+     $         //' using all of them.'
+            msing_max = n_k
+         END IF
+         IF (coupling_flag .AND. .NOT. read_eq) THEN
+            WRITE(*,*) 'ERROR: coupling_flag=t needs the STRIDE'
+            WRITE(*,*) '  Deltaprime matrix; set read_eq=t, infile'
+            WRITE(*,*) '  and ncfile, or set coupling_flag=f.'
+            STOP 'slayer: coupling_flag requires read_eq'
          END IF
 
 c-----------------------------------------------------------------------
@@ -814,13 +857,13 @@ c        growth rates stay NaN on surfaces where no root is extracted
             END IF
          END IF
 
-         WRITE(*,*),"Rational q domain: ",sl_in%qval_arr
+         WRITE(*,*) "Resonant m of the surfaces: ",sl_in%qval_arr
 c-----------------------------------------------------------------------
 c     loop over rational surfaces to find matched growth rates.
 c-----------------------------------------------------------------------
          DO k=1,MIN(n_k,msing_max)
             WRITE(*,*)
-            WRITE(*,'(A,I0,A)') 'Calculating growth rate on q = ',
+            WRITE(*,'(A,I0,A)') 'Calculating growth rate on m = ',
      $       sl_in%qval_arr(k),' rational surface:'
 
             ! Load per-surface parameters into module-level scalars.
@@ -860,7 +903,7 @@ c     dispersion_AMR_v2 (growthrates_mod) populates Q_store, D_store.
 c-----------------------------------------------------------------------
             IF (AMR_flag .AND. .NOT. coupling_flag) THEN
 
-               WRITE(*,'(A,I0,A)') 'Calling uncoupled AMR scan on q = ',
+               WRITE(*,'(A,I0,A)') 'Calling uncoupled AMR scan on m = ',
      $       sl_in%qval_arr(k),' rational surface:'
                ! The tearing root usually sits near the electron
                ! drift frequency, Re(Q) = -Q_e.
@@ -989,8 +1032,8 @@ c-----------------------------------------------------------------------
          ENDDO
 
          IF (.NOT. (est_gamma_flag)) THEN
-            sl_in%d_beta_arr = (/ 0. /)
-            sl_out%dels_db_arr = (/ 0. /)
+            sl_in%d_beta_arr = 0.0_r8
+            sl_out%dels_db_arr = CMPLX(0.0_r8, 0.0_r8, KIND=r8)
          END IF
 
 c-----------------------------------------------------------------------
@@ -1028,7 +1071,10 @@ c-----------------------------------------------------------------------
             DO i = 1, n_pts
                all_deltas_out(1)%inQs(i) = REAL(Q_store(i))
 
-               all_deltas_out(1)%iinQs(i) = -AIMAG(Q_store(i)) ! verify this sign convention
+               ! scan plane q = omega_hat - i*gamma_hat: store the
+               ! growth-rate axis as +gamma_hat, as in the uncoupled
+               ! output above.
+               all_deltas_out(1)%iinQs(i) = -AIMAG(Q_store(i))
 
                all_deltas_out(1)%real_deltas(i) = REAL(D_store(i))
                all_deltas_out(1)%imag_deltas(i) = AIMAG(D_store(i))
@@ -1110,7 +1156,7 @@ c-----------------------------------------------------------------------
             sl_in%chi_p_arr = chi_p_prof
             sl_in%chi_t_arr = chi_t_prof
             sl_in%kappa_arr = kappa_prof
-            CALL build_inputs(infile,ncfile,sl_in)
+            CALL build_inputs(infile,ncfile,sl_in,zeff,mu_i)
             n_k = SIZE(sl_in%qval_arr)
             CALL allocate_outputs(n_k,sl_out)
          ELSE
@@ -1133,7 +1179,8 @@ c-----------------------------------------------------------------------
             CALL allocate_inputs(n_k,sl_in)
             CALL allocate_outputs(n_k,sl_out)
 
-            sl_in%qval_arr    = (/ qval /)
+            sl_in%qval_arr    = (/ mm /)
+            sl_in%q_arr = (/ qval /)
             sl_in%omegas_arr  = (/ omega /)
             sl_in%Q_e_arr     = (/ Q_e /)
             sl_in%Q_i_arr     = (/ Q_i /)
@@ -1164,7 +1211,7 @@ c-----------------------------------------------------------------------
 
          DO k=1,n_k
             WRITE(*,*)
-            WRITE(*,'(A,I0,A)') 'Computing Br threshold on q = ',
+            WRITE(*,'(A,I0,A)') 'Computing Br threshold on m = ',
      $         sl_in%qval_arr(k),' rational surface'
 
             Q_e   = sl_in%Q_e_arr(k)

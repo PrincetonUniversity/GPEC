@@ -1,6 +1,6 @@
 &SLAYER_INPUT
     input_flag=f         ! reads profile quantities (n_e, t_e, etc.) from an ascii table
-    infile=''            ! Path to ascii table of profile quantities read when using input_flag
+    infile=''            ! Path to the kinetic profile file (read_eq=t), or to an ascii table of surface quantities (input_flag=t)
     ncfile=''            ! Path to netCDF file of STRIDE outputs
     params_flag=f        ! calculates normalized parameters from profile quantities
     ! >>>
@@ -15,14 +15,14 @@
     bt=2.0               ! toroidal field [T]
     rs=0.5               ! minor radius of resonant surface [m]
     R0=1.67              ! major radius of magnetic axis [m]
-    omega=5.00E+03       ! ExB frequency [Hz]
+    omega=5.00E+03       ! ExB rotation frequency [rad/s]
     l_t=0.11             ! temperature gradient scale length
     l_n=0.25             ! density gradient scale length
     qval=2.0             ! q of resonant surface
-    mu_i=2.0             ! ion mass ratio to proton mass, 2 for deuterium plasma
-    zeff=2.0             ! plasma Z_effective
-    dr_val=-0.1          ! GGJ resistive interchange criterion D_R
-    dgeo_val=10.0        ! J.W. Connor geometric prefactor for Delta_crit
+    mu_i=2.0             ! ion mass ratio to proton mass, 2 for deuterium plasma. Also used when read_eq=t
+    zeff=2.0             ! plasma Z_effective. Also used when read_eq=t (the kinetic file's Z_eff is not used)
+    dr_val=-0.1          ! GGJ resistive interchange index D_R (taken from STRIDE when read_eq=t)
+    dgeo_val=10.0        ! J.W. Connor geometric prefactor for the experimental dc_type="toroidal" (taken from STRIDE when read_eq=t)
     chi_p_prof=0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2 ! Rational surface anomalous perpendicular energy diffusivity profile
     chi_t_prof=0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2 ! Rational surface anomalous perpendicular ion momentum diffusivity profile
     kappa_prof=0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0 ! Rational surface thermal conductivity profile (NOTE: set > 0 to override chi_p_prof)
@@ -38,7 +38,7 @@
     inds=0.0             ! normalized ion sound radius, or normalized ion skin depth. Set /= 0.0 to override internal calculation
     intau=1.0            ! ratio of ion to electron temperature
     Q0=1.0               ! unnecessary placeholder variable for inQ?
-    delta_prime=(0.0,0.0)  ! input Delta' or (Delta' - Delta_crit) for growth rate calculation, set /= 0.0 to override internal calculation
+    delta_prime=(0.0,0.0)  ! input Delta' for the growth rate calculation when read_eq=f, referenced to the minor radius (r_s*Delta')
     delta_n_p=(0.01,0.01)  ! delta offset used for jxb calculations. Default for latter is (1e-2,1e-2).
     ingamma=(0.0,0.0)     ! input (Re(Q),Im(Q)) to calculate inner layer Delta. Set /= 0.0 to override internal root finding
 /
@@ -47,14 +47,16 @@
     inum=400             ! resolution to find error field thresholds.
     jnum=100             ! resolution for 2d scan along with Q,omega.
     knum=100             ! resolution for 2d scan along with the other.
-    Q_num=100            ! resolution for stability scan along Re(Q),Im(Q) axes
-    scan_width=1.5       ! stability scan width for Re(Q),Im(Q) scan
-    AMR_passes=4
-    msing_max=2          ! number of surfaces to include in coupled tearing growth rate calculation
-    dc_type="toroidal"   ! Delta_crit type, options are "toroidal", "lar", and "rfitzp"
-    read_eq=f            ! read in equilibrium quantities from STRIDE and kinetic file. Set all normalized params to 0.0
+    Q_num=100            ! number of points per axis of the initial Re(Q),Im(Q) scan grid
+    scan_width=1.5       ! half-width of the Re(Q),Im(Q) scan window, in normalized Q
+    AMR_passes=4         ! number of adaptive refinement passes of the scan grid
+    !scan_center=0.0     ! Re(Q) centre of the scan window. Unset: 0, or the middle of the Doppler-shifted branches of a coupled scan
+    msing_max=2          ! number of rational surfaces (counted from the core) to scan, and to couple when coupling_flag=t
+    dc_type="rfitzp"     ! critical Delta model: "rfitzp" (default), "lar", "none", or "toroidal" (experimental)
+    read_eq=f            ! read the equilibrium and Delta' from STRIDE (ncfile) and profiles from the kinetic file (infile)
     Pperp_Ptor_flag=t    ! Use R. Fitzpatrick formalism (inc. anomalous diffusion) for growth rate calculation
-    coupling_flag=t      ! Solve determinant problem and output 2D scan 
+    coupling_flag=f      ! solve the coupled multi-surface determinant instead of each surface separately. Requires read_eq=t
+    rotation_flag=t      ! Doppler-shift each surface by its ExB rotation in the coupled determinant (root reported in the lab frame)
     QPscan_flag=f        ! scan (Q,P) space for delta and torque.
     Qscan_flag=f         ! scan Q space
     QPescan_flag=f       ! scan (Q,Pe) space for delta and torque.
@@ -75,11 +77,11 @@
     bin_flag=f           ! writes results to binary files
     netcdf_flag=f        ! writes results to netcdf files
     est_gamma_flag=t     ! Calculate and output growth rate estimate
-    match_gamma_flag=t ! Find Delta_hat = Delta_prime match to solve for growth rate
+    match_gamma_flag=t   ! match the layer Delta to Delta' and solve for the growth rate
     stability_flag=f     ! calculate delta dependence on complex Q
     stabscan_flag=f      ! Generate Re(Q),Im(Q) scan and output as ASCII
-    coupled_stabscan_flag=f      ! Generate Re(Q),Im(Q) scan and output as ASCII
-    amr_flag=t           ! Generate Re(Q),Im(Q) scan and output as ASCII
+    coupled_stabscan_flag=f      ! uniform-grid scan of the coupled determinant, output as ASCII
+    amr_flag=t           ! adaptive Re(Q),Im(Q) scan and root extraction for match_gamma_flag (results in the netcdf file)
     br_th_flag=f         ! Calculate br_th
     bal_flag=f           ! calculate the resonant field penetration threshold from torque balance
 /

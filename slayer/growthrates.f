@@ -14,7 +14,7 @@ c       2. allocate_inputs       - allocate slayer_inputs_type
 c       3. allocate_outputs      - allocate slayer_outputs_type
 c       4. shrink_array          - trim over-allocated scan arrays
 c       5. grow_array            - expand scan arrays dynamically
-c       6. calc_determinant      - 2x2 / 3x3 complex determinant
+c       6. calc_determinant      - complex determinant
 c       7. dispersion_det        - coupled dispersion determinant
 c       8. get_or_compute_v2     - hash-cached dispersion eval
 c       9. dispersion_AMR_v2     - AMR scan (cell-based storage)
@@ -96,7 +96,8 @@ c-----------------------------------------------------------------------
      $  sl_in%c_beta_arr(n_k),sl_in%lu_arr(n_k),sl_in%Qconv_arr(n_k),
      $  sl_in%Re_dp_psi_arr(n_k),sl_in%Im_dp_psi_arr(n_k),
      $  sl_in%k_ref_arr(n_k),sl_in%alpha_arr(n_k),
-     $  sl_in%D_fac_arr(n_k),sl_in%q_shift_arr(n_k))
+     $  sl_in%D_fac_arr(n_k),sl_in%q_shift_arr(n_k),
+     $  sl_in%q_arr(n_k))
       sl_in%q_shift_arr = 0.0_r8
 c     namelist inputs are taken as already r_s-referenced: identity
 c     reference-length conversion (K = 1).
@@ -150,167 +151,148 @@ c-----------------------------------------------------------------------
       END SUBROUTINE grow_array
 c-----------------------------------------------------------------------
 c     subprogram 6. calc_determinant.
-c     Compute the determinant of a 2x2 or 3x3 complex matrix.
-c     Returns (0,0) and sets status=-1 for unsupported sizes.
-c     status=0 on success, -1 when nk is neither 2 nor 3.
+c     Determinant of an nk x nk complex matrix: closed forms for
+c     nk <= 3, LU factorisation (LAPACK zgetrf) above that.
+c     status=0 on success, -1 for nk < 1 or a failed factorisation.
 c-----------------------------------------------------------------------
       SUBROUTINE calc_determinant(matk, nk, detk, status)
 
       IMPLICIT NONE
 
 c --- arguments
-      INTEGER, INTENT(IN) :: nk                            ! matrix rank (2 or 3)
+      INTEGER, INTENT(IN) :: nk                            ! matrix rank
       COMPLEX(r8), DIMENSION(nk,nk), INTENT(IN) :: matk    ! input matrix
       COMPLEX(r8), INTENT(OUT) :: detk                     ! determinant result
-      INTEGER, INTENT(OUT) :: status        ! 0=success, -1=unsupported rank
-                        
+      INTEGER, INTENT(OUT) :: status        ! 0=success, -1=failure
+c --- locals (LU path)
+      COMPLEX(r8), DIMENSION(nk,nk) :: lu_mat
+      INTEGER, DIMENSION(nk) :: ipiv
+      INTEGER :: info, i
+
       status = 0  ! Initialize status as success
-            
+
       SELECT CASE (nk)
+        CASE (1)
+        detk = matk(1,1)
+
         CASE (2)
         ! 2x2 determinant: ad - bc
         detk = matk(1,1) * matk(2,2) - matk(1,2) * matk(2,1)
-                    
+
         CASE (3)
         ! 3x3 determinant using cofactor expansion along first row
         detk = matk(1,1)*(matk(2,2)*matk(3,3)-matk(2,3)
      $      *matk(3,2))-matk(1,2)*(matk(2,1)*matk(3,3)
      $      -matk(2,3)*matk(3,1))+matk(1,3)*(matk(2,1)
      $      *matk(3,2)-matk(2,2)*matk(3,1))
-                    
+
         CASE default
-        ! Unsupported matrix size
+        IF (nk < 1) THEN
             detk = CMPLX(0.0_r8, 0.0_r8, KIND=r8)
             status = -1
-                    
+        ELSE
+        ! product of the LU diagonal, sign from the row exchanges.
+        ! info > 0 flags an exactly singular matrix, whose zero
+        ! pivot already makes the product zero.
+            lu_mat = matk
+            CALL zgetrf(nk, nk, lu_mat, nk, ipiv, info)
+            IF (info < 0) THEN
+                detk = CMPLX(0.0_r8, 0.0_r8, KIND=r8)
+                status = -1
+            ELSE
+                detk = CMPLX(1.0_r8, 0.0_r8, KIND=r8)
+                DO i = 1, nk
+                    detk = detk * lu_mat(i,i)
+                    IF (ipiv(i) /= i) detk = -detk
+                END DO
+            END IF
+        END IF
+
       END SELECT
       RETURN
       END SUBROUTINE calc_determinant
 c-----------------------------------------------------------------------
 c     subprogram 7. dispersion_det.
-c     Compute the coupled dispersion determinant for n_k surfaces.
+c     Coupled dispersion determinant for the first msing_max rational
+c     surfaces:
 c
-c     For n_k = 1 (single surface):
-c       Evaluate riccati_f() (uses module g_tmp), de-normalise by lu^(1/3), and
-c       return Deltaprime - delta(Q).
+c        det( Dp - diag(Delta_crit_k) - diag(S_k^(1/3)*Delta_k(g_k)) )
 c
-c     For n_k = 2 or 3 (coupled surfaces):
-c       Build the diagonal delta(Q) matrix, subtract from dp_matrix,
-c       and return det(dp_matrix - delta_Q).
-c
+c     Dp is the r_s-referenced Deltaprime matrix (complex), of which
+c     the leading msing_max x msing_max block is used, so a subset of
+c     the surfaces STRIDE found can be coupled. Delta_crit is a local
+c     layer offset and enters the diagonal only. Each layer response
+c     is evaluated at that surface's own normalised eigenvalue g_k.
+c     For msing_max = 1 this is the single-surface matching condition.
 c-----------------------------------------------------------------------
       FUNCTION dispersion_det(g_in,n_k,sl_in,msing_max)
 
 c --- arguments
       COMPLEX(r8), INTENT(IN) :: g_in       ! complex growth rate
       INTEGER, INTENT(IN) :: n_k            ! number of surfaces
-      INTEGER, INTENT(IN) :: msing_max      ! max surfaces to include
+      INTEGER, INTENT(IN) :: msing_max      ! surfaces to include
       TYPE(slayer_inputs_type), INTENT(IN) :: sl_in
 c --- function result and locals
       COMPLEX(r8) :: dispersion_det         ! returned determinant
       COMPLEX(r8) :: det_val                ! intermediate determinant
-      COMPLEX(r8) :: tmp_delta              ! single-surface delta
-      COMPLEX(r8), ALLOCATABLE :: delta_Q(:,:)      ! diagonal delta matrix
-      COMPLEX(r8), ALLOCATABLE :: result_matrix(:,:) ! dp - delta_Q
+      COMPLEX(r8), ALLOCATABLE :: result_matrix(:,:) ! Dp - layer terms
       INTEGER :: k                          ! surface loop index
       INTEGER :: det_status                 ! calc_determinant error status
 
-c --- single-surface branch
-      IF (msing_max < 2) THEN
-c        set module-level variables for riccati_f
-         Q_e = sl_in%Q_e_arr(1)
-         Q_i = sl_in%Q_i_arr(1)
-         P_perp = sl_in%P_perp_arr(1)
-         P_tor = sl_in%P_tor_arr(1)
-         tau = sl_in%tau_arr(1)
-         D_norm = sl_in%D_norm_arr(1)
-         c_beta = sl_in%c_beta_arr(1)
-         tauk = sl_in%Qconv_arr(1)
-         iota_e = Q_e / (Q_e - Q_i)
-c        BENCHMARK PATCH: ensure pr is set so riccati_f's
-c        atol = 1e-7*pr**0.4 does not inherit a stale/zero module value.
-         pr = P_perp
-
-         g_tmp = g_in
-         tmp_delta=riccati_f()
-c        de-normalise delta by lu^(1/3)
-         det_val=tmp_delta*
-     $      (sl_in%lu_arr(1)**(1.0_r8/3.0_r8))
-
-c        return Deltaprime - delta(Q)
-         dispersion_det = sl_in%Re_dp_arr(1) - det_val
-
-c --- coupled-surface branch (2 or 3 surfaces)
-      ELSEIF ((msing_max == 2) .OR. (msing_max == 3)) THEN
-         ALLOCATE(delta_Q(msing_max,msing_max))
-         delta_Q=CMPLX(0.0_r8, 0.0_r8, KIND=r8)
-         DO k=1,msing_max
-c           set module-level variables for this surface
-            Q_e = sl_in%Q_e_arr(k)
-            Q_i = sl_in%Q_i_arr(k)
-            P_perp = sl_in%P_perp_arr(k)
-            P_tor = sl_in%P_tor_arr(k)
-            tau = sl_in%tau_arr(k)
-            D_norm = sl_in%D_norm_arr(k)
-            c_beta = sl_in%c_beta_arr(k)
-            tauk = sl_in%Qconv_arr(k)
-            iota_e = Q_e / (Q_e - Q_i)
-c           BENCHMARK PATCH: ensure pr is set so riccati_f's
-c           atol = 1e-7*pr**0.4 does not inherit a stale/zero module value.
-            pr = P_perp
-
-c           evaluate riccati_f at rescaled growth rate, de-normalise.
-c           g_in is normalised by the first surface's tau_k, i.e.
-c           g_in = tau_1*(gamma + i*omega). The same physical
-c           eigenvalue reaches surface k as tau_k*(gamma + i*omega)
-c           = g_in*tau_k/tau_1, the normalisation its Q_e and Q_i use.
-            g_tmp = g_in*(tauk/sl_in%Qconv_arr(1))
-c           The layer's Q is the mode frequency in the local ExB
-c           frame, while the coupled scan runs in the lab frame:
-c           Q_layer = tau_k*omega_lab - tau_k*n*Omega_E. q_shift_arr
-c           holds that real offset (zero unless the driver sets it),
-c           and g = i*Q.
-            g_tmp = g_tmp + ifac*sl_in%q_shift_arr(k)
-            delta_Q(k,k)=riccati_f()
-            delta_Q(k,k)=delta_Q(k,k)*
-     $         sl_in%lu_arr(k)**(1.0_r8/3.0_r8)
-         END DO
-
-c        Coupled dispersion: det(Delta' - diag(Delta_c) - delta_Q).
-c        Delta_crit is a *local* layer-intrinsic offset at each
-c        rational surface, so it modifies only the diagonal of
-c        Delta'; outer-region off-diagonal couplings are untouched.
-c        This reduces to the single-surface matching
-c           (Delta'_kk - Delta_crit_k) = S^(1/3) * Delta_s
-c        on the diagonal. When dc_type='none', d_crit_arr is zero
-c        and the subtraction is a no-op, so this is backward
-c        compatible with the original coupled behaviour.
-c
-c        BENCHMARK PATCH: take only the (1:msing_max, 1:msing_max)
-c        sub-block of dp_matrix so callers can compute the coupled
-c        dispersion on a subset of the rational surfaces that STRIDE
-c        actually found. This is needed when STRIDE finds 4+ surfaces
-c        (e.g. DIII-D 147131 with sas_flag=t, qhigh=1e3) but the
-c        coupled-dispersion code only supports msing_max ≤ 3.
-         result_matrix = sl_in%dp_matrix(1:msing_max,1:msing_max)
-     $       - delta_Q
-         DO k = 1, msing_max
-            result_matrix(k,k) = result_matrix(k,k)
-     $           - CMPLX(sl_in%d_crit_arr(k), 0.0_r8, KIND=r8)
-         END DO
-         CALL calc_determinant(result_matrix, msing_max, det_val,
-     $        det_status)
-         IF (det_status /= 0) THEN
-            WRITE(*,*) 'ERROR: calc_determinant unsupported rank=',
-     $           msing_max
-            STOP 'dispersion_det: calc_determinant failed'
-         END IF
-         DEALLOCATE(delta_Q, result_matrix)
-         dispersion_det = det_val
-      ELSE
-         WRITE(*,*) "Error: no support for msing > 3"
-         STOP "dispersion_det: unsupported n_k"
+      IF (msing_max < 1 .OR. msing_max > n_k) THEN
+         WRITE(*,*) 'ERROR: dispersion_det needs 1 <= msing_max <= ',
+     $        'number of surfaces; got msing_max=',msing_max,
+     $        ' with',n_k,' surfaces'
+         STOP 'dispersion_det: msing_max out of range'
       END IF
+      IF (.NOT. ALLOCATED(sl_in%dp_matrix)) THEN
+         WRITE(*,*) 'ERROR: the coupled determinant needs the STRIDE'
+         WRITE(*,*) '  Deltaprime matrix; run with read_eq=t.'
+         STOP 'dispersion_det: no Deltaprime matrix'
+      END IF
+
+      ALLOCATE(result_matrix(msing_max,msing_max))
+      result_matrix = sl_in%dp_matrix(1:msing_max,1:msing_max)
+
+      DO k=1,msing_max
+c        set module-level variables for this surface
+         Q_e = sl_in%Q_e_arr(k)
+         Q_i = sl_in%Q_i_arr(k)
+         P_perp = sl_in%P_perp_arr(k)
+         P_tor = sl_in%P_tor_arr(k)
+         tau = sl_in%tau_arr(k)
+         D_norm = sl_in%D_norm_arr(k)
+         c_beta = sl_in%c_beta_arr(k)
+         tauk = sl_in%Qconv_arr(k)
+         iota_e = Q_e / (Q_e - Q_i)
+
+c        g_in is normalised by the first surface's tau_k, i.e.
+c        g_in = tau_1*(gamma + i*omega). The same physical
+c        eigenvalue reaches surface k as tau_k*(gamma + i*omega)
+c        = g_in*tau_k/tau_1, the normalisation its Q_e and Q_i use.
+         g_tmp = g_in*(tauk/sl_in%Qconv_arr(1))
+c        The layer's Q is the mode frequency in the local ExB
+c        frame, while the coupled scan runs in the lab frame:
+c        Q_layer = tau_k*omega_lab - tau_k*n*Omega_E. q_shift_arr
+c        holds that real offset (zero unless the driver sets it),
+c        and g = i*Q.
+         g_tmp = g_tmp + ifac*sl_in%q_shift_arr(k)
+
+c        layer response, de-normalised by S^(1/3), and Delta_crit
+         result_matrix(k,k) = result_matrix(k,k)
+     $        - riccati_f()*sl_in%lu_arr(k)**(1.0_r8/3.0_r8)
+     $        - CMPLX(sl_in%d_crit_arr(k), 0.0_r8, KIND=r8)
+      END DO
+
+      CALL calc_determinant(result_matrix, msing_max, det_val,
+     $     det_status)
+      IF (det_status /= 0) THEN
+         WRITE(*,*) 'ERROR: calc_determinant failed for rank=',
+     $        msing_max
+         STOP 'dispersion_det: calc_determinant failed'
+      END IF
+      DEALLOCATE(result_matrix)
+      dispersion_det = det_val
       END FUNCTION dispersion_det
 
 c-----------------------------------------------------------------------
