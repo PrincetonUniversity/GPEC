@@ -40,7 +40,7 @@ c --- arguments
       REAL(r8), INTENT(IN) :: t_i       ! ion temperature      [eV]
       REAL(r8), INTENT(IN) :: omega     ! toroidal rotation    [rad/s]
       REAL(r8), INTENT(IN) :: dr_val    ! radial width dr at surface
-      REAL(r8), INTENT(IN) :: dgeo_val  ! geometric delta (Shafranov shift factor)
+      REAL(r8), INTENT(IN) :: dgeo_val  ! unused; kept for the interface
       REAL(r8), INTENT(IN) :: l_n       ! density gradient length
       REAL(r8), INTENT(IN) :: l_t       ! temperature gradient length
       REAL(r8), INTENT(IN) :: qval      ! safety factor
@@ -213,7 +213,6 @@ c     short-mfp / long-mfp interpolation for chi_parallel.
 c     dc_type (from sglobal_mod) selects the formula:
 c       'lar'      -- cylindrical (Lutjens)
 c       'rfitzp'   -- R. Fitzpatrick
-c       'toroidal' -- toroidal geometry using dgeo_val
 c       default    -- dc_tmp = 0
 c-----------------------------------------------------------------------
       IF (ABS(dr_val) > 0.0_r8) THEN
@@ -249,9 +248,6 @@ c-----------------------------------------------------------------------
      $                     *( (nr*ABS(sval))/(R0*rs) )**0.5_r8
               CASE('rfitzp')
                   dc_tmp = -(SQRT(2.0_r8)*(pi**(1.5_r8))*dr_val) / Wd
-              CASE('toroidal')
-                  dc_tmp = 0.5_r8*(-dr_val)*(pi**1.5_r8)
-     $                     *((chi_par/chis(1))**0.25_r8)*dgeo_val
               CASE default
                   dc_tmp = 0.0_r8
           END SELECT

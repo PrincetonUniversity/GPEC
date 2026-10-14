@@ -49,13 +49,13 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE stride_netcdf_out(wp,wv,wt,epi,evi,eti,dp,
-     $                              pl1,va1,to1,shr,dgeo)
+     $                              pl1,va1,to1,shr)
 
       REAL(r8), DIMENSION(mpert), INTENT(IN) :: epi,evi,eti
       COMPLEX(r8), DIMENSION(mpert,mpert), INTENT(IN) :: wp,wv,wt
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: dp
       REAL(r8), INTENT(IN) :: pl1,va1,to1
-      REAL(r8), DIMENSION(msing), INTENT(IN) :: shr,dgeo
+      REAL(r8), DIMENSION(msing), INTENT(IN) :: shr
 
       INTEGER :: i, ncid,
      $    i_dim, m_dim, mo_dim, p_dim, i_id, m_id, mo_id, p_id,
@@ -63,7 +63,7 @@ c-----------------------------------------------------------------------
      $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id,
      $    r_dim, rp_dim, l_dim, lp_dim, r_id, rp_id, l_id, lp_id,
      $    pr_id, qr_id, dp_id, ap_id, bp_id, gp_id, dpp_id,
-     $    shear_id,resm_id,drr_id,dgeo_id,dir_id
+     $    shear_id,resm_id,drr_id,dir_id
       COMPLEX(r8), DIMENSION(mpert) :: ep,ev,et
       CHARACTER(2) :: sn
       CHARACTER(64) :: ncfile
@@ -205,8 +205,6 @@ c-----------------------------------------------------------------------
      $       "Safety Factor at Rational Surfaces") )
          CALL check( nf90_def_var(ncid, "shear", nf90_double, r_dim,
      $                            shear_id) )
-         CALL check( nf90_def_var(ncid, "Delta_geo", nf90_double, r_dim,
-     $                            dgeo_id) )
          CALL check( nf90_def_var(ncid, "resm", nf90_int, r_dim,
      $                            resm_id) )
          CALL check( nf90_def_var(ncid, "dr_rational", nf90_double,
@@ -282,7 +280,6 @@ c-----------------------------------------------------------------------
      $                                           i=1,msing)/)) )
          CALL check( nf90_put_var(ncid,shear_id, shr) )
          CALL check( nf90_put_var(ncid,resm_id, resm) )
-         CALL check( nf90_put_var(ncid,dgeo_id, dgeo) )
          CALL check( nf90_put_var(ncid,drr_id, dr_rationals))
          CALL check( nf90_put_var(ncid,dir_id, di_rationals))
       ENDIF

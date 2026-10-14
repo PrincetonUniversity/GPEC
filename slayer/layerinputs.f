@@ -31,13 +31,13 @@ c=======================================================================
 c-----------------------------------------------------------------------
 c     subprogram 1. read_stride_netcdf_diagonal.
 c     Read the STRIDE NetCDF file and extract the Deltaprime matrix,
-c     rational-surface geometry (q, psi_n, shear, dgeo, dr), and
+c     rational-surface geometry (q, psi_n, shear, D_R, D_I), and
 c     equilibrium scalars (R0, B_t0, psi0, m_psi, n, resm).
 c     All global-attribute reads use NF90_GLOBAL explicitly;
 c     variable IDs are obtained via nf90_inq_varid before use.
 c-----------------------------------------------------------------------
       SUBROUTINE read_stride_netcdf_diagonal(ncfile,msing,dp_mat,
-     $   Re_dp_diagonal,Im_dp_diagonal,q_rational,psi_n_rational,dgeo,
+     $   Re_dp_diagonal,Im_dp_diagonal,q_rational,psi_n_rational,
      $   shear,r_o,my_bt0,my_psio,dr_vals,di_vals,mpsi,nn,resm)
 
 c --- arguments (all INTENT(OUT) except ncfile)
@@ -51,8 +51,7 @@ c --- arguments (all INTENT(OUT) except ncfile)
       REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) ::
      $      q_rational,        ! rational-surface q values
      $      psi_n_rational,    ! normalised psi at each surface
-     $      shear,             ! magnetic shear
-     $      dgeo               ! geometric delta (Shafranov shift)
+     $      shear              ! magnetic shear
       REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) ::
      $      r_o,               ! major radius R0
      $      my_bt0,            ! toroidal field B_t0
@@ -69,7 +68,7 @@ c --- locals
       INTEGER(kind=nf90_int) :: ncid, stat             ! NetCDF file id / return status
       INTEGER(kind=nf90_int) :: r_dim_id, r_dim        ! dimension id / length (unused)
       INTEGER(kind=nf90_int) :: dp_id, qr_id, pr_id    ! variable ids
-      INTEGER(kind=nf90_int) :: dgeo_id, shear_id      ! variable ids
+      INTEGER(kind=nf90_int) :: shear_id               ! variable id
       INTEGER(kind=nf90_int) :: resm_id, drr_id         ! variable ids
       INTEGER(kind=nf90_int) :: dir_id                  ! variable id
       INTEGER(kind=nf90_int), DIMENSION(1) :: start, count  ! NetCDF hyperslab
@@ -95,7 +94,7 @@ c --- read msing (number of singular surfaces) from global attribute
 
 c --- allocate output arrays sized by msing
       ALLOCATE(Re_dp_diagonal(msing), q_rational(msing),
-     $         psi_n_rational(msing), shear(msing), dgeo(msing),
+     $         psi_n_rational(msing), shear(msing),
      $         resm(msing), Im_dp_diagonal(msing), dr_vals(msing),
      $         di_vals(msing))
       ALLOCATE(dp_mat(msing, msing, 2))
@@ -127,8 +126,6 @@ c --- obtain NetCDF variable IDs
       stat = nf90_inq_varid(ncid, 'q_rational',    qr_id)
       CALL sl_check(stat)
       stat = nf90_inq_varid(ncid, 'psi_n_rational', pr_id)
-      CALL sl_check(stat)
-      stat = nf90_inq_varid(ncid, 'Delta_geo',     dgeo_id)
       CALL sl_check(stat)
       stat = nf90_inq_varid(ncid, 'shear',         shear_id)
       CALL sl_check(stat)
@@ -163,8 +160,6 @@ c --- read variable data: Deltaprime matrix and 1-D surface arrays
       stat = nf90_get_var(ncid, qr_id, q_rational)
       CALL sl_check(stat)
       stat = nf90_get_var(ncid, pr_id, psi_n_rational)
-      CALL sl_check(stat)
-      stat = nf90_get_var(ncid, dgeo_id, dgeo)
       CALL sl_check(stat)
       stat = nf90_get_var(ncid, shear_id, shear)
       CALL sl_check(stat)
@@ -343,7 +338,7 @@ c --- local plasma quantities at current surface
       REAL(r8) :: my_qval, my_sval          ! safety factor, magnetic shear
       REAL(r8) :: my_bt, my_rs, R_0         ! toroidal field, minor radius, major radius
       REAL(r8) :: zeff                      ! effective charge from kin%f(9)
-      REAL(r8) :: dgeo_val                  ! geometric delta (Shafranov)
+      REAL(r8) :: dgeo_val                  ! unused params() argument
       REAL(r8) :: mu_i                      ! ion mass ratio to proton
       REAL(r8) :: dr_val                    ! radial width dr at surface
       REAL(r8) :: l_n, l_t                  ! density / temperature gradient lengths
@@ -353,7 +348,7 @@ c --- STRIDE data (from read_stride_netcdf_diagonal)
       REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: dp_mat
       REAL(r8), DIMENSION(:), ALLOCATABLE :: Re_dp_diagonal,
      $           Im_dp_diagonal, q_rational, psi_n_rational,
-     $           shear, dgeo, r_o, my_bt0, my_psio, mpsi_arr,
+     $           shear, r_o, my_bt0, my_psio, mpsi_arr,
      $           dr_vals, di_vals, dr_arr
 c --- local per-surface kinetic arrays (for future NetCDF diagnostic output)
       REAL(r8), DIMENSION(:), ALLOCATABLE :: ne_arr, te_arr,
@@ -383,7 +378,7 @@ c     read STRIDE NetCDF: Deltaprime matrix, geometry, equilibrium scalars.
 c-----------------------------------------------------------------------
       CALL read_stride_netcdf_diagonal(ncfile,msing,dp_mat,
      $           Re_dp_diagonal,Im_dp_diagonal,q_rational,
-     $           psi_n_rational,dgeo,shear,r_o,my_bt0,my_psio,dr_vals,
+     $           psi_n_rational,shear,r_o,my_bt0,my_psio,dr_vals,
      $           di_vals,mpsi_arr,nn_arr,resm)
 
 c     The toroidal mode number of the STRIDE run defines the layer
@@ -526,7 +521,7 @@ c        deuterium plasma with carbon impurities.
          omega    = kin%f(5)
          my_qval  = q_rational(ising)
          my_sval  = shear(ising)
-         dgeo_val = dgeo(ising)
+         dgeo_val = 0.0_r8
          my_bt    = my_bt0(1)
          my_rs    = a_surf
          R_0      = r_o(1)

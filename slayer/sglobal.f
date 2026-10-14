@@ -85,7 +85,7 @@ c --- diamagnetic and rotation frequencies
 c --- stability / Delta_crit
       REAL(r8) :: dc_tmp           ! computed Delta_crit
       COMPLEX(r8) :: delta_eff     ! (Deltaprime - Delta_crit)/S^(1/3)
-      CHARACTER(20) :: dc_type     ! dc formula: 'rfitzp','lar','toroidal','none'
+      CHARACTER(20) :: dc_type     ! dc formula: 'rfitzp','lar','none'
 c --- solver workspace / results
       COMPLEX(r8) :: g_tmp         ! temporary complex growth rate
       REAL(r8) :: gamma_fac        ! growth-rate conversion factor

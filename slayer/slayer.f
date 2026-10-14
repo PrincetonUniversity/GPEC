@@ -100,7 +100,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: mu_i               ! ion mass number
       REAL(r8) :: zeff               ! effective charge
       REAL(r8) :: dr_val             ! radial derivative parameter
-      REAL(r8) :: dgeo_val           ! geometric factor parameter
+      REAL(r8) :: dgeo_val           ! unused; still read so old inputs parse
       REAL(r8) :: scan_width         ! half-width of complex-Q scan
       REAL(r8) :: scan_center        ! Re(Q) centre of complex-Q scan
       REAL(r8) :: q_lo,q_hi,q_br     ! expected coupled-branch Re(Q)
@@ -354,13 +354,14 @@ c-----------------------------------------------------------------------
       SELECT CASE (TRIM(dc_type))
          CASE ('rfitzp','lar','none','')
          CASE ('toroidal')
-            WRITE(*,*) "WARNING: dc_type='toroidal' is experimental."
-            WRITE(*,*) "  Its geometric factor (STRIDE Delta_geo) has"
-            WRITE(*,*) "  not been verified in the r_s reference"
-            WRITE(*,*) "  length; prefer dc_type='rfitzp'."
+            WRITE(*,*) "ERROR: dc_type='toroidal' is not available."
+            WRITE(*,*) "  Its geometric factor was not correct in the"
+            WRITE(*,*) "  r_s reference length and has been removed."
+            WRITE(*,*) "  Use dc_type='rfitzp'."
+            STOP 'slayer: dc_type toroidal removed'
          CASE DEFAULT
             WRITE(*,*) "ERROR: unknown dc_type='",TRIM(dc_type),"'."
-            WRITE(*,*) "  Use 'rfitzp', 'lar', 'toroidal' or 'none'."
+            WRITE(*,*) "  Use 'rfitzp', 'lar' or 'none'."
             STOP 'slayer: unknown dc_type'
       END SELECT
 

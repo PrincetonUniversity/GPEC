@@ -22,7 +22,7 @@
     mu_i=2.0             ! ion mass ratio to proton mass, 2 for deuterium plasma. Also used when read_eq=t
     zeff=2.0             ! plasma Z_effective. Also used when read_eq=t (the kinetic file's Z_eff is not used)
     dr_val=-0.1          ! GGJ resistive interchange index D_R (taken from STRIDE when read_eq=t)
-    dgeo_val=10.0        ! J.W. Connor geometric prefactor for the experimental dc_type="toroidal" (taken from STRIDE when read_eq=t)
+    dgeo_val=0.0         ! unused (the toroidal critical Delta was removed); accepted so older inputs still read
     chi_p_prof=0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2 ! Rational surface anomalous perpendicular energy diffusivity profile
     chi_t_prof=0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2 ! Rational surface anomalous perpendicular ion momentum diffusivity profile
     kappa_prof=0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0 ! Rational surface thermal conductivity profile (NOTE: set > 0 to override chi_p_prof)
@@ -52,7 +52,7 @@
     AMR_passes=4         ! number of adaptive refinement passes of the scan grid
     !scan_center=0.0     ! Re(Q) centre of the scan window. Unset: 0, or the middle of the Doppler-shifted branches of a coupled scan
     msing_max=2          ! number of rational surfaces (counted from the core) to scan, and to couple when coupling_flag=t
-    dc_type="rfitzp"     ! critical Delta model: "rfitzp" (default), "lar", "none", or "toroidal" (experimental)
+    dc_type="rfitzp"     ! critical Delta model: "rfitzp" (default), "lar", or "none"
     read_eq=f            ! read the equilibrium and Delta' from STRIDE (ncfile) and profiles from the kinetic file (infile)
     Pperp_Ptor_flag=t    ! Use R. Fitzpatrick formalism (inc. anomalous diffusion) for growth rate calculation
     coupling_flag=f      ! solve the coupled multi-surface determinant instead of each surface separately. Requires read_eq=t
