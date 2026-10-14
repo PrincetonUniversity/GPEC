@@ -431,3 +431,12 @@ mkbin: pentrc dcon rdcon stride match rmatch slayer multi sum gpec
 	cp ../sum/sum $(BINDIR)
 	cp ../gpec/gpec $(BINDIR)
 	$(call print_success,All binaries copied to $(BINDIR))
+
+# Focused PENTRC regression; CASE contains a normal readable PENTRC input deck.
+.PHONY: check-pentrc-radial
+check-pentrc-radial: pentrc
+	$(FCPENTRC) -I../pentrc ../regression/test/pentrc_radial_profile.f90 \
+		$(PENTRC_LIBDIRS) -lpentrc $(PENTRC_LIBS) $(LDFLAGS) \
+		-o $(BINDIR)/test_pentrc_radial_profile
+	@test -n "$(CASE)" || { echo 'Set CASE to a PENTRC case directory'; exit 2; }
+	cd "$(CASE)" && $(abspath $(BINDIR))/test_pentrc_radial_profile
