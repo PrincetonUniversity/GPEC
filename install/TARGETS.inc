@@ -450,3 +450,12 @@ check-pentrc-energy-istate: pentrc
 	$(BINDIR)/test_pentrc_energy_istate default
 	! $(BINDIR)/test_pentrc_energy_istate tight > $(BINDIR)/test_pentrc_energy_istate.log 2>&1
 	grep -q "ERROR: xintgrl_lsode - LSODE failed" $(BINDIR)/test_pentrc_energy_istate.log
+
+# A bracketed cubic root must not be dropped near a cell endpoint.
+.PHONY: check-spline-root-endpoint
+check-spline-root-endpoint: equil
+	mkdir -p $(BINDIR)
+	$(FCEQUIL) -I../equil ../regression/test/spline_root_endpoint.f90 \
+		-L$(LIBDIR) -lequil -L$(MATHDIR) $(MATHLIBS) $(LDFLAGS) \
+		-o $(BINDIR)/test_spline_root_endpoint
+	$(BINDIR)/test_spline_root_endpoint
