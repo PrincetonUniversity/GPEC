@@ -696,6 +696,7 @@ c-----------------------------------------------------------------------
       
       REAL(r8) :: q, f1raw, p1, chi1, jac
       REAL(r8) :: eta, rfac, v21, v22, v23, v33, dpsq
+      REAL(r8), DIMENSION(3,3) :: w
       REAL(r8), DIMENSION(0:mthsurf) :: jacs, r_vec
 
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun
@@ -911,6 +912,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(0:mthsurf), INTENT(OUT) :: cveri_fun
 
       INTEGER :: itheta, ipert
+      REAL(r8) :: jac
       COMPLEX(r8), DIMENSION(mpert) :: dth_cvz_mn, dzt_cvt_mn
       COMPLEX(r8), DIMENSION(mpert) :: curlpsi_mn
 
@@ -971,7 +973,7 @@ c-----------------------------------------------------------------------
      $     q2_fun, jqx_fun, pdiv_fun, total_fun
 
       INTEGER :: itheta
-      REAL(r8) :: f1raw, p1
+      REAL(r8) :: f1raw, p1, chi1, jac, jac1
       REAL(r8) :: q2_density
       REAL(r8) :: mu0jtheta, mu0jzeta
       COMPLEX(r8) :: jqx_density, total_density, pdiv_density
@@ -993,6 +995,7 @@ c-----------------------------------------------------------------------
       CALL spline_eval(sq, psi, 1)
       f1raw = sq%f1(1)
       p1 = sq%f1(2) / mu0
+      chi1 = psio * twopi
 
       CALL iscdftb(mfac, mpert, xsp_fun, mthsurf, xsp_mn)
       CALL iscdftb(mfac, mpert, xmp1_fun, mthsurf, xmp1_mn)
@@ -1101,7 +1104,7 @@ c     convention as gpeq_epfterms epf_density: integral = sum den*jac/mth.
       COMPLEX(r8), DIMENSION(0:mthsurf) :: cwp_fun, cwt_fun, cwz_fun
       COMPLEX(r8), DIMENSION(0:mthsurf) :: cvp_fun, cvt_fun, cvz_fun
       REAL(r8) :: epf_psi_int, epf_theta_int, epf_zeta_int
-      REAL(r8) :: dpsi_d, dthe_d, dzet_d
+      REAL(r8) :: dpsi_d, dthe_d, dzet_d, jac
       
       IF(debug_flag) PRINT *, "Entering gpeq_epf"
 c-----------------------------------------------------------------------
@@ -1171,7 +1174,7 @@ c     convention as gpeq_epfterms: integral = sum den*jac/mthsurf.
       INTEGER :: itheta
       COMPLEX(r8), DIMENSION(0:mthsurf) :: K_fun, xno_fun
       REAL(r8), DIMENSION(0:mthsurf) :: K_term1, K_term2, K_term3
-      REAL(r8) :: xin2_fac, xin2_loc, d1, d2, d3
+      REAL(r8) :: xin2_fac, xin2_loc, d1, d2, d3, jac
       COMPLEX(r8) :: dst1_int, dst2_int, dst3_int
 
 c-----------------------------------------------------------------------
@@ -1219,8 +1222,9 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(0:mthsurf), INTENT(OUT) :: shear_fun
 
       INTEGER :: itheta
-      REAL(r8) :: r_val, theta_val, q, q1
+      REAL(r8) :: r_val, theta_val, q, q1, chi1, jac, rfac, eta
       REAL(r8) :: dpdp, dpdt, dpdz, shear_deriv
+      REAL(r8), DIMENSION(3,3) :: w, v
       REAL(r8) :: shear_contra
       TYPE(spline_type) :: shear_temp
 
@@ -1230,6 +1234,7 @@ c-----------------------------------------------------------------------
       CALL spline_eval(sq, psi, 1)
       q = sq%f(4)
       q1 = sq%f1(4)
+      chi1 = psio * twopi
 
 c-----------------------------------------------------------------------
 c     Allocate spline for shear_temp with 5 components:
@@ -1339,8 +1344,9 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(0:mthsurf), INTENT(OUT) :: curv_fun
 
       INTEGER :: itheta
-      REAL(r8) :: r_val, theta_val, p1
+      REAL(r8) :: r_val, theta_val, p1, jac, rfac, eta
       REAL(r8) :: delpsi
+      REAL(r8), DIMENSION(3,3) :: w
       REAL(r8) :: bsq_val, bsq_psi, bsq_theta
       REAL(r8) :: dpdt , kappa_psi
 
@@ -1416,7 +1422,8 @@ c-----------------------------------------------------------------------
       INTEGER :: itheta
       REAL(r8) :: f1raw, delpsi, chi1, p1, q
       REAL(r8) :: jwt, jwz, bth, bze, bsq_val, sigma, jdotb_val
-      REAL(r8) :: g22, g23, g33, r_val
+      REAL(r8) :: g22, g23, g33, r_val, jac, rfac, eta
+      REAL(r8), DIMENSION(3,3) :: w, v
       REAL(r8), DIMENSION(0:mthsurf) :: K_t1, K_t2, K_t3
       REAL(r8), DIMENSION(0:mthsurf) :: sigma_vals, jdotb_vals
       COMPLEX(r8), DIMENSION(0:mthsurf) :: shear_fun, curv_fun
@@ -1545,6 +1552,8 @@ c       21 dst1_den (K1 xin2), 22 dst3_den (K3 xin2).
      $     epf_density
       REAL(r8) :: delpsi_val, dpsq, bsq_val, sigma_local, jdotb_val
       REAL(r8) :: jwt, jwz, bth, bze, g22, g33, g23, r_val
+      REAL(r8) :: jac, rfac, eta
+      REAL(r8), DIMENSION(3,3) :: w, v
       REAL(r8) :: xin2, mu0jwt, mu0jwz
       REAL(r8) :: mu0jpar_t, mu0jpar_z, mu0jper_t, mu0jper_z
       REAL(r8) :: jsq_val, jpar_val, bmod_val

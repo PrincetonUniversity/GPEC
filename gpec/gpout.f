@@ -7757,7 +7757,7 @@ c-----------------------------------------------------------------------
 c     recon3 output units, within the reserved recon range 72-99.
       INTEGER, PARAMETER :: usurf=97, u_int=98, u_log=99
       INTEGER :: istep, nint_pts, iint
-      REAL(r8) :: psi, dpsi_local
+      REAL(r8) :: psi, dpsi_local, rfac, eta
       REAL(r8) :: A_hr, B_hr, Iperp_hr, Cpar_hr, epf_hr
       REAL(r8) :: A_total, B_total, Iperp_total, Cpar_total, epf_total
       REAL(r8) :: dst1_total, dst3_total
