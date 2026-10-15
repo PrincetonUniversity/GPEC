@@ -1016,6 +1016,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,mpert), INTENT(OUT) :: f,k,g
 
       INTEGER :: ipert,jpert,iqty
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: lmat
       REAL(r8) :: q
       REAL(r8), DIMENSION(mpert) :: singfac
 c-----------------------------------------------------------------------
@@ -1025,20 +1026,19 @@ c-----------------------------------------------------------------------
       q=sq%f(4)
       singfac=mlow-nn*q+(/(ipert,ipert=0,mpert-1)/)
 c-----------------------------------------------------------------------
-c     compute f.
+c     compute f = (Q L)(Q L)^H from fmats, the spline of L that
+c     sing_mmat uses, so both use the same F.
 c-----------------------------------------------------------------------
-      CALL cspline_eval(fmats_gal,psifac,0)
+      CALL cspline_eval(fmats,psifac,0)
+      lmat=0
       iqty=1
       DO jpert=1,mpert
          DO ipert=jpert,MIN(mpert,jpert+mband)
-            f(ipert,jpert)=fmats_gal%f(iqty)
-     $          *singfac(ipert)*singfac(jpert)
-            IF(ipert /= jpert)THEN
-               f(jpert,ipert)=CONJG(f(ipert,jpert))
-            ENDIF
+            lmat(ipert,jpert)=fmats%f(iqty)*singfac(ipert)
             iqty=iqty+1
          ENDDO
       ENDDO
+      f=MATMUL(lmat,CONJG(TRANSPOSE(lmat)))
 c-----------------------------------------------------------------------
 c     compute k.
 c-----------------------------------------------------------------------
