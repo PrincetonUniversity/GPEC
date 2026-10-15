@@ -13,7 +13,7 @@ program pentrc
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
-    ! EMAIL: nlogan@pppl.gov
+    ! EMAIL: nikolas.logan@columbia.edu
     !-----------------------------------------------------------------------
     use pentrc_interface
     use utilities, only: append_1d, append_2d, progressbar
@@ -21,13 +21,6 @@ program pentrc
     ! local variables
     integer :: i,j,k,l,m,nvalid
     real(r8), dimension(:), allocatable ::  psi_out_valid
-
-
-    ! harvest variables
-    include 'harvest_lib.inc'
-    integer :: ierr
-    character(len=65507) :: hlog
-    character, parameter :: nul = char(0)
 
     if(verbose) print *,''
     if(verbose) print *,"PENTRC START => "//trim(version)
@@ -70,29 +63,11 @@ program pentrc
       CALL OMP_SET_NUM_THREADS(pentrc_threads)
     ENDIF
 #else
-    if(pentrc_threads > 1) print *,"WARNING: Not compiled with OPENMP. Forcing pentrc_threads = 1."
+    if(pentrc_threads > 1) print *,"!! WARNING: Not compiled with OPENMP. Forcing pentrc_threads = 1."
     pentrc_threads = 1
 #endif
 
     ! run models
-        ! start log with harvest
-        ierr=init_harvest('CODEDB_PENT'//nul,hlog,len(hlog))
-        ierr=set_harvest_verbose(0)
-        ! standard CODEDB records
-        ierr=set_harvest_payload_str(hlog,'CODE'//nul,'PENT'//nul)
-        ierr=set_harvest_payload_str(hlog,'VERSION'//nul,version//nul)
-        ! record PENT input
-        ierr=set_harvest_payload_int(hlog,'zi'//nul,zi)
-        ierr=set_harvest_payload_int(hlog,'zimp'//nul,zimp)
-        ierr=set_harvest_payload_int(hlog,'mi'//nul,mi)
-        ierr=set_harvest_payload_int(hlog,'mimp'//nul,mimp)
-        ierr=set_harvest_payload_int(hlog,'mimp'//nul,mimp)
-        ierr=set_harvest_payload_bol(hlog,'electron'//nul,electron)
-        ierr=set_harvest_payload_str(hlog,'nutype'//nul,trim(nutype)//nul)
-        ierr=set_harvest_payload_str(hlog,'f0type'//nul,trim(f0type)//nul)
-
-        ! record dcon equilibrium basics
-        call idcon_harvest(hlog)
 
         ! explicit matrix calculations
         if(wxyz_flag .and. output_ascii)then
@@ -114,7 +89,7 @@ program pentrc
                  "imag(H_k)"
                 do l=0,0!! should be all
                     if(psi_out(i)>0 .and. psi_out(i)<=1)then
-                        tsurf = tpsi(psi_out(i),nn,l,zi,mi,wdfac,divxfac,electron,'twmm',&
+                        call tpsi(tsurf,psi_out(i),nn,l,zi,mi,wdfac,divxfac,electron,'twmm',&
                             op_wmats=wtw)
                         do j=1,mpert
                             do k=1,mpert
@@ -157,8 +132,6 @@ program pentrc
                         print "(a24,es11.3E3)", "Total Kinetic Energy = ", aimag(tphi)/(2*nn)
                         print "(a24,es11.3E3)", "alpha/s  = ", real(tphi)/(-1*aimag(tphi))
                     endif
-                    ierr=set_harvest_payload_dbl(hlog,'torque_'//method//nul,real(tphi))
-                    ierr=set_harvest_payload_dbl(hlog,'deltaW_'//method//nul,aimag(tphi)/(2*nn))
                 end if
                 if(equil_grid)then
                     if(verbose) print *,method//" - "//"Calculating on equilibrium grid"
@@ -206,7 +179,7 @@ program pentrc
                         do i=1,nvalid
                             if(nvalid<10) print '(a8,es11.3E3)',"  psi = ",psi_out_valid(i)
                             do l=-nl,nl,max(1,nl)
-                                tsurf = tpsi(psi_out_valid(i),nn,l,zi,mi,wdfac,divxfac,electron,methods(m),&
+                                call tpsi(tsurf,psi_out_valid(i),nn,l,zi,mi,wdfac,divxfac,electron,methods(m),&
                                              op_erecord=xlmda_out,op_orecord=theta_out)
                             enddo
                             if(nvalid>10) call progressbar(i,1,nvalid,op_percent=20)
@@ -232,9 +205,6 @@ program pentrc
             if(xlmda_out) call output_energy_netcdf(nn)
         endif
     endif
-
-    ! send harvest record
-    ierr=harvest_send(hlog)
     
     ! display timer and stop
     if(verbose)then

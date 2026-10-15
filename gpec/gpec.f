@@ -21,13 +21,15 @@ c-----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER :: i,j,in,resol,
+      INTEGER :: i,j,in,resol,ising,
      $     mode,m3mode,lowmode,highmode,filter_modes,
      $     sing_npsi
       INTEGER :: pmode,p1mode,rmode,dmode,d1mode,fmode,smode,tmp_outs(5)
       INTEGER, DIMENSION(:), POINTER :: ipiv
-      REAL(r8) :: sing_spot,majr,minr,smallwidth,fp,normpsi,
-     $     singthresh_slayer_inpr
+      REAL(r8) :: sing_spot,sing_resspot,majr,minr,smallwidth,fp,
+     $     normpsi,singthresh_slayer_inpr,sing_interpspot
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: sing_spots
+      REAL(r8), DIMENSION(20) :: singthresh_slayer_inpr_prof
       CHARACTER(8) :: filter_types
       CHARACTER(128) :: infile
       LOGICAL :: singcoup_flag,singfld_flag,vsingfld_flag,pmodb_flag,
@@ -37,13 +39,15 @@ c-----------------------------------------------------------------------
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
      $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag,
      $     arzphifun_flag,xbrzphifun_flag,pmodbmn_flag,xclebsch_flag,
-     $     filter_flag,gal_flag,delpsi_flag,
+     $     filter_flag,gal_flag,delpsi_flag,use_res_spot,
      $     singthresh_callen_flag,singthresh_slayer_flag,singthresh_flag
       LOGICAL, DIMENSION(100) :: ss_flag
       COMPLEX(r8), DIMENSION(:), POINTER :: finmn,foutmn,xspmn,
-     $     fxmn,fxfun,coilmn
+     $     fxmn,fxfun
       COMPLEX(r8), DIMENSION(:,:), POINTER :: invmats,temp1
       INTEGER, DIMENSION(:), POINTER :: maxs,maxm,indexs,indexm
+
+      LOGICAL :: warnings_needed
 
       NAMELIST/gpec_input/dcon_dir,ieqfile,idconfile,ivacuumfile,
      $     power_flag,fft_flag,mthsurf0,fixed_boundary_flag,
@@ -55,8 +59,9 @@ c-----------------------------------------------------------------------
      $     pmode,p1mode,dmode,d1mode,fmode,rmode,smode,
      $     filter_types,filter_modes,gal_flag
       NAMELIST/gpec_control/resp_index,resp_induct_flag,
-     $     sing_spot,sing_npsi,reg_flag,reg_spot,
-     $     chebyshev_flag,nche,nchr,nchz,use_classic_splines
+     $     sing_spot,sing_resspot,sing_interpspot,sing_npsi,reg_flag,
+     $     reg_spot,chebyshev_flag,nche,nchr,nchz,use_classic_splines,
+     $     use_res_spot
       NAMELIST/gpec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
      $     singfld_flag,pmodb_flag,xbnormal_flag,rstep,jsurf_out,
      $     jac_out,power_bout,power_rout,power_bpout,power_rcout,
@@ -68,7 +73,7 @@ c-----------------------------------------------------------------------
      $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout,filter_flag,
      $     netcdf_flag,ascii_flag,singthresh_flag,
      $     singthresh_callen_flag,singthresh_slayer_flag,
-     $     singthresh_slayer_inpr
+     $     singthresh_slayer_inpr,singthresh_slayer_inpr_prof
       NAMELIST/gpec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,jacfac_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
@@ -87,7 +92,7 @@ c-----------------------------------------------------------------------
       dcon_dir=""
       ieqfile="psi_in.bin"
       idconfile="euler.bin"
-      ivacuumfile="vacuum.bin"
+      ivacuumfile="DEPRECATED"
       rdconfile="globalsol.bin"
       power_flag=.TRUE.
       fft_flag=.FALSE.
@@ -116,6 +121,9 @@ c-----------------------------------------------------------------------
       resp_index=0
       resp_induct_flag=.TRUE.
       sing_spot=5e-4
+      sing_resspot=1.0
+      use_res_spot=.FALSE.
+      sing_interpspot=1.0
       sing_npsi=1e2
       reg_flag=.TRUE.
       reg_spot=5e-2
@@ -146,7 +154,7 @@ c-----------------------------------------------------------------------
       brzphi_flag=.FALSE.
       xrzphi_flag=.FALSE.
       vbrzphi_flag=.FALSE.
-      pbrzphi_flag=.FALSE.      
+      pbrzphi_flag=.FALSE.
       vvbrzphi_flag=.FALSE.
       bin_flag=.TRUE.
       bin_2d_flag=.TRUE.
@@ -155,12 +163,13 @@ c-----------------------------------------------------------------------
       singthresh_callen_flag=.False.
       singthresh_slayer_flag=.False.
       singthresh_slayer_inpr=5.0
+      singthresh_slayer_inpr_prof=-1.0
       singthresh_flag=.False.
       fun_flag=.FALSE.
       flux_flag=.FALSE.
       max_linesout=0
       vsbrzphi_flag=.FALSE.
-      DO i=1,100 
+      DO i=1,100
          ss_flag(i)=.FALSE.
       ENDDO
       arzphifun_flag=.FALSE.
@@ -199,7 +208,7 @@ c-----------------------------------------------------------------------
       m3mode=2
       resol=INT(1e4)
       smallwidth=1e-6
-      
+
       timeit = .FALSE.
       verbose = .TRUE.
       debug_flag = .FALSE.
@@ -225,15 +234,33 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     deprecated variable errors
 c-----------------------------------------------------------------------
+      warnings_needed=.false.
       IF((pmode/=0).or.(p1mode/=0).or.(dmode/=0).or.(d1mode/=0).or.
      $   (fmode/=0).or.(rmode/=0).or.(smode/=0))THEN
-         PRINT *,"WARNING: p/d/f/r/smode syntax is a deprecated!"
-         PRINT *,"  Use filter_types to filter external spectrum."
+         IF(.not. warnings_needed)THEN
+           PRINT *, "..."
+           warnings_needed = .true.
+         ENDIF
+         PRINT *,"!! WARNING: p/d/f/r/smode syntax is a deprecated."
+         PRINT *,"  >> Use filter_types to filter external spectrum."
          CALL gpec_stop("Deprecated input.")
       ENDIF
       IF(malias/=0) THEN
-       PRINT *,"WARNING: malias may not be supported in future versions"
+         IF(.not. warnings_needed)THEN
+           PRINT *, "..."
+           warnings_needed = .true.
+         ENDIF
+       PRINT *,"!! WARNING: malias will be deprecated in the future"
       ENDIF
+      IF(ivacuumfile/="DEPRECATED")THEN
+         IF(.not. warnings_needed)THEN
+           PRINT *, "..."
+           warnings_needed = .true.
+         ENDIF
+       PRINT *,"!! WARNING: ivacuumfile is deprecated and will be"//
+     $         " ignored."
+      ENDIF
+      IF(warnings_needed) PRINT *, "..."
 c-----------------------------------------------------------------------
 c     forced ralational settings
 c-----------------------------------------------------------------------
@@ -245,13 +272,13 @@ c-----------------------------------------------------------------------
       ENDIF
       IF(singthresh_callen_flag)THEN
          IF(data_flag .OR. harmonic_flag)THEN
-            PRINT *, "WARNING: "//
+            PRINT *, "!! WARNING: "//
      $             "singthresh_callen_flag uses coil vacuum fields only"
          ENDIF
          IF(coil_flag)THEN
             singfld_flag = .TRUE.
          ELSE
-            PRINT *, "WARNING: "//
+            PRINT *, "!! WARNING: "//
      $              "singthresh_callen_flag requires coil vacuum fields"
          ENDIF
       ENDIF
@@ -298,7 +325,7 @@ c-----------------------------------------------------------------------
          power_bin=0
          power_bpin=1
          power_rin=0
-         power_rcin=1         
+         power_rcin=1
       CASE("other")
       CASE DEFAULT
       END SELECT
@@ -333,7 +360,7 @@ c-----------------------------------------------------------------------
          power_bout=0
          power_bpout=1
          power_rout=0
-         power_rcout=1         
+         power_rcout=1
       CASE("other")
       CASE DEFAULT
       END SELECT
@@ -392,101 +419,31 @@ c-----------------------------------------------------------------------
       IF(bt_direction=="negative")btd=-1.0
       helicity=ipd*btd
       IF (coil_flag) THEN
+
          IF(verbose) WRITE(*,*)
-     $     "Calculating field on the boundary from coils"
+     $            "Calculating field on the boundary from coils"
          CALL coil_read(idconfile)
-         ALLOCATE(coilmn(cmpert))
+         ALLOCATE(coilmn(cmpert,coil_num))
          ALLOCATE(coil_indmat(mpert,coil_num))
+         coilmn=0
          coil_indmat=0
          DO j=1,coil_num
-            coilmn=0
-            CALL field_bs_psi(psilim,coilmn,1,op_start=j,op_stop=j,
-     $                        op_verbose=.TRUE.)
+            CALL field_bs_psi(psilim,coilmn(:,j),1,op_start=j,
+     $                        op_stop=j,op_verbose=.TRUE.)
             DO i=1,cmpert
                IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
-                  coil_indmat(cmlow-mlow+i,j)=coilmn(i)
-                  finmn(cmlow-mlow+i)=finmn(cmlow-mlow+i)+coilmn(i)
+                  coil_indmat(cmlow-mlow+i,j)=coilmn(i,j)
+                  finmn(cmlow-mlow+i)=finmn(cmlow-mlow+i)+coilmn(i,j)
                ENDIF
             ENDDO
          ENDDO
-         DEALLOCATE(coilmn)
+         IF (coil_num <= 0) THEN
+            WRITE(*,*) "!! WARNING: coil_flag is enabled but no coils"//
+     $              " are defined. Disabling coil_flag."
+               coil_flag = .FALSE.
+         ENDIF
          IF(timeit) CALL gpec_timer(2)
       ENDIF
-c-----------------------------------------------------------------------
-c     log inputs with harvest
-c-----------------------------------------------------------------------
-      ierr=init_harvest('CODEDB_GPEC'//NUL,hlog,len(hlog))
-      ierr=set_harvest_verbose(0)
-      ! standard CODEDB records
-      ierr=set_harvest_payload_str(hlog,'CODE'//nul,'GPEC'//nul)
-      IF (machine=='') then
-         machine = "UNKNOWN"
-      ELSEIF (machine=='d3d') then
-         machine = "DIII-D"
-      ENDIF
-      machine = to_upper(machine)
-      ierr=set_harvest_payload_str(hlog,'MACHINE'//nul,
-     $                             trim(machine)//nul)
-      ierr=set_harvest_payload_str(hlog,'VERSION'//nul,version//nul)
-      if(shotnum>0)
-     $   ierr=set_harvest_payload_int(hlog,'SHOT'//nul,INT(shotnum))
-      if(shottime>0)
-     $   ierr=set_harvest_payload_int(hlog,'TIME'//nul,INT(shottime))
-      ! DCON equilibrium descriptors
-      ierr=set_harvest_payload_int(hlog,'mpsi'//nul,mpsi)
-      ierr=set_harvest_payload_int(hlog,'mtheta'//nul,mtheta)
-      ierr=set_harvest_payload_int(hlog,'mlow'//nul,mlow)
-      ierr=set_harvest_payload_int(hlog,'mhigh'//nul,mhigh)
-      ierr=set_harvest_payload_int(hlog,'mpert'//nul,mpert)
-      ierr=set_harvest_payload_int(hlog,'mband'//nul,mband)
-      ierr=set_harvest_payload_dbl(hlog,'psilow'//nul,psilow)
-      ierr=set_harvest_payload_dbl(hlog,'psilim'//nul,psilim)
-      ierr=set_harvest_payload_dbl(hlog,'amean'//nul,amean)
-      ierr=set_harvest_payload_dbl(hlog,'rmean'//nul,rmean)
-      ierr=set_harvest_payload_dbl(hlog,'aratio'//nul,aratio)
-      ierr=set_harvest_payload_dbl(hlog,'kappa'//nul,kappa)
-      ierr=set_harvest_payload_dbl(hlog,'delta1'//nul,delta1)
-      ierr=set_harvest_payload_dbl(hlog,'delta2'//nul,delta2)
-      ierr=set_harvest_payload_dbl(hlog,'li1'//nul,li1)
-      ierr=set_harvest_payload_dbl(hlog,'li2'//nul,li2)
-      ierr=set_harvest_payload_dbl(hlog,'li3'//nul,li3)
-      ierr=set_harvest_payload_dbl(hlog,'ro'//nul,ro)
-      ierr=set_harvest_payload_dbl(hlog,'zo'//nul,zo)
-      ierr=set_harvest_payload_dbl(hlog,'psio'//nul,psio)
-      ierr=set_harvest_payload_dbl(hlog,'betap1'//nul,betap1)
-      ierr=set_harvest_payload_dbl(hlog,'betap2'//nul,betap2)
-      ierr=set_harvest_payload_dbl(hlog,'betap3'//nul,betap3)
-      ierr=set_harvest_payload_dbl(hlog,'betat'//nul,betat)
-      ierr=set_harvest_payload_dbl(hlog,'betan'//nul,betan)
-      ierr=set_harvest_payload_dbl(hlog,'bt0'//nul,bt0)
-      ierr=set_harvest_payload_dbl(hlog,'q0'//nul,q0)
-      ierr=set_harvest_payload_dbl(hlog,'qmin'//nul,qmin)
-      ierr=set_harvest_payload_dbl(hlog,'qmax'//nul,qmax)
-      ierr=set_harvest_payload_dbl(hlog,'qa'//nul,qa)
-      ierr=set_harvest_payload_dbl(hlog,'crnt'//nul,crnt)
-      ierr=set_harvest_payload_dbl(hlog,'q95'//nul,q95)
-      ierr=set_harvest_payload_dbl(hlog,'betan'//nul,betan)
-      ierr=set_harvest_payload_dbl_array(hlog,'et'//nul,et,mpert)
-      ierr=set_harvest_payload_dbl_array(hlog,'ep'//nul,ep,mpert)
-      ! gpec_input
-      ierr=set_harvest_payload_bol(hlog,'fixed_boundary_flag'//nul,
-     $                             fixed_boundary_flag)
-      ierr=set_harvest_payload_bol(hlog,'mode_flag'//nul,mode_flag)
-      ierr=set_harvest_payload_int(hlog,'mode'//nul,mode)
-      ierr=set_harvest_payload_str(hlog,'filter_types'//nul,
-     $                             filter_types//nul)
-      ierr=set_harvest_payload_int(hlog,'filter_modes'//nul,
-     $                             filter_modes)
-      ! gpec_control
-      ierr=set_harvest_payload_int(hlog,'resp_index'//nul,resp_index)
-      ierr=set_harvest_payload_dbl(hlog,'sing_spot'//nul,sing_spot)
-      ierr=set_harvest_payload_dbl(hlog,'sing_npsi'//nul,sing_npsi)
-      ierr=set_harvest_payload_bol(hlog,'reg_flag'//nul,reg_flag)
-      ierr=set_harvest_payload_dbl(hlog,'reg_spot'//nul,reg_spot)
-      ! gpec_output
-      ierr=set_harvest_payload_str(hlog,'jac_out'//nul,jac_out//nul)
-      ierr=set_harvest_payload_int(hlog,'jsurf_out'//nul,jsurf_out)
-      ierr=set_harvest_payload_int(hlog,'tmag_out'//nul,tmag_out)
 c-----------------------------------------------------------------------
 c     compute plasma response.
 c-----------------------------------------------------------------------
@@ -526,6 +483,29 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     Set parameters for outputs.
 c-----------------------------------------------------------------------
+      ALLOCATE(sing_spots(msing))
+      DO ising=1,msing
+         IF (gal_flag .AND. .NOT. use_res_spot) THEN
+            PRINT *,"!! WARNING: using resistive spot calculation."//
+     $              " Setting use_res_spot = .TRUE."
+            use_res_spot = .TRUE.
+         ENDIF
+         IF (use_res_spot .AND. gal_flag) THEN
+            sing_spots(ising)=sing_resspot*(nn*ABS(singtype(ising)%q1))*
+     $                ((singtype(ising)%restype%sfac)**(-1.0_r8/3.0_r8))
+     $                  + sing_spot
+         ELSEIF (use_res_spot .AND. (.NOT.gal_flag)) THEN
+            sing_spots(ising)=sing_spot
+            use_res_spot = .FALSE.
+            PRINT *,"!! WARNING: use_res_spot requires gal_flag"
+         ELSE
+            sing_spots(ising)=sing_spot
+         ENDIF
+         ! Use sing_spot as a minimum spot size
+         IF (sing_spots(ising) < sing_spot .AND. use_res_spot) THEN
+            sing_spots(ising)=sing_spot
+         ENDIF
+      ENDDO
       IF (nrzeq_flag) THEN
          nr=mr
          nz=mz
@@ -544,11 +524,11 @@ c-----------------------------------------------------------------------
       ENDDO
       IF (singcoup_flag) THEN
          IF (msing==0) THEN
-            PRINT *,"WARNING: no rationals for singcoup_flag"
+            PRINT *,"!! WARNING: no rationals for singcoup_flag"
             singcoup_flag = .FALSE.
-         ELSE         
-            CALL gpout_singcoup(sing_spot,sing_npsi,power_rout,
-     $           power_bpout,power_bout,power_rcout,tmag_out)
+         ELSE
+            CALL gpout_singcoup(sing_spots,sing_interpspot,sing_npsi,
+     $           power_rout,power_bpout,power_bout,power_rcout,tmag_out)
          ENDIF
       ENDIF
 c-----------------------------------------------------------------------
@@ -564,16 +544,27 @@ c-----------------------------------------------------------------------
      $     power_rout,power_bpout,power_bout,power_rcout,tmag_out,
      $     jsurf_out,filter_types,filter_modes,filter_flag)
 
+      IF (singthresh_callen_flag) THEN
+         IF(coil_flag) THEN
+            PRINT *, "singthresh_callen_flag is enabled: setting "//
+     $               "vsingfld_flag to true for use in Callen cubic"
+            vsingfld_flag = .TRUE.
+         ELSE
+            PRINT *, "!! WARNING: singthresh_callen_flag requires "//
+     $              "coil_flag to get the vacuum island width." 
+         ENDIF
+      ENDIF
       IF (coil_flag .AND. vsingfld_flag) THEN
          CALL gpout_vsingfld()
       ENDIF
       IF (singfld_flag) THEN
          IF (con_flag) THEN
-            PRINT *,"WARNING: singfld_flag not supported with con_flag"
+            PRINT *,"!! WARNING: singfld_flag not supported with"//
+     $              "  con_flag"
             singfld_flag = .FALSE.
             vsingfld_flag = .FALSE.
          ELSEIF (msing==0) THEN
-            PRINT *,"WARNING: no rationals for singfld_flag"
+            PRINT *,"!! WARNING: no rationals for singfld_flag"
             singfld_flag = .FALSE.
             vsingfld_flag = .FALSE.
          ELSE
@@ -581,9 +572,9 @@ c-----------------------------------------------------------------------
                CALL initialize_pentrc(op_kin=.TRUE.,op_deq=.TRUE.,
      $                op_peq=.FALSE.)
             ENDIF
-            CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi,
-     $              singthresh_callen_flag,singthresh_slayer_flag,
-     $              singthresh_slayer_inpr)
+            CALL gpout_singfld(mode,xspmn,sing_spots,sing_interpspot,
+     $       sing_npsi,singthresh_callen_flag,singthresh_slayer_flag,
+     $       singthresh_slayer_inpr,singthresh_slayer_inpr_prof)
          ENDIF
       ENDIF
 
@@ -603,7 +594,8 @@ c-----------------------------------------------------------------------
          CALL gpout_pmodb(mode,xspmn)
       ENDIF
       IF (xbnormal_flag) THEN
-         CALL gpout_xbnormal(mode,xspmn,sing_spot,sing_npsi)
+         CALL gpout_xbnormal(mode,xspmn,sing_spots,sing_interpspot,
+     $                                                      sing_npsi)
       ENDIF
       IF (xbtangent_flag) THEN
          CALL gpout_xbtangent(mode,xspmn,power_rout,
@@ -613,7 +605,7 @@ c-----------------------------------------------------------------------
          CALL gpout_vbnormal(power_rout,power_bpout,power_bout,
      $        power_rcout,tmag_out)
       ENDIF
-      IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
+      IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR.
      $     vbrzphi_flag .OR. vvbrzphi_flag .OR. pbrzphi_flag) THEN
          CALL gpout_xbrzphi(mode,xspmn,nr,nz,finmn,foutmn)
       ENDIF
@@ -647,7 +639,7 @@ c-----------------------------------------------------------------------
       IF (pmodbmn_flag) THEN
          CALL gpdiag_pmodb(mode,xspmn)
          CALL gpdiag_pmodbmn(mode,xspmn)
-      ENDIF            
+      ENDIF
       IF (rzphibx_flag) THEN
          CALL gpdiag_rzphibx(mode,xspmn)
       ENDIF
@@ -684,10 +676,10 @@ c-----------------------------------------------------------------------
       IF (rzpgrid_flag) THEN
          CALL gpdiag_rzpgrid(nr,nz)
       ENDIF
-      
+
       IF (m3d_flag) THEN
          normpsi=1.0
-         fp=1e-3         
+         fp=1e-3
          fxmn=0
          fxmn(m3mode-mlow+1)=fp*normpsi
          CALL gpeq_fcoords(psilim,fxmn,mfac,mpert,0,1,0,1,0,0)
@@ -696,14 +688,15 @@ c-----------------------------------------------------------------------
          CALL gpout_control(mode,infile,fxmn,foutmn,xspmn,
      $        0,0,0,0,1,0,0,0,0,0,1,0,'   ',0,.FALSE.)
          edge_flag=.TRUE.
-         CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi,
-     $           singthresh_callen_flag,singthresh_slayer_flag,
-     $           singthresh_slayer_inpr)
+         CALL gpout_singfld(mode,xspmn,sing_spots,sing_interpspot,
+     $           sing_npsi,singthresh_callen_flag,
+     $           singthresh_slayer_flag,singthresh_slayer_inpr,
+     $           singthresh_slayer_inpr_prof)
       ENDIF
 
       IF (cas3d_flag) THEN
          fp = -1e-2
-         
+
          fxmn=0
          fxmn(m3mode-mlow+1)=fp
          ! temporary override of output options
@@ -720,11 +713,13 @@ c-----------------------------------------------------------------------
      $        power_rout,power_bpout,power_bout,power_rcout,
      $        tmag_out,jsurf_out,'   ',0,.FALSE.)
          edge_flag=.TRUE.
-         CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi,
-     $           singthresh_callen_flag,singthresh_slayer_flag,
-     $           singthresh_slayer_inpr)
+         CALL gpout_singfld(mode,xspmn,sing_spots,sing_interpspot,
+     $           sing_npsi,singthresh_callen_flag,
+     $           singthresh_slayer_flag,singthresh_slayer_inpr,
+     $           singthresh_slayer_inpr_prof)
          CALL gpdiag_xbcontra(mode,xspmn,0,0,2,0,1)
-         CALL gpout_xbnormal(mode,xspmn,sing_spot,sing_npsi)
+         CALL gpout_xbnormal(mode,xspmn,sing_spots,sing_interpspot,
+     $              sing_npsi)
          CALL gpdiag_xbnobo(mode,xspmn,d3_flag)
          CALL gpdiag_radvar
          ! reset output options
@@ -748,7 +743,7 @@ c-----------------------------------------------------------------------
      $        "real2","imag1","imag2"
          DO i=1,99
             WRITE(*,*)i
-            foutmn=fxmn 
+            foutmn=fxmn
             normpsi = REAL(i)/100.0
             CALL gpeq_bcoords(normpsi,foutmn,mfac,mpert,2,0,0,0,0,0)
             CALL gpeq_fcoords(normpsi,foutmn,mfac,mpert,2,0,0,0,0,0)
@@ -774,10 +769,6 @@ c         ! Test coordinate independence of power eigenvectors
 c         CALL gpdiag_reluctpowout(power_rout,power_bpout,power_bout,
 c     $        power_rcout)
       ENDIF
-c-----------------------------------------------------------------------
-c     send harvest record.
-c-----------------------------------------------------------------------
-      ierr=harvest_send(hlog)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

@@ -23,26 +23,26 @@ c-----------------------------------------------------------------------
 
       CONTAINS
 c-----------------------------------------------------------------------
-c     subprogram 1. equil_read.
-c     reads input.
+c     subprogram 2. equil_loadnamelists.
+c     reads equil.in.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE equil_read(unit, op_psihigh, op_psilow)
+      SUBROUTINE equil_loadnamelists(op_psihigh, op_psilow)
       USE inverse_mod
       LOGICAL :: file_stat
-      INTEGER, INTENT(IN) :: unit
       REAL(r8), OPTIONAL, INTENT(IN) :: op_psihigh
       REAL(r8), OPTIONAL, INTENT(IN) :: op_psilow
 
       NAMELIST/equil_control/eq_filename,eq_type,grid_type,mpsi,mtheta,
      $     newq0,psihigh,psilow,input_only,jac_type,power_bp,power_r,
      $     power_b,jac_method,convert_type,power_flag,ns1,
-     $     sp_pfac,sp_nx,sp_dx1,sp_dx2,use_galgrid,etol,
-     $     use_classic_splines
+     $     sp_pfac,sp_nx,sp_dx1,sp_dx2,use_galgrid,etol,enstep,
+     $     use_classic_splines,profile_source
       NAMELIST/equil_output/bin_2d,bin_eq_1d,bin_eq_2d,out_2d,out_eq_1d,
-     $     out_eq_2d,bin_fl,out_fl,interp,gse_flag,dump_flag,verbose
+     $     out_eq_2d,bin_fl,out_fl,interp,gse_flag,dump_flag,verbose,
+     $     out_ahg2msc
 c-----------------------------------------------------------------------
 c     read input data.
 c-----------------------------------------------------------------------
@@ -55,6 +55,22 @@ c-----------------------------------------------------------------------
          READ(UNIT=in_unit,NML=equil_output)
       ENDIF
       CALL ascii_close(in_unit)
+      IF (out_ahg2msc) THEN
+         WRITE(*,*) "WARNING: ahg2msc.out is deprecated and will be " //
+     $          "removed in a future version. Set out_ahg2msc = .FALSE."
+         WRITE(*,*) "         to disable this warning."
+         vac_memory=.FALSE.
+      ELSE
+         vac_memory=.TRUE.
+      ENDIF
+c-----------------------------------------------------------------------
+c     guard against negative newq0 (negative q is not supported).
+c-----------------------------------------------------------------------
+      IF(newq0 < 0)CALL program_stop("newq0 < 0 is not supported: "//
+     $     "q must be positive. Use newq0 = 0 (default) or newq0 > 0.")
+c-----------------------------------------------------------------------
+c     read input data.
+c-----------------------------------------------------------------------
       IF(PRESENT(op_psihigh))THEN
          psihigh = op_psihigh
          IF(verbose) WRITE(*,*) "Reforming equilibrium with new psihigh"
@@ -63,9 +79,29 @@ c-----------------------------------------------------------------------
          psilow = op_psilow
          IF(verbose) WRITE(*,*) "Reforming equilibrium with new psilow"
       ENDIF
-      IF(verbose) WRITE(*,'(1x,a,es10.3)')"psihigh =",psihigh
-      IF(verbose) WRITE(*,'(1x,a,es10.3)')"psilow =",psilow
       psihigh=MIN(psihigh,1._r8)
+
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE equil_loadnamelists
+c-----------------------------------------------------------------------
+c     subprogram 2. equil_read.
+c     reads input.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE equil_read(unit, op_psihigh, op_psilow)
+      USE inverse_mod
+      INTEGER, INTENT(IN) :: unit
+      REAL(r8), OPTIONAL, INTENT(IN) :: op_psihigh
+      REAL(r8), OPTIONAL, INTENT(IN) :: op_psilow
+c-----------------------------------------------------------------------
+c     read input data.
+c-----------------------------------------------------------------------
+      CALL equil_loadnamelists(op_psihigh, op_psilow)
 c-----------------------------------------------------------------------
 c     define Jacobian.
 c-----------------------------------------------------------------------
@@ -99,7 +135,8 @@ c-----------------------------------------------------------------------
 c     write equilibrium and jacobian data.
 c-----------------------------------------------------------------------
       IF(.NOT. PRESENT(op_psihigh))THEN  ! only need this once
-        IF(verbose) WRITE(*,'(1x,4a/1x,2a,3(a,i1))')
+        IF(verbose) WRITE(*,'(1x,a)') "Forming the equilibirum"
+        IF(verbose) WRITE(*,'(3x,4a/3x,2a,3(a,i1))')
      $       "Equilibrium: ",TRIM(eq_filename),", Type: ",TRIM(eq_type),
      $       "Jac_type = ",TRIM(jac_type),", power_bp = ",power_bp,
      $       ", power_b = ",power_b,", power_r = ",power_r
@@ -108,9 +145,12 @@ c-----------------------------------------------------------------------
      $       "Jac_type = ",TRIM(jac_type),", power_bp = ",power_bp,
      $       ", power_b = ",power_b,", power_r = ",power_r
       ENDIF
+      IF(verbose) WRITE(*,'(3x,(a,es10.3))')"psilow  =",psilow
+      IF(verbose) WRITE(*,'(3x,(a,es10.3))')"psihigh =",psihigh
 c-----------------------------------------------------------------------
 c     read equilibrium data and diagnose.
 c-----------------------------------------------------------------------
+      sq_in_slopes=.FALSE.
       SELECT CASE(TRIM(eq_type))
       CASE("fluxgrid")
          CALL read_eq_fluxgrid
@@ -121,9 +161,13 @@ c-----------------------------------------------------------------------
       CASE("galkin")
          CALL read_eq_galkin
       CASE("chease")
-         CALL read_eq_chease
+         CALL read_eq_chease_inp1
       CASE("chease2")
-         CALL read_eq_chease2
+         WRITE(*,*) "   !! Warning: eq_type chease2 is deprecated, "//
+     $      "use chease_ascii instead"
+         CALL read_eq_chease_inp1_ascii
+      CASE("chease_ascii")
+         CALL read_eq_chease_inp1_ascii
       CASE("chease3")
          CALL read_eq_chease3
       CASE("chease4")
@@ -173,10 +217,13 @@ c-----------------------------------------------------------------------
       CASE("t7")
          CALL read_eq_t7
       CASE("marklin_direct")
+         CALL program_stop("Error: Deprecated eq_type "//TRIM(eq_type))
          CALL read_eq_marklin_direct
       CASE("marklin_inverse")
+         CALL program_stop("Error: Deprecated eq_type "//TRIM(eq_type))
          CALL read_eq_marklin_inverse
       CASE("hansen_inverse")
+         CALL program_stop("Error: Deprecated eq_type "//TRIM(eq_type))
          CALL read_eq_hansen_inverse
       CASE("pfrc")
          CALL read_eq_pfrc

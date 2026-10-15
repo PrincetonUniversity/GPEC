@@ -8,10 +8,8 @@ code developments.
 
 :Author:
   N.C. Logan
-:Location:
-  Princeton Plasma Physics Laboratory
 :Email:
-  nlogan@pppl.gov
+  nikolas.logan@columbia.edu
 
 
 Interface
@@ -32,11 +30,12 @@ For example,
 >>> from regression.compare import compare_dcons
 >>> data = compare_dcons.check_energies('/p/gpec/GPEC-0.4/docs/examples/DIIID_example','/p/gpec/GPEC-1.0/docs/examples/DIIID_ideal_example')
 
-                        /p/gpec/GPEC-0.4/d...   /p/gpec/GPEC-1.0/d...
-------------------------------------------------------------------------
+               /p/gpec/GPEC-0.4/d...              /p/gpec/GPEC-1.0/d...
+========= ================================== ============================
 total                   +7.3090e-01             +9.0210e-01+7.0180e-05j
 plasma                  -1.7540e+00             -1.6000e+00
 vacuum                  +2.4850e+00             +2.5020e+00
+========= ================================== ============================
 
 >>> pyplot.gcf().savefig('examples/figures/example_compare_dcons.png')
 

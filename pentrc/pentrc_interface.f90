@@ -26,35 +26,35 @@ module pentrc_interface
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
-    ! EMAIL: nlogan@pppl.gov
+    ! EMAIL: nikolas.logan@columbia.edu
     !-----------------------------------------------------------------------
     
     use params, only: r8,xj, npsi_out, nmethods, methods, docs, version
     use utilities, only: timer,to_upper,get_free_file_unit
     use special, only: set_fymnl,set_ellip
-    use dcon_interface, only: set_eq, idcon_harvest
+    use dcon_interface, only: set_eq
     use inputs, only : read_kin,read_equil,nn,read_peq,read_pmodb,&
                        set_peq,read_fnml,verbose
     use diagnostics, only: diagnose_all
     use spline_mod, only: use_classic_splines
 
     use energy_integration, only: &
-        output_energy_netcdf,output_energy_ascii,&  ! subroutine
-        xatol,xrtol,xmax,ximag,xnufac, &            ! real
-        xnutype,xf0type,&                           ! character
-        qt,xdebug                                   ! logical
+        output_energy_netcdf,output_energy_ascii,&       ! subroutine
+        xatol,xrtol,xmax,ximag,xnufac, &                 ! real
+        xnutype,xf0type,&                                ! character
+        qt,xdebug                                        ! logical
     use pitch_integration, only: &
-        output_pitch_netcdf,output_pitch_ascii,&                       ! subroutines
-        lambdaatol,lambdartol,&                     ! real
-        lambdadebug                                 ! logical
+        output_pitch_netcdf,output_pitch_ascii,&         ! subroutines
+        lambdaatol,lambdartol,&                          ! real
+        lambdadebug                                      ! logical
     use torque, only : &
-        tintgrl_lsode,tintgrl_grid,tpsi,&           ! functions
+        tintgrl_lsode,tintgrl_grid,&                     ! functions
         output_orbit_ascii,&
-        output_orbit_netcdf,output_torque_netcdf,&  ! subroutines
-        ntheta,nlmda,nthetafuns,&                   ! integers
-        atol_psi,rtol_psi,&                         ! real
-        tdebug,output_ascii,output_netcdf,&         ! logical
-        mpert,mfac                                  !! hacked for test writing
+        output_orbit_netcdf,tpsi,output_torque_netcdf,&  ! subroutines
+        ntheta,nlmda,nthetafuns,&                        ! integers
+        atol_psi,rtol_psi,&                              ! real
+        tdebug,output_ascii,output_netcdf,&              ! logical
+        mpert,mfac                                       !! hacked for test writing
 
     implicit none
 
@@ -111,9 +111,15 @@ module pentrc_interface
         pentrc_threads = 0,&
         openmp_threads = 0
 
+    !> How much tighter the energy integration is than the pitch integration
+    !> when atol_x/rtol_x are left at their derive-me default.
+    real(r8), parameter :: nested_tolerance_margin = 1e-2_r8
+
     real(r8) ::    &
         atol_xlmda=1e-6, &
         rtol_xlmda=1e-3, &
+        atol_x=-1, &
+        rtol_x=-1, &
         nfac=1.0,  &
         tfac=1.0,  &
         wefac=1.0, &
@@ -148,7 +154,8 @@ module pentrc_interface
             jac_in, jsurf_in, tmag_in, power_bin, power_bpin, power_rin, power_rcin
 
     namelist/pent_control/nfac, tfac, wefac, wdfac, wpfac, nufac, divxfac, &
-            atol_xlmda, rtol_xlmda, atol_psi, rtol_psi, nlmda, ntheta, ximag, xmax, psilims, &
+            atol_xlmda, rtol_xlmda, atol_x, rtol_x, atol_psi, rtol_psi, &
+            nlmda, ntheta, ximag, xmax, psilims, &
             use_classic_splines,pentrc_threads,openmp_threads,force_xialpha
 
     namelist/pent_output/moment, output_ascii, output_netcdf, &
@@ -213,16 +220,15 @@ module pentrc_interface
         if(all(psi_out==-1)) psi_out = (/(i,i=1,30)/)/30.6 ! even spread if user doesn't pick any
 
         ! warnings if using deprecated inputs
-        if(openmp_threads>0) print *,"WARNING: openmp_threads has been deprecated. Use pentrc_threads or OMP_NUM_THREADS env variable."
-        if(eq_out) print *, "WARNING: eq_out has been deprecated. Behavior is always true."
-        if(eqpsi_out) print *, "WARNING: eqpsi_out has been deprecated. Use equil_grid."
-        if(term_flag) print *, "WARNING: term_flag has been deprecated. Use verbose."
-        !if(any(psiout/=0)) print *, "WARNING: psiout has been deprecated. Use psi_out." !! officially removed
-        !if(any(psilim/=0)) print *, "WARNING: psilim has been deprecated. Use psilims."
+        if(openmp_threads>0) print *,"!! WARNING: openmp_threads is deprecated. Use pentrc_threads or OMP_NUM_THREADS env variable."
+        if(eq_out) print *, "!! WARNING: eq_out has been deprecated. Behavior is always true."
+        if(eqpsi_out) print *, "!! WARNING: eqpsi_out has been deprecated. Use equil_grid."
+        if(term_flag) print *, "!! WARNING: term_flag has been deprecated. Use verbose."
+        !if(any(psiout/=0)) print *, "!! WARNING: psiout has been deprecated. Use psi_out." !! officially removed
+        !if(any(psilim/=0)) print *, "!! WARNING: psilim has been deprecated. Use psilims."
 
         ! distribute some simplified inputs to module circles
-        xatol = atol_xlmda
-        xrtol = rtol_xlmda
+        call set_nested_tolerances
         xnufac= nufac
         xnutype= nutype
         xf0type= f0type
@@ -279,8 +285,7 @@ module pentrc_interface
         close(i)
         
         ! distribute inputs to PENTRC module circles
-        xatol = atol_xlmda
-        xrtol = rtol_xlmda
+        call set_nested_tolerances
         xnufac= nufac
         xnutype= nutype
         xf0type= f0type 
@@ -307,6 +312,37 @@ module pentrc_interface
         
     end subroutine get_pentrc
     
+
+    !=======================================================================
+    subroutine set_nested_tolerances
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Give the energy integration its own, tighter tolerances.
+    !
+    !   The pitch integral's integrand IS the energy integral, so this is a
+    !   nested adaptive quadrature.  With one tolerance for both, the outer
+    !   integrator chases the inner one's quadrature error, which is not a
+    !   smooth function of lambda; LSODE then shrinks its step without bound
+    !   and stops with "too many steps in lambda required".
+    !
+    !   Negative atol_x/rtol_x, the default, means "derive from the pitch
+    !   tolerances".  A deck may set them explicitly, including back to the
+    !   old aliased values.
+    !-----------------------------------------------------------------------
+        implicit none
+        if(atol_x < 0) then
+            xatol = atol_xlmda * nested_tolerance_margin
+        else
+            xatol = atol_x
+        endif
+        if(rtol_x < 0) then
+            xrtol = rtol_xlmda * nested_tolerance_margin
+        else
+            xrtol = rtol_x
+        endif
+    end subroutine set_nested_tolerances
+
+
 end module pentrc_interface
     
 

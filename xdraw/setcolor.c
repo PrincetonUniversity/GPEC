@@ -8,6 +8,7 @@
 **  Copyright (c) CounterPoint Graphics 1993.  All rights reserved.
 ******************************************************************************/
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
@@ -19,6 +20,7 @@
 
 #include "setcolor.h"
 #include "ps.h"
+#include "xtools.h"
 
 #define XPRINTF
 #include "gendefs.h"
@@ -264,7 +266,7 @@ void testpalette(int x1, int y1, int dx, int dy)
 |   lowpoint..highpoint: font height
 |   Returns 0 if not found, 1=found
 -----------------------------------------------------------------------------*/
-getgoodfont(char *fonttitle, int lowpoint, int highpoint,
+int getgoodfont(char *fonttitle, int lowpoint, int highpoint,
 	    char *searchfontname)
 {
   /* declarations */

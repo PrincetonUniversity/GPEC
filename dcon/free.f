@@ -20,6 +20,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE free_mod
+      USE vacuum_mod, ONLY: mscvac
       USE global_mod, ONLY: wv_farwall_flag
       USE sing_mod, ONLY: sing_der, msol
       USE fourfit_mod, ONLY: asmat, bsmat, csmat, jmat, ipiva,
@@ -34,7 +35,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), POINTER, PRIVATE :: theta,dphi,r,z
       REAL(r8), DIMENSION(:,:), POINTER, PRIVATE :: thetas
       REAL(r8), DIMENSION(:,:,:), POINTER, PRIVATE :: project
-      REAL(8), DIMENSION(:,:), POINTER :: grri,xzpts
+      REAL(r8), DIMENSION(:,:), POINTER :: grri,xzpts
 
       TYPE(cspline_type) :: wvmats
       CONTAINS
@@ -59,7 +60,8 @@ c-----------------------------------------------------------------------
       REAL(r8) :: v1
       REAL(r8), DIMENSION(mpert) :: singfac
       ! eigenvalues are complex for gpec
-      COMPLEX(r8), DIMENSION(mpert) :: ep,ev,et,tt
+      COMPLEX(r8), DIMENSION(mpert) :: ep,et,tt
+      REAL(r8), DIMENSION(mpert) :: ev
 
       REAL(r8), DIMENSION(3*mpert-2) :: rwork
       REAL(r8), DIMENSION(2*mpert) :: rwork2
@@ -75,6 +77,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: kernelsignin
       INTEGER :: vac_unit
       COMPLEX(r8), DIMENSION(mpert) :: diff
+      CHARACTER(128) :: ahg_file
 c-----------------------------------------------------------------------
 c     write formats.
 c-----------------------------------------------------------------------
@@ -111,7 +114,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write file for mscvac, prepare input for ahb (deallocate moved to end).
 c-----------------------------------------------------------------------
-      CALL free_write_msc(psilim)
+      ahg_file="ahg2msc_dcon.out"
+      CALL free_write_msc(psilim,vac_memory,ahgstr_op=ahg_file)
       IF(ahb_flag)THEN
          CALL free_ahb_prep(wp,nmat,smat,asmat,bsmat,csmat,ipiva)
       ENDIF
@@ -122,44 +126,52 @@ c-----------------------------------------------------------------------
       farwal_flag=.TRUE. ! self-inductance for plasma boundary.
       kernelsignin=-1.0
       ALLOCATE(grri(2*(mthvac+5),mpert*2),xzpts(mthvac+5,4))
+      ! xzpts has a dimension of [mthvac+2] with 2 exrta repeating pts
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
-     $     wall_flag,farwal_flag,grri,xzpts)
-      CALL bin_open(vac_unit,"vacuum.bin","UNKNOWN","REWIND","none")
-      WRITE(vac_unit)grri
+     $     wall_flag,farwal_flag,grri,xzpts,ahg_file)
+      IF(bin_vac)THEN
+         WRITE(*,*) "!! WARNING: Use of vacuum.bin is deprecated in"//
+     $     " GPEC. Set bin_vac = f in dcon.in to reduce file IO."
+         CALL bin_open(vac_unit,"vacuum.bin","UNKNOWN","REWIND","none")
+         WRITE(vac_unit)grri
+      ENDIF
 
       kernelsignin=1.0
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
-     $     wall_flag,farwal_flag,grri,xzpts)
-      WRITE(vac_unit)grri
-
+     $     wall_flag,farwal_flag,grri,xzpts,ahg_file)
+      IF(bin_vac)THEN
+         WRITE(vac_unit)grri
+      ENDIF
       IF(wv_farwall_flag)THEN
          temp=wv
-      ENDIF         
+      ENDIF
 
       farwal_flag=.FALSE. ! self-inductance with the wall.
       kernelsignin=-1.0
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
-     $     wall_flag,farwal_flag,grri,xzpts)
-      WRITE(vac_unit)grri
+     $     wall_flag,farwal_flag,grri,xzpts,ahg_file)
+      IF(bin_vac)THEN
+         WRITE(vac_unit)grri
+      ENDIF
 
       kernelsignin=1.0
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
-     $     wall_flag,farwal_flag,grri,xzpts)
-      WRITE(vac_unit)grri
-      WRITE(vac_unit)xzpts
+     $     wall_flag,farwal_flag,grri,xzpts,ahg_file)
+      IF(bin_vac)THEN
+         WRITE(vac_unit)grri
+         WRITE(vac_unit)xzpts
 
-! xzpts has a dimensioni of [mthvac+2] with 2 repeating pts.
-!      DO ipert=1,mthvac+5
-!         WRITE(*,'(1p,4e16.8)')xzpts(ipert,1),xzpts(ipert,2),
-!     $        xzpts(ipert,3),xzpts(ipert,4)
-!      ENDDO
-      CALL bin_close(vac_unit)
+         CALL bin_close(vac_unit)
+      ENDIF
+
       DEALLOCATE(grri,xzpts)
 
       IF(wv_farwall_flag)THEN
          wv=temp
       ENDIF
-       
+c     vacuum used the reversed theta grid: conjugate to dcon frame.
+      wv=CONJG(wv)
+
       singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
       DO ipert=1,mpert
          wv(ipert,:)=wv(ipert,:)*singfac
@@ -188,7 +200,7 @@ c-----------------------------------------------------------------------
             norm=0
             DO ipert=1,mpert
                DO jpert=1,mpert
-                  norm=norm+jmat(jpert-ipert)
+                  norm=norm+jmat(ipert-jpert)
      $                 *wt(ipert,isol)*CONJG(wt(jpert,isol))
                ENDDO
             ENDDO
@@ -217,7 +229,7 @@ c-----------------------------------------------------------------------
          ev(ipert)=wvt(ipert,ipert)
       ENDDO
       plasma1=REAL(ep(1))
-      vacuum1=REAL(ev(1))
+      vacuum1=ev(1)
       total1=REAL(et(1))
 c-----------------------------------------------------------------------
 c     write data for ahb and deallocate.
@@ -226,6 +238,8 @@ c-----------------------------------------------------------------------
          CALL free_ahb_write(nmat,smat,wt,et)
          DEALLOCATE(r,z,theta,dphi,thetas,project)
       ENDIF
+
+      IF(vac_memory) CALL unset_dcon_params
 c-----------------------------------------------------------------------
 c     save eigenvalues and eigenvectors to file.
 c-----------------------------------------------------------------------
@@ -240,7 +254,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write to screen and copy to output.
 c-----------------------------------------------------------------------
-      IF(verbose) WRITE(*,10) REAL(ep(1)),REAL(ev(1)),
+      IF(verbose) WRITE(*,10) REAL(ep(1)),ev(1),
      $     REAL(et(1)),AIMAG(et(1))
 c-----------------------------------------------------------------------
 c     write eigenvalues to file.
@@ -248,7 +262,7 @@ c-----------------------------------------------------------------------
       message=""
       WRITE(out_unit,'(/1x,a)')"Total Energy Eigenvalues:"
       WRITE(out_unit,20)
-      WRITE(out_unit,30)(isol,REAL(ep(isol)),REAL(ev(isol)),
+      WRITE(out_unit,30)(isol,REAL(ep(isol)),ev(isol),
      $     REAL(et(isol)),AIMAG(et(isol)),
      $     TRIM(message(isol)),isol=1,mpert)
       WRITE(out_unit,20)
@@ -259,7 +273,7 @@ c-----------------------------------------------------------------------
       m=mlow+(/(isol,isol=0,mpert-1)/)
       DO isol=1,mpert
          WRITE(out_unit,40)
-         WRITE(out_unit,50)isol,imax(1),REAL(ep(isol)),REAL(ev(isol)),
+         WRITE(out_unit,50)isol,imax(1),REAL(ep(isol)),ev(isol),
      $        REAL(et(isol)),AIMAG(et(isol)),TRIM(message(isol))
          WRITE(out_unit,60)
          WRITE(out_unit,70)(ipert,m(ipert),wt(ipert,isol),
@@ -278,7 +292,7 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(/2x,"i",5x,"re wp",8x,"im wp",8x,"abs wp"/)')
       ENDDO
 c-----------------------------------------------------------------------
-c     compute and print separate plasma and vacuum eigenvalues.
+c     compute separate plasma and vacuum eigenvalues.
 c-----------------------------------------------------------------------
       lwork=2*mpert+1
       CALL zgeev('V','V',mpert,wp,mpert,ep,
@@ -290,6 +304,7 @@ c-----------------------------------------------------------------------
          wp(:,ipert)=vr(:,eindex(mpert+1-ipert))
          ep(ipert)=tt(eindex(mpert+1-ipert))
       ENDDO
+      lwork=2*mpert-1
       CALL zheev('V','U',mpert,wv,mpert,ev,work,lwork,rwork,info)
 c-----------------------------------------------------------------------
 c     optionally write netcdf file.
@@ -311,7 +326,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE free_write_msc(psifac, inmemory_op)
+      SUBROUTINE free_write_msc(psifac, inmemory_op, ahgstr_op)
 
       REAL(r8), INTENT(IN) :: psifac
       LOGICAL, OPTIONAL :: inmemory_op
@@ -321,12 +336,21 @@ c-----------------------------------------------------------------------
       INTEGER :: itheta,n
       REAL(r8) :: qa
       REAL(r8), DIMENSION(0:mtheta) :: angle,r,z,delta,rfac,theta
+      CHARACTER(128) :: ahgstr
+      CHARACTER(128), optional :: ahgstr_op
 
       IF(PRESENT(inmemory_op))THEN
          inmemory = inmemory_op
       ELSE
          inmemory = .FALSE.
       ENDIF
+
+      IF(PRESENT(ahgstr_op))THEN
+         ahgstr = ahgstr_op
+      ELSE
+         ahgstr = "ahg2msc_dcon.out"
+      ENDIF
+
 c-----------------------------------------------------------------------
 c     compute output.
 c-----------------------------------------------------------------------
@@ -361,7 +385,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write scalars.
 c-----------------------------------------------------------------------
-         CALL ascii_open(bin_unit,'ahg2msc.out',"UNKNOWN")
+         CALL ascii_open(bin_unit,ahgstr,"UNKNOWN")
          WRITE(bin_unit,'(i4,a)')mtheta,tab//tab//"mtheta"//tab//"mthin"
      $        //tab//"Number of poloidal nodes"
          WRITE(bin_unit,'(i4,a)')mlow,tab//tab//"mlow"//tab//"lmin"//tab
@@ -709,7 +733,7 @@ c-----------------------------------------------------------------------
          norm=0
          DO ipert=1,mpert
             DO jpert=1,mpert
-               norm=norm+jmat(jpert-ipert)
+               norm=norm+jmat(ipert-jpert)
      $              *wt(ipert,isol)*CONJG(wt(jpert,isol))
             ENDDO
          ENDDO
@@ -777,6 +801,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: farwal_flag=.FALSE.
       REAL(r8) :: kernelsignin
       INTEGER :: vac_unit
+      CHARACTER(128) :: ahgstr
 c-----------------------------------------------------------------------
 c     Basic parameters for course scan of psi
 c-----------------------------------------------------------------------
@@ -784,6 +809,8 @@ c-----------------------------------------------------------------------
       psii = psiedge  ! should start exactly here
       CALL cspline_alloc(wvmats,npsi,mpert**2)
       DO i=0,npsi
+         ! file name is ahg2msc_{i}.out
+         ahgstr = "ahg2msc_"//CHAR(i)//".out"
          ! space point evenly in q
          qi = q_edge(1) + (qlim - q_edge(1)) * i * 1.0/npsi
          ! use newton iteration to find psilim.
@@ -798,18 +825,20 @@ c-----------------------------------------------------------------------
          ! call mscvac and save matrices to spline
          wvmats%xs(i) = psii
          CALL spline_eval(sq, wvmats%xs(i), 0)
-         CALL free_write_msc(wvmats%xs(i), inmemory_op=.TRUE.)
+         CALL free_write_msc(wvmats%xs(i), inmemory_op=.TRUE.,
+     $                                               ahgstr_op=ahgstr)
          kernelsignin=1.0
          ALLOCATE(grri(2*(mthvac+5),mpert*2),xzpts(mthvac+5,4))
          CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
-     $        wall_flag,farwal_flag,grri,xzpts)
+     $        wall_flag,farwal_flag,grri,xzpts,ahgstr)
+         wv=CONJG(wv)
          singfac=mlow-nn*sq%f(4)+(/(ipert,ipert=0,mpert-1)/)
          DO ipert=1,mpert
             wv(ipert,:)=wv(ipert,:)*singfac
             wv(:,ipert)=wv(:,ipert)*singfac
          ENDDO
          wvmats%fs(i,:)=RESHAPE(wv,(/mpert**2/))
-         DEALLOCATE(grri,xzpts)         
+         DEALLOCATE(grri,xzpts)
       ENDDO
       CALL unset_dcon_params
       CALL cspline_fit(wvmats,"extrap")

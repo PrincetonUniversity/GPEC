@@ -10,6 +10,32 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.5.7
+===========
+
+Fixes
+------
+- ALL - BUMP - Update version to 1.5.7 and document changes in release notes
+- INSTALL - Remove harvest submodule reference from git tree
+- ALL - REMOVE - Remove all harvest dependencies and capabilities
+
+
+GPEC v1.5.6
+===========
+
+Fixes
+------
+- EQUIL - Fixes bug in the reading of the f profile from chease2 equilibrium files
+
+
+GPEC v1.5.5
+===========
+
+Fixes
+------
+- DCON - Fixes bug in the calculation of the kinetic torque matrix when using either the electron terms or method==1.
+
+
 GPEC v1.5.4
 ===========
 
@@ -101,7 +127,7 @@ Fixes
 - DCON - Properly spaces the vacuum matrices used when finding the peak dW with psiedge < psilim
 
 Changes
-------
+--------
 - DCON - dW_edge in the netcdf output now includes the imaginary component of the least stable eigenvalue
 
 
@@ -113,7 +139,7 @@ Fixes
 - PENTRC - Respects the namelist verbose setting throughout the program
 
 Changes
-------
+--------
 - COIL - Updates ASDEX Upgrade coil geometry to have more accurate, rounded cornering
 
 
@@ -214,7 +240,7 @@ Changes
 --------
 - INSTALL - Updates instructions for new AUG cluster
 - GPEC - Moves overlap outputs to control netcdf, consistent with correct dimensions (mode, not psi_rational)
-- GPEC - Renames netcdf dimensions *_rat to *_rational for clarity
+- GPEC - Renames netcdf dimensions \*_rat to \*_rational for clarity
 
 Fixes
 ------

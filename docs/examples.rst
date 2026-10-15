@@ -1,4 +1,4 @@
-.. examples:
+.. _examples:
 
 .. _DIIID_ideal_example:
 

@@ -39,16 +39,6 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), ALLOCATABLE :: psitmp
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: xtmp
 
-      ! harvest variables
-      INCLUDE 'harvest_lib.inc77'
-      INTEGER  :: ierr
-      INTEGER  :: hint = 0
-      REAL(r8) :: hdbl = 0
-      CHARACTER(LEN=16)    :: hkey
-      CHARACTER(LEN=50000) :: hnml
-      CHARACTER(LEN=65507) :: hlog
-      CHARACTER, PARAMETER :: nul = char(0)
-
       NAMELIST/dcon_control/bal_flag,mat_flag,ode_flag,vac_flag,
      $     mer_flag,res_flag,fft_flag,node_flag,mthvac,sing_start,nn,
      $     delta_mlow,delta_mhigh,delta_mband,thmax0,nstep,ksing,
@@ -65,7 +55,7 @@ c-----------------------------------------------------------------------
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
      $     out_fl,bin_fl,out_evals,bin_evals,bin_euler,euler_stride,
-     $     ahb_flag,mthsurf0,msol_ahb,netcdf_out,out_fund
+     $     bin_vac,ahb_flag,mthsurf0,msol_ahb,netcdf_out,out_fund
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -85,12 +75,13 @@ c-----------------------------------------------------------------------
       READ(UNIT=in_unit,NML=dcon_control)
       READ(UNIT=in_unit,NML=dcon_output)
       CALL ascii_close(in_unit)
+
 c-----------------------------------------------------------------------
 c     set variables
 c-----------------------------------------------------------------------
       IF(parallel_threads > 0)THEN
-        WRITE(*,*) "WARNING: parallel_threads has been deprecated. "//
-     $    "Use dcon_kin_threads"
+        WRITE(*,*) "!! WARNING: parallel_threads has been deprecated. "
+     $    //"Use dcon_kin_threads"
       ENDIF
 #ifdef _OPENMP
 c The code is compiled with the OpenMP option so the preprocessor
@@ -104,6 +95,12 @@ c No OpenMP so the following line will appear in source code
 #endif
       delta_mhigh=delta_mhigh*2
       use_classic_splines_for_dcon = use_classic_splines
+      
+      IF(nn .EQ. 0)THEN
+         WRITE(*,*)"ERROR: nn must be set to a positive integer."
+         CALL program_stop("nn must be a positive integer.")
+      ENDIF
+
 c-----------------------------------------------------------------------
 c     open output files, read, process, and diagnose equilibrium.
 c-----------------------------------------------------------------------
@@ -198,17 +195,17 @@ c-----------------------------------------------------------------------
 c     fit equilibrium quantities to Fourier-spline functions.
 c-----------------------------------------------------------------------
       IF(mat_flag .OR. ode_flag)THEN
-         IF(verbose) WRITE(*,'(1x,a)')
-     $        "Fourier analysis of metric tensor components"
-         IF(verbose) WRITE(*,'(1x,1p,4(a,es10.3))')"q0 = ",q0,
+         IF(verbose) WRITE(*,'(3x,1p,4(a,es10.3))')"q0 = ",q0,
      $        ", qmin = ",qmin,", qmax = ",qmax,", q95 = ",q95
-         IF(verbose) WRITE(*,'(1x,a,l1,1p,3(a,es10.3))')
+         IF(verbose) WRITE(*,'(3x,a,l1,1p,3(a,es10.3))')
      $        "sas_flag = ",sas_flag,", dmlim = ",dmlim,
      $        ", qlim = ",qlim,", psilim = ",psilim
-         IF(verbose) WRITE(*,'(1x,1p,3(a,es10.3))')"betat = ",betat,
+         IF(verbose) WRITE(*,'(3x,1p,3(a,es10.3))')"betat = ",betat,
      $        ", betan = ",betan,", betap1 = ",betap1
-         IF(verbose) WRITE(*,'(1x,5(a,i4))')"nn = ",nn,", mlow = ",mlow,
+         IF(verbose) WRITE(*,'(3x,5(a,i4))')"nn = ",nn,", mlow = ",mlow,
      $        ", mhigh = ",mhigh,", mpert = ",mpert,", mband = ",mband
+         IF(verbose) WRITE(*,'(1x,a)')
+     $        "Fourier analysis of metric tensor components"
          CALL fourfit_make_metric
          IF(verbose) WRITE(*,*)"Computing F, G, and K Matrices"
          CALL fourfit_make_matrix(out_fund)
@@ -317,56 +314,6 @@ c-----------------------------------------------------------------------
      $     REAL(bwall,4),REAL(betaj,4)
       CALL bin_close(sum_unit)
 c-----------------------------------------------------------------------
-c     log inputs/outputs with harvest
-c-----------------------------------------------------------------------
-      ierr=init_harvest('CODEDB_DCON'//nul,hlog,LEN(hlog))
-      ierr=set_harvest_verbose(0)
-      ! standard CODEDB records
-      ierr=set_harvest_payload_str(hlog,'CODE'//nul,'DCON'//nul)
-      ierr=set_harvest_payload_str(hlog,'VERSION'//nul,version//nul)
-      if(shotnum>0)
-     $   ierr=set_harvest_payload_int(hlog,'SHOT'//nul,INT(shotnum))
-      if(shottime>0)
-     $   ierr=set_harvest_payload_int(hlog,'TIME'//nul,INT(shottime))
-      ! DCON specifc records
-      ierr=set_harvest_payload_int(hlog,'mpsi'//nul,mpsi)
-      ierr=set_harvest_payload_int(hlog,'mtheta'//nul,mtheta)
-      ierr=set_harvest_payload_int(hlog,'mlow'//nul,mlow)
-      ierr=set_harvest_payload_int(hlog,'mhigh'//nul,mhigh)
-      ierr=set_harvest_payload_int(hlog,'mpert'//nul,mpert)
-      ierr=set_harvest_payload_int(hlog,'mband'//nul,mband)
-      ierr=set_harvest_payload_dbl(hlog,'psilow'//nul,psilow)
-      ierr=set_harvest_payload_dbl(hlog,'psilim'//nul,psilim)
-      ierr=set_harvest_payload_dbl(hlog,'amean'//nul,amean)
-      ierr=set_harvest_payload_dbl(hlog,'rmean'//nul,rmean)
-      ierr=set_harvest_payload_dbl(hlog,'aratio'//nul,aratio)
-      ierr=set_harvest_payload_dbl(hlog,'kappa'//nul,kappa)
-      ierr=set_harvest_payload_dbl(hlog,'delta1'//nul,delta1)
-      ierr=set_harvest_payload_dbl(hlog,'delta2'//nul,delta2)
-      ierr=set_harvest_payload_dbl(hlog,'li1'//nul,li1)
-      ierr=set_harvest_payload_dbl(hlog,'li2'//nul,li2)
-      ierr=set_harvest_payload_dbl(hlog,'li3'//nul,li3)
-      ierr=set_harvest_payload_dbl(hlog,'ro'//nul,ro)
-      ierr=set_harvest_payload_dbl(hlog,'zo'//nul,zo)
-      ierr=set_harvest_payload_dbl(hlog,'psio'//nul,psio)
-      ierr=set_harvest_payload_dbl(hlog,'betap1'//nul,betap1)
-      ierr=set_harvest_payload_dbl(hlog,'betap2'//nul,betap2)
-      ierr=set_harvest_payload_dbl(hlog,'betap3'//nul,betap3)
-      ierr=set_harvest_payload_dbl(hlog,'betat'//nul,betat)
-      ierr=set_harvest_payload_dbl(hlog,'betan'//nul,betan)
-      ierr=set_harvest_payload_dbl(hlog,'bt0'//nul,bt0)
-      ierr=set_harvest_payload_dbl(hlog,'q0'//nul,q0)
-      ierr=set_harvest_payload_dbl(hlog,'qmin'//nul,qmin)
-      ierr=set_harvest_payload_dbl(hlog,'qmax'//nul,qmax)
-      ierr=set_harvest_payload_dbl(hlog,'qa'//nul,qa)
-      ierr=set_harvest_payload_dbl(hlog,'crnt'//nul,crnt)
-      ierr=set_harvest_payload_dbl(hlog,'q95'//nul,q95)
-      ierr=set_harvest_payload_dbl(hlog,'betan'//nul,betan)
-      ierr=set_harvest_payload_dbl(hlog,'plasma1'//nul,plasma1)
-      ierr=set_harvest_payload_dbl(hlog,'vacuum1'//nul,vacuum1)
-      ierr=set_harvest_payload_dbl(hlog,'total1'//nul,total1)
-      ierr=harvest_send(hlog)
-c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       CALL program_stop("Normal termination.")
@@ -401,15 +348,17 @@ c-----------------------------------------------------------------------
          CALL cspline_dealloc(fmats)
          CALL cspline_dealloc(gmats)
          CALL cspline_dealloc(kmats)
-
+      
          DO ising=1,msing
             DEALLOCATE(sing(ising)%vmat)
             DEALLOCATE(sing(ising)%mmat)
+            DEALLOCATE(sing(ising)%power)
             DEALLOCATE(sing(ising)%n1)
             DEALLOCATE(sing(ising)%n2)
          ENDDO
          DEALLOCATE(sing)
       ENDIF
+
       IF(ode_flag)DEALLOCATE(u,du,u_save)
 c-----------------------------------------------------------------------
 c     terminate.
