@@ -46,6 +46,9 @@ c-----------------------------------------------------------------------
       USE idcon_mod
 
       IMPLICIT NONE
+c     floor for recon divisors (rfac, |grad psi|^2, B^2) so the
+c     recon kernels stay finite if called on the magnetic axis.
+      REAL(r8), PARAMETER, PRIVATE :: recon_tiny = 1.0e-30_r8
 
       CONTAINS
 c-----------------------------------------------------------------------
@@ -692,7 +695,7 @@ c-----------------------------------------------------------------------
       INTEGER :: itheta, ipert, jpert, m1, dm
       
       REAL(r8) :: q, f1raw, p1, chi1, jac
-      REAL(r8) :: eta, rfac, v21, v22, v23, v33
+      REAL(r8) :: eta, rfac, v21, v22, v23, v33, dpsq
       REAL(r8), DIMENSION(0:mthsurf) :: jacs, r_vec
 
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun
@@ -741,7 +744,7 @@ c-----------------------------------------------------------------------
       DO itheta = 0, mthsurf
          CALL bicube_eval(rzphi, psi, theta(itheta), 1)
          jac = rzphi%f(4)
-         rfac = SQRT(rzphi%f(1))
+         rfac = MAX(SQRT(MAX(rzphi%f(1), 0.0_r8)), recon_tiny)
          eta = twopi*(theta(itheta) + rzphi%f(2))
          r_vec(itheta) = ro + rfac*COS(eta)
          jacs(itheta) = jac
@@ -791,6 +794,7 @@ c-----------------------------------------------------------------------
          jac = jacs(itheta)
          jwt = - f1raw / jac
          jwz = - p1 * mu0 / chi1 - f1raw * q / jac
+         dpsq = MAX(delpsi(itheta)**2, recon_tiny)
 
 c     J C^psi = J Q^psi
          cwp_fun(itheta)= bwp_fun(itheta)
@@ -799,20 +803,20 @@ c     J C^theta = J Q^theta + xi^psi/|grad psi|^2
 c     * [mu0 j^theta g_theta_zeta + mu0 j^zeta g_zeta_zeta]
 c     = J Q^theta + xwp_fun/(J |grad psi|^2) * [...]
          cwt_fun(itheta) = bmt_fun(itheta) + xwp_fun(itheta)
-     $      / ((delpsi(itheta)**2) * jac )*
+     $      / (dpsq * jac )*
      $     (jwt * g_23(itheta) + jwz * g_33(itheta))
 
 c     J C^zeta = J Q^zeta - xi^psi/|grad psi|^2
 c     * [mu0 j^theta g_theta_theta + mu0 j^zeta g_theta_zeta]
 c     = J Q^zeta - xwp_fun/(J |grad psi|^2) * [...]
          cwz_fun(itheta) = bmz_fun(itheta) - xwp_fun(itheta)
-     $     / ((delpsi(itheta)**2) * jac )*
+     $     / (dpsq * jac )*
      $     (jwt * g_22(itheta) + jwz * g_23(itheta))
 
 c     C_psi = Q_psi + (J xi^psi)/|grad psi|^2
 c     * [mu0 j^theta (grad psi.grad zeta) - mu0 j^zeta (grad psi.grad theta)]
          cvp_fun(itheta) = bvp_fun(itheta)  + 
-     $        xwp_fun(itheta) / (delpsi(itheta)**2) *
+     $        xwp_fun(itheta) / dpsq *
      $        (jwt * dpdz(itheta) - jwz * dpdt(itheta))
 
 c     C_theta = Q_theta + (J xi^psi) mu0 j^zeta
@@ -869,8 +873,6 @@ c-----------------------------------------------------------------------
      $                    g23(dm)*cwt_mn(jpert)+g33(dm)*cwz_mn(jpert)
          ENDDO
       ENDDO
-c     (xno/bno and theta-space c2v* were dev-time checks; removed)
-
       IF(debug_flag) PRINT *, "->Leaving gpeq_c at ipsi=", ipsi
 c-----------------------------------------------------------------------
 c     terminate.
@@ -881,7 +883,7 @@ c-----------------------------------------------------------------------
 c     subprogram 11. gpeq_cveri.
 c     verify the C-vector identity
 c
-c        (curl C) · grad(psi)
+c        (curl C).grad(psi)
 c        = (d C_zeta / d theta - d C_theta / d zeta) / J
 c
 c     using the single-n Fourier convention
@@ -895,7 +897,7 @@ c        d/dzeta -> -2*pi*i*n
 c
 c     and
 c
-c        (curl C) · grad(psi)
+c        (curl C).grad(psi)
 c        = (d_theta C_zeta + 2*pi*i*n*C_theta)/J.
 c
 c     Assumes gpeq_prep_c(psi) has been called for this psi, so the
@@ -926,7 +928,7 @@ c-----------------------------------------------------------------------
 
 c-----------------------------------------------------------------------
 c     divide by Jacobian pointwise:
-c        (curl C) · grad(psi) = (d_theta C_zeta - d_zeta C_theta)/J
+c        (curl C).grad(psi) = (d_theta C_zeta - d_zeta C_theta)/J
 c-----------------------------------------------------------------------
       DO itheta = 0, mthsurf
          CALL bicube_eval(rzphi, psi, theta(itheta), 0)
@@ -1210,7 +1212,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     subprogram 15. gpeq_shear.
 c     compute magnetic shear at a single psi level.
-c     approach: compute spatial domain first (theta), then FFT to mode space.
+c     evaluated on the theta grid and returned in real space.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_shear(psi, shear_fun)
       REAL(r8), INTENT(IN) :: psi
@@ -1231,10 +1233,10 @@ c-----------------------------------------------------------------------
 
 c-----------------------------------------------------------------------
 c     Allocate spline for shear_temp with 5 components:
-c     1: legacy covariant numerator term
+c     1: covariant-form numerator (kept for reference, unused below)
 c     2: (q*dpdt - dpdz) numerator
 c     3: g_psi_g_psi denominator
-c     4: legacy covariant denominator
+c     4: covariant-form denominator (kept for reference, unused below)
 c     5: DCON shear geometry term (component 2 / component 3)
 c-----------------------------------------------------------------------
       CALL spline_alloc(shear_temp, mthsurf, 5)
@@ -1249,7 +1251,7 @@ c-----------------------------------------------------------------------
          CALL bicube_eval(rzphi, psi, theta(itheta), 1)
          
          jac = rzphi%f(4)
-         rfac = SQRT(MAX(rzphi%f(1), 0.0_r8))
+         rfac = MAX(SQRT(MAX(rzphi%f(1), 0.0_r8)), recon_tiny)
          eta = twopi*(theta_val + rzphi%f(2))
          r_val = ro + rfac*COS(eta)
 
@@ -1267,8 +1269,7 @@ c        Compute w_ij contravariant metric in Cartesian components
          w(3,2) = (r_val/(2.0_r8*rfac*jac))*
      $        (rzphi%fx(3)*rzphi%fy(1) - rzphi%fx(1)*rzphi%fy(3))
 
-c        Compute covariant basis v_ij = ∂r/∂ξ_j (Cartesian components)
-c        From recon_metric:
+c        Compute covariant basis v_ij = dr/dxi_j (Cartesian components)
          v(1,1) = rzphi%fx(1)/(2.0_r8*rfac*jac)
          v(1,2) = rzphi%fx(2)*twopi*rfac/jac
          v(1,3) = rzphi%fx(3)*r_val/jac
@@ -1280,7 +1281,7 @@ c        From recon_metric:
 c        Component 33 of covariant basis
          v(3,3) = twopi*r_val/jac
 
-c        Contravariant dot products: dpdp = ∇ψ·∇ψ, etc.
+c        Contravariant dot products: dpdp = grad psi.grad psi, etc.
          dpdp = w(1,1)**2 + w(1,2)**2
          dpdt = w(1,1)*w(2,1) + w(1,2)*w(2,2)
          dpdz = w(1,1)*w(3,1) + w(1,2)*w(3,2)
@@ -1294,8 +1295,8 @@ c        Contravariant dot products: dpdp = ∇ψ·∇ψ, etc.
      $        twopi**2 * r_val**2 * (v(2,1)**2 + v(2,2)**2)
 
 
-         shear_temp%fs(itheta, 5) = 
-     $           shear_temp%fs(itheta, 2) / shear_temp%fs(itheta, 3)
+         shear_temp%fs(itheta, 5) = shear_temp%fs(itheta, 2) /
+     $           MAX(shear_temp%fs(itheta, 3), recon_tiny)
 
       ENDDO
 c-----------------------------------------------------------------------
@@ -1321,7 +1322,7 @@ c        Contravariant approach: derivative of component 5
       ENDDO
 
 c-----------------------------------------------------------------------
-c     Step 4: Transform to mode space via FFT.
+c     Step 4: Release the theta spline.
 c-----------------------------------------------------------------------
       CALL spline_dealloc(shear_temp)
 c-----------------------------------------------------------------------
@@ -1330,7 +1331,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     subprogram 16. gpeq_curvature.
 c     compute curvature in spatial domain.
-c     κ·∇ψ = (|∇ψ|²/B²)[μ₀p' + (1/2)(∂B²/∂ψ) + (1/2)(∂B²/∂θ)(∇ψ·∇θ)/(∇ψ·∇ψ)]
+c     kappa.grad psi = (|grad psi|^2/B^2)[mu0 p' + (1/2) dB^2/dpsi
+c        + (1/2)(dB^2/dtheta)(grad psi.grad theta)/|grad psi|^2]
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_curvature(psi, curv_fun)
       REAL(r8), INTENT(IN) :: psi
@@ -1349,14 +1351,14 @@ c-----------------------------------------------------------------------
       p1 = sq%f1(2) / mu0
 
 c-----------------------------------------------------------------------
-c     Step 3: Compute curvature at all theta points.
+c     Compute curvature at all theta points.
 c-----------------------------------------------------------------------
       DO itheta = 0, mthsurf
          theta_val = theta(itheta)
          CALL bicube_eval(rzphi, psi, theta_val, 1)
          
          jac = rzphi%f(4)
-         rfac = SQRT(rzphi%f(1))
+         rfac = MAX(SQRT(MAX(rzphi%f(1), 0.0_r8)), recon_tiny)
          eta = twopi*(theta_val + rzphi%f(2))
          r_val = ro + rfac*COS(eta)
 
@@ -1373,21 +1375,21 @@ c        Compute contravariant metrics
          w(3,2) = (r_val/(2.0_r8*rfac*jac))*
      $        (rzphi%fx(3)*rzphi%fy(1) - rzphi%fx(1)*rzphi%fy(3))
 
-c        Compute |∇ψ|² and ∇ψ·∇θ
+c        Compute |grad psi|^2 and grad psi.grad theta
          delpsi = SQRT(w(1,1)**2 + w(1,2)**2)
          dpdt = w(1,1)*w(2,1) + w(1,2)*w(2,2)
 
          CALL bicube_eval(eqfun, psi, theta_val, 1)
-c        Retrieve B² and derivatives
-         bsq_val = eqfun%f(1) ** 2
+c        Retrieve B^2 and derivatives
+         bsq_val = MAX(eqfun%f(1)**2, recon_tiny)
          bsq_psi = eqfun%fx(1) * 2 * eqfun%f(1)
          bsq_theta = eqfun%fy(1) * 2 * eqfun%f(1)
 
-c        Compute κ·∇ψ safely
+c        Compute kappa.grad psi
 
          kappa_psi = (delpsi**2 / bsq_val) *
      $           (p1*mu0 + 0.5_r8*bsq_psi +
-     $           0.5_r8*bsq_theta*dpdt/(delpsi**2))
+     $           0.5_r8*bsq_theta*dpdt/MAX(delpsi**2, recon_tiny))
 
          curv_fun(itheta) = CMPLX(kappa_psi, 0.0_r8, r8)
 
@@ -1398,8 +1400,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     subprogram 17. gpeq_K.
 c     compute Bernstein K quantity (stability indicator).
-c     K = |∇ψ_dcon|^2 * σ * S_dcon
-c       + mu0 * B^2 * σ^2 + 2 p' * κ^psi
+c     K = |grad psi_dcon|^2 * sigma * S_dcon
+c       + mu0 * B^2 * sigma^2 + 2 p' * kappa^psi
 c     Uses pre-computed metric from idcon_metric
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_K(psi, K_fun, K_term1, K_term2, K_term3,
@@ -1440,11 +1442,11 @@ c-----------------------------------------------------------------------
       DO itheta = 0, mthsurf
          CALL bicube_eval(rzphi, psi, theta(itheta), 1)
          jac = rzphi%f(4)
-         rfac = SQRT(rzphi%f(1))
+         rfac = MAX(SQRT(MAX(rzphi%f(1), 0.0_r8)), recon_tiny)
          eta = twopi*(theta(itheta) + rzphi%f(2))
          r_val = ro + rfac*COS(eta)
 
-c     |∇ψ| magnitude
+c     |grad psi| magnitude
          w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r_val/jac
          w(1,2)=-rzphi%fy(1)*pi*r_val/(rfac*jac)
          delpsi=SQRT(w(1,1)**2+w(1,2)**2)
@@ -1469,9 +1471,9 @@ c     metric tensor: g_ij = sum(v_i * v_j)  (idcon_metric convention)
          g33 = (v(3,3)**2) 
          g23 = (v(2,3)*v(3,3)) 
 
-c     j·B and σ = (j·B)/B²
+c     j.B and sigma = (j.B)/B^2
          CALL bicube_eval(eqfun, psi, theta(itheta), 0)
-         bsq_val = eqfun%f(1)**2
+         bsq_val = MAX(eqfun%f(1)**2, recon_tiny)
 
          jdotb_val = g22*bth*jwt + g33*bze*jwz +
      $        g23*(bth*jwz + bze*jwt)
@@ -1479,13 +1481,13 @@ c     j·B and σ = (j·B)/B²
          sigma_vals(itheta) = sigma
          jdotb_vals(itheta) = jdotb_val
 
-c     Term1: |∇ψ_dcon|^2 * σ * S_dcon
+c     Term1: |grad psi_dcon|^2 * sigma * S_dcon
          K_t1(itheta) = (delpsi**2) * sigma * REAL(shear_fun(itheta))
 
-c     Term2: mu0 * B^2 * σ^2
+c     Term2: mu0 * B^2 * sigma^2
          K_t2(itheta) = bsq_val * sigma**2 * mu0
 
-c     Term3: 2 p' * κ^psi
+c     Term3: 2 p' * kappa^psi
          K_t3(itheta) = 2.0_r8 * REAL(curv_fun(itheta)) * p1
       ENDDO
 
@@ -1541,7 +1543,7 @@ c       21 dst1_den (K1 xin2), 22 dst3_den (K3 xin2).
       REAL(r8) :: f1raw, p1_local, chi1
       REAL(r8) :: A_density, B_density, Iperp_density, Cpar_density,
      $     epf_density
-      REAL(r8) :: delpsi_val, bsq_val, sigma_local, jdotb_val
+      REAL(r8) :: delpsi_val, dpsq, bsq_val, sigma_local, jdotb_val
       REAL(r8) :: jwt, jwz, bth, bze, g22, g33, g23, r_val
       REAL(r8) :: xin2, mu0jwt, mu0jwz
       REAL(r8) :: mu0jpar_t, mu0jpar_z, mu0jper_t, mu0jper_z
@@ -1598,15 +1600,16 @@ c-----------------------------------------------------------------------
          CALL bicube_eval(rzphi, psi, theta(itheta), 1)
          CALL bicube_eval(eqfun, psi, theta(itheta), 0)
          jac = rzphi%f(4)
-         rfac = SQRT(rzphi%f(1))
+         rfac = MAX(SQRT(MAX(rzphi%f(1), 0.0_r8)), recon_tiny)
          eta = twopi*(theta(itheta) + rzphi%f(2))
          r_val = ro + rfac*COS(eta)
-         bsq_val = eqfun%f(1)**2
+         bsq_val = MAX(eqfun%f(1)**2, recon_tiny)
 
 c        |grad psi|
          w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r_val/jac
          w(1,2)=-rzphi%fy(1)*pi*r_val/(rfac*jac)
          delpsi_val=SQRT(w(1,1)**2+w(1,2)**2)
+         dpsq = MAX(delpsi_val**2, recon_tiny)
 
 c        currents and B (idcon_metric convention, same as gpeq_K).
          jwt = -f1raw/(jac*mu0)
@@ -1650,9 +1653,9 @@ c          J V^zeta  = -xwp/(|grad psi|^2 J) (mu0 j^theta g22 + mu0 j^zeta g23).
 c        mu0 j^i = mu0 * (physical j^i); jwt,jwz already hold physical j^i.
          mu0jwt = mu0 * jwt
          mu0jwz = mu0 * jwz
-         jvt_loc = xwp_fun(itheta) / (delpsi_val**2 * jac) *
+         jvt_loc = xwp_fun(itheta) / (dpsq * jac) *
      $        (mu0jwt * g23 + mu0jwz * g33)
-         jvz_loc = -xwp_fun(itheta) / (delpsi_val**2 * jac) *
+         jvz_loc = -xwp_fun(itheta) / (dpsq * jac) *
      $        (mu0jwt * g22 + mu0jwz * g23)
 c        V is contravariant (J V^i); pair with covariant Q_i (bvt,bvz).
          B_density = 2.0_r8 * REAL(
@@ -1678,9 +1681,9 @@ c           Parallel current: mu0 j_par^i = mu0 sigma B^i (B^t=bth,B^z=bze).
             mu0jpar_z = mu0 * sigma_local * bze
             mu0jper_t = mu0jwt - mu0jpar_t
             mu0jper_z = mu0jwz - mu0jpar_z
-            jvt_cur = xwp_fun(itheta) / (delpsi_val**2 * jac) *
+            jvt_cur = xwp_fun(itheta) / (dpsq * jac) *
      $           (mu0jpar_t * g23 + mu0jpar_z * g33)
-            jvz_cur = -xwp_fun(itheta) / (delpsi_val**2 * jac) *
+            jvz_cur = -xwp_fun(itheta) / (dpsq * jac) *
      $           (mu0jpar_t * g22 + mu0jpar_z * g23)
             jvt_pre = jvt_loc - jvt_cur
             jvz_pre = jvz_loc - jvz_cur

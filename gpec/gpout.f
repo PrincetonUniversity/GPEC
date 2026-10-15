@@ -6981,7 +6981,7 @@ c     executable.
       IF (recon_out) THEN
          OPEN(UNIT=ushear_fun, FILE=shear_fun_file, STATUS="UNKNOWN")
          OPEN(UNIT=ucurv, FILE=curv_file, STATUS="UNKNOWN")
-         IF (cveri_flag) THEN
+         IF (curl_check_flag) THEN
             OPEN(UNIT=ucveri, FILE=cveri_file, STATUS="UNKNOWN")
          ENDIF
          OPEN(UNIT=uk, FILE=k_file, STATUS="UNKNOWN")
@@ -6999,7 +6999,7 @@ c     executable.
      $        "psi","theta","r","z","shear_re","shear_im"
          WRITE(ucurv,'(6(1x,a16))')
      $        "psi","theta","r","z","curv_re","curv_im"
-         IF (cveri_flag) WRITE(ucveri,'(6(1x,a16))')
+         IF (curl_check_flag) WRITE(ucveri,'(6(1x,a16))')
      $        "psi","theta","r","z","cveri_re","cveri_im"
          WRITE(uk,'(9(1x,a16))')
      $        "psi","theta","r","z","K_re","K_im",
@@ -7038,8 +7038,7 @@ c     executable.
      $        "c2_theta_den","c2_zeta_den","dst1_den","dst2_den",
      $        "dst3_den"
       ENDIF
-      ep_index = 1
-      IF (mode_flag) ep_index = mode
+      ep_index = mode
       IF (ep_index < 1 .OR. ep_index > mpert) THEN
          CALL gpec_stop("gpout_recon selected mode is out of range")
       ENDIF
@@ -7084,7 +7083,7 @@ c        the original path so recon terminal totals remain unchanged.
          CALL gpeq_K(psi, K_fun, K_term1, K_term2, K_term3,
      $        sigma_vals, jdotb_vals, shear_fun, curv_fun)
 c        Verify (curl C).grad(psi)=0 using the C state prepared above.
-         IF (cveri_flag) THEN
+         IF (curl_check_flag) THEN
             CALL gpeq_cveri(psi, cveri_fun)
             DO itheta = 0, mthsurf
                cveri_abs = ABS(cveri_fun(itheta))
@@ -7119,7 +7118,7 @@ c           K_i xi_n^2 per-theta densities for the recon terms file.
      $              rvals(itheta), zvals(itheta),
      $              REAL(curv_fun(itheta)),
      $              AIMAG(curv_fun(itheta))
-               IF (cveri_flag) WRITE(ucveri,'(6(es17.8e3))') psi,
+               IF (curl_check_flag) WRITE(ucveri,'(6(es17.8e3))') psi,
      $              theta(itheta), rvals(itheta), zvals(itheta),
      $              REAL(cveri_fun(itheta)), AIMAG(cveri_fun(itheta))
                WRITE(uk,'(9(es17.8e3))') psi, theta(itheta),
@@ -7134,7 +7133,7 @@ c           K_i xi_n^2 per-theta densities for the recon terms file.
             WRITE(u_terms,*)
             WRITE(ushear_fun,*)
             WRITE(ucurv,*)
-            IF (cveri_flag) WRITE(ucveri,*)
+            IF (curl_check_flag) WRITE(ucveri,*)
             WRITE(uk,*)
             WRITE(uk_sigma,*)
          
@@ -7396,7 +7395,7 @@ c-----------------------------------------------------------------------
      $     ep_selected
       WRITE(*,'(a,a,a,es17.8e3)') "  DCON ep(", TRIM(smode), ") = ",
      $     ep_selected * (mu0*2.0_r8) / psio**2 / (chi1*1.0e-3_r8)**2
-      IF (cveri_flag) THEN
+      IF (curl_check_flag) THEN
          cveri_stat = "PASS"
          IF (cveri_count > 0) THEN
             cveri_rms = SQRT(cveri_sumsq / REAL(cveri_count, r8))
@@ -7444,7 +7443,7 @@ c-----------------------------------------------------------------------
          WRITE(u_log,'(a,a,a,es17.8e3)') "  DCON ep(", TRIM(smode),
      $        ") = ", ep_selected *
      $        (mu0*2.0_r8) / psio**2 / (chi1*1.0e-3_r8)**2
-         IF (cveri_flag) THEN
+         IF (curl_check_flag) THEN
             WRITE(u_log,'(a,a)') "  C verify: ", TRIM(cveri_stat)
             WRITE(u_log,'(a,es17.8e3)') "    max = ", cveri_max
             WRITE(u_log,'(a,es17.8e3)') "    rms = ", cveri_rms
@@ -7458,7 +7457,7 @@ c-----------------------------------------------------------------------
       IF (recon_out) THEN
          CLOSE(ushear_fun)
          CLOSE(ucurv)
-         IF (cveri_flag) CLOSE(ucveri)
+         IF (curl_check_flag) CLOSE(ucveri)
          CLOSE(uk)
          CLOSE(uk_sigma)
          CLOSE(u_int)
@@ -7534,8 +7533,7 @@ c     recon2 output units, within the reserved recon range 72-99.
       ENDIF
 
 c     fail fast on an out-of-range mode selection.
-      ep_index = 1
-      IF (mode_flag) ep_index = mode
+      ep_index = mode
       IF (ep_index < 1 .OR. ep_index > mpert) THEN
          CALL gpec_stop("gpout_recon2 selected mode is out of range")
       ENDIF
@@ -7803,8 +7801,7 @@ c     recon3 output units, within the reserved recon range 72-99.
       ENDIF
 
 c     fail fast on an out-of-range mode selection.
-      ep_index = 1
-      IF (mode_flag) ep_index = mode
+      ep_index = mode
       IF (ep_index < 1 .OR. ep_index > mpert) THEN
          CALL gpec_stop("gpout_recon3 selected mode is out of range")
       ENDIF

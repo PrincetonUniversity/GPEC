@@ -15,7 +15,7 @@
 \usepackage{pdflscape}
 \numberwithin{equation}{section}
 
-\title{DCON \texttt{recon\_flag} document}
+\title{DCON \texttt{effective\_field\_flag} document}
 \author{Sunjae Lee}
 \date{\today}
 
@@ -2205,9 +2205,9 @@ denotes the Jacobian-weighted contravariant arrays stored by the code
 This section gives the precise mathematical definition of every scalar
 printed to the terminal and to \texttt{gpec.log} by the three reconstruction
 diagnostics.  The three blocks correspond to the input flags
-\texttt{recon\_flag} (\texttt{GPEC\_RECON}, driver \texttt{gpout\_recon}),
-\texttt{recon\_flag2} (\texttt{GPEC\_RECON2}, driver \texttt{gpout\_recon2}
-$\to$ \texttt{gpeq\_firstform}), and \texttt{recon\_flag3}
+\texttt{effective\_field\_flag} (\texttt{GPEC\_RECON}, driver \texttt{gpout\_recon}),
+\texttt{standard\_form\_flag} (\texttt{GPEC\_RECON2}, driver \texttt{gpout\_recon2}
+$\to$ \texttt{gpeq\_firstform}), and \texttt{effective\_field\_terms\_flag}
 (\texttt{GPEC\_RECON3}, driver \texttt{gpout\_recon3} $\to$
 \texttt{gpeq\_recon3}).
 
@@ -2225,9 +2225,9 @@ diagnostics run:
   $\delta W_p$ total reported below is built with this scheme, so the
   choice affects the reported numbers at the level of the quadrature
   error.
-\item \texttt{cveri\_flag} (default \texttt{.FALSE.}) enables the
+\item \texttt{curl\_check\_flag} (default \texttt{.FALSE.}) enables the
   $(\nabla\times\vec C)\cdot\nabla\psi=0$ verification of
-  \S\ref{par:cveri} alongside \texttt{recon\_flag}.  The pointwise
+  \S\ref{par:cveri} alongside \texttt{effective\_field\_flag}.  The pointwise
   residual is accumulated over all surfaces and reported as a status
   of \texttt{PASS}, \texttt{WARN} or \texttt{SKIP} against a fixed
   tolerance of $10^{-10}$, together with its maximum and rms.
@@ -2242,7 +2242,7 @@ DCON-normalized $\delta W$, used in the normalized outputs below, is
 \chi'=2\pi\psi_o .
 \end{equation}
 
-\subsection{\texttt{GPEC\_RECON} (\texttt{recon\_flag})}
+\subsection{\texttt{GPEC\_RECON} (\texttt{effective\_field\_flag})}
 
 This route reconstructs the closed Bernstein form \eqref{eq:ep_bernsteinK},
 \begin{equation}
@@ -2313,7 +2313,7 @@ $(\nabla\times\vec C)\cdot\nabla\psi=\tfrac1{\mathcal J}
 (\partial_\theta C_\zeta-\partial_\zeta C_\theta)$, which must vanish to
 \texttt{tol}.
 
-\subsection{\texttt{GPEC\_RECON2} (\texttt{recon\_flag2})}
+\subsection{\texttt{GPEC\_RECON2} (\texttt{standard\_form\_flag})}
 
 This route reconstructs the original ``first form'' of $\delta W_p$, Eq.~\eqref{eq:ep_first},
 \begin{equation}
@@ -2380,7 +2380,7 @@ $\nabla\!\cdot\!\vec\xi$ is the compressional density assembled in
 Each line is printed as a complex pair (real, imaginary); the imaginary part
 is a roundoff diagnostic and should vanish.
 
-\subsection{\texttt{GPEC\_RECON3} (\texttt{recon\_flag3})}
+\subsection{\texttt{GPEC\_RECON3} (\texttt{effective\_field\_terms\_flag})}
 
 This route keeps the same closed form as recon1, Eq.~\eqref{eq:dWp_recon1},
 but expands the cross-energy density $|\vec C|^2$ term by term using

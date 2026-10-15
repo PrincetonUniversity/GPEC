@@ -5,7 +5,7 @@
 	ideal_flag=t
 	contour_flag=t
 
-	sol_num=1 		!DCON eigen function index (1 is most unstable), which will be calculated by MATCH
+	sol_num=1 		!DCON eigenfunction index for MATCH (1 = most unstable); sol_num=n>1 writes solutions<n>.bin
 
 	res_flag=f
 	ff0=1e6

@@ -19,7 +19,8 @@ c-----------------------------------------------------------------------
      $     chebyshev_flag,coil_flag,eigm_flag,bwp_pest_flag,verbose,
      $     debug_flag,timeit,kin_flag,con_flag,resp_induct_flag,
      $     netcdf_flag,ascii_flag,wv_farwall_flag,mutual_test_flag,
-     $     cveri_flag,recon_out,recon_flag2,recon_flag3
+     $     curl_check_flag,recon_out,standard_form_flag,
+     $     effective_field_terms_flag
 
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths,nths2,lmpert,lmlow,lmhigh,
