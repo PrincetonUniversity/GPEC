@@ -1230,7 +1230,7 @@ module torque
         complex(r8), dimension(maxsteps,mpert**2,6) :: kel_flat_mats
         character(8) :: methcom
         ! declare lsode input variables
-        integer  iopt, istate, itask, itol, mf, iflag,neqarray(6),&
+        integer  iopt, istate, itask, itol, mf,neqarray(6),&
             neq,liw,lrw
         integer, dimension(:), allocatable :: iwork
         real(r8) :: x,xout
@@ -1287,7 +1287,11 @@ module torque
             xlast = x
             call lsode(tintgrnd, neqarray, y, x, xout, itol, rtol,&
                 atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
-            call dintdy(x, 1, rwork(21), neq, dky, iflag)
+            ! Export the surface response, rather than the derivative of
+            ! LSODE's integral polynomial. At TCRIT, returned x can exceed
+            ! internal TN by a few ulps: DINTDY then leaves dky stale. Direct
+            ! evaluation also keeps flux functions and matrices at this x.
+            call tintgrnd(neqarray, x, y, dky)
 
             ! flux/diffusivity profiles
             call spline_eval(sq,x,0)
