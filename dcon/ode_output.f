@@ -273,6 +273,8 @@ c-----------------------------------------------------------------------
  10   FORMAT(/a,i4,1p,2(a,es10.3))
  20   FORMAT(/5x,"i",5x,"eval",7x,"evali",7x,"err"/)
  30   FORMAT(i6,1p,3e11.3)
+ 40   FORMAT(/"istep = ",i4,", psifac = ",1p,es10.3,
+     $     ": skipped, ",a," is singular (zgetrf info = ",i0,")")
 c-----------------------------------------------------------------------
 c     compute plasma response matrix.
 c-----------------------------------------------------------------------
@@ -280,6 +282,11 @@ c-----------------------------------------------------------------------
       wp=u(:,1:mpert,2)
       wp=CONJG(TRANSPOSE(wp))
       CALL zgetrf(mpert,mpert,temp,mpert,ipiv,info)
+      IF(info /= 0)THEN
+         IF(out_evals .AND. istep > 0)
+     $        WRITE(evals_out_unit,40)istep,psifac,"u(:,:,1)",info
+         RETURN
+      ENDIF
       CALL zgetrs('N',mpert,mpert,temp,mpert,ipiv,wp,mpert,info)
       wp=(wp+CONJG(TRANSPOSE(wp)))/2
 c-----------------------------------------------------------------------
@@ -290,6 +297,19 @@ c-----------------------------------------------------------------------
       index=(/(ipert,ipert=1,mpert)/)
       key=-ABS(1/evals)
       CALL bubble(key,index,1,mpert)
+c-----------------------------------------------------------------------
+c     compute inverse plasma response matrix (zheev destroys wp).
+c-----------------------------------------------------------------------
+      temp=CONJG(TRANSPOSE(u(:,1:mpert,2)))
+      wp=CONJG(TRANSPOSE(u(:,1:mpert,1)))
+      CALL zgetrf(mpert,mpert,temp,mpert,ipiv,info)
+      IF(info /= 0)THEN
+         IF(out_evals .AND. istep > 0)
+     $        WRITE(evals_out_unit,40)istep,psifac,"u(:,:,2)",info
+         RETURN
+      ENDIF
+      CALL zgetrs('N',mpert,mpert,temp,mpert,ipiv,wp,mpert,info)
+      wp=(wp+CONJG(TRANSPOSE(wp)))/2
 c-----------------------------------------------------------------------
 c     compute and sort inverse eigenvalues.
 c-----------------------------------------------------------------------

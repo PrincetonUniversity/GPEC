@@ -532,7 +532,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE idcon_build
 c-----------------------------------------------------------------------
-c     subprogram 4. idcon_matric.
+c     subprogram 4. idcon_metric.
 c     reconstructs metric tensors from dcon.
 c-----------------------------------------------------------------------
       SUBROUTINE idcon_metric

@@ -44,7 +44,7 @@ netcdf-c: v hdf5
 	if [ ! -f ../deps/src/netcdf-c/Makefile ]; then \
 		cd ../deps/src/netcdf-c; \
 			CPPFLAGS="-I$(realpath $(DEPSINSTALLDIR))/include" \
-			LDFLAGS="-L$(realpath $(DEPSINSTALLDIR))/lib" \
+			LDFLAGS="-L$(realpath $(DEPSINSTALLDIR))/lib -Wl,-rpath,$(realpath $(DEPSINSTALLDIR))/lib" \
 			./configure --prefix=$(realpath $(DEPSINSTALLDIR)); \
 	fi
 	cd ../deps/src/netcdf-c; \
@@ -57,7 +57,7 @@ netcdf-fortran: v netcdf-c
 	if [ ! -f ../deps/src/netcdf-fortran/Makefile ]; then \
 		cd ../deps/src/netcdf-fortran; \
 			CPPFLAGS="-I$(realpath $(DEPSINSTALLDIR))/include" \
-			LDFLAGS="-L$(realpath $(DEPSINSTALLDIR))/lib" \
+			LDFLAGS="-L$(realpath $(DEPSINSTALLDIR))/lib -Wl,-rpath,$(realpath $(DEPSINSTALLDIR))/lib" \
 			./configure --prefix=$(realpath $(DEPSINSTALLDIR)); \
 	fi
 	cd ../deps/src/netcdf-fortran; \
@@ -69,6 +69,7 @@ hdf5: v
 	cd ../; git submodule update --init deps/src/hdf5;
 	if [ ! -f ../deps/src/hdf5/Makefile ]; then \
 		cd ../deps/src/hdf5; \
+		LDFLAGS="-Wl,-rpath,$(realpath $(DEPSINSTALLDIR))/lib" \
 		./configure --prefix=$(realpath $(DEPSINSTALLDIR)); \
 	fi
 	cd ../deps/src/hdf5; \
@@ -430,3 +431,22 @@ mkbin: pentrc dcon rdcon stride match rmatch slayer multi sum gpec
 	cp ../sum/sum $(BINDIR)
 	cp ../gpec/gpec $(BINDIR)
 	$(call print_success,All binaries copied to $(BINDIR))
+
+# Focused PENTRC regression; CASE contains a normal readable PENTRC input deck.
+.PHONY: check-pentrc-radial
+check-pentrc-radial: pentrc
+	$(FCPENTRC) -I../pentrc ../regression/test/pentrc_radial_profile.f90 \
+		$(PENTRC_LIBDIRS) -lpentrc $(PENTRC_LIBS) $(LDFLAGS) \
+		-o $(BINDIR)/test_pentrc_radial_profile
+	@test -n "$(CASE)" || { echo 'Set CASE to a PENTRC case directory'; exit 2; }
+	cd "$(CASE)" && $(abspath $(BINDIR))/test_pentrc_radial_profile
+
+# Focused PENTRC regression: LSODE failures in the energy integral must stop.
+.PHONY: check-pentrc-energy-istate
+check-pentrc-energy-istate: pentrc
+	$(FCPENTRC) -I../pentrc ../regression/test/pentrc_energy_istate.f90 \
+		$(PENTRC_LIBDIRS) -lpentrc $(PENTRC_LIBS) $(LDFLAGS) \
+		-o $(BINDIR)/test_pentrc_energy_istate
+	$(BINDIR)/test_pentrc_energy_istate default
+	! $(BINDIR)/test_pentrc_energy_istate tight > $(BINDIR)/test_pentrc_energy_istate.log 2>&1
+	grep -q "ERROR: xintgrl_lsode - LSODE failed" $(BINDIR)/test_pentrc_energy_istate.log
