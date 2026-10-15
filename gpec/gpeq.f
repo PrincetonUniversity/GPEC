@@ -903,18 +903,25 @@ c        = (d_theta C_zeta + 2*pi*i*n*C_theta)/J.
 c
 c     Assumes gpeq_prep_c(psi) has been called for this psi, so the
 c     module cvt_mn/cvz_mn hold the covariant C state.
+c
+c     cveri_scale (optional) returns the size of the two terms that
+c     must cancel, (|d_theta C_zeta| + |d_zeta C_theta|)/|J|, so the
+c     residual can be judged relative to them.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpeq_cveri(psi, cveri_fun)
+      SUBROUTINE gpeq_cveri(psi, cveri_fun, cveri_scale)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psi
       COMPLEX(r8), DIMENSION(0:mthsurf), INTENT(OUT) :: cveri_fun
+      REAL(r8), DIMENSION(0:mthsurf), OPTIONAL, INTENT(OUT) ::
+     $     cveri_scale
 
       INTEGER :: itheta, ipert
       REAL(r8) :: jac
       COMPLEX(r8), DIMENSION(mpert) :: dth_cvz_mn, dzt_cvt_mn
       COMPLEX(r8), DIMENSION(mpert) :: curlpsi_mn
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: dth_cvz_fun, dzt_cvt_fun
 
       IF(debug_flag) PRINT *, "Entering gpeq_cveri"
 c-----------------------------------------------------------------------
@@ -927,6 +934,10 @@ c-----------------------------------------------------------------------
       ENDDO
 
       CALL iscdftb(mfac, mpert, cveri_fun, mthsurf, curlpsi_mn)
+      IF (PRESENT(cveri_scale)) THEN
+         CALL iscdftb(mfac, mpert, dth_cvz_fun, mthsurf, dth_cvz_mn)
+         CALL iscdftb(mfac, mpert, dzt_cvt_fun, mthsurf, dzt_cvt_mn)
+      ENDIF
 
 c-----------------------------------------------------------------------
 c     divide by Jacobian pointwise:
@@ -936,6 +947,9 @@ c-----------------------------------------------------------------------
          CALL bicube_eval(rzphi, psi, theta(itheta), 0)
          jac = rzphi%f(4)
          cveri_fun(itheta) = cveri_fun(itheta) / jac
+         IF (PRESENT(cveri_scale)) cveri_scale(itheta) =
+     $        (ABS(dth_cvz_fun(itheta)) + ABS(dzt_cvt_fun(itheta)))
+     $        / ABS(jac)
       ENDDO
 
       IF(debug_flag) PRINT *, "->Leaving gpeq_cveri"

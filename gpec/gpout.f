@@ -6940,7 +6940,8 @@ c     recon output units, assigned by OPEN(NEWUNIT=...).
       REAL(r8) :: epf_int_total_hr, epf_p_total_hr,
      $     epf_t_total_hr, epf_z_total_hr
       REAL(r8) :: cveri_abs, cveri_max, cveri_rms, cveri_sumsq,
-     $     cveri_tol
+     $     cveri_tol, cveri_scale_max, cveri_rel
+      REAL(r8), DIMENSION(0:mthsurf) :: cveri_scale
       COMPLEX(r8) :: dst_prev, dst_curr, dst1_prev, dst2_prev,
      $     dst3_prev, dst1_curr, dst2_curr, dst3_curr,
      $     dst_int_total_k_hr, dst1_total_hr, dst2_total_hr,
@@ -7043,7 +7044,13 @@ c     recon output units, assigned by OPEN(NEWUNIT=...).
       cveri_max = 0.0_r8
       cveri_rms = 0.0_r8
       cveri_sumsq = 0.0_r8
-      cveri_tol = 1.0e-10_r8
+      cveri_scale_max = 0.0_r8
+      cveri_rel = 0.0_r8
+c     curl check is judged on max|residual| relative to the largest
+c     (|d_theta C_zeta| + |d_zeta C_theta|)/|J|: the identity is a
+c     cancellation of these two terms, so their size is the natural
+c     amplitude- and unit-free reference.
+      cveri_tol = 1.0e-8_r8
       cveri_count = 0
 c-----------------------------------------------------------------------
 c     main loop over all psi levels.
@@ -7081,10 +7088,12 @@ c        the original path so recon terminal totals remain unchanged.
      $        sigma_vals, jdotb_vals, shear_fun, curv_fun)
 c        Verify (curl C).grad(psi)=0 using the C state prepared above.
          IF (curl_check_flag) THEN
-            CALL gpeq_cveri(psi, cveri_fun)
+            CALL gpeq_cveri(psi, cveri_fun, cveri_scale)
             DO itheta = 0, mthsurf
                cveri_abs = ABS(cveri_fun(itheta))
                cveri_max = MAX(cveri_max, cveri_abs)
+               cveri_scale_max = MAX(cveri_scale_max,
+     $              cveri_scale(itheta))
                cveri_sumsq = cveri_sumsq + cveri_abs**2
                cveri_count = cveri_count + 1
             ENDDO
@@ -7396,14 +7405,21 @@ c-----------------------------------------------------------------------
          cveri_stat = "PASS"
          IF (cveri_count > 0) THEN
             cveri_rms = SQRT(cveri_sumsq / REAL(cveri_count, r8))
+            IF (cveri_scale_max > 0.0_r8) THEN
+               cveri_rel = cveri_max / cveri_scale_max
+            ELSE
+               cveri_rel = cveri_max
+            ENDIF
+            IF (cveri_rel > cveri_tol) cveri_stat = "WARN"
          ELSE
             cveri_stat = "SKIP"
          ENDIF
-         IF (cveri_max > cveri_tol) cveri_stat = "WARN"
          WRITE(*,'(a,a)') "GPEC_RECON C verify: ", TRIM(cveri_stat)
-         WRITE(*,'(a,es17.8e3)') "  max = ", cveri_max
-         WRITE(*,'(a,es17.8e3)') "  rms = ", cveri_rms
-         WRITE(*,'(a,es17.8e3)') "  tol = ", cveri_tol
+         WRITE(*,'(a,es17.8e3)') "  max   = ", cveri_max
+         WRITE(*,'(a,es17.8e3)') "  rms   = ", cveri_rms
+         WRITE(*,'(a,es17.8e3)') "  scale = ", cveri_scale_max
+         WRITE(*,'(a,es17.8e3)') "  rel   = ", cveri_rel
+         WRITE(*,'(a,es17.8e3)') "  tol   = ", cveri_tol
       ENDIF
 
       IF (recon_out) THEN
@@ -7442,9 +7458,11 @@ c-----------------------------------------------------------------------
      $        (mu0*2.0_r8) / psio**2 / (chi1*1.0e-3_r8)**2
          IF (curl_check_flag) THEN
             WRITE(u_log,'(a,a)') "  C verify: ", TRIM(cveri_stat)
-            WRITE(u_log,'(a,es17.8e3)') "    max = ", cveri_max
-            WRITE(u_log,'(a,es17.8e3)') "    rms = ", cveri_rms
-            WRITE(u_log,'(a,es17.8e3)') "    tol = ", cveri_tol
+            WRITE(u_log,'(a,es17.8e3)') "    max   = ", cveri_max
+            WRITE(u_log,'(a,es17.8e3)') "    rms   = ", cveri_rms
+            WRITE(u_log,'(a,es17.8e3)') "    scale = ", cveri_scale_max
+            WRITE(u_log,'(a,es17.8e3)') "    rel   = ", cveri_rel
+            WRITE(u_log,'(a,es17.8e3)') "    tol   = ", cveri_tol
          ENDIF
          WRITE(u_log,*)
          CLOSE(u_log)

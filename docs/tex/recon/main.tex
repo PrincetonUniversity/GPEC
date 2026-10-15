@@ -2228,9 +2228,17 @@ diagnostics run:
 \item \texttt{curl\_check\_flag} (default \texttt{.FALSE.}) enables the
   $(\nabla\times\vec C)\cdot\nabla\psi=0$ verification of
   \S\ref{par:cveri} alongside \texttt{effective\_field\_flag}.  The pointwise
-  residual is accumulated over all surfaces and reported as a status
-  of \texttt{PASS}, \texttt{WARN} or \texttt{SKIP} against a fixed
-  tolerance of $10^{-10}$, together with its maximum and rms.
+  residual is accumulated over all surfaces.  Because the identity is
+  a cancellation between $\partial_\theta C_\zeta$ and
+  $\partial_\zeta C_\theta$, the verdict uses the relative residual
+  \begin{equation*}
+  \texttt{rel}=\frac{\max|(\nabla\times\vec C)\cdot\nabla\psi|}
+  {\max\big(|\partial_\theta C_\zeta|+|\partial_\zeta C_\theta|\big)/|J|},
+  \end{equation*}
+  with both maxima taken over all $(\psi,\theta)$ points.  It is
+  reported as \texttt{PASS} or \texttt{WARN} against a tolerance of
+  $10^{-8}$ (\texttt{SKIP} if no points were checked), together with
+  the absolute maximum and rms, the scale, and \texttt{rel}.
 \end{itemize}
 
 The DCON normalization factor that converts the GPEC energy to the
