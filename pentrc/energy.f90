@@ -209,6 +209,7 @@ module energy_integration
                 do while (x<xout)
                     call lsode2(xintgrnd, neq, yi, x, xout, itol, rtol,&
                         atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
+                    if(istate<0) exit
                     call dintdy2(x, 1, rwork(21), neq(1), dky, iflag)
                     i = i+1
                     xprofile(:,i) = (/real(0,r8), x, dky(1:2), y(1:2)/)
@@ -225,6 +226,7 @@ module energy_integration
                 stop "ERROR: xintgrl_lsode - too many steps in x required &
                     &along imaginary axis. Consider changing ximag."
             endif
+            if(istate<0) call xintgrl_lsode_fail(istate, x, psi, lambda)
         endif
 
         ! integration in real space to xmax
@@ -242,6 +244,7 @@ module energy_integration
             do while (x<xout)
                 call lsode2(xintgrnd, neq, y, x, xout, itol, rtol,&
                     atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
+                if(istate<0) exit
                 call dintdy2(x, 1, rwork(21), neq(1), dky, iflag)
                 i = i+1
                 xprofile(:,i) = (/x, real(0,r8), dky(1:2),y(1:2)/)
@@ -280,6 +283,7 @@ module energy_integration
             stop "ERROR: xintgrl_lsode - too many steps in x required. &
                 &consider complex contour (ximag>0)."
         endif
+        if(istate<0) call xintgrl_lsode_fail(istate, x, psi, lambda)
 
         ! save integration profile to memory
         if(record_this) then
@@ -297,6 +301,23 @@ module energy_integration
         xintgrl_lsode = y(1)+xj*y(2) + yi(1) + xj*yi(2)
         return
     end function xintgrl_lsode
+
+    !=======================================================================
+    subroutine xintgrl_lsode_fail(istate, x, psi, lambda)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Stop on an LSODE failure (ISTATE < 0) other than too many steps,
+    !   which xintgrl_lsode reports itself. LSODE returns the integral only
+    !   up to the failure point x on that contour leg, so the result
+    !   must not be used.
+    !-----------------------------------------------------------------------
+        integer, intent(in) :: istate
+        real(r8), intent(in) :: x, psi, lambda
+
+        print *, "psi =", psi, ", lambda =", lambda, ", leff =", energy_leff
+        print *, "LSODE istate =", istate, " at x =", x
+        error stop "ERROR: xintgrl_lsode - LSODE failed before the end of the energy contour."
+    end subroutine xintgrl_lsode_fail
 
     
     
