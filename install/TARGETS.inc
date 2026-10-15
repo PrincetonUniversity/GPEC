@@ -440,3 +440,13 @@ check-pentrc-radial: pentrc
 		-o $(BINDIR)/test_pentrc_radial_profile
 	@test -n "$(CASE)" || { echo 'Set CASE to a PENTRC case directory'; exit 2; }
 	cd "$(CASE)" && $(abspath $(BINDIR))/test_pentrc_radial_profile
+
+# Focused PENTRC regression: LSODE failures in the energy integral must stop.
+.PHONY: check-pentrc-energy-istate
+check-pentrc-energy-istate: pentrc
+	$(FCPENTRC) -I../pentrc ../regression/test/pentrc_energy_istate.f90 \
+		$(PENTRC_LIBDIRS) -lpentrc $(PENTRC_LIBS) $(LDFLAGS) \
+		-o $(BINDIR)/test_pentrc_energy_istate
+	$(BINDIR)/test_pentrc_energy_istate default
+	! $(BINDIR)/test_pentrc_energy_istate tight > $(BINDIR)/test_pentrc_energy_istate.log 2>&1
+	grep -q "ERROR: xintgrl_lsode - LSODE failed" $(BINDIR)/test_pentrc_energy_istate.log
