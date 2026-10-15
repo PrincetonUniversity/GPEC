@@ -29,6 +29,7 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(2) :: r2
       REAL(r8) :: psifac,q
       COMPLEX(r8) :: alpha
+      COMPLEX(r8), DIMENSION(2) :: power
       COMPLEX(r8), DIMENSION(:,:,:,:), POINTER :: vmatl,vmatr
       END TYPE sing_type
 
@@ -53,7 +54,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE msing_read(vmat_filename)
       CHARACTER(*) :: vmat_filename
-      INTEGER :: ising
+      INTEGER :: ising,ios,irec
 c-----------------------------------------------------------------------
 c     read power series data to binary file.
 c-----------------------------------------------------------------------
@@ -64,8 +65,22 @@ c-----------------------------------------------------------------------
       ALLOCATE(sing(msing))
       DO ising=1,msing
          singp => sing(ising)
-         READ(debug_unit)singp%order,singp%alpha,singp%psifac,
-     $        singp%q,singp%r1,singp%r2
+         READ(debug_unit,IOSTAT=ios)singp%order,singp%alpha,
+     $        singp%psifac,singp%q,singp%r1,singp%r2,singp%power
+c-----------------------------------------------------------------------
+c     files without the powers end this record after r2: reread it (the
+c     position after a failed read is processor dependent, so rewind
+c     and skip) and use -alpha, +alpha.
+c-----------------------------------------------------------------------
+         IF(ios /= 0)THEN
+            REWIND(debug_unit)
+            DO irec=1,2*ising-1
+               READ(debug_unit)
+            ENDDO
+            READ(debug_unit)singp%order,singp%alpha,singp%psifac,
+     $           singp%q,singp%r1,singp%r2
+            singp%power=(/-singp%alpha,singp%alpha/)
+         ENDIF
          ALLOCATE(singp%vmatl(mpert,2*mpert,2,0:2*singp%order))
          ALLOCATE(singp%vmatr(mpert,2*mpert,2,0:2*singp%order))
          READ(debug_unit)singp%vmatl,singp%vmatr
@@ -91,7 +106,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: iorder
       INTEGER, DIMENSION(:), POINTER :: r1,r2
-      COMPLEX(r8) :: dpsi,sqrtfac,pfac
+      COMPLEX(r8) :: dpsi,sqrtfac
       COMPLEX(r8), DIMENSION(:,:,:,:), POINTER :: vmat
 c-----------------------------------------------------------------------
 c     set pointers and compute distance from singular surface.
@@ -110,7 +125,6 @@ c-----------------------------------------------------------------------
 c     compute powers.
 c-----------------------------------------------------------------------
       sqrtfac=SQRT(dpsi)
-      pfac=dpsi**singp%alpha
 c-----------------------------------------------------------------------
 c     compute power series by Horner's method.
 c-----------------------------------------------------------------------
@@ -123,8 +137,9 @@ c     restore powers.
 c-----------------------------------------------------------------------
       ua(r1,:,1)=ua(r1,:,1)/sqrtfac
       ua(r1,:,2)=ua(r1,:,2)*sqrtfac
-      ua(:,r2(1),:)=ua(:,r2(1),:)/pfac
-      ua(:,r2(2),:)=ua(:,r2(2),:)*pfac
+c     power(1) as a division keeps the old ua bitwise for old files.
+      ua(:,r2(1),:)=ua(:,r2(1),:)/dpsi**(-singp%power(1))
+      ua(:,r2(2),:)=ua(:,r2(2),:)*dpsi**singp%power(2)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
