@@ -5,7 +5,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. sing1_mod.
+c     0. rdcon_sing1_mod.
 c     1. sing1_mmat.
 c     2. sing1_matmul.
 c     3. sing1_solve.
@@ -28,14 +28,14 @@ c     19. sing1_delta.
 c     20. sing1_kxscan.
 c     21. sing1_xmin.
 c-----------------------------------------------------------------------
-c     subprogram 0. sing1_mod.
+c     subprogram 0. rdcon_sing1_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE sing1_mod
-      USE fourfit_mod
+      MODULE rdcon_sing1_mod
+      USE rdcon_fourfit_mod
       IMPLICIT NONE
 
       INTEGER :: msol,sing_order=2,sing_order_save=2
@@ -1130,7 +1130,7 @@ c-----------------------------------------------------------------------
 
       INTEGER, INTENT(IN) :: ising
       COMPLEX(r8), DIMENSION(:,:,:,0:), INTENT(OUT) :: amat,bmat
-      
+
       INTEGER :: k,k1,info,order,r1,ipert,jpert
       INTEGER, DIMENSION(2) :: ipiv
       INTEGER, DIMENSION(2*mpert) :: p
@@ -1580,7 +1580,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE sing1_delta(ising,psifac,delta)
-      
+
       INTEGER, INTENT(IN) :: ising
       REAL(r8), INTENT(IN) :: psifac
       REAL(r8), DIMENSION(2), INTENT(OUT) :: delta
@@ -1625,7 +1625,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE sing1_delta 
+      END SUBROUTINE sing1_delta
 c-----------------------------------------------------------------------
 c     subprogram 20. sing1_kxscan.
 c     tests convergence of differential equation.
@@ -1760,4 +1760,4 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE sing1_xmin
-      END MODULE sing1_mod
+      END MODULE rdcon_sing1_mod

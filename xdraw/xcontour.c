@@ -69,6 +69,7 @@ typedef struct
 #include "xtools.h"
 #include "setcolor.h"
 #include "ps.h"
+#include "spline1.h"
 
 #define FZ (float)0
 

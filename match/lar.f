@@ -17,7 +17,10 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE lar_mod
-      USE inverse_mod
+      USE inverse_mod, ONLY: r4, r8, spline_type, sq_in, rz_in, in_unit,
+     $ lar_bin_unit, psio, twopi, eq_filename, ro, zo, lar_out_unit,
+     $ bin_open, bin_close, spline_eval, bicube_alloc, spline_alloc,
+     $ spline_dealloc, inverse_run, spline_fit
       IMPLICIT NONE
 
       INTEGER, PRIVATE :: m=2,n=1
@@ -63,7 +66,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     allocate arrays.
 c-----------------------------------------------------------------------
-      CALL spline_alloc(sq_in,ma,4)
+      CALL spline_alloc(sq_in,ma,r4)
       CALL bicube_alloc(rz_in,ma,mtau,2)
       ALLOCATE(r2(0:ma),temp(0:nstep,0:8))
       r2=0
@@ -112,8 +115,8 @@ c-----------------------------------------------------------------------
       DO
          temp(istep,:)=(/r,y,p,sigma,q/)
          IF(out)WRITE(lar_out_unit,20)istep,r,rwork(11),y,p,sigma
-         IF(bin)WRITE(lar_bin_unit)REAL(r,4),REAL(y,4),REAL(p,4),
-     $        REAL(sigma/sigma0,4),REAL(q,4),REAL(q0/q,4)
+         IF(bin)WRITE(lar_bin_unit)REAL(r,r4),REAL(y,r4),REAL(p,r4),
+     $        REAL(sigma/sigma0,r4),REAL(q,r4),REAL(q0/q,r4)
          IF(r >= a .OR. istep > nstep .OR. istate < 0)EXIT
          istep=istep+1
          CALL lsode(lar_der,neq,y,r,a,itol,rtol,atol,itask,
@@ -263,9 +266,9 @@ c-----------------------------------------------------------------------
      $        +p1*chi2/chi1+jtheta*q1*chi1
      $        -(n*chi2*g22+m*(q*chi2+q1*chi1)*g33
      $        -2*(singfac*jtheta+n*p1/chi1))**2/(m**2*g33+n**2*g22)
-         WRITE(lar_bin_unit)REAL(psi,4),REAL(SQRT(psi),4),REAL(q,4),
-     $        REAL(g11,4),REAL(g22,4),REAL(g33,4),
-     $        REAL(f,4),REAL(g,4),REAL(k,4)
+         WRITE(lar_bin_unit)REAL(psi,r4),REAL(SQRT(psi),r4),REAL(q,r4),
+     $        REAL(g11,r4),REAL(g22,r4),REAL(g33,r4),
+     $        REAL(f,r4),REAL(g,r4),REAL(k,r4)
       ENDDO
       CALL bin_close(lar_bin_unit)
 c-----------------------------------------------------------------------

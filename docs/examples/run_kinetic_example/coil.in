@@ -1,7 +1,7 @@
 &COIL_CONTROL
     ceq_type="efit"             ! eq_type from equil.in used in DCON run
 
-    data_dir="../../../coil"                 ! Directory from which <machine>_<coil_name>.dat files are read. Default looks in $GPECHOME/coil.
+    data_dir="../../../coil"    ! Directory from which <machine>_<coil_name>.dat files are read. Default looks in $GPECHOME/coil.
     machine="d3d"               ! Choose from: nstx, d3d, kstar, iter, jet, mast, rfxmod, east
     ip_direction="positive"     ! Set positive for CCW or negative for CW from a top down view
     bt_direction="negative"     ! Set positive for CCW or negative for CW from a top down view
@@ -10,6 +10,7 @@
     cmpsi=64                    ! Number of psi_n grid points in vacuum field outputs
     cmtheta=480                 ! Number of poloidal grid-points. Uses GPEC jac_type.
     cmzeta=40                   ! Number of toroidal grid-points. Uses GPEC jac_type.
+    coil_threads=0              ! Number of parallel threads used when computing fields from coils (no reason to go beyond 4 for coils with less than 1000 points). Setting <=0 defaults to OMP_NUM_THREADS env variable. Setting to <= 0 uses OMP_NUM_THREADS env variable.
 
 ! Array values should be specified for each of the coil arrays to be activated.
 ! The supported coil sets (number of coils) include...

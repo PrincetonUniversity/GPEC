@@ -69,6 +69,7 @@ extern float *buf;
 #include "xinit.h"
 #include "xedit.h"
 #include "setcolor.h"
+#include "binread.h"
 
 extern void postscript(char *);	/* near heap problem, try elim .h's*/
 extern float get_world(int, int, XRectangle, float, float, float, float,

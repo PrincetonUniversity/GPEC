@@ -109,7 +109,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE outer_der(neq,t,y,dy)
-      
+
       INTEGER, INTENT(IN) :: neq
       REAL(r8), INTENT(IN) :: t
       REAL(r8), DIMENSION(3,2), INTENT(IN) :: y

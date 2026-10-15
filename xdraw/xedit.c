@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #if !defined(__MACH__)
-#include <malloc.h>
+#include <stdlib.h>
 #endif
 #include <string.h>
 #include <math.h>
@@ -61,6 +61,8 @@ extern int ncset;
 #define TEXT0 2
 #define TEXT1 8
 #define TEXT2 14
+
+extern void settextcolor(int);
 
 /*-----------------------------------------------------------------------------
 |	get_descriptive_title

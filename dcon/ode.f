@@ -427,7 +427,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
- 10   FORMAT(1x,a,es10.3,a,f6.3)
+ 10   FORMAT(1x,2x,a,es10.3,a,f6.3)
  20   FORMAT(/3x,"ising",3x,"psi",9x,"q",10x,"di",6x,"re alpha",
      $     3x,"im alpha"//i6,1p,5e11.3/)
  30   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
@@ -587,7 +587,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
- 10   FORMAT(1x,a,es10.3,a,f6.3)
+ 10   FORMAT(1x,2x,a,es10.3,a,f6.3)
  20   FORMAT(/3x,"ising",3x,"psi",9x,"q",10x,"di",6x,"re alpha",
      $     3x,"im alpha"//i6,1p,5e11.3/)
  30   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
@@ -608,7 +608,7 @@ c     re-initialize.
 c-----------------------------------------------------------------------
       psi_old=psifac
       ipert0=NINT(nn*kinsing(ising)%q)-mlow+1
-      iperts=MAXLOC(ABS(u(:,index(1),1)))
+      iperts=MAXLOC(ABS(u(:,index(1),1)),dim=1)
       ipert1=iperts(1)
       dpsi=kinsing(ising)%psifac-psifac
 
@@ -688,7 +688,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
- 10   FORMAT(1x,a,es10.3,a,f6.3)
+ 10   FORMAT(1x,2x,a,es10.3,a,f6.3)
  20   FORMAT(/3x,"ising",3x,"psi",9x,"q",10x,"di",6x,"re alpha",
      $     3x,"im alpha"//i6,1p,5e11.3/)
  30   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
@@ -1299,7 +1299,7 @@ c-----------------------------------------------------------------------
 
       CALL spline_eval(sq,psifac,0)
       IF(size_edge > 0)THEN
-         IF(sq%f(4) >= q_edge(i_edge))THEN
+         IF(sq%f(4) >= q_edge(i_edge) .AND. psifac >= psiedge)THEN  ! second codition handles initialization plasmas with q0~qa
             CALL free_test(plasma1,vacuum1,total1,psifac)
             IF(debug) WRITE(*,'(2(i4),6(es12.3))') calc_number,
      $         i_edge,psifac,sq%f(4),q_edge(i_edge),

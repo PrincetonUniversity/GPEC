@@ -25,6 +25,12 @@ When comparing spectral GPEC outputs to real space quantities or to other codes,
 2. GPEC effectively uses CCW :math:`\phi` for left-handed (LH) configurations, but CW :math:`\phi` for right-handed (RH) configurations.
 3. GPEC always uses upward outboard :math:`\theta`.
 
+.. seealso::
+
+   For a comprehensive reference of all sign conventions (including
+   rotation velocity, safety factor, mode number resonance, and code
+   interfacing rules), see :doc:`sign_conventions`.
+
 The result of this is that the pitch-aligned field will always be positive m. This convention makes in-house analysis nice and easy. For example, one can *always* plot the m=2 perturbed normal displacement profile and see the resonant surface behavior at q=2. The m=-2 normal displacement will always be nonresonant. This is shown in the figure below from the package DIII-D example, which is a LH plasma.
 
 .. image:: _static/example_xno_kinkprofile.png
@@ -66,6 +72,7 @@ Interfacing with VACUUM
 Vacuum is the code used in DCON to calculate the vacuum energy matrices, which combine with the plasma energy matrix to describe the full system eigenmodes. The VACUUM code uses CCW :math:`\phi` and downward outboard :math:`\theta`. We thus use the complex conjugate of RH configurations to interface GPEC and VACUUM.
 
 
+.. _inputs:
 
 Inputs
 ******

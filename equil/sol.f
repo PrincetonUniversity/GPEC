@@ -26,7 +26,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE sol_run
-      
+
       INTEGER :: ir,iz,ia
       REAL(r8) :: psifac,efac,f0,pfac
       REAL(r8), DIMENSION(:,:), POINTER :: rg,zg
@@ -60,7 +60,7 @@ c-----------------------------------------------------------------------
 c     enforce physical requirements
 c-----------------------------------------------------------------------
       IF(p0fac<1)THEN
-         WRITE(*,*) "WARNING: Enforcing p0fac>=1 (no negative pressure)"
+         PRINT *, "!! WARNING: Forcing p0fac>=1 (no negative pressure)"
          p0fac = 1
       ENDIF
 c-----------------------------------------------------------------------

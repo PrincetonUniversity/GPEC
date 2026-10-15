@@ -348,10 +348,10 @@ and eq_filename="lar.in".  This allows the user to construct a
 large-aspect-ratio, circular-cross-section equilibrium, using the
 Shafranov expansion to second order, specifying minor radius a, major
 radius r0, central pressure ratio beta0, and central safety factor q0.
-The pressure profile is given by p0*(1-(r/a))**p_pres, and the profile
-of sigma=J.B/B^2 is given by sigma0*(1-(r/a))**p_pres.  Changing these
-to something more interesting would be very simple.  Here are sample
-input parameters:
+The pressure profile is given by p0*(1-(r/a)**2)**p_pres, and the profile
+of sigma=J.B/B^2 is given by sigma0/(1+(r/a))**(2*p_sig))**(1+1/p_sig).
+Changing these to something more interesting would be very simple.
+Here are sample input parameters:
 
 ma=64		number of radial grid points
 mtau=64		number of azimuthal grid points

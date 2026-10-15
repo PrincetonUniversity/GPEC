@@ -21,7 +21,7 @@ module energy_integration
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
-    ! EMAIL: nlogan@pppl.gov
+    ! EMAIL: nikolas.logan@columbia.edu
     !-----------------------------------------------------------------------
     
     use params, only : r8, mp, me, e, npsi_out, nell_out, nlambda_out, &
@@ -69,7 +69,15 @@ module energy_integration
             energy_wb,&
             energy_nuk,&
             energy_leff
-    !$omp threadprivate(energy_wn,energy_wt,energy_we,energy_wd,energy_wb,&
+    ! energy_imaxis selects the integration contour inside xintgrnd, and
+    ! xintgrl_lsode flips it between its imaginary-axis and real-axis legs.  It
+    ! is per-integration state exactly like the frequencies below it, so it must
+    ! be threadprivate too: shared, one thread's imaginary leg silently switches
+    ! another thread's integrand from x + i*ximag to i*x, turning exp(-cx) from
+    ! a decaying exponential into an oscillation and injecting values orders of
+    ! magnitude too large into the pitch integrand.
+    !$omp threadprivate(energy_imaxis,&
+    !$omp&              energy_wn,energy_wt,energy_we,energy_wd,energy_wb,&
     !$omp&              energy_nuk,energy_leff,energy_n)
 
     type record
@@ -157,7 +165,7 @@ module energy_integration
             lrw  = 20 + 16*neq(1)   ! for mf 10
             !lrw = 22+9*neq(1)+neq(1)**2 ! for mf 22
         integer iwork(liw)
-        real*8  atol(neq(1)),rtol(neq(1)),rwork(lrw),x,xout,&
+        real(r8)  atol(neq(1)),rtol(neq(1)),rwork(lrw),x,xout,&
                 y(neq(1)),yi(neq(1)),dky(neq(1))
         
         ! set default recording flag
@@ -201,6 +209,7 @@ module energy_integration
                 do while (x<xout)
                     call lsode2(xintgrnd, neq, yi, x, xout, itol, rtol,&
                         atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
+                    if(istate<0) exit
                     call dintdy2(x, 1, rwork(21), neq(1), dky, iflag)
                     i = i+1
                     xprofile(:,i) = (/real(0,r8), x, dky(1:2), y(1:2)/)
@@ -211,12 +220,13 @@ module energy_integration
                     itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
             endif
 
-            if(iwork(11)>iwork(6)/2) print *, "WARNING: ",iwork(11)," of ",iwork(6),&
+            if(iwork(11)>iwork(6)/2) print *, "!! WARNING: ",iwork(11)," of ",iwork(6),&
                 " maximum steps used in imaginary x integration."
             if(istate==-1) then
                 stop "ERROR: xintgrl_lsode - too many steps in x required &
                     &along imaginary axis. Consider changing ximag."
             endif
+            if(istate<0) call xintgrl_lsode_fail(istate, x, psi, lambda)
         endif
 
         ! integration in real space to xmax
@@ -234,6 +244,7 @@ module energy_integration
             do while (x<xout)
                 call lsode2(xintgrnd, neq, y, x, xout, itol, rtol,&
                     atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
+                if(istate<0) exit
                 call dintdy2(x, 1, rwork(21), neq(1), dky, iflag)
                 i = i+1
                 xprofile(:,i) = (/x, real(0,r8), dky(1:2),y(1:2)/)
@@ -246,7 +257,7 @@ module energy_integration
 
         ! write error file and stop program if integration fails
         if(iwork(11)>iwork(6)/2 .and. istate/=-1) then
-            print *, "WARNING: ",iwork(11)," of maximum ",iwork(6)," steps in x integration"
+            print *, "!! WARNING: ",iwork(11)," of maximum ",iwork(6)," steps in x integration"
         endif
         if(istate==-1) then
             print *, "psi =", psi, ", lambda =",lambda, ", leff =",energy_leff
@@ -272,6 +283,7 @@ module energy_integration
             stop "ERROR: xintgrl_lsode - too many steps in x required. &
                 &consider complex contour (ximag>0)."
         endif
+        if(istate<0) call xintgrl_lsode_fail(istate, x, psi, lambda)
 
         ! save integration profile to memory
         if(record_this) then
@@ -289,6 +301,23 @@ module energy_integration
         xintgrl_lsode = y(1)+xj*y(2) + yi(1) + xj*yi(2)
         return
     end function xintgrl_lsode
+
+    !=======================================================================
+    subroutine xintgrl_lsode_fail(istate, x, psi, lambda)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Stop on an LSODE failure (ISTATE < 0) other than too many steps,
+    !   which xintgrl_lsode reports itself. LSODE returns the integral only
+    !   up to the failure point x on that contour leg, so the result
+    !   must not be used.
+    !-----------------------------------------------------------------------
+        integer, intent(in) :: istate
+        real(r8), intent(in) :: x, psi, lambda
+
+        print *, "psi =", psi, ", lambda =", lambda, ", leff =", energy_leff
+        print *, "LSODE istate =", istate, " at x =", x
+        error stop "ERROR: xintgrl_lsode - LSODE failed before the end of the energy contour."
+    end subroutine xintgrl_lsode_fail
 
     
     
@@ -332,7 +361,7 @@ module energy_integration
     !-----------------------------------------------------------------------
         implicit none
         integer ::  neq
-        real*8 x, y(neq), ydot(neq)
+        real(r8) x, y(neq), ydot(neq)
 
         complex(r8) :: denom,fx,cx,nux
 
@@ -435,7 +464,7 @@ module energy_integration
     !-----------------------------------------------------------------------
         implicit none
         integer  neq, ml, mu, nrpd
-        real*8  t, y, pd(nrpd,2)
+        real(r8)  t, y, pd(nrpd,2)
         ! null result
         pd(:,:) = 0
         return

@@ -22,7 +22,9 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE direct_mod
       USE global_mod
+      USE local_mod
       USE utils_mod
+      USE grid_mod
       IMPLICIT NONE
 
       INTEGER, PRIVATE :: istep
@@ -37,6 +39,7 @@ c-----------------------------------------------------------------------
       END TYPE direct_bfield_type
 
       REAL(r8) :: etol=1e-8
+      INTEGER  :: enstep=16384
 
       CONTAINS
 c-----------------------------------------------------------------------
@@ -49,9 +52,8 @@ c-----------------------------------------------------------------------
       SUBROUTINE direct_run
 
       INTEGER :: ir,iz,itheta,ipsi
-      INTEGER, PARAMETER :: nstep=2048
       REAL(r8) :: f0fac,f0,ffac,rfac,eta,r,jacfac,w11,w12,delpsi,q
-      REAL(r8), DIMENSION(0:nstep,0:4) :: y_out
+      REAL(r8), DIMENSION(0:enstep,0:4) :: y_out
       REAL(r8), DIMENSION(2, mpsi+1) :: xdx
       REAL(r8), DIMENSION(3,3) :: v
 
@@ -87,7 +89,13 @@ c-----------------------------------------------------------------------
             mpsi=sq_in%mx-2
          ENDIF
       ENDIF
-      CALL spline_alloc(sq,mpsi,4)
+      IF(.NOT. sq%allocated)THEN
+         CALL spline_alloc(sq,mpsi,4)
+      ELSE
+         CALL spline_dealloc(sq)
+         CALL spline_alloc(sq,mpsi,4)
+      ENDIF
+
       sq%name="  sq  "
       sq%title=(/"psifac","twopif","mu0 p ","dvdpsi","  q   "/)
 c-----------------------------------------------------------------------
@@ -127,7 +135,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     start loop over flux surfaces and integrate over field line.
 c-----------------------------------------------------------------------
-      IF(verbose) WRITE(*,'(a,1p,es10.3)')" etol = ",etol
+      IF(verbose) WRITE(*,'(3x,a,1p,es10.3)')"etol = ",etol
       DO ipsi=mpsi,0,-1
          CALL direct_fl_int(ipsi,y_out,bf)
 c-----------------------------------------------------------------------
@@ -187,7 +195,6 @@ c-----------------------------------------------------------------------
       sq%name="  sq  "
       sq%title=(/" psi  ","  f   ","  p   ","  q   "/)
       q0=sq%fs(0,4)-sq%fs1(0,4)*sq%xs(0)
-      IF(newq0 == -1)newq0=-q0
 c-----------------------------------------------------------------------
 c     revise q profile.
 c-----------------------------------------------------------------------
@@ -196,7 +203,7 @@ c-----------------------------------------------------------------------
          f0fac=f0**2*((newq0/q0)**2-1)
          q0=newq0
          DO ipsi=0,mpsi
-            ffac=SQRT(1+f0fac/sq%fs(ipsi,1)**2)*SIGN(one,newq0)
+            ffac=SQRT(1+f0fac/sq%fs(ipsi,1)**2)
             sq%fs(ipsi,1)=sq%fs(ipsi,1)*ffac
             sq%fs(ipsi,4)=sq%fs(ipsi,4)*ffac
             rzphi%fs(ipsi,:,3)=rzphi%fs(ipsi,:,3)*ffac
@@ -354,8 +361,6 @@ c-----------------------------------------------------------------------
       ENDDO
       ro=r
       zo=z
-      ro=r
-      zo=z
 c-----------------------------------------------------------------------
 c     renormalize psi.
 c-----------------------------------------------------------------------
@@ -382,7 +387,7 @@ c-----------------------------------------------------------------------
             ird=ird+1
             r=((3-0.5*ird)*rmin+ro)/(1+3-0.5*ird)
             ir=0
-            IF (ird==6) THEN 
+            IF (ird==6) THEN
                direct_infinite_loop_flag = .TRUE.
                CALL program_stop("Took too many steps to find inb spx.")
             ENDIF
@@ -406,7 +411,7 @@ c-----------------------------------------------------------------------
             ird=ird+1
             r=(ro+(3-0.5*ird)*rmax)/(1+3-0.5*ird)
             ir=0
-            IF (ird==6) THEN 
+            IF (ird==6) THEN
                direct_infinite_loop_flag = .TRUE.
                CALL program_stop
      $              ("Took too many steps to find outb spx.")
@@ -437,7 +442,6 @@ c-----------------------------------------------------------------------
       INTEGER, PARAMETER :: neq=4,liw=30,lrw=22+neq*16
       INTEGER :: iopt,istate,itask,itol,jac,mf,ir
       INTEGER, DIMENSION(liw) :: iwork
-      INTEGER, PARAMETER :: nstep=2048
       REAL(r8), PARAMETER :: eps=1e-12
       REAL(r8) :: atol,rtol,rfac,deta,r,z,eta,err,psi0,psifac,dr
       REAL(r8), DIMENSION(neq) :: y
@@ -521,7 +525,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     advance differential equations.
 c-----------------------------------------------------------------------
-         IF(eta >= twopi .OR. istep >= nstep  .OR.  istate < 0
+         IF(eta >= twopi .OR. istep >= enstep  .OR.  istate < 0
      $        .OR. ABS(err) >= 1)EXIT
          istep=istep+1
          CALL lsode(direct_fl_der,neq,y,eta,twopi,itol,rtol,atol,
@@ -530,10 +534,10 @@ c-----------------------------------------------------------------------
       IF(out_fl)WRITE(out_2d_unit,20)
       IF(bin_fl)WRITE(bin_2d_unit)
 c-----------------------------------------------------------------------
-c     abort if istep > nstep.
+c     abort if istep > enstep.
 c-----------------------------------------------------------------------
       IF(eta < twopi)THEN
-         WRITE(message,40)"direct_int: istep = nstep = ",nstep,
+         WRITE(message,40)"direct_int: istep = enstep = ",enstep,
      $        " at eta = ",eta,", ipsi = ",ipsi
          CALL program_stop(message)
       ENDIF

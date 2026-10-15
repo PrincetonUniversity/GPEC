@@ -37,6 +37,7 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
     'sphinx.ext.mathjax',
+
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -53,7 +54,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'GPEC'
-copyright = u'2015, PPPL'
+copyright = u'2007 The Trustees of Princeton University'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -127,11 +128,13 @@ html_theme_options = {
     # Note the "1" or "True" value above as the third argument to indicate
     # an arbitrary url.
     'navbar_links': [("Cite", "references"),
+                     ("Installation", "installation"),
                      ("Contact", "contact"),
                      ("I/O", "outputs"),
                      ("Release History", "releases"),
+                     ("DCON", "dcon_readme"),
                      ("Develop", "developers"),
-                     ("Code","source_documentation"),
+                     ("Python Post Processing","source_documentation"),
                      ],
 
     # Render the next and previous page links in navbar. (Default: true)
@@ -404,4 +407,6 @@ epub_copyright = u'2015, PPPL'
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'http://docs.python.org/': None}
+# intersphinx_mapping = {'http://docs.python.org/': None}
+intersphinx_mapping = {'python': ('http://docs.python.org/', None)}
+

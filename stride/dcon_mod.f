@@ -3,13 +3,13 @@ c     file dcon_mod.f.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
-c     subprogram 0. dcon_mod.
+c     subprogram 0. stride_dcon_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE dcon_mod
+      MODULE stride_dcon_mod
       USE spline_mod
       USE global_mod
       USE equil_mod
@@ -98,12 +98,12 @@ c-----------------------------------------------------------------------
       EQUIVALENCE (sas_flag,lim_flag)
       REAL(r8) :: psilim,qlim,q1lim,dmlim=.5_r8,qhigh=1e3,qlow=0
 
-      INTEGER :: nThreads=32
-      LOGICAL :: vac_parallel
+      INTEGER :: nThreads=0
+      LOGICAL :: vac_parallel = .TRUE.
 
       CHARACTER(10) :: spline_str
 
       LOGICAL :: verbose_riccati_output, verbose_performance_output,
      $     riccati_bounce,riccati_match_hamiltonian_evals
 
-      END MODULE dcon_mod
+      END MODULE stride_dcon_mod

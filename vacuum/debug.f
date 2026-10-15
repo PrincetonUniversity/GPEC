@@ -6,11 +6,12 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE debug(a,l,m,n,name,iunit)
+      USE local_mod, ONLY: r8
       IMPLICIT NONE
 
       CHARACTER(*) :: name
       INTEGER, INTENT(IN) :: l,m,n,iunit
-      REAL(8), DIMENSION(l,n), INTENT(IN) :: a
+      REAL(r8), DIMENSION(l,n), INTENT(IN) :: a
 
       INTEGER :: i,j
 c-----------------------------------------------------------------------
