@@ -6909,13 +6909,10 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:), INTENT(IN) :: xspmn
       
       INTEGER :: ipsi, itheta, ipert
-c     recon output units: 72-99 are reserved for the recon diagnostics
-c     (gpout_recon/2/3) and are not opened elsewhere in the GPEC
-c     executable.
-      INTEGER, PARAMETER :: ushear_fun=82, ucurv=72, ucveri=74, uk=73,
-     $     uk_sigma=85, ucw_fun=86, ucw_mn=87, ucv_fun=88, ucv_mn=89,
-     $     ucv2_fun=90, ucv2_mn=91, u_int=92, u_log=93, u_terms=94,
-     $     uqv_mn=95
+c     recon output units, assigned by OPEN(NEWUNIT=...).
+      INTEGER :: ushear_fun, ucurv, ucveri, uk, uk_sigma, ucw_fun,
+     $     ucw_mn, ucv_fun, ucv_mn, ucv2_fun, ucv2_mn, u_int, u_log,
+     $     u_terms, uqv_mn
       REAL(r8), DIMENSION(0:mthsurf) :: epf_den_fun, epf_p_fun,
      $     epf_t_fun, epf_z_fun, dst1_den_fun, dst2_den_fun,
      $     dst3_den_fun
@@ -6979,22 +6976,22 @@ c     executable.
       terms_file = "gpec_recon_terms_sol"//TRIM(smode)//".out"
 
       IF (recon_out) THEN
-         OPEN(UNIT=ushear_fun, FILE=shear_fun_file, STATUS="UNKNOWN")
-         OPEN(UNIT=ucurv, FILE=curv_file, STATUS="UNKNOWN")
+         OPEN(NEWUNIT=ushear_fun, FILE=shear_fun_file, STATUS="UNKNOWN")
+         OPEN(NEWUNIT=ucurv, FILE=curv_file, STATUS="UNKNOWN")
          IF (curl_check_flag) THEN
-            OPEN(UNIT=ucveri, FILE=cveri_file, STATUS="UNKNOWN")
+            OPEN(NEWUNIT=ucveri, FILE=cveri_file, STATUS="UNKNOWN")
          ENDIF
-         OPEN(UNIT=uk, FILE=k_file, STATUS="UNKNOWN")
-         OPEN(UNIT=uk_sigma, FILE=k_sigma_file, STATUS="UNKNOWN")
-         CALL ascii_open(ucw_fun, cw_fun_file, "UNKNOWN")
-         CALL ascii_open(ucw_mn, cw_mn_file, "UNKNOWN")
-         CALL ascii_open(ucv_fun, cv_fun_file, "UNKNOWN")
-         CALL ascii_open(ucv_mn, cv_mn_file, "UNKNOWN")
-         CALL ascii_open(ucv2_fun, cv2_fun_file, "UNKNOWN")
-         CALL ascii_open(ucv2_mn, cv2_mn_file, "UNKNOWN")
-         CALL ascii_open(uqv_mn, qv_mn_file, "UNKNOWN")
-         OPEN(UNIT=u_int, FILE=int_file, STATUS="UNKNOWN")
-         OPEN(UNIT=u_terms, FILE=terms_file, STATUS="UNKNOWN")
+         OPEN(NEWUNIT=uk, FILE=k_file, STATUS="UNKNOWN")
+         OPEN(NEWUNIT=uk_sigma, FILE=k_sigma_file, STATUS="UNKNOWN")
+         OPEN(NEWUNIT=ucw_fun, FILE=cw_fun_file, STATUS="UNKNOWN")
+         OPEN(NEWUNIT=ucw_mn, FILE=cw_mn_file, STATUS="UNKNOWN")
+         OPEN(NEWUNIT=ucv_fun, FILE=cv_fun_file, STATUS="UNKNOWN")
+         OPEN(NEWUNIT=ucv_mn, FILE=cv_mn_file, STATUS="UNKNOWN")
+         OPEN(NEWUNIT=ucv2_fun, FILE=cv2_fun_file, STATUS="UNKNOWN")
+         OPEN(NEWUNIT=ucv2_mn, FILE=cv2_mn_file, STATUS="UNKNOWN")
+         OPEN(NEWUNIT=uqv_mn, FILE=qv_mn_file, STATUS="UNKNOWN")
+         OPEN(NEWUNIT=u_int, FILE=int_file, STATUS="UNKNOWN")
+         OPEN(NEWUNIT=u_terms, FILE=terms_file, STATUS="UNKNOWN")
          WRITE(ushear_fun,'(6(1x,a16))')
      $        "psi","theta","r","z","shear_re","shear_im"
          WRITE(ucurv,'(6(1x,a16))')
@@ -7410,7 +7407,7 @@ c-----------------------------------------------------------------------
       ENDIF
 
       IF (recon_out) THEN
-         OPEN(UNIT=u_log, FILE="gpec.log", STATUS="UNKNOWN",
+         OPEN(NEWUNIT=u_log, FILE="gpec.log", STATUS="UNKNOWN",
      $        POSITION="APPEND")
          WRITE(u_log,'(a)') "GPEC_RECON final results:"
          WRITE(u_log,'(a,I8)') "  mode = ", mode
@@ -7462,13 +7459,13 @@ c-----------------------------------------------------------------------
          CLOSE(uk_sigma)
          CLOSE(u_int)
          CLOSE(u_terms)
-         CALL ascii_close(ucw_fun)
-         CALL ascii_close(ucw_mn)
-         CALL ascii_close(ucv_fun)
-         CALL ascii_close(ucv_mn)
-         CALL ascii_close(ucv2_fun)
-         CALL ascii_close(ucv2_mn)
-         CALL ascii_close(uqv_mn)
+         CLOSE(ucw_fun)
+         CLOSE(ucw_mn)
+         CLOSE(ucv_fun)
+         CLOSE(ucv_mn)
+         CLOSE(ucv2_fun)
+         CLOSE(ucv2_mn)
+         CLOSE(uqv_mn)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -7493,8 +7490,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:), INTENT(IN) :: xspmn
 
       INTEGER :: ipsi, itheta
-c     recon2 output units, within the reserved recon range 72-99.
-      INTEGER, PARAMETER :: usurf=94, u_int=95, u_log=96
+c     recon2 output units, assigned by OPEN(NEWUNIT=...).
+      INTEGER :: usurf, u_int, u_log
       INTEGER :: istep, nint_pts, iint
       REAL(r8) :: psi, eta, rfac, dpsi_local, q2_hr
       REAL(r8), DIMENSION(0:mthsurf) :: rvals, zvals
@@ -7522,8 +7519,8 @@ c     recon2 output units, within the reserved recon range 72-99.
       int_file = "gpec_recon2_integration_sol"//TRIM(smode)//".out"
 
       IF (recon_out) THEN
-         OPEN(UNIT=usurf, FILE=surf_file, STATUS="UNKNOWN")
-         OPEN(UNIT=u_int, FILE=int_file, STATUS="UNKNOWN")
+         OPEN(NEWUNIT=usurf, FILE=surf_file, STATUS="UNKNOWN")
+         OPEN(NEWUNIT=u_int, FILE=int_file, STATUS="UNKNOWN")
          WRITE(usurf,'(12(1x,a16))')
      $        "psi","theta","r","z","q2_re","q2_im","jqx_re",
      $        "jqx_im","pdiv_re","pdiv_im","total_re","total_im"
@@ -7693,7 +7690,7 @@ c     below rzphi%xs(0) are skipped (gpout_recon clamps instead).
      $     ep_dcon
 
       IF (recon_out) THEN
-         OPEN(UNIT=u_log, FILE="gpec.log", STATUS="UNKNOWN",
+         OPEN(NEWUNIT=u_log, FILE="gpec.log", STATUS="UNKNOWN",
      $        POSITION="APPEND")
          WRITE(u_log,'(a)') "GPEC_RECON2 final results:"
          WRITE(u_log,'(a,I8)') "  mode = ", mode
@@ -7754,8 +7751,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:), INTENT(IN) :: xspmn
 
       INTEGER :: ipsi, itheta
-c     recon3 output units, within the reserved recon range 72-99.
-      INTEGER, PARAMETER :: usurf=97, u_int=98, u_log=99
+c     recon3 output units, assigned by OPEN(NEWUNIT=...).
+      INTEGER :: usurf, u_int, u_log
       INTEGER :: istep, nint_pts, iint
       REAL(r8) :: psi, dpsi_local, rfac, eta
       REAL(r8) :: A_hr, B_hr, Iperp_hr, Cpar_hr, epf_hr
@@ -7787,8 +7784,8 @@ c     recon3 output units, within the reserved recon range 72-99.
       int_file = "gpec_recon3_integration_sol"//TRIM(smode)//".out"
 
       IF (recon_out) THEN
-         OPEN(UNIT=usurf, FILE=surf_file, STATUS="UNKNOWN")
-         OPEN(UNIT=u_int, FILE=int_file, STATUS="UNKNOWN")
+         OPEN(NEWUNIT=usurf, FILE=surf_file, STATUS="UNKNOWN")
+         OPEN(NEWUNIT=u_int, FILE=int_file, STATUS="UNKNOWN")
          WRITE(usurf,'(30(1x,a16))')
      $        "psi","theta","r","z","A_den","B_den","Iperp_den",
      $        "Cpar_den","VdotQ_re","VdotQ_im","Bcur_den","Bpre_den",
@@ -7988,7 +7985,7 @@ c     (the parallel-current piece dst2 = Cpar cancels identically).
      $     ep_dcon
 
       IF (recon_out) THEN
-         OPEN(UNIT=u_log, FILE="gpec.log", STATUS="UNKNOWN",
+         OPEN(NEWUNIT=u_log, FILE="gpec.log", STATUS="UNKNOWN",
      $        POSITION="APPEND")
          WRITE(u_log,'(a)') "GPEC_RECON3 final results:"
          WRITE(u_log,'(a,I8)') "  mode = ", mode
