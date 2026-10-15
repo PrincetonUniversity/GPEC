@@ -808,14 +808,26 @@ c-----------------------------------------------------------------------
       END SUBROUTINE read_eq_ldp_d
 c-----------------------------------------------------------------------
 c     subprogram 12. read_eq_ldp_i.
-c     reads data from L. Don Pearlstein's inverse equilibrium code.
+c     reads data from L. Don Pearlstein's inverse equilibrium code, also
+c     written by OpenFUSIONToolkit TokaMaker (save_ifile). Sequential
+c     unformatted records, real*8, axis first, theta index fastest:
+c       mx,my (integer*4: number of surfaces, number of angles)
+c       psi(mx) [Wb/rad], f(mx) = R*B_t [T m], p(mx) [Pa], q(mx)
+c       r(my,mx), z(my,mx) [m], periodic point duplicated
+c       optional, each only if present, in this order:
+c       f*df/dpsi(mx), dp/dpsi(mx) (used if profile_source =
+c       "integrate");
+c       psi_axis, psi_lcfs (2 reals): psi is normalized to these; the
+c       last surface may lie inside the lcfs and then caps psihigh.
+c       Optional records are told apart by length (mx, 2).
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE read_eq_ldp_i
 
-      INTEGER :: mx,my,ios1,ios2
+      INTEGER :: mx,my,irec,ios1,ios2,ios3
+      REAL(r8), DIMENSION(2) :: psib
       REAL(r8), DIMENSION(:), POINTER :: psi,f,p,q,ffp,pp
       REAL(r8), DIMENSION(:,:), POINTER :: r,z
 c-----------------------------------------------------------------------
@@ -833,6 +845,10 @@ c-----------------------------------------------------------------------
      $     r(0:my,0:mx),z(0:my,0:mx),ffp(0:mx),pp(0:mx))
 c-----------------------------------------------------------------------
 c     read binary data; f*df/dpsi and dp/dpsi records are optional.
+c     The psi bounds record follows z, ffp or pp. Reading it into a
+c     profile array fails (short record); the file position is then
+c     processor dependent, so rewind and skip the 7 fixed records and
+c     any ffp, pp records before reading it.
 c-----------------------------------------------------------------------
       READ(in_unit)psi
       READ(in_unit)f
@@ -841,15 +857,42 @@ c-----------------------------------------------------------------------
       READ(in_unit)r
       READ(in_unit)z
       READ(in_unit,IOSTAT=ios1)ffp
-      READ(in_unit,IOSTAT=ios2)pp
+      ios2=ios1
+      IF(ios1 == 0)READ(in_unit,IOSTAT=ios2)pp
+      ios3=ios2
+      IF(ios2 == 0)READ(in_unit,IOSTAT=ios3)psib
+      IF(ios2 > 0)THEN
+         REWIND(in_unit)
+         DO irec=1,7+COUNT((/ios1,ios2/) == 0)
+            READ(in_unit)
+         ENDDO
+         READ(in_unit,IOSTAT=ios3)psib
+      ENDIF
       CALL bin_close(in_unit)
 c-----------------------------------------------------------------------
 c     copy and revise 1D arrays.
 c-----------------------------------------------------------------------
-      psio=psi(mx)-psi(0)
       CALL spline_alloc(sq_in,mx,4)
-      sq_in%xs=(psi-psi(0))/psio
-      sq_in%fs(:,1)=f
+      IF(ios3 == 0)THEN
+         psio=psib(2)-psib(1)
+         sq_in%xs=(psi-psib(1))/psio
+         IF(.NOT.(MINVAL(sq_in%xs) >= 0 .AND. sq_in%xs(mx) <= 1))THEN
+            WRITE(*,'(1x,a,1p,4es14.6)')"psi_axis, psi_lcfs, psi(0), "
+     $           //"psi(mx) =",psib,psi(0),psi(mx)
+            CALL program_stop("ldp_i psi bounds disagree with psi")
+         ENDIF
+         IF(verbose)WRITE(*,'(1x,a,1p,2es14.6)')
+     $        "ldp_i psi bounds: psi_axis, psi_lcfs =",psib
+         IF(psihigh > sq_in%xs(mx))THEN
+            WRITE(*,'(1x,2(a,es12.5))')"Note: psihigh =",psihigh,
+     $           " clamped to the last i-file surface",sq_in%xs(mx)
+            psihigh=sq_in%xs(mx)
+         ENDIF
+      ELSE
+         psio=psi(mx)-psi(0)
+         sq_in%xs=(psi-psi(0))/psio
+      ENDIF
+      sq_in%fs(:,1)=ABS(f)
       sq_in%fs(:,2)=p*mu0
       sq_in%fs(:,3)=q
       IF(ios1 == 0 .AND. ios2 == 0)THEN
