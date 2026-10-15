@@ -103,19 +103,23 @@ clear:
 	cd ../docs/examples/solovev_kinetic_example; rm -f *.out *.bin *.nc
 	cd ../docs/examples/solovev_resistive_example; rm -f *.out *.bin *.nc *.dat
 
-# Revert to clean state
+# Remove build products and dependency configuration before switching compilers.
+# Dependency sources stay in ../deps/src; custom install prefixes are respected.
 realclean: clean clear
 	rm -rf ../deps/lib/* ../deps/hdf5 ../deps/include/* ../deps/bin/* ../deps/share ../bin
 	if [ -f ../deps/src/OpenBLAS/Makefile ]; then cd ../deps/src/OpenBLAS && make clean; fi
-	if [ -f ../deps/src/hdf5/Makefile ]; then cd ../deps/src/hdf5 && make clean; fi
-	if [ -f ../deps/src/netcdf-c/Makefile ]; then cd ../deps/src/netcdf-c && make clean; fi
-	if [ -f ../deps/src/netcdf-fortran/Makefile ]; then cd ../deps/src/netcdf-fortran && make clean; fi
+	if [ -f ../deps/src/hdf5/Makefile ]; then cd ../deps/src/hdf5 && $(MAKE) distclean; fi
+	if [ -f ../deps/src/netcdf-c/Makefile ]; then cd ../deps/src/netcdf-c && $(MAKE) distclean; fi
+	if [ -f ../deps/src/netcdf-fortran/Makefile ]; then cd ../deps/src/netcdf-fortran && $(MAKE) distclean; fi
+	rm -f "$(DEPSINSTALLDIR)"/lib/libnetcdf* "$(DEPSINSTALLDIR)"/lib/libhdf5* \
+		"$(DEPSINSTALLDIR)"/include/netcdf*.mod "$(DEPSINSTALLDIR)"/include/typesizes.mod
 
 # Dependency graph (DEPENDENCIES.inc) maintenance.
 # Building GPEC never needs these -- DEPENDENCIES.inc is committed. They are
 # only for regenerating it when source USE/MODULE relationships change, and
 # require python3 (used by maintainers and the CI deps job, not end users).
 PYTHON ?= python3
+
 .PHONY: deps checkdeps
 deps:
 	$(PYTHON) gen_deps.py > DEPENDENCIES.inc
