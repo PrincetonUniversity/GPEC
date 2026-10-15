@@ -13,6 +13,7 @@ c     4. ascii_open.
 c     5. ascii_close.
 c     6. program_stop.
 c     7. floored_log.
+c     8. read_var_len.
 c-----------------------------------------------------------------------
 c     subprogram 0. local.
 c     module declarations.
@@ -259,4 +260,46 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END FUNCTION floored_log
+c-----------------------------------------------------------------------
+c     subprogram 8. read_var_len.
+c     allocates variable length arrays from set-length read-in arrays.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE read_var_len(x_in, x_out)
+
+      IMPLICIT NONE
+
+      REAL(r8), DIMENSION(:), INTENT(IN) :: x_in ! Indexes from 1...
+      REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: x_out
+      INTEGER :: n, i
+      REAL(r8) :: default_value
+c-----------------------------------------------------------------------
+c     assume last value of x_in is a sentinal
+c-----------------------------------------------------------------------
+      default_value = x_in(SIZE(x_in))
+c-----------------------------------------------------------------------
+c     count leading non-sentinel values in x_in.
+c-----------------------------------------------------------------------
+      n = 0
+      DO i = 1, SIZE(x_in) - 1
+        IF (x_in(i) /= default_value) THEN
+          n = n + 1
+        ELSE
+          EXIT
+        END IF
+      END DO
+c-----------------------------------------------------------------------
+c     allocate output array and copy if values exist.
+c-----------------------------------------------------------------------
+      IF (n > 0) THEN
+        ALLOCATE(x_out(n))
+        x_out(1:n) = x_in(1:n)
+      END IF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE read_var_len
       END MODULE local_mod

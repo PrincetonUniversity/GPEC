@@ -74,7 +74,7 @@ c-----------------------------------------------------------------------
       sq_in%fs(:,4)=SQRT(sq_in%xs)
       sq_in%name="  sq  "
       sq_in%title=(/"psifac","  f   ","mu0 p ","  q   "," rho  "/)
-      CALL spline_fit(sq_in,"extrap")
+      CALL spline_fit_hermite(sq_in,"extrap",sq_in_slopes)
       psi_in%xs=rmin+(/(ir,ir=0,psi_in%mx)/)*(rmax-rmin)/psi_in%mx
       psi_in%ys=zmin+(/(iz,iz=0,psi_in%my)/)*(zmax-zmin)/psi_in%my
       CALL bicube_fit(psi_in,"extrap","extrap")
@@ -179,6 +179,8 @@ c     store surface quantities.
 c-----------------------------------------------------------------------
          sq%fs(ipsi,1)=bf%f*twopi
          sq%fs(ipsi,2)=bf%p
+         sq%fs1(ipsi,1)=bf%f1*twopi
+         sq%fs1(ipsi,2)=bf%p1
          sq%fs(ipsi,3)=y_out(istep,1)*twopi*psio
          sq%fs(ipsi,4)=y_out(istep,3)*bf%f/twopi
          CALL spline_dealloc(ff)
@@ -191,9 +193,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     fit surface quantities to cubic splines.
 c-----------------------------------------------------------------------
-      CALL spline_fit(sq,"extrap")
+      CALL spline_fit_hermite(sq,"extrap",sq_in_slopes)
       sq%name="  sq  "
-      sq%title=(/" psi  ","  f   ","  p   ","  q   "/)
       q0=sq%fs(0,4)-sq%fs1(0,4)*sq%xs(0)
 c-----------------------------------------------------------------------
 c     revise q profile.
@@ -205,10 +206,11 @@ c-----------------------------------------------------------------------
          DO ipsi=0,mpsi
             ffac=SQRT(1+f0fac/sq%fs(ipsi,1)**2)
             sq%fs(ipsi,1)=sq%fs(ipsi,1)*ffac
+            sq%fs1(ipsi,1)=sq%fs1(ipsi,1)/ffac
             sq%fs(ipsi,4)=sq%fs(ipsi,4)*ffac
             rzphi%fs(ipsi,:,3)=rzphi%fs(ipsi,:,3)*ffac
          ENDDO
-         CALL spline_fit(sq,"extrap")
+         CALL spline_fit_hermite(sq,"extrap",sq_in_slopes)
       ENDIF
       qa=sq%fs(mpsi,4)+sq%fs1(mpsi,4)*(1-sq%xs(mpsi))
 c-----------------------------------------------------------------------
