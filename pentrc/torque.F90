@@ -39,7 +39,7 @@ module torque
     use energy_integration, only : xintgrl_lsode,qt
     use dcon_interface, only : issurfint,mpert                  ! intel	< 2018 doesn't like mpert from inputs
     use inputs, only : eqfun,sq,geom,rzphi,smats,tmats,xmats,ymats,zmats,&
-        kin,xs_m,dbob_m,divx_m,fnml, &                          ! equilib and pert. equilib splines
+        kin,kin_eval,kin_eval_external,xs_m,dbob_m,divx_m,fnml, & ! profile queries
         chi1,ro,zo,bo,mfac,mthsurf,shotnum,shottime, &          ! reals or integers
         verbose, &                                              ! logical
         machine                                                 ! character
@@ -307,7 +307,7 @@ module torque
 
         ! flux function variables  !!WARNING WHEN MODIFYING: THESE ARE CALCULATED SEPARATELY FOR I/O!!
         call spline_eval_external(sq,psi,ix,sq_s_f)
-        call spline_eval_external(kin,psi,ix,kin_f,kin_f1)
+        call kin_eval_external(psi,ix,kin_f,kin_f1)
         call spline_eval_external(geom,psi,ix,geom_f)
         q     = sq_s_f(4)
         welec = kin_f(5)                            ! electric precession
@@ -1121,7 +1121,7 @@ module torque
         do i=0,mx
             x = xs(i+istrt)
             call spline_eval(sq,x,0)
-            call spline_eval(kin,x,1)
+            call kin_eval(x,1)
             call spline_eval(geom,x,1)
             gam = tphi_spl%fs(i,:)*twopi/(chrg*chi1*geom%f(1))
             if(qt)then
@@ -1291,7 +1291,7 @@ module torque
 
             ! flux/diffusivity profiles
             call spline_eval(sq,x,0)
-            call spline_eval(kin,x,1)
+            call kin_eval(x,1)
             call spline_eval(geom,x,1)
             gam = dky*twopi/(chrg*chi1*geom%f(1))
             if(qt)then
@@ -1894,7 +1894,7 @@ module torque
         do i=1,sq%mx + 1
             psi = sq%xs(i-1)
             call spline_eval(sq,psi,1)
-            call spline_eval(kin,psi,1)
+            call kin_eval(psi,1)
             call spline_eval(geom,psi,0)
             q = sq%f(4)
             ni(i) = kin%f(1)

@@ -430,3 +430,8 @@ mkbin: pentrc dcon rdcon stride match rmatch slayer multi sum gpec
 	cp ../sum/sum $(BINDIR)
 	cp ../gpec/gpec $(BINDIR)
 	$(call print_success,All binaries copied to $(BINDIR))
+
+# Native PENTRC profile-reader/query regression; no equilibrium or solver job.
+.PHONY: check-pentrc-collisions
+check-pentrc-collisions:
+	python3 ../regression/test/pentrc_collision_profile.py -v
