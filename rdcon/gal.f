@@ -154,6 +154,10 @@ c-----------------------------------------------------------------------
 c     resistive perturbed equilibrium solution.
 c-----------------------------------------------------------------------
       IF (coil%rpec_flag ) THEN
+         IF (solver == "cholesky") THEN
+            WRITE(*,*)"WARNING: rpec_flag needs solver='LU'; switching."
+            solver="LU"
+         ENDIF
          coil%mcoil=mpert
          coil%m1=2*msing+1
          coil%m2=2*msing+coil%mcoil
