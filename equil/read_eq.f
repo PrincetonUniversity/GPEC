@@ -876,8 +876,11 @@ c-----------------------------------------------------------------------
       IF(ios3 == 0)THEN
          psio=psib(2)-psib(1)
          sq_in%xs=(psi-psib(1))/psio
-         IF(.NOT.(sq_in%xs(mx) > 0 .AND. sq_in%xs(mx) <= 1))
-     $        CALL program_stop("ldp_i psi bounds disagree with psi")
+         IF(.NOT.(MINVAL(sq_in%xs) >= 0 .AND. sq_in%xs(mx) <= 1))THEN
+            WRITE(*,'(1x,a,1p,4es14.6)')"psi_axis, psi_lcfs, psi(0), "
+     $           //"psi(mx) =",psib,psi(0),psi(mx)
+            CALL program_stop("ldp_i psi bounds disagree with psi")
+         ENDIF
          IF(verbose)WRITE(*,'(1x,a,1p,2es14.6)')
      $        "ldp_i psi bounds: psi_axis, psi_lcfs =",psib
          IF(psihigh > sq_in%xs(mx))THEN
