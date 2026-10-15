@@ -1556,7 +1556,7 @@ c-----------------------------------------------------------------------
      $           a_id,pp_id,cp_id,wp_id,np_id,dp_id,dd_id,pr_id,wc_id,
      $           bc_id,ti_id,te_id,ni_id,ne_id,we_id,wi_id,q1_id,rh_id,
      $           r1_id,ssp_id,lq_id,rt_id,at_id,wmin_id,wsat_id,pm_id,
-     $           ps_id,pcc_id,astat
+     $           ps_id,pcc_id,dm_id,astat
 
       INTEGER :: itheta,ising,icoup
       REAL(r8) :: respsi,lpsi,rpsi,shear,hdist,sbnosurf
@@ -1569,6 +1569,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(msing) :: hw_isl,hw_v,
      $     chirikov,hw_v_crit,hw_sat,hw_min
       REAL(r8), DIMENSION(nsingcoup,msing) :: op
+      REAL(r8), DIMENSION(msing) :: dmo
       COMPLEX(r8), DIMENSION(msing) :: delta,delcur,singcur,
      $     singflx,singbwp
       COMPLEX(r8), DIMENSION(nsingcoup, msing) :: olap
@@ -2219,6 +2220,9 @@ c-----------------------------------------------------------------------
             ENDDO
          ENDDO
          op = ABS(olap) / sbnosurf * 1e2
+         ! dominant mode overlap (little delta)
+         dmo = 0.0_r8
+         IF (ABS(bt0) > 0.0_r8) dmo = ABS(olap(1,:)) / ABS(bt0)
 
          IF(ascii_flag)THEN
             WRITE(out_unit,*)"Overlap fields, overlap singular "//
@@ -2250,52 +2254,62 @@ c-----------------------------------------------------------------------
      $         (/m_id,i_id/), p_id) )
             CALL check( nf90_put_att(mncid, p_id, "units", "Tesla") )
             CALL check( nf90_put_att(mncid, p_id, "long_name",
-     $        "Pitch resonant flux overlap") )
+     $        "Root-area weighted vacuum field overlap with resonant "//
+     $        "flux coupling right-singular vectors") )
             CALL check( nf90_def_var(mncid, "Phi_overlap_norm",
      $         nf90_double,(/m_id/), pp_id) )
-            CALL check( nf90_put_att(mncid, pp_id, "units", "unitless"))
+            CALL check( nf90_put_att(mncid, pp_id, "units", "%"))
             CALL check( nf90_put_att(mncid, pp_id, "long_name",
-     $        "Pitch resonant flux overlap percentage") )
+     $        "Normalized resonant flux overlap") )
             CALL check( nf90_def_var(mncid, "I_overlap", nf90_double,
      $         (/m_id,i_id/), c_id) )
-            CALL check( nf90_put_att(mncid, c_id, "units", "Amps") )
+            CALL check( nf90_put_att(mncid, c_id, "units", "Tesla") )
             CALL check( nf90_put_att(mncid, c_id, "long_name",
-     $        "Pitch resonant current overlap") )
+     $        "Root-area weighted vacuum field overlap with resonant "//
+     $        "current coupling right-singular vectors") )
             CALL check( nf90_def_var(mncid, "I_overlap_norm",
-     $         nf90_double,(/m_id,i_id/), cp_id) )
-            CALL check( nf90_put_att(mncid, cp_id, "units", "unitless"))
+     $         nf90_double,(/m_id/), cp_id) )
+            CALL check( nf90_put_att(mncid, cp_id, "units", "%"))
             CALL check( nf90_put_att(mncid, cp_id, "long_name",
-     $        "Pitch resonant current overlap percentage") )
+     $        "Normalized resonant current overlap") )
             CALL check( nf90_def_var(mncid, "w_overlap", nf90_double,
      $         (/m_id,i_id/), w_id) )
-            CALL check( nf90_put_att(mncid, w_id, "units", "untiless") )
+            CALL check( nf90_put_att(mncid, w_id, "units", "Tesla") )
             CALL check( nf90_put_att(mncid, w_id, "long_name",
-     $        "Full width of saturated island overlap") )
+     $        "Root-area weighted vacuum field overlap with island "//
+     $        "half-width squared coupling right-singular vectors") )
             CALL check( nf90_def_var(mncid, "w_overlap_norm",
      $         nf90_double,(/m_id/), wp_id) )
-            CALL check( nf90_put_att(mncid, wp_id, "units", "untiless"))
+            CALL check( nf90_put_att(mncid, wp_id, "units", "%"))
             CALL check( nf90_put_att(mncid, wp_id, "long_name",
-     $        "Full width of saturated island overlap percentage") )
+     $        "Normalized resonant island half-width squared overlap") )
             CALL check( nf90_def_var(mncid, "Pen_overlap", nf90_double,
      $         (/m_id, i_id/), n_id) )
-            CALL check( nf90_put_att(mncid, n_id, "units", "untiless") )
+            CALL check( nf90_put_att(mncid, n_id, "units", "Tesla") )
             CALL check( nf90_put_att(mncid, n_id, "long_name",
-     $        "Penetrated flux overlap") )
+     $        "Root-area weighted vacuum field overlap with "//
+     $        "penetrated flux coupling right-singular vectors") )
             CALL check( nf90_def_var(mncid, "Pen_overlap_norm",
      $         nf90_double,(/m_id/), np_id) )
-            CALL check( nf90_put_att(mncid, np_id, "units", "untiless"))
+            CALL check( nf90_put_att(mncid, np_id, "units", "%"))
             CALL check( nf90_put_att(mncid, np_id, "long_name",
-     $        "Penetrated flux overlap percentage") )
+     $        "Normalized resonant penetrated flux overlap") )
             CALL check( nf90_def_var(mncid, "Delta_overlap",nf90_double,
      $         (/m_id, i_id/), d_id) )
-            CALL check( nf90_put_att(mncid, d_id, "units", "untiless") )
+            CALL check( nf90_put_att(mncid, d_id, "units", "Tesla") )
             CALL check( nf90_put_att(mncid, d_id, "long_name",
-     $        "External Delta prime overlap") )
+     $        "Root-area weighted vacuum field overlap with "//
+     $        "Delta_mn coupling right-singular vectors") )
             CALL check( nf90_def_var(mncid, "Delta_overlap_norm",
      $         nf90_double,(/m_id/), dd_id) )
-            CALL check( nf90_put_att(mncid, dd_id, "units", "untiless"))
+            CALL check( nf90_put_att(mncid, dd_id, "units", "%"))
             CALL check( nf90_put_att(mncid, dd_id, "long_name",
-     $        "External Delta prime overlap percentage") )
+     $        "Normalized resonant Delta_mn overlap") )
+            CALL check( nf90_def_var(mncid, "dominant_mode_overlap",
+     $         nf90_double,(/m_id/), dm_id) )
+            CALL check( nf90_put_att(mncid, dm_id, "units", "unitless"))
+            CALL check( nf90_put_att(mncid, dm_id, "long_name",
+     $        "Dominant mode overlap delta = |Phi_overlap|/B_T") )
             CALL check( nf90_enddef(mncid) )
             CALL check( nf90_put_var(mncid, p_id, RESHAPE((/
      $         REAL(olap(1,:)),AIMAG(olap(1,:))/), (/msing,2/))) )
@@ -2312,6 +2326,7 @@ c-----------------------------------------------------------------------
             CALL check( nf90_put_var(mncid, wp_id, op(3,:)) )
             CALL check( nf90_put_var(mncid, np_id, op(4,:)) )
             CALL check( nf90_put_var(mncid, dd_id, op(5,:)) )
+            CALL check( nf90_put_var(mncid, dm_id, dmo) )
             CALL check( nf90_close(mncid) )
          ENDIF
 
@@ -2326,6 +2341,8 @@ c-----------------------------------------------------------------------
                ENDDO
             ENDDO
             op = ABS(olap) / sbnosurf * 1e2
+            dmo = 0.0_r8
+            IF (ABS(bt0) > 0.0_r8) dmo = ABS(olap(1,:)) / ABS(bt0)
 
             IF(ascii_flag)THEN
                WRITE(out_unit,*)"Local overlap fields, overlap "//
@@ -2333,8 +2350,8 @@ c-----------------------------------------------------------------------
                WRITE(out_unit,*)
                WRITE(out_unit,'(1x,a6,15(1x,a16))') "mode",
      $           "real(ovf)","imag(ovf)","overlap(%)",  ! Resonant flux RSV overlap
-     $           "real(ovs)","imag(ovs)","overlap(%)",  ! Resonant current RSV overlap
-     $           "real(ovi)","imag(ovi)","overlap(%)",  ! Island width RSV overlap
+     $           "real(ovi)","imag(ovi)","overlap(%)",  ! Resonant current RSV overlap
+     $           "real(ovw)","imag(ovw)","overlap(%)",  ! Island width RSV overlap
      $           "real(ovp)","imag(ovp)","overlap(%)",  ! Penetrated flux RSV overlap
      $           "real(ovd)","imag(ovd)","overlap(%)"   ! Unitless Delta RSV overlap
                DO ising=1,osing
@@ -2357,52 +2374,66 @@ c-----------------------------------------------------------------------
      $            nf90_double,(/m_id,i_id/), p_id) )
                CALL check( nf90_put_att(mncid, p_id,"units","Tesla"))
                CALL check( nf90_put_att(mncid, p_id, "long_name",
-     $           "Local pitch resonant flux overlap") )
+     $           "Root-area weighted vacuum field overlap with local "//
+     $           "resonant flux coupling right-singular vectors") )
                CALL check( nf90_def_var(mncid, "Phi_local_overlap_norm",
      $            nf90_double,(/m_id/), pp_id) )
-               CALL check( nf90_put_att(mncid,pp_id,"units","unitless"))
+               CALL check( nf90_put_att(mncid,pp_id,"units","%"))
                CALL check( nf90_put_att(mncid, pp_id, "long_name",
-     $           "Local pitch resonant flux overlap percentage") )
+     $           "Normalized local resonant flux overlap") )
                CALL check( nf90_def_var(mncid, "I_local_overlap",
      $            nf90_double,(/m_id,i_id/), c_id) )
-               CALL check( nf90_put_att(mncid, c_id,"units","Amps"))
+               CALL check( nf90_put_att(mncid, c_id,"units","Tesla"))
                CALL check( nf90_put_att(mncid, c_id, "long_name",
-     $           "Local pitch resonant current overlap") )
+     $           "Root-area weighted vacuum field overlap with local "//
+     $           "resonant current coupling right-singular vectors") )
                CALL check( nf90_def_var(mncid, "I_local_overlap_norm",
      $            nf90_double,(/m_id/), cp_id) )
-               CALL check( nf90_put_att(mncid,cp_id,"units","unitless"))
+               CALL check( nf90_put_att(mncid,cp_id,"units","%"))
                CALL check( nf90_put_att(mncid, cp_id, "long_name",
-     $           "Local pitch resonant current overlap percentage") )
+     $           "Normalized local resonant current overlap") )
                CALL check( nf90_def_var(mncid, "w_local_overlap",
      $            nf90_double,(/m_id,i_id/), w_id) )
-               CALL check( nf90_put_att(mncid, w_id,"units","untiless"))
+               CALL check( nf90_put_att(mncid, w_id,"units","Tesla"))
                CALL check( nf90_put_att(mncid, w_id, "long_name",
-     $           "Local full width of saturated island overlap") )
+     $           "Root-area weighted vacuum field overlap with local "//
+     $           "island half-width squared coupling right-singular "//
+     $           "vectors") )
                CALL check( nf90_def_var(mncid, "w_local_overlap_norm",
      $            nf90_double,(/m_id/), wp_id) )
-               CALL check( nf90_put_att(mncid,wp_id,"units","untiless"))
+               CALL check( nf90_put_att(mncid,wp_id,"units","%"))
                CALL check( nf90_put_att(mncid, wp_id, "long_name",
-     $      "Local full width of saturated island overlap percentage") )
+     $           "Normalized local resonant island half-width "//
+     $           "squared overlap") )
                CALL check( nf90_def_var(mncid, "Pen_local_overlap",
      $            nf90_double,(/m_id, i_id/), n_id) )
-               CALL check( nf90_put_att(mncid, n_id,"units","untiless"))
+               CALL check( nf90_put_att(mncid, n_id,"units","Tesla"))
                CALL check( nf90_put_att(mncid, n_id, "long_name",
-     $           "Local penetrated flux overlap") )
+     $           "Root-area weighted vacuum field overlap with local "//
+     $           "penetrated flux coupling right-singular vectors") )
                CALL check( nf90_def_var(mncid, "Pen_local_overlap_norm",
      $            nf90_double,(/m_id/), np_id) )
-               CALL check( nf90_put_att(mncid,np_id,"units","untiless"))
+               CALL check( nf90_put_att(mncid,np_id,"units","%"))
                CALL check( nf90_put_att(mncid, np_id, "long_name",
-     $           "Local penetrated flux overlap percentage") )
+     $           "Normalized local resonant penetrated flux overlap") )
                CALL check( nf90_def_var(mncid, "Delta_local_overlap",
      $            nf90_double,(/m_id, i_id/), d_id) )
-               CALL check( nf90_put_att(mncid, d_id,"units","untiless"))
+               CALL check( nf90_put_att(mncid, d_id,"units","Tesla"))
                CALL check( nf90_put_att(mncid, d_id, "long_name",
-     $           "Local extrenal Delta prime overlap") )
+     $           "Root-area weighted vacuum field overlap with local "//
+     $           "Delta_mn coupling right-singular vectors") )
               CALL check( nf90_def_var(mncid,"Delta_local_overlap_norm",
      $            nf90_double,(/m_id/), dp_id) )
-               CALL check( nf90_put_att(mncid,dp_id,"units","untiless"))
+               CALL check( nf90_put_att(mncid,dp_id,"units","%"))
                CALL check( nf90_put_att(mncid, dp_id, "long_name",
-     $           "Local extrenal Delta prime overlap percentage") )
+     $           "Normalized local resonant Delta_mn overlap") )
+               CALL check( nf90_def_var(mncid,
+     $            "dominant_mode_local_overlap",
+     $            nf90_double,(/m_id/), dm_id) )
+               CALL check( nf90_put_att(mncid,dm_id,"units","unitless"))
+               CALL check( nf90_put_att(mncid, dm_id, "long_name",
+     $           "Local dominant mode overlap delta = "//
+     $           "|Phi_local_overlap|/B_T") )
                CALL check( nf90_enddef(mncid) )
                CALL check( nf90_put_var(mncid, p_id, RESHAPE((/
      $            REAL(olap(1,:osing)),AIMAG(olap(1,:osing))/),
@@ -2424,6 +2455,7 @@ c-----------------------------------------------------------------------
                CALL check( nf90_put_var(mncid, wp_id, op(3,1:osing)) )
                CALL check( nf90_put_var(mncid, np_id, op(4,1:osing)) )
                CALL check( nf90_put_var(mncid, dp_id, op(5,1:osing)) )
+               CALL check( nf90_put_var(mncid, dm_id, dmo(1:osing)) )
                CALL check( nf90_close(mncid) )
             ENDIF
 

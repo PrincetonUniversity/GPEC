@@ -72,6 +72,21 @@ Interfacing with VACUUM
 Vacuum is the code used in DCON to calculate the vacuum energy matrices, which combine with the plasma energy matrix to describe the full system eigenmodes. The VACUUM code uses CCW :math:`\phi` and downward outboard :math:`\theta`. We thus use the complex conjugate of RH configurations to interface GPEC and VACUUM.
 
 
+.. _coupling_overlap:
+
+Resonant Coupling and Dominant Mode Overlap
+===========================================
+
+Coupling matrices (singcoup_flag) relate area-weighted resonant quantities to the root-area-weighted vacuum field, making their SVD coordinate invariant (Park 2008, Pharr 2026):
+
+.. math::
+
+   \bar{b}^r_i = C_{im} \tilde{b}^x_m, \qquad
+   \tilde{b}^x_m = \frac{1}{\sqrt{A^x}} \oint d\theta\, d\phi \, \delta\mathbf{B}^x\cdot\hat{n} \, \sqrt{\mathcal{J}|\nabla\psi|} \, e^{i(n\phi - m\theta)}.
+
+Singular values carry the units of each C; right-singular vectors :math:`\mathbf{v}_j` are unitless.
+
+
 .. _inputs:
 
 Inputs
@@ -157,7 +172,7 @@ GPEC_singfld_n#.out
 
     **Flag** singcoup_flag
 
-    **Info** Additional section showing the overlap field and overlap percentage for each eigenmode in the singcoup_svd output.
+    **Info** Additional section showing the overlap field (Tesla) and overlap percentage for each eigenmode in the singcoup_svd output. See :ref:`coupling_overlap` for definitions.
 
 GPEC_pmod_n#.out
 
