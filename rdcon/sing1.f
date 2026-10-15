@@ -171,7 +171,7 @@ c-----------------------------------------------------------------------
      $           =10*singfac(ipert,2)*fmats%f3(iqty)
      $           +10*singfac(ipert,3)*fmats%f2(iqty)
             IF(singp%order < 6)CYCLE
-            f(1+ipert-jpert,jpert,5)
+            f(1+ipert-jpert,jpert,6)
      $           =20*singfac(ipert,3)*fmats%f3(iqty)
          ENDDO
       ENDDO

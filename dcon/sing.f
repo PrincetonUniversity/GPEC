@@ -449,7 +449,7 @@ c-----------------------------------------------------------------------
      $           =10*singfac(ipert,2)*fmats%f3(iqty)
      $           +10*singfac(ipert,3)*fmats%f2(iqty)
             IF(sing_order < 6)CYCLE
-            f(1+ipert-jpert,jpert,5)
+            f(1+ipert-jpert,jpert,6)
      $           =20*singfac(ipert,3)*fmats%f3(iqty)
          ENDDO
       ENDDO
@@ -530,7 +530,7 @@ c-----------------------------------------------------------------------
             IF(sing_order < 2)CYCLE
             g(1+ipert-jpert,jpert,2)=gmats%f2(iqty)/2
             IF(sing_order < 3)CYCLE
-            g(1+ipert-jpert,jpert,3)=gmats%f2(iqty)/6
+            g(1+ipert-jpert,jpert,3)=gmats%f3(iqty)/6
          ENDDO
       ENDDO
 c-----------------------------------------------------------------------
