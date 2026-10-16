@@ -34,7 +34,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE gpeq_mod
       USE idcon_mod
- 
+
       IMPLICIT NONE
 
       CONTAINS
@@ -78,11 +78,10 @@ c-----------------------------------------------------------------------
          xss_mn=u4%f
       ELSE
          IF (galsol%gal_flag) THEN
-            CALL cspline_eval(u1,psi,1)
-            CALL cspline_eval(u2,psi,0)
-            xsp1_mn=u1%f1
+            ! analytic galerkin derivative carried in u3 (not d/dpsi of u1)
+            CALL cspline_eval(u3,psi,0)
+            xsp1_mn=u3%f
          ELSE
-            CALL cspline_eval(u1,psi,0)
             CALL cspline_eval(u2,psi,0)
             xspfac=u2%f/singfac
             CALL zgbmv('N',mpert,mpert,mband,mband,-ione,kmats,
@@ -102,6 +101,11 @@ c-----------------------------------------------------------------------
       bwp_mn=(chi1*singfac*twopi*ifac*xsp_mn)
       bwt_mn=-(chi1*xsp1_mn+twopi*ifac*nn*xss_mn)
       bwz_mn=-(chi1*(q1*xsp_mn+sq%f(4)*xsp1_mn)+twopi*ifac*mfac*xss_mn)
+      IF(galsol%gal_flag) THEN
+         CALL cspline_eval(bpsi,psi,0)
+         bwp_mn_rmatch=bpsi%f
+         ! bwp_mn=bwp_mn_rmatch
+      ENDIF
 c-----------------------------------------------------------------------
 c     compute derivative of b fields.
 c-----------------------------------------------------------------------
@@ -143,7 +147,7 @@ c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psi
-      
+
       INTEGER :: ipert,jpert,m1,dm
       COMPLEX(r8), DIMENSION(-mband:mband) ::jmat,jmat1
 
@@ -233,7 +237,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(-mband:mband) :: g11,g22,g33,g23,g31,g12
 
       IF(debug_flag) PRINT *, "Entering gpeq_cova"
-      
+
       CALL spline_eval(sq,psi,1)
       CALL cspline_eval(metric%cs,psi,0)
       q=sq%f(4)
@@ -246,7 +250,7 @@ c-----------------------------------------------------------------------
       g33(0:-mband:-1)=metric%cs%f(2*mband+3:3*mband+3)
       g23(0:-mband:-1)=metric%cs%f(3*mband+4:4*mband+4)
       g31(0:-mband:-1)=metric%cs%f(4*mband+5:5*mband+5)
-      g12(0:-mband:-1)=metric%cs%f(5*mband+6:6*mband+6)      
+      g12(0:-mband:-1)=metric%cs%f(5*mband+6:6*mband+6)
 c-----------------------------------------------------------------------
 c     compute upper half of matrices.
 c-----------------------------------------------------------------------
@@ -265,7 +269,7 @@ c-----------------------------------------------------------------------
       xvz_mn=0
       bvp_mn=0
       bvt_mn=0
-      bvz_mn=0 
+      bvz_mn=0
       DO m1=mlow,mhigh
          ipert=ipert+1
          DO dm=MAX(1-ipert,-mband),MIN(mpert-ipert,mband)
@@ -299,7 +303,7 @@ c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psi
-   
+
       INTEGER :: itheta
 
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,jacs
@@ -345,7 +349,7 @@ c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psi
-   
+
       INTEGER :: itheta
 
       REAL(r8), DIMENSION(0:mthsurf) :: jacs,bs,rfun,zfun
@@ -401,7 +405,7 @@ c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psi
-   
+
       INTEGER :: itheta
 
       REAL(r8), DIMENSION(0:mthsurf) :: eqb
@@ -443,7 +447,7 @@ c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psi
-   
+
       INTEGER :: itheta
 
       REAL(r8), DIMENSION(0:mthsurf) :: t11,t12,t21,t22,t33,jacs
@@ -515,15 +519,19 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(0:mthsurf) :: dphi,jacs
       COMPLEX(r8), DIMENSION(0:mthsurf) :: chi_fun,che_fun,kax_fun,
-     $     xwp_fun,xwt_fun,bvt_fun,bvz_fun,bwp_fun
+     $     xwp_fun,xwt_fun,bvt_fun,bvz_fun,bwp_fun,
+     $     chy_fun,chx_fun,chw_fun,kaw_fun
       COMPLEX(r8), DIMENSION(mpert) :: rbwp_mn
       COMPLEX(r8), DIMENSION(4,0:mthsurf) :: chp_fun,kap_fun
 
-      REAL(r8), DIMENSION(:), POINTER :: grri_real,grri_imag,
-     $     grre_real,grre_imag
+      REAL(r8), DIMENSION(:), POINTER ::
+     $     grri_real,grri_imag,grre_real,grre_imag,
+     $     griw_real,griw_imag,grrw_real,grrw_imag
 
       ALLOCATE(grri_real(nths2),grri_imag(nths2),
-     $     grre_real(nths2),grre_imag(nths2))
+     $     grre_real(nths2),grre_imag(nths2),
+     $     griw_real(nths2),griw_imag(nths2),
+     $     grrw_real(nths2),grrw_imag(nths2))
       IF(debug_flag) PRINT *, "Entering gpeq_surface"
 c-----------------------------------------------------------------------
 c     take into account reverse-theta in vacuum code.
@@ -533,7 +541,7 @@ c-----------------------------------------------------------------------
       CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
       CALL iscdftb(mfac,mpert,bvt_fun,mthsurf,bvt_mn)
       CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
-      
+
       CALL spline_eval(sq,psi,1)
       DO itheta=0,mthsurf
          CALL bicube_eval(rzphi,psi,theta(itheta),1)
@@ -553,6 +561,10 @@ c-----------------------------------------------------------------------
       grri_imag=MATMUL(grri,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/))
       grre_real=MATMUL(grre,(/REAL(rbwp_mn),-AIMAG(rbwp_mn)/))
       grre_imag=MATMUL(grre,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/))
+      griw_real=MATMUL(griw,(/REAL(rbwp_mn),-AIMAG(rbwp_mn)/))
+      griw_imag=MATMUL(griw,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/))
+      grrw_real=MATMUL(grrw,(/REAL(rbwp_mn),-AIMAG(rbwp_mn)/))
+      grrw_imag=MATMUL(grrw,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/))
 c-----------------------------------------------------------------------
 c     return into original coordinates.
 c-----------------------------------------------------------------------
@@ -562,16 +574,34 @@ c-----------------------------------------------------------------------
      $        *EXP(-ifac*nn*dphi(itheta+1))
          che_fun(itheta+1)=(grre_real(rtheta)-ifac*grre_imag(rtheta))
      $        *EXP(-ifac*nn*dphi(itheta+1))
+         chy_fun(itheta+1)=(griw_real(rtheta)-ifac*griw_imag(rtheta))
+     $        *EXP(-ifac*nn*dphi(itheta+1))
+         chx_fun(itheta+1)=(grrw_real(rtheta)-ifac*grrw_imag(rtheta))
+     $        *EXP(-ifac*nn*dphi(itheta+1))
       ENDDO
       chi_fun(0)=chi_fun(mthsurf)
       che_fun(0)=che_fun(mthsurf)
+      chy_fun(0)=chy_fun(mthsurf)
+      chx_fun(0)=chx_fun(mthsurf)
+      ! mutual inductance
+      DO itheta=0,mthsurf-1
+         rtheta=2*mthsurf-itheta
+         chw_fun(itheta+1)=grrw_real(rtheta)-ifac*grrw_imag(rtheta)
+      ENDDO
+      chw_fun(0)=chw_fun(mthsurf)
 c-----------------------------------------------------------------------
 c     normalize chi functions of vacuum.
 c-----------------------------------------------------------------------
       chi_fun=chi_fun/(twopi**2)
       che_fun=-che_fun/(twopi**2)
+      chy_fun=chy_fun/(twopi**2)
+      chx_fun=-chx_fun/(twopi**2)
+      chw_fun=-chw_fun/(twopi**2)
       CALL iscdftf(mfac,mpert,chi_fun,mthsurf,chi_mn)
       CALL iscdftf(mfac,mpert,che_fun,mthsurf,che_mn)
+      CALL iscdftf(mfac,mpert,chy_fun,mthsurf,chy_mn)
+      CALL iscdftf(mfac,mpert,chx_fun,mthsurf,chx_mn)
+      CALL iscdftf(mfac,mpert,chw_fun,mthsurf,chw_mn)
 c-----------------------------------------------------------------------
 c     compute plasma magnetic potential on the surface.
 c-----------------------------------------------------------------------
@@ -602,9 +632,12 @@ c-----------------------------------------------------------------------
          CALL iscdftf(mfac,mpert,kap_fun(j,:),mthsurf,kap_mn(j,:))
       ENDDO
       kax_fun=(chi_fun-che_fun)/mu0
+      kaw_fun=(chy_fun-chx_fun)/mu0
       CALL iscdftf(mfac,mpert,kax_fun,mthsurf,kax_mn)
-     
+      CALL iscdftf(mfac,mpert,kaw_fun,mthsurf,kaw_mn)
+
       DEALLOCATE(grri_real,grri_imag,grre_real,grre_imag)
+      DEALLOCATE(griw_real,griw_imag,grrw_real,grrw_imag)
       IF(debug_flag) PRINT *, "->Leaving gpeq_surface"
 c-----------------------------------------------------------------------
 c     terminate.
@@ -613,7 +646,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE gpeq_surface
 c-----------------------------------------------------------------------
 c     subprogram 9. gpeq_fcoords.
-c     transform coordinates to dcon coordinates. 
+c     transform coordinates to dcon coordinates.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_fcoords(psi,ftnmn,amf,amp,ri,bpi,bi,rci,ti,ji)
 c-----------------------------------------------------------------------
@@ -720,7 +753,7 @@ c-----------------------------------------------------------------------
       ENDIF
 c-----------------------------------------------------------------------
 c     convert coordinates.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       ! compute given function in dcon angle
       DO itheta=0,mthsurf
          ftnfun(itheta)=0
@@ -831,7 +864,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi
       COMPLEX(r8), DIMENSION(0:mthsurf) :: ftnfun
 
-      TYPE(spline_type) :: spl       
+      TYPE(spline_type) :: spl
 
       ! note automatic arrays are allocated and deallocated on entry/exit
       ! instead, we use allocatables and just allocate once for all
@@ -841,7 +874,7 @@ c-----------------------------------------------------------------------
       first = .FALSE.
 
       IF(debug_flag) PRINT *, "Entering gpeq_bcoords"
-      
+
       ! global sq may have been eval'd elsewhere inbetween bcoords calls
       CALL spline_eval(sq,psi,0)
       ! expensive spline formation, do only if asking for new bcoords
@@ -1137,7 +1170,7 @@ c-----------------------------------------------------------------------
       rbeta%fs(:,1)=rbarr
       CALL spline_fit(rbeta,"periodic")
 
-      DO i=0,nr 
+      DO i=0,nr
          DO j=0,nz
             gdr(i,j)=psi_in%xs(0)+i*xint
             gdz(i,j)=psi_in%ys(0)+j*zint
@@ -1149,10 +1182,10 @@ c-----------------------------------------------------------------------
                CALL bicube_eval(psi_in,gdr(i,j),gdz(i,j),0)
                gdpsi(i,j)=psi_in%f(1)
             ENDIF
-            ! avoid o-point 
+            ! avoid o-point
             IF (gdpsi(i,j)<psilow) gdpsi(i,j)=psilow
             ttheta=ATAN2((gdz(i,j)-zo),(gdr(i,j)-ro))
-            IF (ttheta >= 0) THEN 
+            IF (ttheta >= 0) THEN
                ptheta=ttheta/twopi
             ELSE
                ptheta=1+ttheta/twopi
@@ -1160,7 +1193,7 @@ c-----------------------------------------------------------------------
 
             IF (gdpsi(i,j)<psilim) THEN
                CALL spline_eval(rbeta,ptheta,0)
-            ! recheck whether it is inside the boundary 
+            ! recheck whether it is inside the boundary
                IF (SQRT((gdr(i,j)-ro)**2+(gdz(i,j)-zo)**2)<rbeta%f(1))
      $              THEN
                   gdl(i,j)=1
@@ -1196,7 +1229,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:nr,0:nz), INTENT(IN) :: rval,zval
       COMPLEX(r8), DIMENSION(0:nr,0:nz), INTENT(IN) :: fr,fz
       COMPLEX(r8), DIMENSION(0:nr,0:nz), INTENT(INOUT) :: fp
- 
+
       INTEGER :: i,j
 
       TYPE(bicube_type) :: rfr,ifr,rfz,ifz
@@ -1211,12 +1244,12 @@ c-----------------------------------------------------------------------
       rfr%xs=rval(:,0)
       ifr%xs=rval(:,0)
       rfz%xs=rval(:,0)
-      ifz%xs=rval(:,0) 
+      ifz%xs=rval(:,0)
 
       rfr%ys=zval(0,:)
       ifr%ys=zval(0,:)
       rfz%ys=zval(0,:)
-      ifz%ys=zval(0,:) 
+      ifz%ys=zval(0,:)
 
       rfr%fs(:,:,1)=rval*REAL(fr)
       ifr%fs(:,:,1)=rval*AIMAG(fr)
@@ -1226,7 +1259,7 @@ c-----------------------------------------------------------------------
       CALL bicube_fit(rfr,"extrap","extrap")
       CALL bicube_fit(ifr,"extrap","extrap")
       CALL bicube_fit(rfz,"extrap","extrap")
-      CALL bicube_fit(ifz,"extrap","extrap")      
+      CALL bicube_fit(ifz,"extrap","extrap")
 
       DO i=0,nr
          DO j=0,nz
@@ -1240,7 +1273,7 @@ c-----------------------------------------------------------------------
 
          ENDDO
       ENDDO
-       
+
       CALL bicube_dealloc(rfr)
       CALL bicube_dealloc(ifr)
       CALL bicube_dealloc(rfz)
@@ -1252,7 +1285,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE gpeq_rzpdiv
 c-----------------------------------------------------------------------
 c     subprogram 16. gpeq_alloc.
-c     allocate essential vectors in fourier space 
+c     allocate essential vectors in fourier space
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_alloc
       IF(debug_flag) PRINT *, "Entering gpeq_alloc"
@@ -1275,7 +1308,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE gpeq_alloc
 c-----------------------------------------------------------------------
 c     subprogram 17. gpeq_dealloc.
-c     deallocate essential vectors in fourier space 
+c     deallocate essential vectors in fourier space
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_dealloc
       IF(debug_flag) PRINT *, "Entering gpeq_dealloc"
@@ -1295,30 +1328,36 @@ c-----------------------------------------------------------------------
 c     subprogram 18. gpeq_interp_singsurf.
 c     create spline for interpretation of solution near singular surface.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpeq_interp_singsurf(fsp_sol,spot,npsi)
+      SUBROUTINE gpeq_interp_singsurf(fsp_sol,spots,npsi)
       TYPE(cspline_type), INTENT(INOUT)::fsp_sol    ! spline of bwp smoothly crossing rationals
-      REAL(r8), INTENT(IN) :: spot                  ! roughly the span in  m-nq to cross
+      REAL(r8), DIMENSION(msing), INTENT(IN) :: spots ! roughly the span in  m-nq to cross
       INTEGER, INTENT(IN) :: npsi                   ! number of points between rationals in the spline
 
       INTEGER::psisize,ising,ix,icount
-      INTEGER,PARAMETER:: method=1
-      REAL(r8)::nq1,x,x0,x1
+      INTEGER,PARAMETER:: method=3
+      REAL(r8)::nq1,x,x0,x1,spot
       REAL(r8),DIMENSION(msing)::respsi,dxl,dxr
 c-----------------------------------------------------------------------
-c     detemine spline allocation.
+c     determine spline allocation.
 c-----------------------------------------------------------------------
       DO ising=1,msing
          respsi(ising)=singtype(ising)%psifac
       ENDDO
       DO ising=1,msing
+         spot=spots(ising)
          nq1=singtype(ising)%q1*nn
          SELECT CASE(method)
          CASE(1)
-         IF (ising==1) THEN
+         IF (ising==1 .AND. ising < msing) THEN
             dxl(ising)=respsi(ising)
      $                 -spot*(respsi(ising)-psilow)
             dxr(ising)=respsi(ising)
      $                 +spot*(respsi(ising+1)-respsi(ising))
+         ELSEIF (ising==1 .AND. ising == msing) THEN
+            dxl(ising)=respsi(ising)
+     $                 -spot*(respsi(ising)-psilow)
+            dxr(ising)=respsi(ising)
+     $                 +spot*(psilim-respsi(ising))
          ELSEIF (ising==msing) THEN
             dxl(ising)=respsi(ising)
      $                 -spot*(respsi(ising)-respsi(ising-1))
@@ -1333,6 +1372,9 @@ c-----------------------------------------------------------------------
          CASE(2)
             dxl(ising)=respsi(ising)-spot/nq1
             dxr(ising)=respsi(ising)+spot/nq1
+         CASE(3)
+            dxl(ising)=respsi(ising) - 1.0e-7
+            dxr(ising)=respsi(ising) + 1.0e-7
          END SELECT
       ENDDO
 c-----------------------------------------------------------------------

@@ -1,0 +1,36 @@
+&COIL_CONTROL
+	ceq_type="efit"				! eq_type from equil.in used in DCON run
+
+	data_dir="../regression_solovev_ideal_example"	! Directory from which <machine>_<coil_name>.dat files are read
+	machine="solovev"	    	! Choose from: nstx, d3d, kstar, iter
+	ip_direction="positive"		! Set positive for CCW or negative for CW from a top down view
+	bt_direction="positive"		! Set positive for CCW or negative for CW from a top down view
+	coil_num=1					! Total number of coil sets activated
+
+	cmpsi=32					! ?? Why do we need this is only care about psi_lim??
+	cmtheta=32					! Number of poloidal gridpoints (uses DCON jac_type??)
+	cmzeta=32					! Number of toroidal gridpoints (uses DCON jac_type??)
+    coil_threads=0              ! Number of parallel threads used when computing fields from coils (no reason to go beyond 4 for coils with less than 1000 points). Setting to <= 0 uses OMP_NUM_THREADS env variable.
+
+
+! Array values should be specified for each of the coil arrays to be activated.
+! The supported coil sets (number of coils) include...
+! For nstx:	rwmef(6), tfef(12), pf5ef(2), hhfw(24), ppu(12), ppl(12),
+! 			psu(12),  psl(12),  vpu(12),  vpl(12),  vsu(12), vsl(12)
+! For d3d:	iu(6), il(6), c(6), tbm_solenoid(1), tbm_racetrack(1)
+! For kstar:fecu(4), fecm(4), fecl(4)
+! For iter:	efcu(6), efcm(6), efcl(6), bl2u(9), bl2m(9),
+! 			bl2l(9), avvu(9), avvm(9), avvl(9)
+
+	coil_name(1)="efcm"			! External correction coil set
+	coil_cur(1,1)= 1e3			! 1kA, 19 degree phase n=1 field
+	coil_cur(1,2)= 5e2
+	coil_cur(1,3)=-5e2
+	coil_cur(1,4)=-1e3
+	coil_cur(1,5)=-5e2
+	coil_cur(1,6)= 5e2
+
+/
+&COIL_OUTPUT
+	gpec_interface=t			! Provides external field to GPEC
+/

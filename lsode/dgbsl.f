@@ -1,14 +1,15 @@
       subroutine dgbsl(abd,lda,n,ml,mu,ipvt,b,job)
+      USE local_mod, ONLY: r8
       integer lda,n,ml,mu,ipvt(1),job
-      real*8 abd(lda,1),b(1)
+      real(r8) abd(lda,1),b(1)
 c
-c     dgbsl solves the real*8 band system
+c     dgbsl solves the real(r8) band system
 c     a * x = b  or  trans(a) * x = b
 c     using the factors computed by dgbco or dgbfa.
 c
 c     on entry
 c
-c        abd     real*8(lda, n)
+c        abd     real(r8)(lda, n)
 c                the output from dgbco or dgbfa.
 c
 c        lda     integer
@@ -26,7 +27,7 @@ c
 c        ipvt    integer(n)
 c                the pivot vector from dgbco or dgbfa.
 c
-c        b       real*8(n)
+c        b       real(r8)(n)
 c                the right hand side vector.
 c
 c        job     integer
@@ -65,7 +66,7 @@ c     fortran min0
 c
 c     internal variables
 c
-      real*8 ddot,t
+      real(r8) ddot,t
       integer k,kb,l,la,lb,lm,m,nm1
 c
       m = mu + ml + 1

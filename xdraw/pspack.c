@@ -19,6 +19,7 @@
 #include <sys/stat.h>
 
 #include "pspack.h"
+#include "ps.h"
 
 #define FZ (float)0
 
@@ -26,7 +27,6 @@ FILE *file, *frd;
 int wdx, wdy, wbord;
 extern int ps_aspect;
 char outfile[40] = "";
-
 /*-----------------------------------------------------------------------------
 |   main
 -----------------------------------------------------------------------------*/

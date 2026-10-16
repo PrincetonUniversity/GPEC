@@ -27,14 +27,14 @@ clean:
 	-rm -rf _build/*
 
 init:
-	mkdir $(GH_PAGES_DIR)
+	mkdir -p $(GH_PAGES_DIR)
 	cp -r ../.git $(GH_PAGES_DIR)
 	cd $(GH_PAGES_DIR); git checkout gh-pages
 
 ghpages: html
 	cp -r _build/html/* $(GH_PAGES_DIR)
 	cd $(GH_PAGES_DIR) &&  git add -A && git commit -a -m "Updated docs" && git push -f origin gh-pages
-	
+
 html:
 	mkdir -p _build/html _build/doctrees
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) _build/html

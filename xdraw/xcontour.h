@@ -8,6 +8,8 @@ extern void redraw_mb(CURVE_SET *cp,
 extern	int new_ncurve(CURVE_SET *cp, char how);
 extern  void contour_values(CURVE_SET *cp);
 extern	void get_contlim(float *xlim, float *ylim);
+int new_nvect(CURVE_SET *cp, char how);
+void get_world_coordinates(int i, int which,  double *x, double *y, char *caption);
 
 #ifdef XCONTOUR
 extern  void drawcontour(float psi,int ii);
@@ -42,7 +44,6 @@ extern int FindPoint( float x1, float y1, float z1,
 	       float *xp, float *yp   );
 extern void drawcontour_t(float psi, int ii,int xy_off,int f_off,
 		   int mvert,int mcells);
-int new_nvect(CURVE_SET *cp, char how);
 void draw_v(int mr,int mz,int x_off,int y_off,int q1_off,int q2_off,
 	    float *lmax, int *npoints, int *zpoints,
 	    float l_scale, int mod, int density);

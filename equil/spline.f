@@ -32,6 +32,7 @@ c     20. spline_get_yp.
 c     21. spline_thomas.
 c     22. spline_roots.
 c     23. spline_refine_root.
+c     24. spline_fit_hermite.
 c-----------------------------------------------------------------------
 c     subprogram 0. spline_type definition.
 c     defines spline_type.
@@ -67,7 +68,11 @@ c-----------------------------------------------------------------------
 
       INTEGER, INTENT(IN) :: mx,nqty
       TYPE(spline_type), INTENT(INOUT) :: spl
-      IF(spl%allocated) CALL spline_dealloc(spl)
+c-----------------------------------------------------------------------
+c     safety check.
+c-----------------------------------------------------------------------
+      IF(spl%allocated)
+     $   CALL program_stop("spline_alloc: spline already allocated")
 c-----------------------------------------------------------------------
 c     set scalars.
 c-----------------------------------------------------------------------
@@ -106,6 +111,11 @@ c-----------------------------------------------------------------------
 
       TYPE(spline_type), INTENT(INOUT) :: spl
 c-----------------------------------------------------------------------
+c     safety check.
+c-----------------------------------------------------------------------
+      IF(.NOT.spl%allocated)
+     $   CALL program_stop("spline_dealloc: spline not allocated")
+c-----------------------------------------------------------------------
 c     deallocate space.
 c-----------------------------------------------------------------------
       DEALLOCATE(spl%xs)
@@ -135,6 +145,8 @@ c-----------------------------------------------------------------------
 
       TYPE(spline_type), INTENT(INOUT) :: spl
       CHARACTER(*), INTENT(IN) :: endmode
+      IF(.NOT.spl%allocated)
+     $   CALL program_stop("spline_fit: spline not allocated")
 c-----------------------------------------------------------------------
 c     switch between two spline_fit.
 c-----------------------------------------------------------------------
@@ -1775,7 +1787,7 @@ c-----------------------------------------------------------------------
       ENDDO
       roots(1:nroots) = tmproots(1:nroots)
       IF(nroots>0 .AND. debug)
-     $   PRINT *," > Sorted roots are",roots(1:nroots)
+     $   PRINT *,"  > Sorted roots are",roots(1:nroots)
       DEALLOCATE(index, tmproots)
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1829,14 +1841,50 @@ c-----------------------------------------------------------------------
       ENDDO
       ! abort on failure.
       IF(it >= itmax)THEN
-         WRITE(*,*) "WARNING: root refining convergence failure!"
+         WRITE(*,*)
+         WRITE(*,*) "!! WARNING: root refining convergence failure"
          WRITE(*,*) " -> estimated root ",x,
      $              " has error/tol ",abs(dx)/(tol*lx),abs(df)/(tol*lf)
+         WRITE(*,*)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE spline_refine_root
+c-----------------------------------------------------------------------
+c     subprogram 24. spline_fit_hermite.
+c     fits cubic splines, keeping the caller's knot derivatives fs1
+c     for the quantities flagged in keep (cubic Hermite interpolation).
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE spline_fit_hermite(spl,endmode,keep)
+
+      TYPE(spline_type), INTENT(INOUT) :: spl
+      CHARACTER(*), INTENT(IN) :: endmode
+      LOGICAL, DIMENSION(spl%nqty), INTENT(IN) :: keep
+
+      INTEGER :: iqty
+      REAL(r8), DIMENSION(0:spl%mx,spl%nqty) :: fs1
+c-----------------------------------------------------------------------
+c     fit all quantities, then restore the supplied derivatives.
+c-----------------------------------------------------------------------
+      DO iqty=1,spl%nqty
+         IF(keep(iqty) .AND. ANY(spl%xpower(:,iqty) /= 0))
+     $        CALL program_stop("spline_fit_hermite: "//
+     $        "supplied derivatives incompatible with xpower")
+      ENDDO
+      fs1=spl%fs1
+      CALL spline_fit(spl,endmode)
+      DO iqty=1,spl%nqty
+         IF(keep(iqty))spl%fs1(:,iqty)=fs1(:,iqty)
+      ENDDO
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE spline_fit_hermite
 
       END MODULE spline_mod

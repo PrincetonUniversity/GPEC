@@ -29,13 +29,15 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(2) :: r2
       REAL(r8) :: psifac,q
       COMPLEX(r8) :: alpha
+      COMPLEX(r8), DIMENSION(2) :: power
       COMPLEX(r8), DIMENSION(:,:,:,:), POINTER :: vmatl,vmatr
       END TYPE sing_type
-      
+
       LOGICAL :: msing_diagnose=.FALSE.
       LOGICAL :: us_flag=.TRUE.,ul_flag=.TRUE.
       CHARACTER(80) :: vmat_filename
       INTEGER, PRIVATE :: mpert,msing
+      INTEGER :: msing_bounds
       TYPE(sing_type), DIMENSION(:), POINTER, PRIVATE :: sing
       TYPE(sing_type), POINTER, PRIVATE :: singp
 
@@ -52,18 +54,33 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE msing_read(vmat_filename)
       CHARACTER(*) :: vmat_filename
-      INTEGER :: ising
+      INTEGER :: ising,ios,irec
 c-----------------------------------------------------------------------
 c     read power series data to binary file.
 c-----------------------------------------------------------------------
       OPEN(UNIT=debug_unit,FILE=TRIM(vmat_filename),STATUS="OLD",
      $     FORM="UNFORMATTED")
       READ(debug_unit)mpert,msing
+      msing_bounds=msing
       ALLOCATE(sing(msing))
       DO ising=1,msing
          singp => sing(ising)
-         READ(debug_unit)sing%order,singp%alpha,singp%psifac,
-     $        singp%q,singp%r1,singp%r2
+         READ(debug_unit,IOSTAT=ios)singp%order,singp%alpha,
+     $        singp%psifac,singp%q,singp%r1,singp%r2,singp%power
+c-----------------------------------------------------------------------
+c     files without the powers end this record after r2: reread it (the
+c     position after a failed read is processor dependent, so rewind
+c     and skip) and use -alpha, +alpha.
+c-----------------------------------------------------------------------
+         IF(ios /= 0)THEN
+            REWIND(debug_unit)
+            DO irec=1,2*ising-1
+               READ(debug_unit)
+            ENDDO
+            READ(debug_unit)singp%order,singp%alpha,singp%psifac,
+     $           singp%q,singp%r1,singp%r2
+            singp%power=(/-singp%alpha,singp%alpha/)
+         ENDIF
          ALLOCATE(singp%vmatl(mpert,2*mpert,2,0:2*singp%order))
          ALLOCATE(singp%vmatr(mpert,2*mpert,2,0:2*singp%order))
          READ(debug_unit)singp%vmatl,singp%vmatr
@@ -89,7 +106,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: iorder
       INTEGER, DIMENSION(:), POINTER :: r1,r2
-      COMPLEX(r8) :: dpsi,sqrtfac,pfac
+      COMPLEX(r8) :: dpsi,sqrtfac
       COMPLEX(r8), DIMENSION(:,:,:,:), POINTER :: vmat
 c-----------------------------------------------------------------------
 c     set pointers and compute distance from singular surface.
@@ -100,7 +117,7 @@ c-----------------------------------------------------------------------
          dpsi=singp%psifac-psifac
       ELSE
          vmat => singp%vmatr
-         dpsi=psifac-singp%psifac         
+         dpsi=psifac-singp%psifac
       ENDIF
       r1 => singp%r1
       r2 => singp%r2
@@ -108,7 +125,6 @@ c-----------------------------------------------------------------------
 c     compute powers.
 c-----------------------------------------------------------------------
       sqrtfac=SQRT(dpsi)
-      pfac=dpsi**singp%alpha
 c-----------------------------------------------------------------------
 c     compute power series by Horner's method.
 c-----------------------------------------------------------------------
@@ -121,8 +137,9 @@ c     restore powers.
 c-----------------------------------------------------------------------
       ua(r1,:,1)=ua(r1,:,1)/sqrtfac
       ua(r1,:,2)=ua(r1,:,2)*sqrtfac
-      ua(:,r2(1),:)=ua(:,r2(1),:)/pfac
-      ua(:,r2(2),:)=ua(:,r2(2),:)*pfac
+c     power(1) as a division keeps the old ua bitwise for old files.
+      ua(:,r2(1),:)=ua(:,r2(1),:)/dpsi**(-singp%power(1))
+      ua(:,r2(2),:)=ua(:,r2(2),:)*dpsi**singp%power(2)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -147,7 +164,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,2*mpert,2) :: ua
 c-----------------------------------------------------------------------
 c     compute range of psi values on left of singular surface.
-c----------------------------------------------------------------------- 
+c-----------------------------------------------------------------------
       singp => sing(ising)
       IF(ising == 1)THEN
          psil=(1-sing_frac)*singp%psifac
@@ -158,7 +175,7 @@ c-----------------------------------------------------------------------
       dpsil=(singp%psifac-psil)/sing_nout
 c-----------------------------------------------------------------------
 c     compute range of psi values on right of singular surface.
-c----------------------------------------------------------------------- 
+c-----------------------------------------------------------------------
       IF(ising == msing)THEN
          psir=singp%psifac+sing_frac*(1-singp%psifac)
       ELSE
@@ -187,7 +204,7 @@ c-----------------------------------------------------------------------
             sol=sol+cofout(ksing)*ul
          ENDIF
          IF (us_flag) THEN
-            DO jsing=1,2*msing 
+            DO jsing=1,2*msing
                sol=sol+cofout(jsing)*delta(jsing,ksing)*us
             ENDDO
          ENDIF
@@ -211,13 +228,13 @@ c-----------------------------------------------------------------------
       SUBROUTINE msing_run(cofout,delta)
       COMPLEX(r8), INTENT(IN), DIMENSION(:) :: cofout
       COMPLEX(r8), DIMENSION(:,:), INTENT(IN) :: delta
-      
+
       CHARACTER(100):: filename
       INTEGER :: ising
       IF (.NOT.msing_diagnose) RETURN
 c-----------------------------------------------------------------------
 c     do msing diagnostic.
-c-----------------------------------------------------------------------     
+c-----------------------------------------------------------------------
       DO ising=1,msing
          WRITE (filename,"(I4)")ising
          filename=ADJUSTL(filename)
@@ -236,14 +253,14 @@ c-----------------------------------------------------------------------
       END SUBROUTINE msing_run
 c-----------------------------------------------------------------------
 c     subprogram 5. msing_estimate_zo.
-c     estimate zo value for zeroth order dominant 
+c     estimate zo value for zeroth order dominant
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       SUBROUTINE msing_estimate_zo(zo,ising)
       REAL(r8), INTENT(OUT) :: zo
-      INTEGER, INTENT(IN) :: ising 
+      INTEGER, INTENT(IN) :: ising
       REAL(r8) :: tmp1,tmp2,tmp3,tmp4
       singp => sing(ising)
       tmp1=MAXVAL(ABS(singp%vmatr(:,singp%r2(1),1,0)))
@@ -256,7 +273,7 @@ c-----------------------------------------------------------------------
       zo=tmp3
 c-----------------------------------------------------------------------
 c     terminate.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       END SUBROUTINE msing_estimate_zo
 c-----------------------------------------------------------------------
 c     subprogram 6. msing_init.

@@ -1,10 +1,11 @@
       SUBROUTINE DPREPJ (NEQ, Y, YH, NYH, EWT, FTEM, SAVF, WM, IWM,
      1   F, JAC)
+      USE local_mod, ONLY: r8
 C***BEGIN PROLOGUE  DPREPJ
 C***SUBSIDIARY
 C***PURPOSE  Compute and process Newton iteration matrix.
 C***LIBRARY   MATHLIB (ODEPACK)
-C***TYPE      REAL*8 (SPREPJ-S, DPREPJ-D)
+C***TYPE      REAL(r8) (SPREPJ-S, DPREPJ-D)
 C***AUTHOR  Hindmarsh, Alan C., (LLNL)
 C***DESCRIPTION
 C
@@ -48,7 +49,7 @@ C***REVISION HISTORY  (YYMMDD)
 C   791129  DATE WRITTEN
 C   890501  Modified prologue to SLATEC/LDOC format.  (FNF)
 C   890504  Minor cosmetic changes.  (FNF)
-C   930809  Renamed to allow single/real*8 versions. (ACH)
+C   930809  Renamed to allow single/real(r8) versions. (ACH)
 C***END PROLOGUE  DPREPJ
 C**End
       EXTERNAL F, JAC
@@ -58,10 +59,10 @@ C**End
      2   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
       INTEGER I, I1, I2, IER, II, J, J1, JJ, LENP,
      1   MBA, MBAND, MEB1, MEBAND, ML, ML3, MU, NP1
-      REAL*8 Y, YH, EWT, FTEM, SAVF, WM
-      REAL*8 ROWNS,
+      REAL(r8) Y, YH, EWT, FTEM, SAVF, WM
+      REAL(r8) ROWNS,
      1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND
-      REAL*8 CON, DI, FAC, HL0, R, R0, SRUR, YI, YJ, YJJ,
+      REAL(r8) CON, DI, FAC, HL0, R, R0, SRUR, YI, YJ, YJJ,
      1   DVNORM
       DIMENSION NEQ(*), Y(*), YH(NYH,*), EWT(*), FTEM(*), SAVF(*),
      1   WM(*), IWM(*)
@@ -80,11 +81,13 @@ C***FIRST EXECUTABLE STATEMENT  DPREPJ
 C If MITER = 1, call JAC and multiply by scalar. -----------------------
  100  LENP = N*N
       DO 110 I = 1,LENP
- 110    WM(I+2) = 0.0
+        WM(I+2) = 0.0
+ 110    CONTINUE
       CALL JAC (NEQ, TN, Y, 0, 0, WM(3), N)
       CON = -HL0
       DO 120 I = 1,LENP
- 120    WM(I+2) = WM(I+2)*CON
+        WM(I+2) = WM(I+2)*CON
+ 120    CONTINUE
       GO TO 240
 C If MITER = 2, make N calls to F to approximate J. --------------------
  200  FAC = DVNORM (N, SAVF, EWT)
@@ -99,7 +102,8 @@ C If MITER = 2, make N calls to F to approximate J. --------------------
         FAC = -HL0/R
         CALL F (NEQ, TN, Y, FTEM)
         DO 220 I = 1,N
- 220      WM(I+J1) = (FTEM(I) - SAVF(I))*FAC
+          WM(I+J1) = (FTEM(I) - SAVF(I))*FAC
+ 220      CONTINUE
         Y(J) = YJ
         J1 = J1 + N
  230    CONTINUE
@@ -109,7 +113,8 @@ C Add identity matrix. -------------------------------------------------
       NP1 = N + 1
       DO 250 I = 1,N
         WM(J) = WM(J) + 1.0
- 250    J = J + NP1
+        J = J + NP1
+ 250    CONTINUE
 C Do LU decomposition on P. --------------------------------------------
       CALL DGEFA (WM(3), N, N, IWM(21), IER)
       IF (IER .NE. 0) IERPJ = 1
@@ -118,7 +123,8 @@ C If MITER = 3, construct a diagonal approximation to J and P. ---------
  300  WM(2) = HL0
       R = EL0*0.1
       DO 310 I = 1,N
- 310    Y(I) = Y(I) + R*(H*SAVF(I) - YH(I,2))
+        Y(I) = Y(I) + R*(H*SAVF(I) - YH(I,2))
+ 310    CONTINUE
       CALL F (NEQ, TN, Y, WM(3))
       NFE = NFE + 1
       DO 320 I = 1,N
@@ -140,11 +146,13 @@ C If MITER = 4, call JAC and multiply by scalar. -----------------------
       MEBAND = MBAND + ML
       LENP = MEBAND*N
       DO 410 I = 1,LENP
- 410    WM(I+2) = 0.0
+        WM(I+2) = 0.0
+ 410    CONTINUE
       CALL JAC (NEQ, TN, Y, ML, MU, WM(ML3), MEBAND)
       CON = -HL0
       DO 420 I = 1,LENP
- 420    WM(I+2) = WM(I+2)*CON
+        WM(I+2) = WM(I+2)*CON
+ 420    CONTINUE
       GO TO 570
 C If MITER = 5, make MBAND calls to F to approximate J. ----------------
  500  ML = IWM(1)
@@ -161,7 +169,8 @@ C If MITER = 5, make MBAND calls to F to approximate J. ----------------
         DO 530 I = J,N,MBAND
           YI = Y(I)
           R = MAX(SRUR*ABS(YI),R0/EWT(I))
- 530      Y(I) = Y(I) + R
+          Y(I) = Y(I) + R
+ 530      CONTINUE
         CALL F (NEQ, TN, Y, FTEM)
         DO 550 JJ = J,N,MBAND
           Y(JJ) = YH(JJ,1)
@@ -172,7 +181,8 @@ C If MITER = 5, make MBAND calls to F to approximate J. ----------------
           I2 = MIN(JJ+ML,N)
           II = JJ*MEB1 - ML + 2
           DO 540 I = I1,I2
- 540        WM(II+I) = (FTEM(I) - SAVF(I))*FAC
+            WM(II+I) = (FTEM(I) - SAVF(I))*FAC
+ 540        CONTINUE
  550      CONTINUE
  560    CONTINUE
       NFE = NFE + MBA
@@ -180,7 +190,8 @@ C Add identity matrix. -------------------------------------------------
  570  II = MBAND + 2
       DO 580 I = 1,N
         WM(II) = WM(II) + 1.0
- 580    II = II + MEBAND
+        II = II + MEBAND
+ 580    CONTINUE
 C Do LU decomposition of P. --------------------------------------------
       CALL DGBFA (WM(3), MEBAND, N, ML, MU, IWM(21), IER)
       IF (IER .NE. 0) IERPJ = 1

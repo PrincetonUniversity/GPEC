@@ -1,7 +1,7 @@
 c-----------------------------------------------------------------------
 c     PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT
 c     lsode integration copy of all subroutines that involve common
-c     block to avoid recursive overwrites. Note that calls to 
+c     block to avoid recursive overwrites. Note that calls to
 c     DSRCOM were insufficient to avoid this.
 
 c     !!! THIS MODULE STILL RELIES ON LSODE LIBRARY  for all subroutines
@@ -20,10 +20,11 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE LSODE2_MOD
+      USE local_mod, ONLY: r8
 
       IMPLICIT NONE
 
-      REAL*8 REAL_LSODE2
+      REAL(r8) REAL_LSODE2
       INTEGER INT_LSODE2
       COMMON /DLS002/ REAL_LSODE2(218),INT_LSODE2(37)
 !$OMP THREADPRIVATE(/DLS002/)
@@ -40,7 +41,7 @@ C               dy/dt = f(t,y),   or, in component form,
 C               dy(i)/dt = f(i) = f(i,t,y(1),y(2),...,y(N)),  i=1,...,N.
 C***LIBRARY   MATHLIB (ODEPACK)
 C***CATEGORY  I1A
-C***TYPE      REAL*8 (SLSODE-S, LSODE-D)
+C***TYPE      REAL(r8) (SLSODE-S, LSODE-D)
 C***KEYWORDS  ORDINARY DIFFERENTIAL EQUATIONS, INITIAL VALUE PROBLEM,
 C             STIFF, NONSTIFF
 C***AUTHOR  Hindmarsh, Alan C., (LLNL)
@@ -93,7 +94,7 @@ C
 C        EXTERNAL F, JAC
 C        INTEGER  NEQ, ITOL, ITASK, ISTATE, IOPT, LRW, IWORK(LIW),
 C       *         LIW, MF
-C        REAL*8 Y(NEQ), T, TOUT, RTOL, ATOL(ntol), RWORK(LRW)
+C        REAL(r8) Y(NEQ), T, TOUT, RTOL, ATOL(ntol), RWORK(LRW)
 C
 C        CALL LSODE (F, NEQ, Y, T, TOUT, ITOL, RTOL, ATOL, ITASK,
 C       *            ISTATE, IOPT, RWORK, LRW, IWORK, LIW, JAC, MF)
@@ -105,7 +106,7 @@ C                   program.  The form of F must be:
 C
 C                   SUBROUTINE  F (NEQ, T, Y, YDOT)
 C                   INTEGER  NEQ
-C                   REAL*8  T, Y(NEQ), YDOT(NEQ)
+C                   REAL(r8)  T, Y(NEQ), YDOT(NEQ)
 C
 C                   The inputs are NEQ, T, Y.  F is to set
 C
@@ -231,7 +232,7 @@ C                   dummy name.  The form of JAC must be:
 C
 C                   SUBROUTINE JAC (NEQ, T, Y, ML, MU, PD, NROWPD)
 C                   INTEGER  NEQ, ML, MU, NROWPD
-C                   REAL*8  T, Y(NEQ), PD(NROWPD,NEQ)
+C                   REAL(r8)  T, Y(NEQ), PD(NROWPD,NEQ)
 C
 C                   See item c, under "Description" below for more
 C                   information about JAC.
@@ -266,7 +267,7 @@ C     a. First write a subroutine of the form
 C
 C           SUBROUTINE  F (NEQ, T, Y, YDOT)
 C           INTEGER  NEQ
-C           REAL*8  T, Y(NEQ), YDOT(NEQ)
+C           REAL(r8)  T, Y(NEQ), YDOT(NEQ)
 C
 C        which supplies the vector function f by loading YDOT(i) with
 C        f(i).
@@ -296,7 +297,7 @@ C        subroutine of the form
 C
 C           SUBROUTINE  JAC (NEQ, T, Y, ML, MU, PD, NROWPD)
 C           INTEGER  NEQ, ML, MU, NRWOPD
-C           REAL*8  Y, Y(NEQ), PD(NROWPD,NEQ)
+C           REAL(r8)  Y, Y(NEQ), PD(NROWPD,NEQ)
 C
 C        which provides df/dy by loading PD as follows:
 C        - For a full Jacobian (MF = 21), load PD(i,j) with df(i)/dy(j),
@@ -330,16 +331,16 @@ C
 C     on the interval from t = 0.0 to t = 4.E10, with initial conditions
 C     y1 = 1.0, y2 = y3 = 0. The problem is stiff.
 C
-C     The following coding solves this problem with LSODE, using 
-C     MF = 21 and printing results at t = .4, 4., ..., 4.E10.  It uses 
-C     ITOL = 2 and ATOL much smaller for y2 than for y1 or y3 because y2 
-C     has much smaller values.  At the end of the run, statistical 
+C     The following coding solves this problem with LSODE, using
+C     MF = 21 and printing results at t = .4, 4., ..., 4.E10.  It uses
+C     ITOL = 2 and ATOL much smaller for y2 than for y1 or y3 because y2
+C     has much smaller values.  At the end of the run, statistical
 C     quantities of interest are printed.
 C
 C        EXTERNAL  FEX, JEX
 C        INTEGER  IOPT, IOUT, ISTATE, ITASK, ITOL, IWORK(23), LIW, LRW,
 C       *         MF, NEQ
-C        REAL*8  ATOL(3), RTOL, RWORK(58), T, TOUT, Y(3)
+C        REAL(r8)  ATOL(3), RTOL, RWORK(58), T, TOUT, Y(3)
 C        NEQ = 3
 C        Y(1) = 1.
 C        Y(2) = 0.
@@ -374,7 +375,7 @@ C        END
 C
 C        SUBROUTINE  FEX (NEQ, T, Y, YDOT)
 C        INTEGER  NEQ
-C        REAL*8  T, Y(3), YDOT(3)
+C        REAL(r8)  T, Y(3), YDOT(3)
 C        YDOT(1) = -.04*Y(1) + 1.D4*Y(2)*Y(3)
 C        YDOT(3) = 3.D7*Y(2)*Y(2)
 C        YDOT(2) = -YDOT(1) - YDOT(3)
@@ -383,7 +384,7 @@ C        END
 C
 C        SUBROUTINE  JEX (NEQ, T, Y, ML, MU, PD, NRPD)
 C        INTEGER  NEQ, ML, MU, NRPD
-C        REAL*8  T, Y(3), PD(NRPD,3)
+C        REAL(r8)  T, Y(3), PD(NRPD,3)
 C        PD(1,1) = -.04
 C        PD(1,2) = 1.D4*Y(3)
 C        PD(1,3) = 1.D4*Y(2)
@@ -424,12 +425,12 @@ C     inputs.
 C
 C *Portability:
 C     Since NEQ is dimensioned inside LSODE, some compilers may object
-C     to a call to LSODE with NEQ a scalar variable.  In this event, 
+C     to a call to LSODE with NEQ a scalar variable.  In this event,
 C     use DIMENSION NEQ(1).  Similar remarks apply to RTOL and ATOL.
 C
 C     Note to Cray users:
 C     For maximum efficiency, use the CFT77 compiler.  Appropriate
-C     compiler optimization directives have been inserted for CFT77 
+C     compiler optimization directives have been inserted for CFT77
 C     (but not CIVIC).
 C
 C     NOTICE:  If moving the LSODE source code to other systems,
@@ -497,7 +498,7 @@ C              the scalar t and the vector y. Subroutine F is to compute
 C              the function f. It is to have the form
 C
 C                 SUBROUTINE F (NEQ, T, Y, YDOT)
-C                 REAL*8  Y(NEQ), YDOT(NEQ)
+C                 REAL(r8)  Y(NEQ), YDOT(NEQ)
 C
 C              where NEQ, T, and Y are input, and the array YDOT =
 C              f(T,Y) is output.  Y and YDOT are arrays of length NEQ.
@@ -733,7 +734,7 @@ C              0   No optional inputs are being used.  Default values
 C                  will be used in all cases.
 C              1   One or more optional inputs are being used.
 C
-C     RWORK    A real working array (real*8).  The length of
+C     RWORK    A real working array (real(r8)).  The length of
 C              RWORK must be at least
 C
 C                 20 + NYH*(MAXORD + 1) + 3*NEQ + LWM
@@ -806,7 +807,7 @@ C              scalar t and the vector y.  (See the MF description below
 C              for MITER.)  It is to have the form
 C
 C                 SUBROUTINE JAC (NEQ, T, Y, ML, MU, PD, NROWPD)
-C                 REAL*8  Y(NEQ), PD(NROWPD,NEQ)
+C                 REAL(r8)  Y(NEQ), PD(NROWPD,NEQ)
 C
 C              where NEQ, T, Y, ML, MU, and NROWPD are input and the
 C              array PD is to be loaded with partial derivatives
@@ -917,9 +918,9 @@ C
 C     Optional Outputs
 C     ----------------
 C     As optional additional output from LSODE, the variables listed
-C     below are quantities related to the performance of LSODE which 
+C     below are quantities related to the performance of LSODE which
 C     are available to the user.  These are communicated by way of the
-C     work arrays, but also have internal mnemonic names as shown. 
+C     work arrays, but also have internal mnemonic names as shown.
 C     Except where stated otherwise, all of these outputs are defined on
 C     any successful return from LSODE, and on any return with ISTATE =
 C     -1, -2, -4, -5, or -6.  On an illegal input return (ISTATE = -3),
@@ -1061,8 +1062,8 @@ C
 C     If LSODE is to be used in an overlay situation, the user must
 C     declare, in the primary overlay, the variables in:
 C     (1) the call sequence to LSODE,
-C     (2) the internal COMMON block /DLS002/, of length 255 
-C         (218 real*8 words followed by 37 integer words).
+C     (2) the internal COMMON block /DLS002/, of length 255
+C         (218 real(r8) words followed by 37 integer words).
 C
 C     If LSODE is used on a system in which the contents of internal
 C     COMMON blocks are not preserved between calls, the user should
@@ -1123,7 +1124,7 @@ C     given by NST = 0, NQ is 1 and H is temporarily set to 1.0.  The
 C     quantities NQ, NYH, H, and NST can be obtained by including in
 C     DEWSET the statements:
 C
-C           REAL*8  RLS
+C           REAL(r8)  RLS
 C           COMMON /DLS002/ RLS(218),ILS(37)
 C           NQ = ILS(33)
 C           NYH = ILS(12)
@@ -1182,13 +1183,13 @@ C   930326  Added comment about non-reentrancy.  (FNF)
 C   930723  Changed R1MACH to RUMACH. (FNF)
 C   930801  Removed Common variables ILLIN and NTREP (affects driver
 C           logic and Common references); minor changes to prologue and
-C           internal comments; changed Hollerith strings to quoted 
+C           internal comments; changed Hollerith strings to quoted
 C           strings; changed internal comments to mixed case; changed
 C           dummy dimensions from 1 to *. (ACH)
 C   930809  Changed to generic intrinsic names; changed names of
 C           subprograms and Common blocks to SLSODE etc. (ACH)
 C   930929  Eliminated use of REAL intrinsic; other minor changes. (ACH)
-C   931005  Generated real*8 version. (ACH)
+C   931005  Generated real(r8) version. (ACH)
 C***END PROLOGUE  LSODE
 C
 C*Internal Notes:
@@ -1215,7 +1216,7 @@ C           linear systems.
 C  DUMACH   computes the unit roundoff in a machine-independent manner.
 C  XERRWD, XSETUN, and XSETF   handle the printing of all error
 C           messages and warnings.  XERRWD is machine-dependent.
-C Note.. DVNORM and DUMACH are function routines.  All the others 
+C Note.. DVNORM and DUMACH are function routines.  All the others
 C are subroutines.
 C
 C The intrinsic routines used by LSODE are..
@@ -1227,13 +1228,13 @@ C  Declare arguments.
 C
       EXTERNAL F, JAC
       INTEGER NEQ, ITOL, ITASK, ISTATE, IOPT, LRW, IWORK, LIW, MF
-      REAL*8 Y, T, TOUT, RTOL, ATOL, RWORK
+      REAL(r8) Y, T, TOUT, RTOL, ATOL, RWORK
       DIMENSION NEQ(*), Y(*), RTOL(*), ATOL(*), RWORK(LRW), IWORK(LIW)
 C
 C  Declare externals.
 C
 C      EXTERNAL DPREPJ2, DSOLSY2
-      REAL*8 DUMACH, DVNORM
+      REAL(r8) DUMACH, DVNORM
 C
 C  Declare all other variables.
 C
@@ -1243,9 +1244,9 @@ C
      1   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
       INTEGER I, I1, I2, IFLAG, IMXER, KGO, LF0,
      1   LENIW, LENRW, LENWM, ML, MORD, MU, MXHNL0, MXSTP0
-      REAL*8 ROWNS,
+      REAL(r8) ROWNS,
      1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND
-      REAL*8 ATOLI, AYI, BIG, EWTI, H0, HMAX, HMX, RH, RTOLI,
+      REAL(r8) ATOLI, AYI, BIG, EWTI, H0, HMAX, HMX, RH, RTOLI,
      1   TCRIT, TDIST, TNEXT, TOL, TOLSF, TP, SIZE, SUM, W0
       DIMENSION MORD(2)
       LOGICAL IHIT
@@ -1684,7 +1685,7 @@ C-----------------------------------------------------------------------
 C Block I.
 C The following block handles all error returns due to illegal input
 C (ISTATE = -3), as detected before calling the core integrator.
-C First the error message routine is called.  If the illegal input 
+C First the error message routine is called.  If the illegal input
 C is a negative ISTATE, the run is aborted (apparent infinite loop).
 C-----------------------------------------------------------------------
  601  MSG = 'LSODE- Energy-  ISTATE (=I1) illegal '
@@ -1812,7 +1813,7 @@ C***BEGIN PROLOGUE  DSRCOM2
 C***SUBSIDIARY
 C***PURPOSE  Save/restore ODEPACK COMMON blocks.
 C***LIBRARY   MATHLIB (ODEPACK)
-C***TYPE      REAL*8 (SSRCOM-S, DSRCOM2-D)
+C***TYPE      REAL(r8) (SSRCOM-S, DSRCOM2-D)
 C***AUTHOR  Hindmarsh, Alan C., (LLNL)
 C***DESCRIPTION
 C
@@ -1836,13 +1837,13 @@ C   890501  Modified prologue to SLATEC/LDOC format.  (FNF)
 C   890503  Minor cosmetic changes.  (FNF)
 C   921116  Deleted treatment of block /EH0001/.  (ACH)
 C   930801  Reduced Common block length by 2.  (ACH)
-C   930809  Renamed to allow single/real*8 versions. (ACH)
+C   930809  Renamed to allow single/real(r8) versions. (ACH)
 C***END PROLOGUE  DSRCOM2
 C**End
       INTEGER ISAV, JOB
       INTEGER ILS
       INTEGER I, LENILS, LENRLS
-      REAL*8 RSAV,   RLS
+      REAL(r8) RSAV,   RLS
       DIMENSION RSAV(*), ISAV(*)
       COMMON /DLS002/ RLS(218), ILS(37)
 !$OMP THREADPRIVATE(/DLS002/)
@@ -1880,7 +1881,7 @@ C***BEGIN PROLOGUE  DINTDY2
 C***SUBSIDIARY
 C***PURPOSE  Interpolate solution derivatives.
 C***LIBRARY   MATHLIB (ODEPACK)
-C***TYPE      REAL*8 (SINTDY-S, DINTDY2-D)
+C***TYPE      REAL(r8) (SINTDY-S, DINTDY2-D)
 C***AUTHOR  Hindmarsh, Alan C., (LLNL)
 C***DESCRIPTION
 C
@@ -1910,7 +1911,7 @@ C***REVISION HISTORY  (YYMMDD)
 C   791129  DATE WRITTEN
 C   890501  Modified prologue to SLATEC/LDOC format.  (FNF)
 C   890503  Minor cosmetic changes.  (FNF)
-C   930809  Renamed to allow single/real*8 versions. (ACH)
+C   930809  Renamed to allow single/real(r8) versions. (ACH)
 C***END PROLOGUE  DINTDY2
 C**End
       INTEGER K, NYH, IFLAG
@@ -1918,10 +1919,10 @@ C**End
      1   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L, METH, MITER,
      2   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
       INTEGER I, IC, J, JB, JB2, JJ, JJ1, JP1
-      REAL*8 T, YH, DKY
-      REAL*8 ROWNS,
+      REAL(r8) T, YH, DKY
+      REAL(r8) ROWNS,
      1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND
-      REAL*8 C, R, S, TP
+      REAL(r8) C, R, S, TP
       CHARACTER*80 MSG
       DIMENSION YH(NYH,*), DKY(*)
       COMMON /DLS002/ ROWNS(209),
@@ -1993,7 +1994,7 @@ C***BEGIN PROLOGUE  DPREPJ2
 C***SUBSIDIARY
 C***PURPOSE  Compute and process Newton iteration matrix.
 C***LIBRARY   MATHLIB (ODEPACK)
-C***TYPE      REAL*8 (SPREPJ-S, DPREPJ2-D)
+C***TYPE      REAL(r8) (SPREPJ-S, DPREPJ2-D)
 C***AUTHOR  Hindmarsh, Alan C., (LLNL)
 C***DESCRIPTION
 C
@@ -2037,7 +2038,7 @@ C***REVISION HISTORY  (YYMMDD)
 C   791129  DATE WRITTEN
 C   890501  Modified prologue to SLATEC/LDOC format.  (FNF)
 C   890504  Minor cosmetic changes.  (FNF)
-C   930809  Renamed to allow single/real*8 versions. (ACH)
+C   930809  Renamed to allow single/real(r8) versions. (ACH)
 C***END PROLOGUE  DPREPJ2
 C**End
       EXTERNAL F, JAC
@@ -2047,10 +2048,10 @@ C**End
      2   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
       INTEGER I, I1, I2, IER, II, J, J1, JJ, LENP,
      1   MBA, MBAND, MEB1, MEBAND, ML, ML3, MU, NP1
-      REAL*8 Y, YH, EWT, FTEM, SAVF, WM
-      REAL*8 ROWNS,
+      REAL(r8) Y, YH, EWT, FTEM, SAVF, WM
+      REAL(r8) ROWNS,
      1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND
-      REAL*8 CON, DI, FAC, HL0, R, R0, SRUR, YI, YJ, YJJ,
+      REAL(r8) CON, DI, FAC, HL0, R, R0, SRUR, YI, YJ, YJJ,
      1   DVNORM
       DIMENSION NEQ(*), Y(*), YH(NYH,*), EWT(*), FTEM(*), SAVF(*),
      1   WM(*), IWM(*)
@@ -2189,7 +2190,7 @@ C***BEGIN PROLOGUE  DSOLSY2
 C***SUBSIDIARY
 C***PURPOSE  ODEPACK linear system solver.
 C***LIBRARY   MATHLIB (ODEPACK)
-C***TYPE      REAL*8 (SSOLSY-S, DSOLSY2-D)
+C***TYPE      REAL(r8) (SSOLSY-S, DSOLSY2-D)
 C***AUTHOR  Hindmarsh, Alan C., (LLNL)
 C***DESCRIPTION
 C
@@ -2223,7 +2224,7 @@ C***REVISION HISTORY  (YYMMDD)
 C   791129  DATE WRITTEN
 C   890501  Modified prologue to SLATEC/LDOC format.  (FNF)
 C   890503  Minor cosmetic changes.  (FNF)
-C   930809  Renamed to allow single/real*8 versions. (ACH)
+C   930809  Renamed to allow single/real(r8) versions. (ACH)
 C***END PROLOGUE  DSOLSY2
 C**End
       INTEGER IWM
@@ -2231,10 +2232,10 @@ C**End
      1   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L, METH, MITER,
      2   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
       INTEGER I, MEBAND, ML, MU
-      REAL*8 WM, X, TEM
-      REAL*8 ROWNS,
+      REAL(r8) WM, X, TEM
+      REAL(r8) ROWNS,
      1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND
-      REAL*8 DI, HL0, PHL0, R
+      REAL(r8) DI, HL0, PHL0, R
       DIMENSION WM(*), IWM(*), X(*), TEM(*)
       COMMON /DLS002/ ROWNS(209),
      2   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND,
@@ -2285,7 +2286,7 @@ C***BEGIN PROLOGUE  DSTODE2
 C***SUBSIDIARY
 C***PURPOSE  Performs one step of an ODEPACK integration.
 C***LIBRARY   MATHLIB (ODEPACK)
-C***TYPE      REAL*8 (SSTODE-S, DSTODE2-D)
+C***TYPE      REAL(r8) (SSTODE-S, DSTODE2-D)
 C***AUTHOR  Hindmarsh, Alan C., (LLNL)
 C***DESCRIPTION
 C
@@ -2368,7 +2369,7 @@ C***REVISION HISTORY  (YYMMDD)
 C   791129  DATE WRITTEN
 C   890501  Modified prologue to SLATEC/LDOC format.  (FNF)
 C   890503  Minor cosmetic changes.  (FNF)
-C   930809  Renamed to allow single/real*8 versions. (ACH)
+C   930809  Renamed to allow single/real(r8) versions. (ACH)
 C***END PROLOGUE  DSTODE2
 C**End
       EXTERNAL F, JAC, PJAC, SLVS
@@ -2377,10 +2378,10 @@ C**End
      1   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L, METH, MITER,
      2   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
       INTEGER I, I1, IREDO, IRET, J, JB, M, NCF, NEWQ
-      REAL*8 Y, YH, YH1, EWT, SAVF, ACOR, WM
-      REAL*8 CONIT, CRATE, EL, ELCO, HOLD, RMAX, TESCO,
+      REAL(r8) Y, YH, YH1, EWT, SAVF, ACOR, WM
+      REAL(r8) CONIT, CRATE, EL, ELCO, HOLD, RMAX, TESCO,
      2   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND
-      REAL*8 DCON, DDN, DEL, DELP, DSM, DUP, EXDN, EXSM, EXUP,
+      REAL(r8) DCON, DDN, DEL, DELP, DSM, DUP, EXDN, EXSM, EXUP,
      1   R, RH, RHDN, RHSM, RHUP, TOLD, DVNORM
       DIMENSION NEQ(*), Y(*), YH(NYH,*), YH1(*), EWT(*), SAVF(*),
      1   ACOR(*), WM(*), IWM(*)

@@ -27,7 +27,7 @@ c-----------------------------------------------------------------------
 
       CHARACTER(6), DIMENSION(:), POINTER :: name
       INTEGER, DIMENSION(:), POINTER :: sol_out_unit,sol_bin_unit
-      
+
       INTEGER :: neq,ising,istep,m1,nzero
       REAL(r8) :: psifac,psizero,singfac,q,psi_save,psimax,singfac_old,
      $     psifac_old
@@ -58,7 +58,7 @@ c-----------------------------------------------------------------------
  20   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
      $     "eval1"/)
  30   FORMAT(3x,"mlow",4x,"m",2x,"mhigh",2x,"isol",2x,"msol"//5i6/)
- 40   FORMAT(1x,a,es10.3,a,f6.3)
+ 40   FORMAT(1x,2x,a,es10.3,a,f6.3)
 c-----------------------------------------------------------------------
 c     allocate space for asymptotic coefficients.
 c-----------------------------------------------------------------------
@@ -212,7 +212,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
- 10   FORMAT(1x,a,es10.3,a,f6.3)
+ 10   FORMAT(1x,2x,a,es10.3,a,f6.3)
  20   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
      $     "eval1"/)
 c-----------------------------------------------------------------------
@@ -273,23 +273,43 @@ c-----------------------------------------------------------------------
  10   FORMAT(/a,i4,1p,2(a,es10.3))
  20   FORMAT(/5x,"i",5x,"eval",7x,"evali",7x,"err"/)
  30   FORMAT(i6,1p,3e11.3)
+ 40   FORMAT(/"istep = ",i4,", psifac = ",1p,es10.3,
+     $     ": skipped, ",a," is singular (zgetrf info = ",i0,")")
 c-----------------------------------------------------------------------
 c     compute plasma response matrix.
 c-----------------------------------------------------------------------
       temp=CONJG(TRANSPOSE(u(:,1:mpert,1)))
       wp=u(:,1:mpert,2)
       wp=CONJG(TRANSPOSE(wp))
-      CALL zgetrf(mpert,mpert,temp,mpert,ipiv,info)  
+      CALL zgetrf(mpert,mpert,temp,mpert,ipiv,info)
+      IF(info /= 0)THEN
+         IF(out_evals .AND. istep > 0)
+     $        WRITE(evals_out_unit,40)istep,psifac,"u(:,:,1)",info
+         RETURN
+      ENDIF
       CALL zgetrs('N',mpert,mpert,temp,mpert,ipiv,wp,mpert,info)
       wp=(wp+CONJG(TRANSPOSE(wp)))/2
 c-----------------------------------------------------------------------
 c     compute and sort eigenvalues.
 c-----------------------------------------------------------------------
-      lwork=2*mpert-1  
+      lwork=2*mpert-1
       CALL zheev('N','U',mpert,wp,mpert,evals,work,lwork,rwork,info)
       index=(/(ipert,ipert=1,mpert)/)
       key=-ABS(1/evals)
       CALL bubble(key,index,1,mpert)
+c-----------------------------------------------------------------------
+c     compute inverse plasma response matrix (zheev destroys wp).
+c-----------------------------------------------------------------------
+      temp=CONJG(TRANSPOSE(u(:,1:mpert,2)))
+      wp=CONJG(TRANSPOSE(u(:,1:mpert,1)))
+      CALL zgetrf(mpert,mpert,temp,mpert,ipiv,info)
+      IF(info /= 0)THEN
+         IF(out_evals .AND. istep > 0)
+     $        WRITE(evals_out_unit,40)istep,psifac,"u(:,:,2)",info
+         RETURN
+      ENDIF
+      CALL zgetrs('N',mpert,mpert,temp,mpert,ipiv,wp,mpert,info)
+      wp=(wp+CONJG(TRANSPOSE(wp)))/2
 c-----------------------------------------------------------------------
 c     compute and sort inverse eigenvalues.
 c-----------------------------------------------------------------------
@@ -343,7 +363,7 @@ c-----------------------------------------------------------------------
 
       REAL(r8) :: logpsi1,logpsi2,crit,fac,
      $     psi_med,crit_med,q_med,singfac_med,logpsi1_med,logpsi2_med
-      REAL(r8), SAVE :: crit_save,psi_save,dpsi
+      REAL(r8), SAVE :: crit_save=0,psi_save=0,dpsi
       COMPLEX(r8), DIMENSION(mpert,msol,2) :: u_med
 c-----------------------------------------------------------------------
 c     format statements.
@@ -431,13 +451,13 @@ c-----------------------------------------------------------------------
       wp=CONJG(TRANSPOSE(uu(:,:,1)))
       temp=uu(:,:,2)
       temp=CONJG(TRANSPOSE(temp))
-      CALL zgetrf(mpert,mpert,temp,mpert,ipiv,info)  
+      CALL zgetrf(mpert,mpert,temp,mpert,ipiv,info)
       CALL zgetrs('N',mpert,mpert,temp,mpert,ipiv,wp,mpert,info)
       wp=(wp+CONJG(TRANSPOSE(wp)))/2
 c-----------------------------------------------------------------------
 c     compute and sort inverse eigenvalues.
 c-----------------------------------------------------------------------
-      lwork=2*mpert-1  
+      lwork=2*mpert-1
       CALL zheev('N','U',mpert,wp,mpert,evalsi,work,lwork,rwork,info)
       indexi=(/(ipert,ipert=1,mpert)/)
       key=-ABS(evalsi)
@@ -468,7 +488,7 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psifac
       COMPLEX(r8), DIMENSION(mpert,msol,2), INTENT(IN) :: u
       REAL(r8), DIMENSION(:), INTENT(IN) :: unorm
-      
+
       INTEGER :: isol,ipert,iunit,jsing
       REAL(r8) :: psil,psir,psiminl,psiminr,a,b,x,singlog
       REAL(r8), DIMENSION(mpert) :: logunorm

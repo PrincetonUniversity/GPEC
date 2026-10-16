@@ -1,8 +1,9 @@
       subroutine dgefa(a,lda,n,ipvt,info)
+      USE local_mod, ONLY: r8
       integer lda,n,ipvt(1),info
-      real*8 a(lda,1)
+      real(r8) a(lda,1)
 c
-c     dgefa factors a real*8 matrix by gaussian elimination.
+c     dgefa factors a real(r8) matrix by gaussian elimination.
 c
 c     dgefa is usually called by dgeco, but it can be called
 c     directly with a saving in time if  rcond  is not needed.
@@ -10,7 +11,7 @@ c     (time for dgeco) = (1 + 9/n)*(time for dgefa) .
 c
 c     on entry
 c
-c        a       real*8(lda, n)
+c        a       real(r8)(lda, n)
 c                the matrix to be factored.
 c
 c        lda     integer
@@ -47,7 +48,7 @@ c     blas daxpy,dscal,idamax
 c
 c     internal variables
 c
-      real*8 t
+      real(r8) t
       integer idamax,j,k,kp1,l,nm1
 c
 c

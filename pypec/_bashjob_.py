@@ -1,4 +1,4 @@
-bashjob="""#!/bin/bash
+bashjob = """#!/bin/bash
 
 #SBATCH --job-name={name:}
 

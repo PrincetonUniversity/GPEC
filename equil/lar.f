@@ -24,6 +24,7 @@ c-----------------------------------------------------------------------
       INTEGER :: lar_m=2,lar_n=1
       REAL(r8) :: lar_a,lar_r0,p_pres,p_sig
       REAL(r8), PRIVATE :: beta0,p,p00,q,sigma,sigma0
+      CHARACTER(20) :: sigma_type
       TYPE(spline_type), PRIVATE :: spl
 
       CONTAINS
@@ -45,7 +46,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute derivatives.
 c-----------------------------------------------------------------------
-      CALL lar_profile(r,y,p,pp,sigma,bsq,q)
+      CALL lar_profile(r,y,p,pp,sigma,bsq,q,sigma_type)
       dy(1)=-pp/bsq*y(1)+sigma*y(2)*r
       dy(2)=-pp/bsq*y(2)-sigma*y(1)/r
       dy(3)=y(1)*lar_r0/r
@@ -78,7 +79,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:,:), POINTER :: temp
 
       NAMELIST/lar_input/mtau,ma,lar_r0,lar_a,beta0,q0,p_pres,p_sig,
-     $     zeroth,out,bin,lar_m,lar_n
+     $     zeroth,out,bin,sigma_type,lar_m,lar_n
 
       REAL(r8), DIMENSION(:), POINTER :: xptr,fsptr,fs1ptr
 c-----------------------------------------------------------------------
@@ -96,8 +97,18 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     allocate arrays.
 c-----------------------------------------------------------------------
-      CALL spline_alloc(sq_in,ma,4)
-      CALL bicube_alloc(rz_in,ma,mtau,2)
+      IF(.NOT. sq_in%allocated)THEN
+         CALL spline_alloc(sq_in,ma,4)
+      ELSE
+         CALL spline_dealloc(sq_in)
+         CALL spline_alloc(sq_in,ma,4)
+      ENDIF
+      IF(.NOT. rz_in%allocated)THEN
+         CALL bicube_alloc(rz_in,ma,mtau,2)
+      ELSE
+         CALL bicube_dealloc(rz_in)
+         CALL bicube_alloc(rz_in,ma,mtau,2)
+      ENDIF
       ALLOCATE(r2(0:ma),temp(0:nstep,0:8))
       r2=0
 c-----------------------------------------------------------------------
@@ -165,7 +176,12 @@ c-----------------------------------------------------------------------
 c     fit to cubic splines.
 c-----------------------------------------------------------------------
       mstep=istep
-      CALL spline_alloc(spl,mstep,8)
+      IF(.NOT. spl%allocated)THEN
+         CALL spline_alloc(spl,mstep,8)
+      ELSE
+         CALL spline_dealloc(spl)
+         CALL spline_alloc(spl,mstep,8)
+      ENDIF
       spl%xs=temp(0:mstep,0)
       spl%fs=temp(0:mstep,1:8)
       CALL spline_fit(spl,"extrap")
@@ -277,11 +293,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE lar_profile(r,y,p,pp,sigma,bsq,q)
+      SUBROUTINE lar_profile(r,y,p,pp,sigma,bsq,q,sigma_type)
 
       REAL(r8), INTENT(IN) :: r
       REAL(r8), INTENT(OUT) :: p,pp,sigma,bsq,q
       REAL(r8), DIMENSION(:), INTENT(IN) :: y
+      CHARACTER(20) :: sigma_type
 
       REAL(r8) :: x,xfac
 c-----------------------------------------------------------------------
@@ -291,7 +308,12 @@ c-----------------------------------------------------------------------
       xfac=1-x*x
       p=p00*xfac**p_pres
       pp=-2*p_pres*p00*x*xfac**(p_pres-1)
-      sigma=sigma0/(1+x**(2*p_sig))**(1+1/p_sig)
+      SELECT CASE(sigma_type)
+           CASE("wesson")
+                sigma=sigma0*xfac**p_sig
+           CASE default
+                sigma=sigma0/(1+x**(2*p_sig))**(1+1/p_sig)
+      END SELECT
       bsq=(y(1)/r)**2+y(2)**2
       q=r**2*y(2)/(lar_r0*y(1))
 c-----------------------------------------------------------------------

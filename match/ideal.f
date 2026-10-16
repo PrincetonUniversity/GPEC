@@ -26,7 +26,7 @@ c-----------------------------------------------------------------------
       USE bicube_mod
       IMPLICIT NONE
 
-      LOGICAL :: ripple_flag=.FALSE.
+      LOGICAL :: ripple_flag=.FALSE.,wv_farwall_flag
       INTEGER :: mpsi,mtheta,mripple
       REAL(r8) :: ro,zo
       TYPE(spline_type) :: sq
@@ -93,6 +93,7 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
          CASE(3)
+            READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
@@ -170,6 +171,7 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)et
             READ(UNIT=in_unit)wt
             READ(UNIT=in_unit)wt0
+            READ(UNIT=in_unit)wv_farwall_flag
          CASE(4)
             ising=ising+1
             singtype(ising)%jfix=ifix
@@ -506,7 +508,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: psi,theta,theta0,theta1,zlevel,z,zz0,zz1
       REAL(r8), DIMENSION(0:mtheta) :: zz
       REAL(r8), DIMENSION(mstep,2) :: r,th0,z0,q
-      COMPLEX(r8), DIMENSION(mstep,2) :: xi_psi,b_psi,xi_norm,b_norm 
+      COMPLEX(r8), DIMENSION(mstep,2) :: xi_psi,b_psi,xi_norm,b_norm
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -536,7 +538,7 @@ c-----------------------------------------------------------------------
             CALL bicube_eval(rzphi,psi,theta,0)
             zz(itheta)=zo-zlevel
      $           +SQRT(rzphi%f(1))*SIN(twopi*(theta+rzphi%f(2)))
-         ENDDO         
+         ENDDO
 c-----------------------------------------------------------------------
 c     find theta indices intersecting chord.
 c-----------------------------------------------------------------------
@@ -617,7 +619,7 @@ c-----------------------------------------------------------------------
          jstep=jstep+1
       ENDDO
       WRITE(debug_unit,10)
-      CALL bin_close(bin_unit) 
+      CALL bin_close(bin_unit)
       CALL ascii_close(debug_unit)
 c-----------------------------------------------------------------------
 c     terminate.

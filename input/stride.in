@@ -48,7 +48,7 @@
 /
 
 &stride_params
-    nThreads=32                         ! Number of threads used to calculate intervals in parallel
+    nThreads=0                          ! Number of threads used to calculate intervals in parallel. Setting to <= 0 uses OMP_NUM_THREADS env variable
     fourfit_metric_parallel=f           ! Compute equilibrium metric tensor components in parallel
     vac_parallel=t                      ! Doubles the number of main level threads, creating more threads than processors
 
