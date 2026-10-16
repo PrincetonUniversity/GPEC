@@ -1,0 +1,63 @@
+&DCON_CONTROL
+    bal_flag=f
+    mat_flag=t
+    ode_flag=t
+    vac_flag=t
+    mer_flag=t
+
+    sas_flag=f
+    dmlim=0.2
+    psiedge=0.988
+    qlow=1.02
+    qhigh=20.2
+    sing_start=0
+    reform_eq_with_psilim=f
+
+    nn=1
+    delta_mlow=8
+    delta_mhigh=8
+    delta_mband=0
+    mthvac=512
+    thmax0=1
+
+    kin_flag = f         ! Overridden: kinetic off for this scan
+    con_flag = t
+    kinfac1 = 1.0
+    kinfac2 = 1.0
+    kingridtype = 0
+    passing_flag = t
+    trapped_flag = t
+    ktanh_flag = f
+    ktc = 0.1
+    ktw = 50.0
+    ion_flag = t
+    electron_flag = f
+    dcon_kin_threads=0
+
+    tol_nr=1e-6
+    tol_r=1e-7
+    crossover=1e-2
+    singfac_min=1e-4
+    ucrit=1e3
+
+    wv_farwall_flag = f
+    termbycross_flag = t
+
+    use_classic_splines = f
+/
+&DCON_OUTPUT
+    out_fund=f
+    out_ahg2msc=f
+    crit_break=t
+    ahb_flag=f
+    msol_ahb=1
+    mthsurf0=1
+    bin_euler=t
+    bin_vac=f
+    euler_stride=1
+    out_bal1=f
+    bin_bal1=f
+    out_bal2=f
+    bin_bal2=f
+    netcdf_out=t
+/
