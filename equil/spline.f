@@ -1693,8 +1693,6 @@ c-----------------------------------------------------------------------
             r = (2.0 * a * a * a - 9.0 * a * b + 27.0 * c) / 54.0
             m = r**2 - q**3  ! discrimenent
             IF(m > 0)THEN ! one real root
-c              Keep the cube-root exponent in the spline's precision.
-c              A default-real 1/3 can move a valid root outside its cell.
                s = -sign(1.0_r8,r)*(abs(r)+sqrt(m))**(1.0_r8/3.0_r8)
                t = q / s
                z1 = s + t - (a / 3.0)
