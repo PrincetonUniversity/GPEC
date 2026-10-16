@@ -2224,7 +2224,10 @@ diagnostics run:
   $\psi$ integration on the \texttt{psifac} grid.  Every
   $\delta W_p$ total reported below is built with this scheme, so the
   choice affects the reported numbers at the level of the quadrature
-  error.
+  error.  Each route prints the $\psi$ range it integrated over
+  (\texttt{recon psi range}) next to the DCON range
+  $[\psi_{\rm low},\psi_{\rm lim}]$ (\texttt{DCON psi range}), so a
+  truncated integration is visible beside the $\delta W_p$ comparison.
 \item \texttt{curl\_check\_flag} (default \texttt{.FALSE.}) enables the
   $(\nabla\times\vec C)\cdot\nabla\psi=0$ verification of
   \S\ref{par:cveri} alongside \texttt{effective\_field\_flag}.  The pointwise

@@ -6935,6 +6935,7 @@ c     recon output units, assigned by OPEN(NEWUNIT=...).
       REAL(r8) :: dpsi_local
       INTEGER :: istep, nint_pts, iint, ep_index
       REAL(r8) :: psi_prev, psi_curr, epf_prev, epf_curr, ep_selected
+      REAL(r8) :: psi_lo, psi_hi
       REAL(r8) :: epf_p_prev, epf_t_prev, epf_z_prev
       REAL(r8) :: epf_p_curr, epf_t_curr, epf_z_curr
       REAL(r8) :: epf_int_total_hr, epf_p_total_hr,
@@ -7348,6 +7349,8 @@ c-----------------------------------------------------------------------
      $         REAL(dst3_vals(iint))
          ENDDO
       ENDIF
+      psi_lo = psi_int_pts(1)
+      psi_hi = psi_int_pts(nint_pts)
       DEALLOCATE(psi_int_pts, epf_vals, epf_p_vals, epf_t_vals,
      $   epf_z_vals, dst_vals, dst1_vals, dst2_vals, dst3_vals)
       dw_raw_k_hr = 0.5_r8 *
@@ -7401,6 +7404,10 @@ c-----------------------------------------------------------------------
      $     ep_selected
       WRITE(*,'(a,a,a,es17.8e3)') "  DCON ep(", TRIM(smode), ") = ",
      $     ep_selected * (mu0*2.0_r8) / psio**2 / (chi1*1.0e-3_r8)**2
+      WRITE(*,'(a,2es17.8e3)') "  recon psi range      = ",
+     $     psi_lo, psi_hi
+      WRITE(*,'(a,2es17.8e3)') "  DCON psi range       = ",
+     $     psilow, psilim
       IF (curl_check_flag) THEN
          cveri_stat = "PASS"
          IF (cveri_count > 0) THEN
@@ -7456,6 +7463,10 @@ c-----------------------------------------------------------------------
          WRITE(u_log,'(a,a,a,es17.8e3)') "  DCON ep(", TRIM(smode),
      $        ") = ", ep_selected *
      $        (mu0*2.0_r8) / psio**2 / (chi1*1.0e-3_r8)**2
+         WRITE(u_log,'(a,2es17.8e3)') "  recon psi range      = ",
+     $        psi_lo, psi_hi
+         WRITE(u_log,'(a,2es17.8e3)') "  DCON psi range       = ",
+     $        psilow, psilim
          IF (curl_check_flag) THEN
             WRITE(u_log,'(a,a)') "  C verify: ", TRIM(cveri_stat)
             WRITE(u_log,'(a,es17.8e3)') "    max   = ", cveri_max
@@ -7520,7 +7531,7 @@ c     recon2 output units, assigned by OPEN(NEWUNIT=...).
       CHARACTER(8) :: smode
       CHARACTER(128) :: surf_file, int_file
       INTEGER :: ep_index
-      REAL(r8) :: ep_selected, ep_dcon
+      REAL(r8) :: ep_selected, ep_dcon, psi_lo, psi_hi
       REAL(r8), DIMENSION(:), ALLOCATABLE :: psi_int_pts, q2_vals_r
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: q2_vals, jqx_vals,
      $     pdiv_vals, total_vals
@@ -7591,10 +7602,14 @@ c     fail fast on an out-of-range mode selection.
 c     integrate on psifac points inside the spline domain; points
 c     below rzphi%xs(0) are skipped (gpout_recon clamps instead).
       nint_pts = 0
+      psi_lo = 0.0_r8
+      psi_hi = 0.0_r8
       DO istep = 0, mstep
          IF (psifac(istep) < rzphi%xs(0)) CYCLE
          IF (psifac(istep) > rzphi%xs(mpsi)) EXIT
          nint_pts = nint_pts + 1
+         IF (nint_pts == 1) psi_lo = psifac(istep)
+         psi_hi = psifac(istep)
       ENDDO
       ALLOCATE(psi_int_pts(nint_pts), q2_vals_r(nint_pts),
      $   q2_vals(nint_pts), jqx_vals(nint_pts), pdiv_vals(nint_pts),
@@ -7706,6 +7721,10 @@ c     below rzphi%xs(0) are skipped (gpout_recon clamps instead).
      $     ep_selected
       WRITE(*,'(a,a,a,es17.8e3)') "  DCON ep(", TRIM(smode), ") = ",
      $     ep_dcon
+      WRITE(*,'(a,2es17.8e3)') "  recon psi range      = ",
+     $     psi_lo, psi_hi
+      WRITE(*,'(a,2es17.8e3)') "  DCON psi range       = ",
+     $     psilow, psilim
 
       IF (recon_out) THEN
          OPEN(NEWUNIT=u_log, FILE="gpec.log", STATUS="UNKNOWN",
@@ -7728,6 +7747,10 @@ c     below rzphi%xs(0) are skipped (gpout_recon clamps instead).
      $        ") = ", ep_selected
          WRITE(u_log,'(a,a,a,es17.8e3)') "  DCON ep(", TRIM(smode),
      $        ") = ", ep_dcon
+         WRITE(u_log,'(a,2es17.8e3)') "  recon psi range      = ",
+     $        psi_lo, psi_hi
+         WRITE(u_log,'(a,2es17.8e3)') "  DCON psi range       = ",
+     $        psilow, psilim
          WRITE(u_log,*)
          CLOSE(u_log)
       ENDIF
@@ -7778,6 +7801,7 @@ c     recon3 output units, assigned by OPEN(NEWUNIT=...).
       REAL(r8) :: dst1_total, dst3_total
       REAL(r8) :: identity_residual
       REAL(r8) :: dw_raw3, dw_dcon3, ep_selected, ep_dcon
+      REAL(r8) :: psi_lo, psi_hi
       INTEGER :: ep_index
       COMPLEX(r8) :: dst_int_c, dst1_c, dst2_c, dst3_c
       REAL(r8), DIMENSION(0:mthsurf) :: rvals, zvals
@@ -7849,10 +7873,14 @@ c     fail fast on an out-of-range mode selection.
 c     integrate on psifac points inside the spline domain; points
 c     below rzphi%xs(0) are skipped (gpout_recon clamps instead).
       nint_pts = 0
+      psi_lo = 0.0_r8
+      psi_hi = 0.0_r8
       DO istep = 0, mstep
          IF (psifac(istep) < rzphi%xs(0)) CYCLE
          IF (psifac(istep) > rzphi%xs(mpsi)) EXIT
          nint_pts = nint_pts + 1
+         IF (nint_pts == 1) psi_lo = psifac(istep)
+         psi_hi = psifac(istep)
       ENDDO
       ALLOCATE(psi_int_pts(nint_pts), A_vals(nint_pts),
      $   B_vals(nint_pts), Iperp_vals(nint_pts), Cpar_vals(nint_pts),
@@ -8001,6 +8029,10 @@ c     (the parallel-current piece dst2 = Cpar cancels identically).
      $     ep_selected
       WRITE(*,'(a,a,a,es17.8e3)') "  DCON ep(", TRIM(smode), ") = ",
      $     ep_dcon
+      WRITE(*,'(a,2es17.8e3)') "  recon psi range      = ",
+     $     psi_lo, psi_hi
+      WRITE(*,'(a,2es17.8e3)') "  DCON psi range       = ",
+     $     psilow, psilim
 
       IF (recon_out) THEN
          OPEN(NEWUNIT=u_log, FILE="gpec.log", STATUS="UNKNOWN",
@@ -8026,6 +8058,10 @@ c     (the parallel-current piece dst2 = Cpar cancels identically).
      $        ") = ", ep_selected
          WRITE(u_log,'(a,a,a,es17.8e3)') "  DCON ep(", TRIM(smode),
      $        ") = ", ep_dcon
+         WRITE(u_log,'(a,2es17.8e3)') "  recon psi range      = ",
+     $        psi_lo, psi_hi
+         WRITE(u_log,'(a,2es17.8e3)') "  DCON psi range       = ",
+     $        psilow, psilim
          WRITE(u_log,*)
          CLOSE(u_log)
       ENDIF
