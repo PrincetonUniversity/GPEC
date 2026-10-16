@@ -182,7 +182,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:spl%mx) :: xfac
 
       INTEGER :: iside,iqty,i
-      REAL(r8),DIMENSION(spl%nqty) :: bs,cs,ds
+      COMPLEX(r8),DIMENSION(spl%nqty) :: bs,cs,ds
 c-----------------------------------------------------------------------
 c     extract powers.
 c-----------------------------------------------------------------------
@@ -315,9 +315,11 @@ c-----------------------------------------------------------------------
       SELECT CASE(endmode)
       CASE("extrap")
          DO iqty=1,spl%nqty
-            spl%fs1(0,iqty)=SUM(cl(1:4)*spl%fs(0:3,iqty))
-            spl%fs1(spl%mx,iqty)=SUM(cr(1:4)
-     $           *spl%fs(spl%mx:spl%mx-3:-1,iqty))
+            spl%fs1(0,iqty)=SUM(cl(2:4)
+     $           *(spl%fs(1:3,iqty)-spl%fs(0,iqty)))
+            spl%fs1(spl%mx,iqty)=SUM(cr(2:4)
+     $           *(spl%fs(spl%mx-1:spl%mx-3:-1,iqty)
+     $           -spl%fs(spl%mx,iqty)))
             spl%fs1(1,iqty)=spl%fs1(1,iqty)-spl%fs1(0,iqty)
      $           /(spl%xs(1)-spl%xs(0))
             spl%fs1(spl%mx-1,iqty)=
