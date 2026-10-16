@@ -46,8 +46,8 @@ c-----------------------------------------------------------------------
       USE idcon_mod
 
       IMPLICIT NONE
-c     floor for recon divisors (rfac, |grad psi|^2, B^2) so the
-c     recon kernels stay finite if called on the magnetic axis.
+c     floor for the recon divisors rfac, |grad psi|^2 and B^2, which
+c     vanish on the magnetic axis; the Jacobian is assumed nonzero.
       REAL(r8), PARAMETER, PRIVATE :: recon_tiny = 1.0e-30_r8
 
       CONTAINS

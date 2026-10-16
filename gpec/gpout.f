@@ -7108,7 +7108,7 @@ c           K_i xi_n^2 per-theta densities for the recon terms file.
      $           dst2_den_fun=dst2_den_fun, dst3_den_fun=dst3_den_fun)
             DO itheta = 0, mthsurf
                CALL bicube_eval(rzphi, psi, theta(itheta), 1)
-               rfac = SQRT(rzphi%f(1))
+               rfac = SQRT(MAX(rzphi%f(1), 0.0_r8))
                eta = twopi*(theta(itheta) + rzphi%f(2))
                rvals(itheta) = ro + rfac*COS(eta)
                zvals(itheta) = zo + rfac*SIN(eta)
@@ -7576,7 +7576,7 @@ c     fail fast on an out-of-range mode selection.
          IF (recon_out) THEN
             DO itheta = 0, mthsurf
                CALL bicube_eval(rzphi, psi, theta(itheta), 1)
-               rfac = SQRT(rzphi%f(1))
+               rfac = SQRT(MAX(rzphi%f(1), 0.0_r8))
                eta = twopi*(theta(itheta) + rzphi%f(2))
                rvals(itheta) = ro + rfac*COS(eta)
                zvals(itheta) = zo + rfac*SIN(eta)
@@ -7857,7 +7857,7 @@ c     fail fast on an out-of-range mode selection.
          IF (recon_out) THEN
             DO itheta = 0, mthsurf
                CALL bicube_eval(rzphi, psi, theta(itheta), 1)
-               rfac = SQRT(rzphi%f(1))
+               rfac = SQRT(MAX(rzphi%f(1), 0.0_r8))
                eta = twopi*(theta(itheta) + rzphi%f(2))
                rvals(itheta) = ro + rfac*COS(eta)
                zvals(itheta) = zo + rfac*SIN(eta)
