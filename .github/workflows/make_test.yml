@@ -231,6 +231,14 @@ jobs:
           ulimit -s unlimited
           ../../../bin/rdcon && ../../../bin/rmatch && ../../../bin/gpec && ../../../bin/stride
 
+      - name: Run Soloviev energy decomposition example
+        run: |
+          export GPECHOME=$(pwd)
+          export LD_LIBRARY_PATH=$PREFIX/lib:$LD_LIBRARY_PATH
+          cd docs/examples/regression_solovev_recon_example
+          ulimit -s unlimited
+          ../../../bin/dcon && ../../../bin/gpec && python3 check_recon.py
+
   make_gpec_ifort:
     runs-on: ubuntu-latest
     needs: build-netcdf-ifort
@@ -310,3 +318,13 @@ jobs:
           cd docs/examples/regression_solovev_resistive_example
           ulimit -s unlimited
           ../../../bin/rdcon && ../../../bin/rmatch && ../../../bin/gpec && ../../../bin/stride
+
+      - name: Run Soloviev energy decomposition example
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          export GPECHOME=$(pwd)
+          export LD_LIBRARY_PATH=$PREFIX/lib:$LD_LIBRARY_PATH
+          export FOR_DISABLE_STACK_TRACE=TRUE
+          cd docs/examples/regression_solovev_recon_example
+          ulimit -s unlimited
+          ../../../bin/dcon && ../../../bin/gpec && python3 check_recon.py
