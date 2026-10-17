@@ -31,11 +31,12 @@ class CollisionProfileTests(unittest.TestCase):
         torque = (ROOT/'pentrc/torque.F90').read_text()
         call_external = re.search(r'call (?:kin_eval_external\(|spline_eval_external\(kin,)[^\n]+', torque).group()
         call_diagnostic = re.search(r'call (?:kin_eval\(x,1\)|spline_eval\(kin,x,1\))', torque).group()
-        declarations = re.search(r'^    integer :: kin_zi[^\n]+', source, re.M)
-        decl = declarations.group() if declarations else ''
+        decl = source[source.index('    integer :: kin_zi'):source.index('    type(cspline_type)')]
         parts = ''.join(routine(source, name) for name in
-                        ('read_kin', 'kin_eval', 'kin_eval_external', 'update_collision_values', 'kinetic_collisions'))
+                        ('read_kin', 'kin_eval', 'kin_eval_external', 'update_collision_values',
+                         'kinetic_collisions', 'validate_kinetic_values', 'supplied_collision_values'))
         inputs = '''module inputs
+use, intrinsic :: iso_fortran_env, only: int64
 use params, only: r8,mp,me,e,twopi
 use utilities, only: readtable,get_free_file_unit
 use spline_mod, only: spline_type,spline_alloc,spline_fit, &
@@ -43,12 +44,12 @@ use spline_mod, only: spline_type,spline_alloc,spline_fit, &
 implicit none
 logical :: verbose=.false.
 real(r8) :: chi1=1.0_r8
-type(spline_type) :: kin,kin_collision
-''' + decl + '\ncontains\n' + parts + '\nend module inputs\n'
+''' + decl + '\ncontains\n' + parts + \
+            (ROOT/'pentrc/supplied_rates.inc').read_text() + '\nend module inputs\n'
         driver = '''program collision_profile
 use params, only: r8
 use inputs
-use spline_mod, only: spline_eval,spline_eval_external
+use spline_mod, only: spline_eval,spline_eval_external,spline_dealloc
 implicit none
 integer :: i,unit,ix,icase
 real(r8) :: psi,x,nfac,tfac,kin_f(9),kin_f1(9)
@@ -82,6 +83,8 @@ do icase=1,2
     QUERY_DIAGNOSTIC
     write(*,'(2i4,1x,24es25.16e3)') icase,i,psi,kin_f,kin%f,kin_f1(7:8)
   end do
+  call spline_dealloc(kin)
+  call spline_dealloc(kin_collision)
 end do
 end program collision_profile
 '''.replace('QUERY_EXTERNAL',call_external).replace('QUERY_DIAGNOSTIC',call_diagnostic)
@@ -124,11 +127,13 @@ end program collision_profile
             minnu=math.inf
             maxerr=0.
             violations=[]
+            row_count=0
             for line in run.stdout.splitlines():
                 values=line.split()
                 if len(values)!=23:
                     continue
                 case,index=int(values[0]),int(values[1])
+                row_count+=1
                 psi=float(values[2]); f=list(map(float,values[3:12])); diagnostic=list(map(float,values[12:21]))
                 nfac,tfac=(1.,1.) if case==1 else (0.5,2.)
                 ni=ne=1.e19*nfac
@@ -156,6 +161,7 @@ end program collision_profile
                 if min(f[6:8])<=0 or error>1.e-6:
                     violations.append((case,index,psi,f[6],nui,error))
             self.assertTrue(math.isfinite(minnu),'no native rows read')
+            self.assertEqual(row_count,210,'both native profile cases must complete')
             print('native collision profile: minnu=',minnu,'maxerr=',maxerr,'violations=',violations[:8])
             self.assertFalse(bool(violations),'native collision-rate positivity/Coulomb oracle failed: '+str(violations[:8]))
 
