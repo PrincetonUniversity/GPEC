@@ -3,6 +3,9 @@
 Compile the production profile reader, its query routines and the exact query
 calls used by torque.F90, with the native spline/table modules.  A positive
 linear-temperature profile has an independent analytic Coulomb-rate oracle.
+
+Use the native make check-pentrc-collisions target to select platform linker
+flags. Direct invocation accepts GPEC_TEST_LDFLAGS (use -Wl,-dead_strip on Darwin).
 """
 import math
 import os
@@ -95,11 +98,12 @@ end program collision_profile
             netcdf_libs=shlex.split(os.environ['NETCDF_FLIBS']) if 'NETCDF_FLIBS' in os.environ else \
                 shlex.split(subprocess.check_output([nf,'--flibs'],text=True))
             math_libs=shlex.split(os.environ.get('GPEC_MATH_LIBS','-llapack -lblas'))
+            linker_flags=shlex.split(os.environ.get('GPEC_TEST_LDFLAGS','-Wl,--gc-sections'))
             command=[os.environ.get('FC','gfortran'),'-O0','-fcheck=all','-std=legacy',
                      '-ffree-line-length-none','-ffixed-line-length-none','-fallow-argument-mismatch',
                      '-ffunction-sections','-fdata-sections',*netcdf_flags,'-I'+str(work),
                      *[str(ROOT/f) for f in files],str(work/'inputs.f90'),str(work/'driver.f90'),
-                     '-Wl,--gc-sections',*netcdf_libs,*math_libs,'-o',str(work/'check')]
+                     *linker_flags,*netcdf_libs,*math_libs,'-o',str(work/'check')]
             compiled=subprocess.run(command,cwd=work,text=True,capture_output=True,timeout=90)
             self.assertEqual(compiled.returncode,0,compiled.stdout+compiled.stderr)
             run=subprocess.run([str(work/'check')],cwd=work,text=True,capture_output=True,timeout=30)

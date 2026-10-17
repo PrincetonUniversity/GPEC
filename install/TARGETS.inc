@@ -432,6 +432,11 @@ mkbin: pentrc dcon rdcon stride match rmatch slayer multi sum gpec
 	$(call print_success,All binaries copied to $(BINDIR))
 
 # Native PENTRC profile-reader/query regression; no equilibrium or solver job.
+ifeq ($(PLATFORM),Darwin)
+GPEC_TEST_LDFLAGS ?= -Wl,-dead_strip
+else
+GPEC_TEST_LDFLAGS ?= -Wl,--gc-sections
+endif
 .PHONY: check-pentrc-collisions
 check-pentrc-collisions:
-	python3 ../regression/test/pentrc_collision_profile.py -v
+	GPEC_TEST_LDFLAGS="$(GPEC_TEST_LDFLAGS)" python3 ../regression/test/pentrc_collision_profile.py -v
