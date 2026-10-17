@@ -1821,7 +1821,8 @@ c-----------------------------------------------------------------------
       INTEGER :: i,j,lwork
       REAL(r8), DIMENSION(3*mpert-2) :: rwork
       COMPLEX(r8), DIMENSION(2*mpert-1) :: work
-      COMPLEX(r8), DIMENSION(mpert) :: temp,ev,evo
+      COMPLEX(r8), DIMENSION(mpert) :: temp
+      REAL(r8), DIMENSION(mpert) :: ev,evo
       COMPLEX(r8), DIMENSION(mpert,mpert) :: sqrta,mat,mato,
      $   sqrtao
 

@@ -32,7 +32,8 @@ c     20. spline_get_yp.
 c     21. spline_thomas.
 c     22. spline_roots.
 c     23. spline_refine_root.
-c     24. spline_fit_pchip.
+c     24. spline_fit_hermite.
+c     25. spline_fit_pchip.
 c-----------------------------------------------------------------------
 c     subprogram 0. spline_type definition.
 c     defines spline_type.
@@ -209,9 +210,11 @@ c-----------------------------------------------------------------------
       SELECT CASE(endmode)
       CASE("extrap")
          DO iqty=1,spl%nqty
-            spl%fs1(0,iqty)=SUM(cl(1:4)*spl%fs(0:3,iqty))
-            spl%fs1(spl%mx,iqty)=SUM(cr(1:4)
-     $           *spl%fs(spl%mx:spl%mx-3:-1,iqty))
+            spl%fs1(0,iqty)=SUM(cl(2:4)
+     $           *(spl%fs(1:3,iqty)-spl%fs(0,iqty)))
+            spl%fs1(spl%mx,iqty)=SUM(cr(2:4)
+     $           *(spl%fs(spl%mx-1:spl%mx-3:-1,iqty)
+     $           -spl%fs(spl%mx,iqty)))
             spl%fs1(1,iqty)=spl%fs1(1,iqty)-spl%fs1(0,iqty)
      $           /(spl%xs(1)-spl%xs(0))
             spl%fs1(spl%mx-1,iqty)=
@@ -1693,7 +1696,7 @@ c-----------------------------------------------------------------------
             r = (2.0 * a * a * a - 9.0 * a * b + 27.0 * c) / 54.0
             m = r**2 - q**3  ! discrimenent
             IF(m > 0)THEN ! one real root
-               s = -sign(1.0_r8, r) * (abs(r) + sqrt(m))**(1.0/3.0)
+               s = -sign(1.0_r8,r)*(abs(r)+sqrt(m))**(1.0_r8/3.0_r8)
                t = q / s
                z1 = s + t - (a / 3.0)
                z2 = -huge(z2)
@@ -1851,7 +1854,41 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE spline_refine_root
 c-----------------------------------------------------------------------
-c     subprogram 24. spline_fit_pchip.
+c     subprogram 24. spline_fit_hermite.
+c     fits cubic splines, keeping the caller's knot derivatives fs1
+c     for the quantities flagged in keep (cubic Hermite interpolation).
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE spline_fit_hermite(spl,endmode,keep)
+
+      TYPE(spline_type), INTENT(INOUT) :: spl
+      CHARACTER(*), INTENT(IN) :: endmode
+      LOGICAL, DIMENSION(spl%nqty), INTENT(IN) :: keep
+
+      INTEGER :: iqty
+      REAL(r8), DIMENSION(0:spl%mx,spl%nqty) :: fs1
+c-----------------------------------------------------------------------
+c     fit all quantities, then restore the supplied derivatives.
+c-----------------------------------------------------------------------
+      DO iqty=1,spl%nqty
+         IF(keep(iqty) .AND. ANY(spl%xpower(:,iqty) /= 0))
+     $        CALL program_stop("spline_fit_hermite: "//
+     $        "supplied derivatives incompatible with xpower")
+      ENDDO
+      fs1=spl%fs1
+      CALL spline_fit(spl,endmode)
+      DO iqty=1,spl%nqty
+         IF(keep(iqty))spl%fs1(:,iqty)=fs1(:,iqty)
+      ENDDO
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE spline_fit_hermite
+c-----------------------------------------------------------------------
+c     subprogram 25. spline_fit_pchip.
 c     monotone piecewise cubic Hermite fit (pchip) for tabulated data
 c     without derivatives: no overshoot between points. Slopes as in
 c     scipy's PchipInterpolator (Fritsch and Butland, SIAM J. Sci.

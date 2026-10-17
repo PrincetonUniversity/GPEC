@@ -55,7 +55,8 @@ c-----------------------------------------------------------------------
       REAL(r8) :: v1
       REAL(r8), DIMENSION(mpert) :: singfac
       ! eigenvalues are complex for gpec
-      COMPLEX(r8), DIMENSION(mpert) :: ep,ev,et,tt
+      COMPLEX(r8), DIMENSION(mpert) :: ep,et,tt
+      REAL(r8), DIMENSION(mpert) :: ev
 
       REAL(r8), DIMENSION(3*mpert-1) :: rwork
       REAL(r8), DIMENSION(2*mpert) :: rwork2
@@ -221,7 +222,7 @@ c-----------------------------------------------------------------------
          ev(ipert)=wvt(ipert,ipert)
       ENDDO
       plasma1=REAL(ep(1))
-      vacuum1=REAL(ev(1))
+      vacuum1=ev(1)
       total1=REAL(et(1))
 c-----------------------------------------------------------------------
 c     write data for ahb and deallocate.
@@ -244,7 +245,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write to screen and copy to output.
 c-----------------------------------------------------------------------
-      IF(verbose) WRITE(*,10) REAL(ep(1)),REAL(ev(1)),
+      IF(verbose) WRITE(*,10) REAL(ep(1)),ev(1),
      $     REAL(et(1)),AIMAG(et(1))
 c-----------------------------------------------------------------------
 c     write eigenvalues to file.
@@ -252,7 +253,7 @@ c-----------------------------------------------------------------------
       message=""
       WRITE(out_unit,'(/1x,a)')"Total Energy Eigenvalues:"
       WRITE(out_unit,20)
-      WRITE(out_unit,30)(isol,REAL(ep(isol)),REAL(ev(isol)),
+      WRITE(out_unit,30)(isol,REAL(ep(isol)),ev(isol),
      $     REAL(et(isol)),AIMAG(et(isol)),
      $     TRIM(message(isol)),isol=1,mpert)
       WRITE(out_unit,20)
@@ -264,7 +265,7 @@ c-----------------------------------------------------------------------
       DO isol=1,mpert
          WRITE(out_unit,40)
          WRITE(out_unit,50)isol,imax(1,isol),REAL(ep(isol)),
-     $         REAL(ev(isol)),REAL(et(isol)),
+     $         ev(isol),REAL(et(isol)),
      $         AIMAG(et(isol)),TRIM(message(isol))
          WRITE(out_unit,60)
          WRITE(out_unit,70)(ipert,m(ipert),wt(ipert,isol),
@@ -312,6 +313,7 @@ c-----------------------------------------------------------------------
          wp(:,ipert)=vr(:,eindex(mpert+1-ipert))
          ep(ipert)=tt(eindex(mpert+1-ipert))
       ENDDO
+      lwork=2*mpert-1
       CALL zheev('V','U',mpert,wv,mpert,ev,work,lwork,rwork,info)
 
 c-----------------------------------------------------------------------
@@ -670,7 +672,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE free_get_wvac()
-      LOGICAL, PARAMETER :: complex_flag=.FALSE.
+      LOGICAL, PARAMETER :: complex_flag=.TRUE.
       INTEGER :: ipert
       REAL(r8) :: kernelsignin
       REAL(r8), DIMENSION(mpert) :: singfac
