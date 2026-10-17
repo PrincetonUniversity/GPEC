@@ -585,7 +585,7 @@ c-----------------------------------------------------------------------
       SUBROUTINE match_solution(eig)
       COMPLEX(r8), INTENT(IN) :: eig
 
-      INTEGER :: galnsol,msing,tot_grids,isol,mhigh,mlow,ip,eff_grids
+      INTEGER :: galnsol,galmsing,tot_grids,isol,mhigh,mlow,ip,eff_grids
       INTEGER :: ipert,mpert,nn,ising,tot_g,jsing
       CHARACTER(100) :: comp_tittle,tmp
       REAL(r8),PARAMETER :: eps=1e-4
@@ -616,16 +616,16 @@ c-----------------------------------------------------------------------
 c     read outer region solutions.
 c-----------------------------------------------------------------------
       CALL bin_open(bin_unit,galsol_filename,"OLD","REWIND","none")
-      READ(bin_unit) galnsol,msing,mpert,mhigh,mlow,nn,psio,tot_grids
+      READ(bin_unit) galnsol,galmsing,mpert,mhigh,mlow,nn,psio,tot_grids
       ALLOCATE(psi(0:tot_grids),issing(0:tot_grids),q(0:tot_grids))
-      ALLOCATE(qpsifac(msing),qsing(msing))
+      ALLOCATE(qpsifac(galmsing),qsing(galmsing))
       ALLOCATE(singfac(mpert),outsol(mpert,0:tot_grids,galnsol),
      $         outtotsol(mpert,0:tot_grids))
       ALLOCATE(outsol_cut(mpert,0:tot_grids,galnsol),
      $         outtotsol_cut(mpert,0:tot_grids),
      $         tmp_cut(mpert,0:tot_grids),psi_cut(0:tot_grids))
-      ALLOCATE(xext(msing,2))
-      DO isol=1,msing
+      ALLOCATE(xext(galmsing,2))
+      DO isol=1,galmsing
          READ(bin_unit) qpsifac(isol),qsing(isol)
       ENDDO
       READ(bin_unit) psi,issing,q

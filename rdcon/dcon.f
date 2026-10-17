@@ -356,13 +356,15 @@ c        one Zeff value (default 1.52) without psi_N_Zeff: flat profile.
                zeff0=Zeff_(1)
                DEALLOCATE(Zeff_)
             ENDIF
-            ALLOCATE(Zeff_(2),psi_N_Zeff_(2))
+            ALLOCATE(Zeff_(4),psi_N_Zeff_(4))
             Zeff_=zeff0
-            psi_N_Zeff_=(/0.0_r8,1.0_r8/)
+            psi_N_Zeff_=(/0.0_r8,1.0_r8/3,2.0_r8/3,1.0_r8/)
          ENDIF
          IF(.NOT.ALLOCATED(Zeff_) .OR. SIZE(Zeff_) /= SIZE(psi_N_Zeff_)
-     $     .OR. SIZE(Zeff_) < 2)
-     $     CALL program_stop("Zeff, psi_N_Zeff: equal sizes, >= 2")
+     $     .OR. SIZE(Zeff_) < 4)
+     $     CALL program_stop("Zeff, psi_N_Zeff: equal sizes, >= 4")
+         IF(ANY(psi_N_Zeff_(2:) <= psi_N_Zeff_(:SIZE(psi_N_Zeff_)-1)))
+     $     CALL program_stop("psi_N_Zeff must be strictly increasing")
          CALL spline_alloc(mreterms,mpsi,30)
          mreterms%xs=sq%xs
          mreterms%fs=0
@@ -455,7 +457,7 @@ c-----------------------------------------------------------------------
          mx0=0
          vx0=0
          IF (netcdf_out)
-     $    CALL rdcon_netcdf_out(mx0,mx0,mx0,mx0,vx0,vx0,vx0)
+     $    CALL rdcon_netcdf_out(mx0,mx0,mx0,mx0,vx0,REAL(vx0,r8),vx0)
       ENDIF
       IF(mat_flag .OR. ode_flag)DEALLOCATE(amat,bmat,cmat,ipiva,jmat)
       IF(bin_euler)CALL bin_close(euler_bin_unit)

@@ -46,7 +46,7 @@ c-----------------------------------------------------------------------
          CALL spline_alloc(Zeff_spline,SIZE(psi_N_Zeff_)-1,1)
          Zeff_spline%xs=psi_N_Zeff_
          Zeff_spline%fs(:,1)=Zeff_
-         CALL spline_fit_pchip(Zeff_spline)
+         CALL spline_fit(Zeff_spline,"extrap")
       ELSE
          CALL spline_alloc(ff,mtheta,5)
       ENDIF

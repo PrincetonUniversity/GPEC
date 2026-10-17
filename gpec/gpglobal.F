@@ -59,7 +59,8 @@ c-----------------------------------------------------------------------
      $     surf_indev,vsurf_indev,fsurf_indev,surf_indinvev
      $     ,eft,efp
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: xzpts,
-     $     chperr,chpsqr,grri,grre,griw,grrw,gdr,gdz,gdpsi,gdthe,gdphi
+     $     chperr,chpsqr,grri,grre,griw,grrw,gdr,gdz,gdpsi,gdthe,gdphi,
+     $     permeabsv
       REAL(r8), DIMENSION(3,3) :: w,v
 
 
@@ -74,7 +75,7 @@ c-----------------------------------------------------------------------
      $     bwp_mn_rmatch
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: wt,wt0,chp_mn,kap_mn,
      $     permeabev,chimats,chemats,flxmats,kaxmats,singbno_mn,
-     $     plas_indev,plas_indinvev,reluctev,indrelev,permeabsv,
+     $     plas_indev,plas_indinvev,reluctev,indrelev,
      $     surf_indmats,surf_indevmats,vsurf_indmats,fsurf_indmats,
      $     surf_indinvmats,surf_indinvevmats,surfet,surfep,
      $     amat,bmat,cmat,fmats,gmats,kmats,coil_indmat,coilmn,

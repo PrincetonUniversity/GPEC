@@ -38,7 +38,7 @@ class CollisionProfileTests(unittest.TestCase):
         inputs = '''module inputs
 use params, only: r8,mp,me,e,twopi
 use utilities, only: readtable,get_free_file_unit
-use spline_mod, only: spline_type,spline_alloc,spline_fit,spline_fit_pchip, &
+use spline_mod, only: spline_type,spline_alloc,spline_fit, &
     spline_eval,spline_eval_external,spline_write1
 implicit none
 logical :: verbose=.false.

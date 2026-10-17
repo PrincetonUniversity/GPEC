@@ -32,8 +32,8 @@ module inputs
 
     use params, only : r8,xj,mp,me,e,mu0,twopi
     use utilities, only : get_free_file_unit,readtable,nunique,progressbar,iscdftf,iscdftb
-    use spline_mod, only : spline_type,spline_alloc,spline_fit,spline_fit_pchip, &
-        spline_eval,spline_eval_external
+    use spline_mod, only : spline_type,spline_alloc,spline_fit,spline_eval,spline_write1, &
+        spline_eval_external
     use cspline_mod, only : cspline_type,cspline_alloc,cspline_dealloc,&
                             cspline_fit,cspline_write,cspline_eval
     use fspline_mod, only : fspline_eval
@@ -225,7 +225,7 @@ module inputs
         do i=1,5
             tmp%fs(0:,i) = table(1:,i+1)
         enddo
-        call spline_fit_pchip(tmp)  ! monotone between table points
+        call spline_fit(tmp,"extrap")
         if(write_log) print *,"Formed temporary spline"
 
         ! extrapolate to regular spline (helps smooth core??)
