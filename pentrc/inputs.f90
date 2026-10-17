@@ -273,14 +273,19 @@ module inputs
         ! convert temperatures to si units
         kin%fs(:,3:4) = kin%fs(:,3:4)*1.602e-19 !ev to j
 
-        ! Derived collision data are evaluated from the same primitive n,T.
-        do i=0,nkin
-            if(kin_rate_format=='rates-v1') then
+        if(kin_rate_format=='rates-v1') then
+            ! Preserve supplied-profile validation and initialization.
+            do i=0,nkin
                 call supplied_collision_values(kin%xs(i),kin%fs(i,:))
-            else
-                call kinetic_collisions(kin%fs(i,:))
-            end if
-        end do
+            end do
+        else
+            ! Slots 6:8 are reconstructed by kin_eval[_external] at each query.
+            ! Synthetic interpolation nodes can lie beyond the supplied physical
+            ! profile, so they must not impose a collision-model domain there.
+            ! Keep Zeff for GPEC's direct primitive-spline/slayer consumer.
+            kin%fs(:,6:8)=0._r8
+            kin%fs(:,9)=zimp-(kin%fs(:,1)/kin%fs(:,2))*zi*(zimp-zi)
+        end if
 
         call spline_fit(kin,"extrap")
         if(write_log) print *,"Formed kin spline"
@@ -332,15 +337,18 @@ module inputs
                 status="unknown")!,action="write")
             write(out_unit,'(a)') 'kinetic_format: '//trim(kin_rate_format)
             write(out_unit,'(/a)') 'node values:'
+            write(out_unit,'(a,2es17.8)') 'supplied profile domain: ', &
+                tmp%xs(0),tmp%xs(tmp%mx)
             write(out_unit,'(3x,a6,9(4x,a6))') kin%title
             do i=0,nkin
                 psi=kin%xs(i)
+                if(psi<tmp%xs(0).or.psi>tmp%xs(tmp%mx)) cycle
                 call kin_eval(psi,0)
                 write(out_unit,'(i5,1p,10e11.3)') i,psi,kin%f
             end do
             write(out_unit,'(/a)') 'interpolated values (pointwise collision rates):'
             do i=0,4*nkin
-                psi=real(i,r8)/(4*nkin)
+                psi=tmp%xs(0)+(tmp%xs(tmp%mx)-tmp%xs(0))*real(i,r8)/(4*nkin)
                 call kin_eval(psi,0)
                 write(out_unit,'(i5,1p,10e11.3)') i,psi,kin%f
             end do
