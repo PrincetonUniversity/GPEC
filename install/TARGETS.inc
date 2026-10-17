@@ -177,6 +177,13 @@ pentrc: v neededdeps $(PENTRC_OBJS) lsode equil
 	ar -r $(LIBDIR)/libpentrc.a $(PENTRC_OBJS)
 	$(call print_success,pentrc -> $(BINDIR)/pentrc and libpentrc.a -> $(LIBDIR))
 
+.PHONY: test-pentrc-small-width
+test-pentrc-small-width: pentrc
+	$(FCPENTRC) -I../pentrc -o $(BINDIR)/pentrc_small_width \
+		../regression/test/pentrc_small_width.f90 \
+		$(PENTRC_LIBDIRS) -lpentrc $(PENTRC_LIBS) $(LDFLAGS)
+	OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 $(BINDIR)/pentrc_small_width
+
 # DCON code
 DCON_LIBS = \
 	-lpentrc \
