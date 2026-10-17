@@ -177,6 +177,13 @@ pentrc: v neededdeps $(PENTRC_OBJS) lsode equil
 	ar -r $(LIBDIR)/libpentrc.a $(PENTRC_OBJS)
 	$(call print_success,pentrc -> $(BINDIR)/pentrc and libpentrc.a -> $(LIBDIR))
 
+.PHONY: test-pentrc-small-width
+test-pentrc-small-width: pentrc
+	$(FCPENTRC) -I../pentrc -o $(BINDIR)/pentrc_small_width \
+		../regression/test/pentrc_small_width.f90 \
+		$(PENTRC_LIBDIRS) -lpentrc $(PENTRC_LIBS) $(LDFLAGS)
+	OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 $(BINDIR)/pentrc_small_width
+
 # DCON code
 DCON_LIBS = \
 	-lpentrc \
@@ -431,3 +438,13 @@ mkbin: pentrc dcon rdcon stride match rmatch slayer multi sum gpec
 	cp ../sum/sum $(BINDIR)
 	cp ../gpec/gpec $(BINDIR)
 	$(call print_success,All binaries copied to $(BINDIR))
+
+# Native PENTRC profile-reader/query regression; no equilibrium or solver job.
+ifeq ($(PLATFORM),Darwin)
+GPEC_TEST_LDFLAGS ?= -Wl,-dead_strip
+else
+GPEC_TEST_LDFLAGS ?= -Wl,--gc-sections
+endif
+.PHONY: check-pentrc-collisions
+check-pentrc-collisions:
+	GPEC_TEST_LDFLAGS="$(GPEC_TEST_LDFLAGS)" python3 ../regression/test/pentrc_collision_profile.py -v
