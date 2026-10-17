@@ -36,10 +36,10 @@ module torque
                             cspline_fit,cspline_int,cspline_eval_external
     use bicube_mod, only : bicube_eval_external
     use pitch_integration, only : lambdaintgrl_lsode,kappaintgrl,kappadjsum
-    use energy_integration, only : xintgrl_lsode,qt
+    use energy_integration, only : xintgrl_lsode,qt,xnutype,xnufac
     use dcon_interface, only : issurfint,mpert                  ! intel	< 2018 doesn't like mpert from inputs
     use inputs, only : eqfun,sq,geom,rzphi,smats,tmats,xmats,ymats,zmats,&
-        kin,kin_eval,kin_eval_external,xs_m,dbob_m,divx_m,fnml, & ! profile queries
+        kin,kin_rate_format,kin_eval,kin_eval_external,xs_m,dbob_m,divx_m,fnml, & ! profile queries
         chi1,ro,zo,bo,mfac,mthsurf,shotnum,shottime, &          ! reals or integers
         verbose, &                                              ! logical
         machine                                                 ! character
@@ -1929,6 +1929,11 @@ module torque
         ! store attributes
         call check( nf90_put_att(ncid, nf90_global, "title", "PENTRC fundamental outputs") )
         call check( nf90_put_att(ncid, nf90_global, "version", version))
+        call check( nf90_put_att(ncid, nf90_global, "kinetic_format", &
+                                  trim(kin_rate_format)) )
+        call check( nf90_put_att(ncid, nf90_global, "collision_model", &
+                                  trim(xnutype)) )
+        call check( nf90_put_att(ncid, nf90_global, "collision_multiplier", xnufac) )
         call check( nf90_put_att(ncid, nf90_global, "shot", INT(shotnum) ) )
         call check( nf90_put_att(ncid, nf90_global, "time", INT(shottime)) )
         call check( nf90_put_att(ncid, nf90_global, "machine", machine) )
