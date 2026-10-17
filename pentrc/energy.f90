@@ -105,7 +105,7 @@ module energy_integration
     !   Module global variable xnutype is used to determine collision
     !   operator. Default is harmonic, and valid choices are:
     !       "zero" : collisionless
-    !       "small" : 1e-6*(we+wd) (krook value ignored)
+    !       "small" : 1e-5*abs(we) (krook value ignored)
     !       "krook" : krook operator (unmodified argument)
     !       "harmoinc" : (1+(l/2)^2)*krook*x^-3/2
     !
@@ -335,7 +335,7 @@ module energy_integration
     !    Module global variable xnutype is used to determine collision
     !    operator. Default is harmonic, and valid choices are:
     !       "zero" : collisionless
-    !       "small" : 1e-6*(we+wd) (krook value ignored)
+    !       "small" : 1e-5*abs(we) (krook value ignored)
     !       "krook" : krook operator (unmodified argument)
     !       "harmoinc" : (1+(l/2)^2)*krook*x^-3/2
     !
@@ -377,7 +377,7 @@ module energy_integration
             case ("zero")
                 nux = 0.0
             case ("small")
-                nux = 1e-5*energy_we
+                nux = 1.0e-5_r8*abs(energy_we)
             case ("krook")
                 nux = energy_nuk
             case ("harmonic")
