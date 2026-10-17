@@ -95,7 +95,7 @@
 ../pentrc/dcon_interface.o: ../equil/bicube.o ../equil/cspline.o ../equil/fspline.o ../equil/spline.o ../pentrc/params.o ../pentrc/utilities.o
 ../pentrc/diagnostics.o: ../equil/cspline.o ../equil/spline.o ../pentrc/energy.o ../pentrc/params.o ../pentrc/pitch.o ../pentrc/special.o
 ../pentrc/energy.o: ../pentrc/dcon_interface.o ../pentrc/lsode2.o ../pentrc/params.o ../pentrc/utilities.o
-../pentrc/inputs.o: ../equil/bicube.o ../equil/cspline.o ../equil/fspline.o ../equil/spline.o ../pentrc/dcon_interface.o ../pentrc/params.o ../pentrc/utilities.o
+../pentrc/inputs.o: ../equil/bicube.o ../equil/cspline.o ../equil/fspline.o ../equil/spline.o ../pentrc/dcon_interface.o ../pentrc/params.o ../pentrc/supplied_rates.inc ../pentrc/utilities.o
 ../pentrc/lsode1.o: ../equil/local.o
 ../pentrc/lsode2.o: ../equil/local.o
 ../pentrc/params.o: ../equil/local.o ../pentrc/version.inc

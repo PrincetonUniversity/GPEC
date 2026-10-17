@@ -15,7 +15,8 @@ module inputs
     !*PUBLIC DATA MEMBERS:
     !   ro, real                - Major radius (idcon)
     !   bo, real                - Field on axis (determined from sq)
-    !   kin, spline_type        - (psi) Kinetic profiles
+    !   kin, spline_type        - (psi) Primitive profiles; use kin_eval or
+    !                            kin_eval_external for derived collision rates
     !   xs_m, fspline_type     - (psi,theta) First order perturbations
     !   eqfun, bicube_type      - (psi,theta) Equilibrium mod b
     !   sq, spline_type         - (psi,theta) Equilibrium flux functions
@@ -29,9 +30,11 @@ module inputs
     ! EMAIL: nikolas.logan@columbia.edu
     !-----------------------------------------------------------------------
 
+    use, intrinsic :: iso_fortran_env, only: int64
     use params, only : r8,xj,mp,me,e,mu0,twopi
     use utilities, only : get_free_file_unit,readtable,nunique,progressbar,iscdftf,iscdftb
-    use spline_mod, only : spline_type,spline_alloc,spline_fit,spline_eval,spline_write1
+    use spline_mod, only : spline_type,spline_alloc,spline_fit,spline_eval,spline_write1, &
+        spline_eval_external
     use cspline_mod, only : cspline_type,cspline_alloc,cspline_dealloc,&
                             cspline_fit,cspline_write,cspline_eval
     use fspline_mod, only : fspline_eval
@@ -50,21 +53,26 @@ module inputs
 
     private
     public &
-        read_kin, &
+        read_kin, kin_eval, kin_eval_external, &
         read_pmodb, &
         read_peq, &
         set_peq, &
         read_gpec_peq,&
         read_equil, &
         read_fnml, &
-        kin, xs_m, dbob_m, divx_m, fnml, &
+        kin, kin_rate_format, xs_m, dbob_m, divx_m, fnml, &
         geom,eqfun, sq, rzphi, smats, tmats, xmats, ymats, zmats, &
         chi1,ro,zo,bo,nn,mfac,mpert,mthsurf, &
         shotnum,shottime,machine,&
         verbose
 
     ! global variables with defaults
+    ! Species parameters are immutable during one PENTRC run, like ro and bo.
+    integer :: kin_zi,kin_zimp,kin_mi,kin_mimp
+    character(16) :: kin_rate_format='legacy'
     type(spline_type) :: kin
+    type(spline_type) :: kin_collision
+    type(spline_type) :: kin_supplied
     type(cspline_type) :: dbob_m, divx_m, xs_m(3)
     type(bicube_type):: fnml
     !$omp threadprivate(dbob_m, divx_m, kin, xs_m, fnml)
@@ -156,7 +164,7 @@ module inputs
 
 
     !=======================================================================
-    subroutine read_kin(file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,write_log)
+    subroutine read_kin(file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,write_log,format)
     !-----------------------------------------------------------------------
     !*DESCRIPTION:
     !   Read ascii file containing table of kinetic profiles ni, ne, ti,
@@ -166,7 +174,9 @@ module inputs
     !   Assumes table consists of 6 columns: psi_n, n_i(m^-3), n_e(m^-3),
     !   T_i(eV), T_e(eV), omega_E(rad/s). File can (nearly) arbitrary
     !   header and/or footer, with the exception that no lines start with
-    !   a number.
+    !   a number. Optional format='rates-v1' requires exactly nine columns:
+    !   the six above, logLambda, nu_i(s^-1), nu_e(s^-1). Rates are positive
+    !   supplied base damping rates, interpolated through their logarithms.
     !
     !*ARGUMENTS:
     !    file : character(256) (in)
@@ -191,6 +201,7 @@ module inputs
         implicit none
         ! declare arguments
         character(512), intent(in) :: file
+        character(*), intent(in), optional :: format
         integer, intent(in) :: zi,zimp,mi,mimp
         real(r8), intent(in) :: wefac,wpfac,nfac,tfac
         logical :: write_log
@@ -202,12 +213,42 @@ module inputs
         integer, parameter :: nkin = 100
         integer :: i,out_unit, tshape(2)
         real(r8) :: psi
-        real(r8), dimension(0:nkin) :: zeff,zpitch,welec,wdian,wdiat,wpefac
+        real(r8), dimension(0:nkin) :: welec,wdian,wdiat,wpefac
         type(spline_type) :: tmp
+
+        kin_zi=zi
+        kin_zimp=zimp
+        kin_mi=mi
+        kin_mimp=mimp
+        kin_rate_format='legacy'
+        if(present(format)) kin_rate_format=format
+        if(kin_rate_format/='legacy'.and.kin_rate_format/='rates-v1') &
+            error stop 'PENTRC: kinetic_format must be legacy or rates-v1'
+        if(min(zi,zimp,mi,mimp)<=0) &
+            error stop 'PENTRC: positive ion charges and masses required'
+        call validate_kinetic_values([nfac,tfac,wefac,wpfac])
+        if(kin_rate_format=='rates-v1'.and.wpfac/=1._r8) &
+            error stop 'PENTRC: rates-v1 requires wpfac=1 for physical rotation'
 
         call readtable(file,table,titles,verbose,write_log)
         tshape = shape(table)
         if(write_log) print *,"Table shaped ",tshape
+        if(tshape(2)<6) error stop 'PENTRC: kinetic profile needs six columns'
+        if(kin_rate_format=='rates-v1') then
+            if(tshape(2)/=9) &
+                error stop 'PENTRC: rates-v1 requires exactly nine columns'
+            do i=1,tshape(1)
+                call validate_kinetic_values(table(i,:))
+                if(any(table(i,2:5)<=0._r8).or.any(table(i,7:9)<=0._r8)) &
+                    error stop 'PENTRC: rates-v1 needs positive n,T,logLambda,rates'
+                if(zi*table(i,2)>table(i,3)) &
+                    error stop 'PENTRC: selected-ion density exceeds quasineutral total'
+            end do
+            call spline_alloc(kin_supplied,tshape(1)-1,3)
+            kin_supplied%xs=table(:,1)
+            kin_supplied%fs=log(table(:,7:9))
+            call spline_fit(kin_supplied,"extrap")
+        end if
 
         ! temp spline on experimental grid
         call spline_alloc(tmp,tshape(1)-1,5)
@@ -232,19 +273,27 @@ module inputs
         ! convert temperatures to si units
         kin%fs(:,3:4) = kin%fs(:,3:4)*1.602e-19 !ev to j
 
-        ! collisionalities **assumes si units for n,t**
-        zeff = zimp-(kin%fs(:,1)/kin%fs(:,2))*zi*(zimp-zi)
-        zpitch = 1.0+(1.0+mimp)/(2.0*mimp)*zimp*(zeff-1.0)/(zimp-zeff)
-        kin%fs(:,6) = 17.3-0.5*log(kin%fs(:,2)/1.0e20) &
-            +1.5*log(kin%fs(:,4)/1.602e-16)
-        kin%fs(:,7) = (zpitch/3.5e17)*kin%fs(:,1)*kin%fs(:,6) &
-            /(sqrt(1.0*mi)*(kin%fs(:,3)/1.602e-16)**1.5)
-        kin%fs(:,8) = (zpitch/3.5e17)*kin%fs(:,2)*kin%fs(:,6) &
-            /(sqrt(me/mp)*(kin%fs(:,4)/1.602e-16)**1.5)
-        kin%fs(:,9) = zeff
+        if(kin_rate_format=='rates-v1') then
+            ! Preserve supplied-profile validation and initialization.
+            do i=0,nkin
+                call supplied_collision_values(kin%xs(i),kin%fs(i,:))
+            end do
+        else
+            ! Slots 6:8 are reconstructed by kin_eval[_external] at each query.
+            ! Synthetic interpolation nodes can lie beyond the supplied physical
+            ! profile, so they must not impose a collision-model domain there.
+            ! Keep Zeff for GPEC's direct primitive-spline/slayer consumer.
+            kin%fs(:,6:8)=0._r8
+            kin%fs(:,9)=zimp-(kin%fs(:,1)/kin%fs(:,2))*zi*(zimp-zi)
+        end if
 
         call spline_fit(kin,"extrap")
         if(write_log) print *,"Formed kin spline"
+
+        ! Keep collision rates tied to the supplied input profiles, as before
+        ! nfac/tfac: those optional multipliers act on the drive profiles only.
+        ! This snapshot is read-only during surface integration.
+        kin_collision=kin
 
         ! manipulation of N and T profiles
         kin%fs(:,1:2) = nfac*kin%fs(:,1:2)
@@ -252,6 +301,8 @@ module inputs
 
         ! manipulation of rotation variables
         welec(:) = wefac*kin%fs(:,5) ! direct manipulation of omegae
+        ! Supplied rotation is already physical. Preserve exact zero as well.
+        if(kin_rate_format/='rates-v1') then
         ! note dividing by zero makes a nan that then ruins the whole spline
         warning_printed = .false.
         do i=0,nkin
@@ -268,6 +319,7 @@ module inputs
         wdiat =-twopi*kin%fs1(:,3)/(e*zi*chi1)
         wpefac= (wpfac*(welec+wdian+wdiat) - (wdian+wdiat))/welec
         welec = wpefac*welec   ! indirect manipulation of rotation
+        end if
         kin%fs(:,5)=welec
 
         if(wpfac/=1.0 .and. verbose) then
@@ -283,11 +335,150 @@ module inputs
             if(verbose) print *, "Writing kinetic spline to pentrc_kinetics.out"
             open(unit=out_unit,file="pentrc_kinetics.out",&
                 status="unknown")!,action="write")
-            call spline_write1(kin,.true.,.false.,out_unit,0,.true.)
+            write(out_unit,'(a)') 'kinetic_format: '//trim(kin_rate_format)
+            write(out_unit,'(/a)') 'node values:'
+            write(out_unit,'(a,2es17.8)') 'supplied profile domain: ', &
+                tmp%xs(0),tmp%xs(tmp%mx)
+            write(out_unit,'(3x,a6,9(4x,a6))') kin%title
+            do i=0,nkin
+                psi=kin%xs(i)
+                if(psi<tmp%xs(0).or.psi>tmp%xs(tmp%mx)) cycle
+                call kin_eval(psi,0)
+                write(out_unit,'(i5,1p,10e11.3)') i,psi,kin%f
+            end do
+            write(out_unit,'(/a)') 'interpolated values (pointwise collision rates):'
+            do i=0,4*nkin
+                psi=tmp%xs(0)+(tmp%xs(tmp%mx)-tmp%xs(0))*real(i,r8)/(4*nkin)
+                call kin_eval(psi,0)
+                write(out_unit,'(i5,1p,10e11.3)') i,psi,kin%f
+            end do
             close(out_unit)
         endif
 
     end subroutine read_kin
+
+
+    subroutine kin_eval(psi,mode)
+        ! Keep primitive interpolation and gradients unchanged. Nonlinear
+        ! collision rates must not be independently interpolated as cubics.
+        real(r8), intent(in) :: psi
+        integer, intent(in) :: mode
+        call spline_eval(kin,psi,mode)
+        if(mode>0) then
+            call update_collision_values(psi,kin%f,kin%f1)
+        else
+            call update_collision_values(psi,kin%f)
+        end if
+    end subroutine kin_eval
+
+    subroutine kin_eval_external(psi,ix,f,f1)
+        ! Reentrant evaluator for the surface integrand and its exported data.
+        real(r8), intent(in) :: psi
+        integer, intent(inout) :: ix
+        real(r8), intent(out) :: f(:),f1(:)
+        call spline_eval_external(kin,psi,ix,f,f1)
+        call update_collision_values(psi,f,f1)
+    end subroutine kin_eval_external
+
+    subroutine update_collision_values(psi,f,f1)
+        ! The original inputs set collisions even when nfac/tfac modify the
+        ! drive profiles. Supplied rates bypass the legacy impurity model.
+        real(r8), intent(in) :: psi
+        real(r8), intent(inout) :: f(:)
+        real(r8), intent(inout), optional :: f1(:)
+        real(r8) :: raw(9),raw1(9)
+        integer :: ix
+        ix=0
+        call spline_eval_external(kin_collision,psi,ix,raw,raw1)
+        if(kin_rate_format=='rates-v1') then
+            call supplied_collision_values(psi,raw,raw1)
+        else
+            call kinetic_collisions(raw,raw1)
+        end if
+        f(6:9)=raw(6:9)
+        if(present(f1)) f1(6:9)=raw1(6:9)
+    end subroutine update_collision_values
+
+    subroutine validate_kinetic_values(values)
+        ! Inspect binary64 exponent bits: IEEE predicates may be optimized
+        ! away by -ffast-math, while integer validation remains effective.
+        real(r8), intent(in) :: values(:)
+        integer(int64) :: bits(size(values))
+        integer(int64), parameter :: exponent_mask=int(z'7ff0000000000000',int64)
+        if(storage_size(0._r8)/=64) &
+            error stop 'PENTRC: kinetic validation requires binary64'
+        bits=transfer(values,bits)
+        if(any(iand(bits,exponent_mask)==exponent_mask)) &
+            error stop 'PENTRC: non-finite kinetic profile value'
+    end subroutine validate_kinetic_values
+
+    subroutine supplied_collision_values(psi,f,f1)
+        real(r8), intent(in) :: psi
+        real(r8), intent(inout) :: f(:)
+        real(r8), intent(inout), optional :: f1(:)
+        real(r8) :: logarithms(3),derivatives(3),rate_derivatives(3)
+        integer :: ix,j
+        call validate_kinetic_values(f(1:5))
+        if(any(f(1:4)<=0._r8)) &
+            error stop 'PENTRC: non-positive supplied-rate drive profile'
+        if(kin_zi*f(1)>f(2)) &
+            error stop 'PENTRC: selected-ion density exceeds quasineutral total'
+        ix=0
+        call spline_eval_external(kin_supplied,psi,ix,logarithms,derivatives)
+        do j=1,3
+            call supplied_rate_leaf(logarithms(j),derivatives(j), &
+                                    f(j+5),rate_derivatives(j))
+        end do
+        call validate_kinetic_values(f(6:8))
+        if(any(f(6:8)<=0._r8)) &
+            error stop 'PENTRC: supplied-rate interpolation underflow'
+        ! Main ion plus residual ion charge determines this diagnostic.
+        ! In the D/T projection zi=zimp=1 gives Zeff=1 without a division.
+        f(9)=kin_zimp-(f(1)/f(2))*kin_zi*(kin_zimp-kin_zi)
+        if(present(f1)) then
+            call validate_kinetic_values(f1(1:5))
+            call validate_kinetic_values(rate_derivatives)
+            f1(6:8)=rate_derivatives
+            f1(9)=-kin_zi*(kin_zimp-kin_zi) &
+                *(f1(1)/f(2)-f(1)*f1(2)/f(2)**2)
+        end if
+    end subroutine supplied_collision_values
+
+    include 'supplied_rates.inc'
+
+    subroutine kinetic_collisions(f,f1)
+        ! n_i,n_e in m^-3, T_i,T_e in joules; rates in s^-1.
+        ! Reconstruct the existing read_kin Coulomb model at the query point.
+        ! Positive physical primitives and a positive Coulomb logarithm imply
+        ! positive rates, without flooring or clipping an interpolated rate.
+        real(r8), intent(inout) :: f(:)
+        real(r8), intent(inout), optional :: f1(:)
+        real(r8) :: zpitch,dpitch,fac
+        if(any(f(1:4)<=0)) &
+            error stop 'PENTRC: non-positive kinetic density or temperature'
+        f(6)=17.3-0.5*log(f(2)/1.0e20)+1.5*log(f(4)/1.602e-16)
+        f(9)=kin_zimp-(f(1)/f(2))*kin_zi*(kin_zimp-kin_zi)
+        if(kin_zimp<=f(9)) &
+            error stop 'PENTRC: invalid impurity density in collision model'
+        fac=(1.0+kin_mimp)/(2.0*kin_mimp)*kin_zimp
+        zpitch=1.0+fac*(f(9)-1.0)/(kin_zimp-f(9))
+        if(f(6)<=0.or.zpitch<=0) &
+            error stop 'PENTRC: non-positive collision model coefficient'
+        f(7)=(zpitch/3.5e17)*f(1)*f(6) &
+            /(sqrt(1.0*kin_mi)*(f(3)/1.602e-16)**1.5)
+        f(8)=(zpitch/3.5e17)*f(2)*f(6) &
+            /(sqrt(me/mp)*(f(4)/1.602e-16)**1.5)
+        if(present(f1)) then
+            f1(6)=-0.5*f1(2)/f(2)+1.5*f1(4)/f(4)
+            f1(9)=-kin_zi*(kin_zimp-kin_zi) &
+                *(f1(1)/f(2)-f(1)*f1(2)/f(2)**2)
+            dpitch=fac*(kin_zimp-1.0)*f1(9)/(kin_zimp-f(9))**2
+            f1(7)=f(7)*(dpitch/zpitch+f1(1)/f(1) &
+                +f1(6)/f(6)-1.5*f1(3)/f(3))
+            f1(8)=f(8)*(dpitch/zpitch+f1(2)/f(2) &
+                +f1(6)/f(6)-1.5*f1(4)/f(4))
+        end if
+    end subroutine kinetic_collisions
 
 
     !=======================================================================

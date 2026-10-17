@@ -32,8 +32,10 @@ This namelist sets the inputs, controls the behavior, and determines the outputs
 The PENTRC Namelist
 ====================
 
-This namelist sets the inputs, controls the behavior, and determines the outputs of the GPEC code.
+This namelist sets the inputs, controls the behavior, and determines the outputs of PENTRC.
 
 .. include:: ../input/pentrc.in
    :literal:
+
+.. include:: pentrc_supplied_rates.rst
 
