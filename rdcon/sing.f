@@ -199,7 +199,7 @@ c     compute qlim.
 c-----------------------------------------------------------------------
          qlim=(INT(nn*qlim)+dmlim)/nn
          DO
-            IF(qlim <= qmax)EXIT
+            IF(qlim <= MIN(qmax,qhigh))EXIT
             qlim=qlim-1._r8/nn
          ENDDO
       ENDIF
