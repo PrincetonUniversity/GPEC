@@ -69,6 +69,20 @@ c-----------------------------------------------------------------------
 
       CONTAINS
 
+c-----------------------------------------------------------------------
+c     Pack every poloidal point, including the periodic endpoint.
+c-----------------------------------------------------------------------
+      PURE FUNCTION gpout_function_channels(values,imag_sign)
+     $     RESULT(channels)
+      COMPLEX(r8), DIMENSION(:,:), INTENT(IN) :: values
+      REAL(r8), INTENT(IN) :: imag_sign
+      REAL(r8), DIMENSION(SIZE(values,1),SIZE(values,2),2) ::
+     $     channels
+
+      channels(:,:,1)=REAL(values,r8)
+      channels(:,:,2)=imag_sign*AIMAG(values)
+      END FUNCTION gpout_function_channels
+
       !-----------------------------------------------------------------
       function str(k,fmt)
       !-----------------------------------------------------------------
@@ -3171,18 +3185,14 @@ c-----------------------------------------------------------------------
      $      -divxprpmout),AIMAG(-divxprpmout)/),(/mstep,lmpert,2/))) )
          CALL check( nf90_put_var(fncid,km_id,RESHAPE((/REAL(
      $      -curvmout),AIMAG(-curvmout)/),(/mstep,lmpert,2/))) )
-         CALL check( nf90_put_var(fncid,be_id,RESHAPE(
-     $      (/REAL(eulbparfout),-helicity*AIMAG(eulbparfout)/),
-     $      (/mstep,mthsurf,2/))) )
-         CALL check( nf90_put_var(fncid,bl_id,RESHAPE(
-     $      (/REAL(lagbparfout),-helicity*AIMAG(lagbparfout)/),
-     $      (/mstep,mthsurf,2/))) )
-         CALL check( nf90_put_var(fncid,x_id,RESHAPE(
-     $      (/REAL(-divxprpfout),-helicity*AIMAG(-divxprpfout)/),
-     $      (/mstep,mthsurf,2/))))
-         CALL check( nf90_put_var(fncid,k_id,RESHAPE(
-     $      (/REAL(-curvfout),-helicity*AIMAG(-curvfout)/),
-     $      (/mstep,mthsurf,2/))) )
+         CALL check( nf90_put_var(fncid,be_id,
+     $      gpout_function_channels(eulbparfout,-helicity)) )
+         CALL check( nf90_put_var(fncid,bl_id,
+     $      gpout_function_channels(lagbparfout,-helicity)) )
+         CALL check( nf90_put_var(fncid,x_id,
+     $      gpout_function_channels(-divxprpfout,-helicity)) )
+         CALL check( nf90_put_var(fncid,k_id,
+     $      gpout_function_channels(-curvfout,-helicity)) )
          CALL check( nf90_put_var(fncid,b_id,equilbfun) )
          CALL check( nf90_close(fncid) )
       ENDIF

@@ -391,6 +391,15 @@ gpec: v neededdeps $(GPEC_OBJS) pentrc lsode equil vacuum slayer coil
 	cp ../gpec/gpec $(BINDIR)
 	$(call print_success,gpec -> $(BINDIR)/gpec)
 
+# Manufactured pmodb function export roundtrip using the production packer.
+.PHONY: test-gpec-function-netcdf
+test-gpec-function-netcdf: gpec
+	$(FCGPEC) -I../gpec -o $(BINDIR)/test_gpec_function_netcdf \
+		../regression/test/gpec_function_netcdf.f90 \
+		$(filter-out ../gpec/gpec.o,$(GPEC_OBJS)) \
+		$(GPEC_LIBDIRS) $(GPEC_LIBS) $(LDFLAGS)
+	OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 $(BINDIR)/test_gpec_function_netcdf
+
 # Xdraw
 XDRAW_LIBS = \
 	-lm \
