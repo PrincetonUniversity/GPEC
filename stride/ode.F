@@ -475,6 +475,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE ode_set_intervals
          INTEGER :: i, j, jsing, iS, nIntervalsMin
+         INTEGER, PARAMETER :: nAxisMin = 8
          INTEGER :: newItvls, cumulItvls, innerItvls, nbad
          REAL(r8) :: s1, s2, sLast, alpha
          REAL(r8), DIMENSION(:), ALLOCATABLE :: aT
@@ -484,8 +485,9 @@ c-----------------------------------------------------------------------
 c     basic requirement to avoid silly faults
 c-----------------------------------------------------------------------
         ! Require at least splitting each inter-singularity
-        ! edge, msing inner layers, split msing-1 inter-regions, edge
-        nIntervalsMin = 1 + msing + 2 * (msing -1) + 1
+        ! nAxisMin axis pieces, msing inner layers, split msing-1
+        ! inter-regions, edge
+        nIntervalsMin = nAxisMin + msing + 2 * (msing -1) + 1
          IF(nIntervalsMin > nIntervalsTot)THEN
              nIntervalsTot = nIntervalsMin
              WRITE(*, '(1x,a25,i4, a27)') "Forcing nIntervalsTot to ",
@@ -629,6 +631,13 @@ c-----------------------------------------------------------------------
                      ENDIF
                   ENDIF
                ENDDO
+               ! then split the axis interval into nAxisMin pieces: with
+               ! fewer, the innermost Delta' can be wrong by 1e3
+               IF(j<0 .AND. COUNT(psiPoints(1:nIntervals,2) <=
+     $            scalc(1)%singEdgesLR(1)) < nAxisMin)THEN
+                  j = MAXLOC(aT(1:nIntervals), DIM=1, MASK=
+     $            psiPoints(1:nIntervals,2) <= scalc(1)%singEdgesLR(1))
+               ENDIF
                ! then, start breaking up the longest intervals
                IF(j<0)THEN
                   j = MAXLOC(aT(1:nIntervals), DIM=1, 
