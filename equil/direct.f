@@ -10,9 +10,10 @@ c     1. direct_run.
 c     2. direct_get_bfield.
 c     3. direct_position.
 c     4. direct_fl_int.
-c     5. direct_fl_der.
-c     6. direct_refine.
-c     7. direct_output.
+c     5. direct_fl_sample.
+c     6. direct_fl_der.
+c     7. direct_refine.
+c     8. direct_output.
 c-----------------------------------------------------------------------
 c     subprogram 0. direct_mod.
 c     module declarations.
@@ -440,12 +441,12 @@ c-----------------------------------------------------------------------
       CHARACTER(64) :: message
 
       INTEGER, PARAMETER :: neq=4,liw=30,lrw=22+neq*16
-      INTEGER :: iopt,istate,itask,itol,jac,mf,ir,js,it,iflag
+      INTEGER :: iopt,istate,itask,itol,jac,mf,ir,js
       INTEGER, DIMENSION(liw) :: iwork
       REAL(r8), PARAMETER :: eps=1e-12
       REAL(r8) :: atol,rtol,rfac,deta,r,z,eta,err,psi0,psifac,dr
-      REAL(r8) :: eta0,y40,y4j,t,res
-      REAL(r8), DIMENSION(neq) :: y,dky
+      REAL(r8) :: eta0,y40
+      REAL(r8), DIMENSION(neq) :: y
       REAL(r8), DIMENSION(lrw) :: rwork
 c-----------------------------------------------------------------------
 c     format statements.
@@ -535,26 +536,8 @@ c-----------------------------------------------------------------------
          y40=y(4)
          CALL lsode(direct_fl_der,neq,y,eta,twopi,itol,rtol,atol,
      $        itask,istate,iopt,rwork,lrw,iwork,liw,jac,mf)
-c-----------------------------------------------------------------------
-c     sample the step at the angles it covers: Newton on lsode's
-c     interpolant for y(4) = theta*y4tot, then y there.
-c-----------------------------------------------------------------------
-         IF(.NOT. PRESENT(ys))CYCLE
-         DO WHILE(js < mtheta)
-            y4j=rzphi%ys(js)*y4tot
-            IF(y4j > y(4))EXIT
-            t=eta0+(eta-eta0)*(y4j-y40)/(y(4)-y40)
-            DO it=1,20
-               CALL dintdy(t,0,rwork(21),neq,dky,iflag)
-               res=dky(4)-y4j
-               CALL dintdy(t,1,rwork(21),neq,dky,iflag)
-               t=MIN(MAX(t-res/dky(4),eta0),eta)
-               IF(ABS(res) <= eps*y4tot)EXIT
-            ENDDO
-            CALL dintdy(t,0,rwork(21),neq,dky,iflag)
-            ys(js,:)=(/t,dky/)
-            js=js+1
-         ENDDO
+         IF(PRESENT(ys))CALL direct_fl_sample(eta0,eta,y40,y(4),
+     $        y4tot,rwork(21),js,ys)
       ENDDO
       IF(PRESENT(ys))ys(mtheta,:)=(/eta,y/)
       IF(out_fl .AND. .NOT. PRESENT(ys))WRITE(out_2d_unit,20)
@@ -573,7 +556,51 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_fl_int
 c-----------------------------------------------------------------------
-c     subprogram 5. direct_fl_der.
+c     subprogram 5. direct_fl_sample.
+c     samples the last lsode step, eta0 to eta1, at the angles
+c     rzphi%ys it covers: Newton on lsode's interpolant for
+c     y(4) = theta*y4tot, then y there.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE direct_fl_sample(eta0,eta1,y40,y41,y4tot,yh,js,ys)
+
+      REAL(r8), INTENT(IN) :: eta0,eta1,y40,y41,y4tot
+      REAL(r8), DIMENSION(*), INTENT(IN) :: yh
+      INTEGER, INTENT(INOUT) :: js
+      REAL(r8), DIMENSION(0:,0:), INTENT(INOUT) :: ys
+
+      INTEGER, PARAMETER :: neq=4
+      REAL(r8), PARAMETER :: eps=1e-12
+      INTEGER :: it,iflag
+      REAL(r8) :: y4j,eta,res
+      REAL(r8), DIMENSION(neq) :: dky
+c-----------------------------------------------------------------------
+c     find and sample each angle in the step.
+c-----------------------------------------------------------------------
+      DO WHILE(js < mtheta)
+         y4j=rzphi%ys(js)*y4tot
+         IF(y4j > y41)EXIT
+         eta=eta0+(eta1-eta0)*(y4j-y40)/(y41-y40)
+         DO it=1,20
+            CALL dintdy(eta,0,yh,neq,dky,iflag)
+            res=dky(4)-y4j
+            CALL dintdy(eta,1,yh,neq,dky,iflag)
+            eta=MIN(MAX(eta-res/dky(4),eta0),eta1)
+            IF(ABS(res) <= eps*y4tot)EXIT
+         ENDDO
+         CALL dintdy(eta,0,yh,neq,dky,iflag)
+         ys(js,:)=(/eta,dky/)
+         js=js+1
+      ENDDO
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE direct_fl_sample
+c-----------------------------------------------------------------------
+c     subprogram 6. direct_fl_der.
 c     contains differential equations for field line averages.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -614,7 +641,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_fl_der
 c-----------------------------------------------------------------------
-c     subprogram 6. direct_refine.
+c     subprogram 7. direct_refine.
 c     moves a point orthogonally to a specified flux surface.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -662,7 +689,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_refine
 c-----------------------------------------------------------------------
-c     subprogram 7. direct_output.
+c     subprogram 8. direct_output.
 c     diagnoses input.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
