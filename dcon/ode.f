@@ -983,6 +983,7 @@ c-----------------------------------------------------------------------
       CHARACTER(64) :: message
       INTEGER, DIMENSION(1) :: jmax
       REAL(r8) :: uratio
+      LOGICAL :: fix_required
 c-----------------------------------------------------------------------
 c     compute norms of first solution vectors, abort if any are zero.
 c-----------------------------------------------------------------------
@@ -994,19 +995,21 @@ c-----------------------------------------------------------------------
          CALL program_stop(message)
       ENDIF
 c-----------------------------------------------------------------------
-c     normalize unorm and perform Gaussian reduction if required.
+c     preserve singular reductions while resetting norm baselines.
 c-----------------------------------------------------------------------
+      fix_required=sing_flag
       IF(new)THEN
          new=.FALSE.
          unorm0(1:msol)=unorm(1:msol)
       ELSE
          unorm(1:msol)=unorm(1:msol)/unorm0(1:msol)
          uratio=MAXVAL(unorm(1:msol))/MINVAL(unorm(1:msol))
-         IF(uratio > ucrit .OR. sing_flag)THEN
-            CALL ode_fixup(sing_flag,.FALSE.)
-            IF(diagnose)CALL ode_test_fixup
-            new=.TRUE.
-         ENDIF
+         fix_required=fix_required .OR. uratio > ucrit
+      ENDIF
+      IF(fix_required)THEN
+         CALL ode_fixup(sing_flag,.FALSE.)
+         IF(diagnose)CALL ode_test_fixup
+         new=.TRUE.
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
