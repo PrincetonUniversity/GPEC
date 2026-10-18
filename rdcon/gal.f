@@ -2078,6 +2078,32 @@ c-----------------------------------------------------------------------
       COMPLEX(r8),DIMENSION(:,:,:), ALLOCATABLE :: sol,sol_cut,dsol
       TYPE(cell_type), POINTER :: cell
 c-----------------------------------------------------------------------
+c     cell grid for the netcdf output, whatever the output flags.
+c-----------------------------------------------------------------------
+      DO iintvl=0,msing
+         DO icell=1,gal%nx
+            cell=>gal%intvl(iintvl)%cell(icell)
+            j=iintvl*gal%nx+icell
+            cellinfos%etypes(j)=cell%etype
+            SELECT CASE(cell%etype)
+            CASE("res")
+               cellinfos%etypes_int(j)=1
+            CASE("ext")
+               cellinfos%etypes_int(j)=2
+            CASE("ext1")
+               cellinfos%etypes_int(j)=3
+            CASE("ext2")
+               cellinfos%etypes_int(j)=4
+            CASE DEFAULT
+               cellinfos%etypes_int(j)=0
+            END SELECT
+            cellinfos%icell(j)=icell
+            cellinfos%iintvl(j)=iintvl
+            cellinfos%x1(j)=cell%x(1)
+            cellinfos%x2(j)=cell%x(2)
+         ENDDO
+      ENDDO
+c-----------------------------------------------------------------------
 c     check flag
 c-----------------------------------------------------------------------
       IF (.NOT.(bin_delmatch.OR.out_galsol.OR.bin_galsol)) RETURN
@@ -2098,33 +2124,23 @@ c-----------------------------------------------------------------------
       DO iintvl=0,msing
          DO icell=1,gal%nx
             cell=>gal%intvl(iintvl)%cell(icell)
-            cellinfos%etypes(iintvl*gal%nx+icell)=cell%etype
             SELECT CASE(cell%etype)
             CASE("res")
                psi(ip:ip+interp_np_res-1)=cell%x(1)+
      $                                     (cell%x(2)-cell%x(1))*xvarres
-               cellinfos%etypes_int(iintvl*gal%nx+icell)=1
             CASE("ext")
                psi(ip:ip+interp_np_res-1)=cell%x(1)+
      $                                     (cell%x(2)-cell%x(1))*xvarres
-               cellinfos%etypes_int(iintvl*gal%nx+icell)=2
             CASE("ext1")
                psi(ip:ip+interp_np-1)=cell%x(1)+
      $                                        (cell%x(2)-cell%x(1))*xvar
-               cellinfos%etypes_int(iintvl*gal%nx+icell)=3
             CASE("ext2")
                psi(ip:ip+interp_np-1)=cell%x(1)+
      $                                        (cell%x(2)-cell%x(1))*xvar
-               cellinfos%etypes_int(iintvl*gal%nx+icell)=4
             CASE("none")
                psi(ip:ip+interp_np-1)=cell%x(1)+
      $                                        (cell%x(2)-cell%x(1))*xvar
-               cellinfos%etypes_int(iintvl*gal%nx+icell)=0
             END SELECT
-            cellinfos%icell(iintvl*gal%nx+icell)=icell
-            cellinfos%iintvl(iintvl*gal%nx+icell)=iintvl
-            cellinfos%x1(iintvl*gal%nx+icell)=cell%x(1)
-            cellinfos%x2(iintvl*gal%nx+icell)=cell%x(2)
             IF (cell%extra=="right".AND.cell%etype=="res")
      $         issing(ip)=.TRUE.
             IF (cell%etype=="res".OR.cell%etype=="ext") THEN
