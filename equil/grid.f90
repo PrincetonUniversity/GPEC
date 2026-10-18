@@ -373,5 +373,31 @@
        return
     end function logspace
     
+    !=======================================================================
+    function clipspace(xs,xmin,xmax)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Restrict an existing grid to [xmin,xmax].
+    !
+    !*ARGUMENTS:
+    !    xs : real array (in)
+    !       Increasing grid.
+    !    xmin : real (in)
+    !       Grid minimum.
+    !    xmax : real (in)
+    !       Grid maximum.
+    !
+    !*RETURNS:
+    !     clipspace : real array.
+    !        xmin, the points of xs strictly between xmin and xmax, xmax.
+    !-----------------------------------------------------------------------
+        ! declare function and arguments
+        real(r8), dimension(:), intent(in) :: xs
+        real(r8), intent(in) :: xmin, xmax
+        real(r8), dimension(:), allocatable :: clipspace
+
+        clipspace = (/xmin, pack(xs, xs > xmin .and. xs < xmax), xmax/)
+        return
+    end function clipspace
     
     end module grid_mod
