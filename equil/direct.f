@@ -57,9 +57,10 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(2, mpsi+1) :: xdx
       REAL(r8), DIMENSION(3,3) :: v
 
-      REAL(r8) :: xm,dx,rholow,rhohigh
+      REAL(r8) :: xm,dx,rholow,rhohigh,y4tot,theta
+      REAL(r8), DIMENSION(4) :: dy
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: ys
       TYPE(direct_bfield_type) :: bf
-      TYPE(spline_type) :: ff
 c-----------------------------------------------------------------------
 c     warning.
 c-----------------------------------------------------------------------
@@ -139,17 +140,6 @@ c-----------------------------------------------------------------------
       DO ipsi=mpsi,0,-1
          CALL direct_fl_int(ipsi,y_out,bf)
 c-----------------------------------------------------------------------
-c     fit data to cubic splines.
-c-----------------------------------------------------------------------
-         CALL spline_alloc(ff,istep,4)
-         ff%xs(0:istep)=y_out(0:istep,4)/y_out(istep,4)
-         ff%fs(0:istep,1)=y_out(0:istep,2)**2
-         ff%fs(0:istep,2)=y_out(0:istep,0)/twopi-ff%xs(0:istep)
-         ff%fs(0:istep,3)=bf%f*
-     $        (y_out(0:istep,3)-ff%xs(0:istep)*y_out(istep,3))
-         ff%fs(0:istep,4)=y_out(0:istep,1)/y_out(istep,1)-ff%xs
-         CALL spline_fit(ff,"periodic")
-c-----------------------------------------------------------------------
 c     allocate space for rzphi and define grids.
 c-----------------------------------------------------------------------
          IF(ipsi == mpsi)THEN
@@ -164,15 +154,21 @@ c-----------------------------------------------------------------------
             eqfun%title=(/"  b0  ","      ","      " /)
             eqfun%xs=sq%xs
             eqfun%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
+            ALLOCATE(ys(0:mtheta,0:4))
          ENDIF
 c-----------------------------------------------------------------------
-c     interpolate to uniform grid.
+c     sample the surface at the common straight-fieldline angles.
 c-----------------------------------------------------------------------
+         y4tot=y_out(istep,4)
+         CALL direct_fl_int(ipsi,y_out,bf,y4tot,ys)
          DO itheta=0,mtheta
-            CALL spline_eval(ff,rzphi%ys(itheta),1)
-            rzphi%fs(ipsi,itheta,1:3)=ff%f(1:3)
-            rzphi%fs(ipsi,itheta,4)=(1+ff%f1(4))
-     $           *y_out(istep,1)*twopi*psio
+            theta=rzphi%ys(itheta)
+            CALL direct_fl_der(4,ys(itheta,0),ys(itheta,1:4),dy)
+            rzphi%fs(ipsi,itheta,1)=ys(itheta,2)**2
+            rzphi%fs(ipsi,itheta,2)=ys(itheta,0)/twopi-theta
+            rzphi%fs(ipsi,itheta,3)=bf%f*
+     $           (ys(itheta,3)-theta*y_out(istep,3))
+            rzphi%fs(ipsi,itheta,4)=dy(1)/dy(4)*y4tot*twopi*psio
          ENDDO
 c-----------------------------------------------------------------------
 c     store surface quantities.
@@ -183,7 +179,6 @@ c-----------------------------------------------------------------------
          sq%fs1(ipsi,2)=bf%p1
          sq%fs(ipsi,3)=y_out(istep,1)*twopi*psio
          sq%fs(ipsi,4)=y_out(istep,3)*bf%f/twopi
-         CALL spline_dealloc(ff)
       ENDDO
 c-----------------------------------------------------------------------
 c     close output files.
@@ -428,25 +423,29 @@ c-----------------------------------------------------------------------
       END SUBROUTINE direct_position
 c-----------------------------------------------------------------------
 c     subprogram 4. direct_fl_int.
-c     integrates along field line.
+c     integrates along field line; with y4tot, a second pass also
+c     samples y at the straight-fieldline angles rzphi%ys.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE direct_fl_int(ipsi,y_out,bf)
+      SUBROUTINE direct_fl_int(ipsi,y_out,bf,y4tot,ys)
 
       INTEGER, INTENT(IN) :: ipsi
       REAL(r8), DIMENSION(0:,0:), INTENT(OUT) :: y_out
       TYPE(direct_bfield_type), INTENT(OUT) :: bf
+      REAL(r8), INTENT(IN), OPTIONAL :: y4tot
+      REAL(r8), DIMENSION(0:,0:), INTENT(OUT), OPTIONAL :: ys
 
       CHARACTER(64) :: message
 
       INTEGER, PARAMETER :: neq=4,liw=30,lrw=22+neq*16
-      INTEGER :: iopt,istate,itask,itol,jac,mf,ir
+      INTEGER :: iopt,istate,itask,itol,jac,mf,ir,js,it,iflag
       INTEGER, DIMENSION(liw) :: iwork
       REAL(r8), PARAMETER :: eps=1e-12
       REAL(r8) :: atol,rtol,rfac,deta,r,z,eta,err,psi0,psifac,dr
-      REAL(r8), DIMENSION(neq) :: y
+      REAL(r8) :: eta0,y40,y4j,t,res
+      REAL(r8), DIMENSION(neq) :: y,dky
       REAL(r8), DIMENSION(lrw) :: rwork
 c-----------------------------------------------------------------------
 c     format statements.
@@ -485,6 +484,8 @@ c-----------------------------------------------------------------------
       deta=twopi/mtheta
       y=0
       y(2)=SQRT((r-ro)**2+(z-zo)**2)
+      IF(PRESENT(ys))ys(0,:)=(/eta,y/)
+      js=1
 c-----------------------------------------------------------------------
 c     set up integrator parameters.
 c-----------------------------------------------------------------------
@@ -502,7 +503,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write header.
 c-----------------------------------------------------------------------
-      IF(out_fl)THEN
+      IF(out_fl .AND. .NOT. PRESENT(ys))THEN
          WRITE(out_2d_unit,10)ipsi,psifac
          WRITE(out_2d_unit,20)
       ENDIF
@@ -520,9 +521,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute and print output for each step.
 c-----------------------------------------------------------------------
-         IF(out_fl)WRITE(out_2d_unit,30)
+         IF(out_fl .AND. .NOT. PRESENT(ys))WRITE(out_2d_unit,30)
      $        istep,eta,rwork(11),y(1:2),r,z,bf%psi,err
-         IF(bin_fl)WRITE(bin_2d_unit)
+         IF(bin_fl .AND. .NOT. PRESENT(ys))WRITE(bin_2d_unit)
      $        REAL(eta,4),REAL(y(1:2),4),REAL(r,4),REAL(z,4),REAL(err,4)
 c-----------------------------------------------------------------------
 c     advance differential equations.
@@ -530,11 +531,34 @@ c-----------------------------------------------------------------------
          IF(eta >= twopi .OR. istep >= enstep  .OR.  istate < 0
      $        .OR. ABS(err) >= 1)EXIT
          istep=istep+1
+         eta0=eta
+         y40=y(4)
          CALL lsode(direct_fl_der,neq,y,eta,twopi,itol,rtol,atol,
      $        itask,istate,iopt,rwork,lrw,iwork,liw,jac,mf)
+c-----------------------------------------------------------------------
+c     sample the step at the angles it covers: Newton on lsode's
+c     interpolant for y(4) = theta*y4tot, then y there.
+c-----------------------------------------------------------------------
+         IF(.NOT. PRESENT(ys))CYCLE
+         DO WHILE(js < mtheta)
+            y4j=rzphi%ys(js)*y4tot
+            IF(y4j > y(4))EXIT
+            t=eta0+(eta-eta0)*(y4j-y40)/(y(4)-y40)
+            DO it=1,20
+               CALL dintdy(t,0,rwork(21),neq,dky,iflag)
+               res=dky(4)-y4j
+               CALL dintdy(t,1,rwork(21),neq,dky,iflag)
+               t=MIN(MAX(t-res/dky(4),eta0),eta)
+               IF(ABS(res) <= eps*y4tot)EXIT
+            ENDDO
+            CALL dintdy(t,0,rwork(21),neq,dky,iflag)
+            ys(js,:)=(/t,dky/)
+            js=js+1
+         ENDDO
       ENDDO
-      IF(out_fl)WRITE(out_2d_unit,20)
-      IF(bin_fl)WRITE(bin_2d_unit)
+      IF(PRESENT(ys))ys(mtheta,:)=(/eta,y/)
+      IF(out_fl .AND. .NOT. PRESENT(ys))WRITE(out_2d_unit,20)
+      IF(bin_fl .AND. .NOT. PRESENT(ys))WRITE(bin_2d_unit)
 c-----------------------------------------------------------------------
 c     abort if istep > enstep.
 c-----------------------------------------------------------------------
