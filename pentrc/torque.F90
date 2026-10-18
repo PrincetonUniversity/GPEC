@@ -1287,6 +1287,12 @@ module torque
             xlast = x
             call lsode(tintgrnd, neqarray, y, x, xout, itol, rtol,&
                 atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
+            if (istate < 0) then
+                write(*,'(a,i0,a,es24.15,a,a)') &
+                    'PENTRC radial LSODE ISTATE=',istate, &
+                    ' at psi=',x,' method=',trim(method)
+                error stop 'ERROR: tintgrl_lsode - radial integration failed.'
+            endif
             ! Export the surface response, rather than the derivative of
             ! LSODE's integral polynomial. At TCRIT, returned x can exceed
             ! internal TN by a few ulps: DINTDY then leaves dky stale. Direct
