@@ -407,7 +407,7 @@ c-----------------------------------------------------------------------
          intvl%x(ixmax)=psihigh
       ELSE
          x1=sing(ising+1)%psifac
-         nq1=ABS(sing(ising+1)%q1)
+         nq1=ABS(nn*sing(ising+1)%q1)
          intvl%x(nx)=x1
          IF (gal_xmin_flag .AND. sing1_flag) THEN
             CALL sing1_xmin(ising+1,gal_eps_xmin,myxmin)
