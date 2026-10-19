@@ -750,7 +750,7 @@ c-----------------------------------------------------------------------
          r_vec(itheta) = ro + rfac*COS(eta)
          jacs(itheta) = jac
 
-         w(1,1) = (1.0+ rzphi%fy(2))*twopi**2*rfac*r_vec(itheta)/jac
+         w(1,1) = (1.0_r8+ rzphi%fy(2))*twopi**2*rfac*r_vec(itheta)/jac
          w(1,2) = -rzphi%fy(1)*pi*r_vec(itheta)/(rfac*jac)
          
          w(2,1) = -twopi**2*rfac*r_vec(itheta)*rzphi%fx(2)/jac
@@ -1383,7 +1383,7 @@ c-----------------------------------------------------------------------
          r_val = ro + rfac*COS(eta)
 
 c        Compute contravariant metrics
-         w(1,1) = (1.0+ rzphi%fy(2))*(twopi**2)*rfac*r_val/jac
+         w(1,1) = (1.0_r8+ rzphi%fy(2))*(twopi**2)*rfac*r_val/jac
          w(1,2) = -rzphi%fy(1)*pi*r_val/(rfac*jac)
          
          w(2,1) = -(twopi**2)*rfac*r_val*rzphi%fx(2)/jac
@@ -1540,8 +1540,10 @@ c     comparable magnitude, using C = Q + V, V = xi_n mu0 j x n_hat:
 c        A     = int |Q|^2 / mu0            B     = int 2 Re(V*.Q) / mu0
 c        Cpar  = int mu0 sigma^2 B^2 xin^2  (= gpeq_dst's dst2)
 c        Iperp = int mu0 p'^2 |grad psi|^2 xin^2 / B^2
-c     each on the jac measure, as int (..) J dtheta / mthsurf. The
-c     terms satisfy epf = A + B + Cpar + Iperp to roundoff.
+c     each on the jac measure, as int (..) J dtheta / mthsurf. epf
+c     uses the Fourier-truncated C while the four terms are built
+c     pointwise, so epf - (A + B + Cpar + Iperp) measures the
+c     truncation error and shrinks as harmonics are added.
 c     Assumes gpeq_prep_c(psi) has been called for this psi.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_epfterms(psi, A_int, B_int, Iperp_int, Cpar_int,

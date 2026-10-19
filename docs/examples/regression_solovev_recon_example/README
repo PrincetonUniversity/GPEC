@@ -1,7 +1,7 @@
 Soloviev Energy Decomposition Regression Example
 ================================================
 
-This example checks the GPEC ideal energy decomposition (effective_field_flag) against the DCON eigenvalue it reconstructs. It reuses the Soloviev equilibrium of regression_solovev_ideal_example (sol.in, equil.in, vac.in are copies). dcon.in differs only in delta_mlow=delta_mhigh=8: the decomposition is built in real space and Fourier truncated, so the default 8 poloidal harmonics leave a ~21% error, while 32 harmonics bring it to 0.4%.
+This example checks the GPEC ideal energy decomposition (effective_field_flag) against the DCON eigenvalue it reconstructs. It reuses the Soloviev equilibrium of regression_solovev_ideal_example (sol.in, equil.in, vac.in are copies). dcon.in differs only in delta_mlow=delta_mhigh=8: the effective-field form relies on identities that hold only for untruncated fields, so the default band leaves a ~21% error, while 8 extra harmonics on each side bring it to 0.4%. (standard_form_flag matches ep(1) to 0.02% even with the default band.)
 
 gpec.in selects the least stable eigenmode (mode_flag=t, mode=1) with reg_flag=f and no external field, turns off the usual outputs, and sets effective_field_flag=t and curl_check_flag=t.
 
@@ -15,7 +15,7 @@ check_recon.py reads the last GPEC_RECON block of gpec.log (gpec.log is appended
 
 - the recon psi range equals the DCON psi range (psilow to psilim),
 - dW_p(recon-normalize) matches DCON ep(1) within 2% relative, and
-- the curl check reports PASS.
+- the curl check reports PASS (a consistency check on C; it passes even when the truncated run misses the energy).
 
 Reference values (gfortran 15, macOS arm64)::
 

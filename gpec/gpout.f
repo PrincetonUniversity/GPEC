@@ -7910,7 +7910,7 @@ c        2 dW_p = A + B + Iperp - dst1 - dst3 (dst2 = Cpar cancels).
          WRITE(u_int,'(a)') "c  Bernstein |C|^2 decomposition (direct)"
          WRITE(u_int,'(a)') "c  identity: epf = A + B + Cpar + Iperp"
          WRITE(u_int,'(a)') "c  identity_res = epf - A - B - Cpar"//
-     $        " - Iperp (should be near zero)"
+     $        " - Iperp (Fourier truncation error)"
          WRITE(u_int,'(a)') "c  Cpar should equal dst2 from recon1"//
      $        " (compare against gpec_recon_integration_sol*.out)"
          WRITE(u_int,'(a,a)') "c  recon_int = ", TRIM(recon_int)
@@ -8021,8 +8021,8 @@ c     (the parallel-current piece dst2 = Cpar cancels identically).
       WRITE(*,'(a,es17.8e3)') "  Iperp_total   = ", Iperp_total
       WRITE(*,'(a,es17.8e3)') "  epf_total     = ", epf_total
       WRITE(*,'(a,es17.8e3)') "  identity_res  = ", identity_residual
-      WRITE(*,'(a)') "  (identity_res should be ~ 0. Cpar = dst2"//
-     $     " from recon1, not checked here.)"
+      WRITE(*,'(a)') "  (identity_res is the Fourier truncation"//
+     $     " error; it shrinks as harmonics are added.)"
       WRITE(*,'(a,es17.8e3)') "  dW_p(recon3)         = ", dw_raw3
       WRITE(*,'(a,es17.8e3)') "  dW_p(recon3-normalize)= ", dw_dcon3
       WRITE(*,'(a,a,a,es17.8e3)') "  GPEC ep(", TRIM(smode), ") = ",
@@ -8048,8 +8048,8 @@ c     (the parallel-current piece dst2 = Cpar cancels identically).
          WRITE(u_log,'(a,es17.8e3)') "    epf_total    = ", epf_total
          WRITE(u_log,'(a,es17.8e3)') "    identity_res = ",
      $        identity_residual
-         WRITE(u_log,'(a)') "  (identity_res should be ~0;"//
-     $        " Cpar should match dst2 from recon1.)"
+         WRITE(u_log,'(a)') "  (identity_res is the Fourier"//
+     $        " truncation error; Cpar should match dst2.)"
          WRITE(u_log,'(a,es17.8e3)') "  dW_p(recon3)         = ",
      $        dw_raw3
          WRITE(u_log,'(a,es17.8e3)') "  dW_p(recon3-normalize)= ",

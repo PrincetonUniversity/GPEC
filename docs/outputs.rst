@@ -209,10 +209,13 @@ A number of output files have a similar structure. Here the * in the file name i
     **Info** The false perturbed magnetic field in the vacuum region on the \left(r,z,\phi\right) grid calculated using the GPEC boundary surface current from the external fields alone.
 
 Energy Decomposition Outputs
+----------------------------
 
 These outputs reconstruct the ideal plasma energy :math:`\delta W_p` of a single DCON eigenmode on every flux surface and break it into physically distinct terms. They require a pure DCON eigenmode: set mode_flag=t, choose mode (1 is the least stable eigenmode), and keep reg_flag=f and coil_flag=data_flag=harmonic_flag=f. GPEC stops at input if any of the three decomposition flags is set otherwise. The derivations, integrands and the meaning of every printed quantity are documented in :download:`docs/tex/recon/main.tex <tex/recon/main.tex>` (build with pdflatex and bibtex).
 
 Each route prints a summary to the terminal that ends with its :math:`\delta W_p` total, the same total in DCON normalization (dW_p(recon-normalize) and its analogues), the DCON eigenvalue ep(mode) it should reproduce, and the :math:`\psi` range it integrated over beside the DCON range psilow to psilim. In the files below <mode> is the selected mode. recon_out=f keeps only the terminal summary, and recon_int ("spline", the default, or "trapezoid") selects the radial quadrature.
+
+The three routes converge differently with the number of poloidal harmonics. The standard form (standard_form_flag) reproduces the DCON eigenvalue at any truncation, because it evaluates the same Galerkin energy DCON minimizes. The two effective-field forms rely on identities that hold only for the untruncated fields, so they need extra harmonics: in the Soloviev regression example they miss ep(1) by about 20% with the default band and agree to 0.4% with delta_mlow=delta_mhigh=8. The curl check and the identity residual measure this truncation; a PASS on the curl check does not by itself confirm the energy.
 
 gpec_recon_*_sol<mode>.out
 
@@ -237,14 +240,6 @@ gpec_recon3_terms_sol<mode>.out, gpec_recon3_integration_sol<mode>.out
     **Flag** effective_field_terms_flag
 
     **Info** Split of :math:`|\mathbf{C}|^2 = |\mathbf{Q}|^2 + 2\mathrm{Re}(\mathbf{V}^*\cdot\mathbf{Q}) + |\mathbf{V}|^2` into A, B, Cpar and Iperp, with the identity check epf = A + B + Cpar + Iperp, per surface (terms) and integrated (integration).
-
-MATCH Outputs
-
-solutions.bin, solutions<n>.bin
-
-    **Flag** sol_num (match.in)
-
-    **Info** Ideal Euler-Lagrange solution built from DCON eigenfunction sol_num (1 is the most unstable). sol_num=1 writes solutions.bin; sol_num=n>1 writes solutions<n>.bin so several eigenfunctions can be kept side by side.
 
 Binary File Outputs
 -------------------
@@ -275,3 +270,8 @@ bnormal_spectrum.bin
 
     **Info** Surfmn type contours of the normal perturbed magnetic fields as a function of poloidal harmonic number and \Psi_{N}.
 
+solutions.bin, solutions<n>.bin
+
+    **Flag** sol_num (match.in, MATCH)
+
+    **Info** Ideal Euler-Lagrange solution built from DCON eigenfunction sol_num (1 is the most unstable). sol_num=1 writes solutions.bin; sol_num=n>1 writes solutions<n>.bin so several eigenfunctions can be kept side by side.
