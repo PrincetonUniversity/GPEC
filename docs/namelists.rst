@@ -29,6 +29,14 @@ This namelist sets the inputs, controls the behavior, and determines the outputs
 .. include:: ../input/gpec.in
    :literal:
 
+The MATCH Namelist
+==================
+
+This namelist controls the MATCH code, including which DCON eigenfunction (sol_num) it reconstructs.
+
+.. include:: ../input/match.in
+   :literal:
+
 The PENTRC Namelist
 ====================
 

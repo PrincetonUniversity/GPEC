@@ -1,0 +1,27 @@
+Soloviev Energy Decomposition Regression Example
+================================================
+
+This example checks the GPEC ideal energy decomposition (effective_field_flag) against the DCON eigenvalue it reconstructs. It reuses the Soloviev equilibrium of regression_solovev_ideal_example (sol.in, equil.in, vac.in are copies). dcon.in differs only in delta_mlow=delta_mhigh=8: the effective-field form relies on identities that hold only for untruncated fields, so the default band leaves a ~21% error, while 8 extra harmonics on each side bring it to 0.4%. (standard_form_flag matches ep(1) to 0.02% even with the default band.)
+
+gpec.in selects the least stable eigenmode (mode_flag=t, mode=1) with reg_flag=f and no external field, turns off the usual outputs, and sets effective_field_flag=t and curl_check_flag=t.
+
+Run from this directory::
+
+  ../../../bin/dcon
+  ../../../bin/gpec
+  python3 check_recon.py
+
+check_recon.py reads the last GPEC_RECON block of gpec.log (gpec.log is appended to, so delete it before re-running by hand) and passes when
+
+- the recon psi range equals the DCON psi range (psilow to psilim),
+- dW_p(recon-normalize) matches DCON ep(1) within 2% relative, and
+- the curl check reports PASS (a consistency check on C; it passes even when the truncated run misses the energy).
+
+Reference values (gfortran 15, macOS arm64)::
+
+  recon psi range       = 1.0E-04  9.9999E-01   (same as DCON psi range)
+  dW_p(recon-normalize) = -1.04353063E+001
+  DCON ep(1)            = -1.03926066E+001   (relative difference 4.1E-03)
+  C verify: PASS        (rel 2.8E-13 against tol 1E-08)
+
+The 2% tolerance leaves room for compiler and optimization differences while still catching a broken decomposition: the truncated 8-harmonic run above misses by 21%.
