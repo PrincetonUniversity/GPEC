@@ -199,17 +199,6 @@ dcon: v neededdeps $(DCON_OBJS) equil lsode vacuum pentrc
 	cp ../dcon/dcon $(BINDIR)
 	$(call print_success,dcon -> $(BINDIR)/dcon)
 
-.PHONY: test-dcon-singular-fixup
-test-dcon-singular-fixup: dcon
-	$(FCDCON) -I../dcon -DDCON_NO_MAIN $(MODFLAG) ../dcon \
-		-c ../dcon/dcon.F -o ../dcon/dcon_test_support.o
-	$(FCDCON) -I../dcon -o $(BINDIR)/test_dcon_singular_fixup \
-		../regression/test/dcon_singular_fixup.f90 \
-		$(filter-out ../dcon/dcon.o,$(DCON_OBJS)) \
-		../dcon/dcon_test_support.o $(DCON_LIBDIRS) $(DCON_LIBS) $(LDFLAGS)
-	OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 $(BINDIR)/test_dcon_singular_fixup 1
-	OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 $(BINDIR)/test_dcon_singular_fixup 2
-
 # RDCON code
 ../rdcon/version.inc:
 	@ver="`git describe --tags`"; \

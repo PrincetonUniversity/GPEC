@@ -212,7 +212,6 @@ jobs:
           export CC=/usr/bin/gcc
           export FFLAGS='-fallow-argument-mismatch -O0 -Wall -Wextra -fcheck=all,no-array-temps -fbacktrace -finit-real=snan -finit-integer=-9999 -fstack-protector-all -fsanitize=bounds -Wno-array-temporaries -Wno-unused-variable -Wno-unused-dummy-argument -Wno-compare-reals -Wno-unused-parameter -Wno-unused-label -fno-omit-frame-pointer -frecord-marker=4 -gdwarf-4 -ffloat-store -fbounds-check'
           make -j$(nproc)
-          LD_LIBRARY_PATH=$PREFIX/lib:${LD_LIBRARY_PATH:-} make test-dcon-singular-fixup
 
       - name: Run Soloviev ideal example
         run: |

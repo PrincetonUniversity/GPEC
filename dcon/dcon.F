@@ -14,7 +14,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-#ifndef DCON_NO_MAIN
       PROGRAM dcon
       USE equil_mod
       USE equil_out_mod
@@ -319,7 +318,6 @@ c     terminate.
 c-----------------------------------------------------------------------
       CALL program_stop("Normal termination.")
       END PROGRAM dcon
-#endif
 c-----------------------------------------------------------------------
 c     subprogram 2. dcon_dealloc.
 c     deallocates internal memory.
