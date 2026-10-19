@@ -158,6 +158,31 @@ policy, not evidence of resistive physics. The unconditional smoothing in
 ``gpout_pmodb`` even with ``reg_flag=f`` is a separate verified output bug.
 
 
+A general-J continuum error budget (verified R6-R7) is available without
+assuming a diagonal regularizer. Let U be the derivative selected by
+``gpeq_sol``, V the derivative used by pmodb divergence, and
+:math:`\Delta_s=\xi_s-\chi_1(q\xi_{rec}^\theta-\xi_{rec}^\zeta)`.
+Writing :math:`B_\theta,B_\zeta` for covariant components gives
+
+.. math::
+
+   \mathrm{lagb}+\mathrm{Bdivxprp}+\mathrm{Bkxprp}
+   =-\frac{\xi_{rec,\perp}^\zeta}{q}\partial_\theta B
+   +\frac{2\Delta_s}{\chi_1q}\partial_\theta B
+   +\frac{B_\theta\partial_\zeta\Delta_s-B_\zeta\partial_\theta\Delta_s}
+          {\mathcal J B}
+   +B(V-U)-\frac{\boldsymbol\xi_{rec,\perp}\cdot\mathbf F}{B}.
+
+This uses consistent continuum geometry and the field norm. Finite Fourier
+truncation and spline errors are additional numerical errors, not part of F.
+The derivative term cancels when V=U, even if both are regularized; in the
+old reg_flag=f output V differs from U. With regularization enabled,
+Delta_s can be nonzero and leaves the two explicit closure terms. Thus a
+large derivative in Bdivxprp alone does not measure its contribution to the
+net mismatch. This budget separates the candidate causes of finding (i),
+without claiming a numerical allocation of the original edge residual.
+
+
 
 What consumers need
 ===================

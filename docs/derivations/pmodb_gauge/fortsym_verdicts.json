@@ -6,19 +6,19 @@
       "label": "G1.1",
       "equation": "J dB^psi = GPEC bwp (pointwise)",
       "verdict": "PROVED",
-      "seconds": 0.001
+      "seconds": 0.0
     },
     {
       "label": "G1.2",
       "equation": "J dB^theta = GPEC bwt (pointwise)",
       "verdict": "PROVED",
-      "seconds": 0.001
+      "seconds": 0.0
     },
     {
       "label": "G1.3",
       "equation": "J dB^zeta = GPEC bwz (pointwise)",
       "verdict": "PROVED",
-      "seconds": 0.001
+      "seconds": 0.0
     },
     {
       "label": "G1.4",
@@ -72,43 +72,43 @@
       "label": "G3",
       "equation": "B.dB = chi1 (bvt + q bvz)/J  (eulb times |B|)",
       "verdict": "PROVED",
-      "seconds": 0.019
+      "seconds": 0.009
     },
     {
       "label": "G4.1",
       "equation": "J xi_perp^theta = xmt - (chi1/B)^2 (xvt + q xvz)/J",
       "verdict": "PROVED",
-      "seconds": 0.005
+      "seconds": 0.003
     },
     {
       "label": "G4.2",
       "equation": "J xi_perp^zeta = xmz - q (chi1/B)^2 (xvt + q xvz)/J",
       "verdict": "PROVED",
-      "seconds": 0.004
+      "seconds": 0.002
     },
     {
       "label": "G4.3",
       "equation": "B_i xi_perp^i = 0 for xi_perp^i = xi^i - (B_j xi^j / B_k B^k) B^i",
       "verdict": "PROVED",
-      "seconds": 0.001
+      "seconds": 0.0
     },
     {
       "label": "G4.4",
       "equation": "xi_perp^theta = xms/(chi1 q) + xmz/(J q) - (chi1/(J B))^2 (xvt + q xvz)  (curvfun, gpout.f)",
       "verdict": "PROVED",
-      "seconds": 0.008
+      "seconds": 0.004
     },
     {
       "label": "G5.1",
       "equation": "xi_g^zeta = 0 for lam = -xi_perp^zeta / B^zeta",
       "verdict": "PROVED",
-      "seconds": 0.008
+      "seconds": 0.006
     },
     {
       "label": "G5.2",
       "equation": "xi_g^theta = xi_s/(chi1 q)",
       "verdict": "PROVED",
-      "seconds": 0.013
+      "seconds": 0.007
     },
     {
       "label": "G5.2b",
@@ -120,37 +120,37 @@
       "label": "G5.3",
       "equation": "curl(xi_g x B) = curl(xi_perp x B)  (theta component)",
       "verdict": "PROVED",
-      "seconds": 0.029
+      "seconds": 0.017
     },
     {
       "label": "G5.4",
       "equation": "lagb (gpout.f) = dB_L(xi_g), the xi^zeta = 0 gauge",
       "verdict": "PROVED",
-      "seconds": 0.024
+      "seconds": 0.012
     },
     {
       "label": "G5.5",
       "equation": "lagb - dB_L(xi_perp) = -(xi_perp^zeta/q) d_theta B",
       "verdict": "PROVED",
-      "seconds": 0.019
+      "seconds": 0.008
     },
     {
       "label": "G5.6",
       "equation": "llagb (gpdiag.f) = dB_L(xi_perp)",
       "verdict": "PROVED",
-      "seconds": 0.018
+      "seconds": 0.008
     },
     {
       "label": "G5.7",
       "equation": "dB_L(xi, div-free) = lagb + (xmz/(J q)) d_theta B",
       "verdict": "PROVED",
-      "seconds": 0.013
+      "seconds": 0.009
     },
     {
       "label": "G5.8",
       "equation": "xi_perp^zeta = -(B_theta xi_s/chi1 + q B_psi xi^psi)/(B_theta + q B_zeta)",
       "verdict": "PROVED",
-      "seconds": 0.01
+      "seconds": 0.005
     },
     {
       "label": "G7.1",
@@ -162,7 +162,7 @@
       "label": "G7.2",
       "equation": "J B^2 (xi_perp.grad B + mu0 p' xi^psi/B)/B = sband xsp + tband xms/chi1, xi = e_theta",
       "verdict": "PROVED",
-      "seconds": 0.001
+      "seconds": 0.0
     },
     {
       "label": "G7.3",
@@ -186,7 +186,7 @@
       "label": "R1",
       "equation": "J D_effective(reg) = (1-R)(J R xsp1 + J' xsp)",
       "verdict": "PROVED",
-      "seconds": 0.001
+      "seconds": 0.0
     },
     {
       "label": "R1a",
@@ -204,19 +204,31 @@
       "label": "R5",
       "equation": "llagb_code - (eulb+xi_rec_perp.grad B) = (1-R) xms Bt/(chi1 q)",
       "verdict": "PROVED",
-      "seconds": 0.001
+      "seconds": 0.0
     },
     {
       "label": "R2",
       "equation": "J div xi (R = 1) = 0",
       "verdict": "PROVED",
-      "seconds": 0.002
+      "seconds": 0.001
     },
     {
       "label": "R3",
       "equation": "J div dB (reg) = 2 pi i chi1 (m - n q)(1 - R) xsp1",
       "verdict": "PROVED",
       "seconds": 0.0
+    },
+    {
+      "label": "R6",
+      "equation": "H_parallel = B(X1-U)+(B_theta Delta_zeta-B_zeta Delta_theta)/(J B)",
+      "verdict": "PROVED",
+      "seconds": 0.0
+    },
+    {
+      "label": "R7",
+      "equation": "lagb+Bdivxprp+Bkxprp = -xi_rec_perp^zeta Bt/q + 2 Delta Bt/(chi1 q) + curl_delta + B(V-U) - xi_rec_perp.F/B",
+      "verdict": "PROVED",
+      "seconds": 0.001
     },
     {
       "label": "E4.1",
@@ -234,7 +246,7 @@
       "label": "G8.2",
       "equation": "idcon zband2/zband3 normalization from B**2=chi1**2*(g22+2qg23+q**2g33)/J**2",
       "verdict": "PROVED",
-      "seconds": 0.001
+      "seconds": 0.0
     },
     {
       "label": "Q1.hamada",
@@ -258,7 +270,7 @@
       "label": "Q1.boozer",
       "equation": "T_a(xi+lambda B) = T_a(xi)+B.grad(lambda B**a)/B**a",
       "verdict": "PROVED",
-      "seconds": 0.001
+      "seconds": 0.0
     },
     {
       "label": "Q2.boozer",

@@ -410,6 +410,38 @@ def regularisation(sp):
     return out
 
 
+def regularized_column_budget(sp):
+    """General-J continuum budget, allowing independent field/output derivatives.
+
+    U is the derivative selected by gpeq_sol; V is the derivative used in
+    gpout divergence. Delta=xi_s-chi1(q xi_rec^theta-xi_rec^zeta).
+    F denotes xi_rec_perp.((curl B)xB-mu0 grad p)/B, in Tesla.
+    Metric/field-norm consistency and C1/C2 are assumed; finite truncation
+    errors are not folded into the physical force residual.
+    """
+    c,J,B,q,Bt,Bt_cov,Delta,Dt,Dz,X1,U,V,D,K,F,Z = sp.symbols(
+        "chi J B q Bt Btheta Delta Delta_theta Delta_zeta X1 U V D K F Z")
+    Bz_cov=(J*B**2/c-Bt_cov)/q
+    # J-weighted induction mismatch: supplied field minus curl(xi_rec x B).
+    Ht=c*(X1-U)+Dz
+    Hz=c*q*(X1-U)-Dt
+    Hpar=(Bt_cov*Ht+Bz_cov*Hz)/(J*B)
+    curl_delta=(Bt_cov*Dz-Bz_cov*Dt)/(J*B)
+    out=[("R6", "H_parallel = B(X1-U)+(B_theta Delta_zeta-B_zeta Delta_theta)/(J B)",
+          Hpar-B*(X1-U)-curl_delta)]
+    g=Delta*Bt/(c*q)
+    # C1 for the reconstructed perpendicular displacement, plus the supplied H.
+    LLrec=-B*(D+K)+Hpar
+    LLcode=LLrec+g
+    Lagcode=LLcode-Z*Bt/q
+    BDcode=B*(D+V-X1)
+    BKcode=B*K+g-F
+    budget=-Z*Bt/q+2*g+curl_delta+B*(V-U)-F
+    out.append(("R7", "lagb+Bdivxprp+Bkxprp = -xi_rec_perp^zeta Bt/q + 2 Delta Bt/(chi1 q) + curl_delta + B(V-U) - xi_rec_perp.F/B",
+                Lagcode+BDcode+BKcode-budget))
+    return out
+
+
 def cgl(sp):
     """K1-K2: the PENTRC/GPEC.jl fcgl integrand against the CGL closure.
 
@@ -577,7 +609,7 @@ def jacobian_identity(sp):
 def all_identities(sp):
     return (induction(sp) + fourier_symbols(sp) + incompressible_closure(sp)
             + columns(sp) + pentrc_kappa_matrices(sp)
-            + cartesian_kappa(sp) + regularisation(sp)
+            + cartesian_kappa(sp) + regularisation(sp) + regularized_column_budget(sp)
             + jacobian_identity(sp) + divergence_matrices(sp) + gauge_coordinates(sp) + [c for c in cgl(sp) if not c[0].endswith("neg")] + drive_gauge(sp))
 
 
