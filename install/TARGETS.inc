@@ -214,7 +214,7 @@ RDCON_LIBS = \
 	-llsode \
 	-lequil \
 	-lvac \
-	$(MATHLIBS) \
+	$(RDCON_MATHLIBS) \
 	$(NETCDFLIBS) \
 	$(FCLIBS) \
 	$(NETCDF_EXTRA_LIBS)
