@@ -72,13 +72,13 @@
       "label": "G3",
       "equation": "B.dB = chi1 (bvt + q bvz)/J  (eulb times |B|)",
       "verdict": "PROVED",
-      "seconds": 0.023
+      "seconds": 0.019
     },
     {
       "label": "G4.1",
       "equation": "J xi_perp^theta = xmt - (chi1/B)^2 (xvt + q xvz)/J",
       "verdict": "PROVED",
-      "seconds": 0.006
+      "seconds": 0.005
     },
     {
       "label": "G4.2",
@@ -96,19 +96,19 @@
       "label": "G4.4",
       "equation": "xi_perp^theta = xms/(chi1 q) + xmz/(J q) - (chi1/(J B))^2 (xvt + q xvz)  (curvfun, gpout.f)",
       "verdict": "PROVED",
-      "seconds": 0.011
+      "seconds": 0.008
     },
     {
       "label": "G5.1",
       "equation": "xi_g^zeta = 0 for lam = -xi_perp^zeta / B^zeta",
       "verdict": "PROVED",
-      "seconds": 0.013
+      "seconds": 0.008
     },
     {
       "label": "G5.2",
       "equation": "xi_g^theta = xi_s/(chi1 q)",
       "verdict": "PROVED",
-      "seconds": 0.017
+      "seconds": 0.013
     },
     {
       "label": "G5.2b",
@@ -120,37 +120,37 @@
       "label": "G5.3",
       "equation": "curl(xi_g x B) = curl(xi_perp x B)  (theta component)",
       "verdict": "PROVED",
-      "seconds": 0.049
+      "seconds": 0.029
     },
     {
       "label": "G5.4",
       "equation": "lagb (gpout.f) = dB_L(xi_g), the xi^zeta = 0 gauge",
       "verdict": "PROVED",
-      "seconds": 0.032
+      "seconds": 0.024
     },
     {
       "label": "G5.5",
       "equation": "lagb - dB_L(xi_perp) = -(xi_perp^zeta/q) d_theta B",
       "verdict": "PROVED",
-      "seconds": 0.027
+      "seconds": 0.019
     },
     {
       "label": "G5.6",
       "equation": "llagb (gpdiag.f) = dB_L(xi_perp)",
       "verdict": "PROVED",
-      "seconds": 0.027
+      "seconds": 0.018
     },
     {
       "label": "G5.7",
       "equation": "dB_L(xi, div-free) = lagb + (xmz/(J q)) d_theta B",
       "verdict": "PROVED",
-      "seconds": 0.015
+      "seconds": 0.013
     },
     {
       "label": "G5.8",
       "equation": "xi_perp^zeta = -(B_theta xi_s/chi1 + q B_psi xi^psi)/(B_theta + q B_zeta)",
       "verdict": "PROVED",
-      "seconds": 0.011
+      "seconds": 0.01
     },
     {
       "label": "G7.1",
@@ -199,6 +199,12 @@
       "equation": "chi1(q xi_reconstructed^theta-xi_reconstructed^zeta)=R xms",
       "verdict": "PROVED",
       "seconds": 0.0
+    },
+    {
+      "label": "R5",
+      "equation": "llagb_code - (eulb+xi_rec_perp.grad B) = (1-R) xms Bt/(chi1 q)",
+      "verdict": "PROVED",
+      "seconds": 0.001
     },
     {
       "label": "R2",

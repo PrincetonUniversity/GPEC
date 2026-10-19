@@ -48,6 +48,10 @@ For every ``jac_type`` (G1, G1F) the Jacobian-weighted perturbed field of
 The pmodb columns
 =================
 
+The displacement identifications in this section assume unregularized
+consistent components. The literal lagb expression is valid for both modes;
+the regularized closure defect is given by R4-R5 below.
+
 ``eulb``
    :math:`\delta B_E=\hat{\mathbf b}\cdot\delta\mathbf B`, the Eulerian
    field strength (G3).
@@ -139,6 +143,14 @@ divergence of the reconstructed displacement is instead (R1a)
    =\mathcal J(1-R^2)\partial_\psi\xi^\psi+(1-R)\mathcal J'\xi^\psi.
 
 Also :math:`\chi_1(q\xi_{rec}^\theta-\xi_{rec}^\zeta)=R\xi_s` (R4).
+The diagnostic llagb also differs from the projection of the reconstructed
+contravariant displacement by (R5)
+
+.. math::
+
+   \mathrm{llagb}_{code}-(\delta B_E+\boldsymbol\xi_{rec,\perp}\cdot\nabla B)
+   =(1-R)\frac{\xi_s}{\chi_1 q}\partial_\theta B.
+
 These formulas are for the diagonal model only. Near rational surfaces the
 regularized field, displacement and effective derivative therefore do not
 form one exact ideal-induction pair. This is a limitation of the smoothing
@@ -246,7 +258,8 @@ Finding (ii) from the TC24 reconstruction is a missing division by B in
 the pressure *regressor*, not a GPEC normalization error (P1). For the
 retained ITER n=3 output the original fit gives 0.1677; the corrected
 pressure term plus the gauge term fits coefficients (1,1,1) with relative
-residual about 1e-4. This is numerical corroboration only.
+residual about 1e-4. This is numerical corroboration only; ``docs/derivations/pmodb_gauge/check_output.py``
+reproduces the fit from the pmodb, xclebsch, diagnostic and IDCON ASCII tables.
 
 Finding (i) combines the gauge term, effective-derivative smoothing,
 finite spectral/spline error, and the equilibrium force residual. The

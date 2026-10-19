@@ -394,6 +394,9 @@ def regularisation(sp):
             jdiv_actual-J0*(1-R**2)*X1-(1-R)*J1*X),
            ("R4", "chi1(q xi_reconstructed^theta-xi_reconstructed^zeta)=R xms",
             chi1*(q*xmt-xmz)/J0-R*Xs)]
+    Bt = sp.Symbol("Bt")
+    out.append(("R5", "llagb_code - (eulb+xi_rec_perp.grad B) = (1-R) xms Bt/(chi1 q)",
+                (Xs/(chi1*q)+xmz/(J0*q)-xmt/J0)*Bt-(1-R)*Xs*Bt/(chi1*q)))
     jdiv_unreg = (J0 * X1 + J1 * X + 2 * pi * I * m * xwt.subs(R, 1)
                   - 2 * pi * I * n * xwz.subs(R, 1))
     out.append(("R2", "J div xi (R = 1) = 0", jdiv_unreg))
