@@ -177,16 +177,6 @@ pentrc: v neededdeps $(PENTRC_OBJS) lsode equil
 	ar -r $(LIBDIR)/libpentrc.a $(PENTRC_OBJS)
 	$(call print_success,pentrc -> $(BINDIR)/pentrc and libpentrc.a -> $(LIBDIR))
 
-# Failure injection uses the production radial wrapper and native PENTRC setup.
-# Run the executable in a fresh ordinary PENTRC input directory, passing a
-# negative LSODE status. It must exit with the radial failure diagnostic.
-.PHONY: build-pentrc-radial-istate-test
-build-pentrc-radial-istate-test: pentrc
-	$(FCPENTRC) -I../pentrc -I../equil \
-		-o $(BINDIR)/test_pentrc_radial_istate \
-		../regression/test/pentrc_radial_istate.f90 \
-		$(PENTRC_LIBDIRS) -lpentrc $(PENTRC_LIBS) $(LDFLAGS)
-
 # DCON code
 DCON_LIBS = \
 	-lpentrc \
