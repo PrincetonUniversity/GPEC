@@ -204,7 +204,7 @@ dcon: v neededdeps $(DCON_OBJS) equil lsode vacuum pentrc
 	@ver="`git describe --tags`"; \
 	if [ ! -f $@ ] || ! grep -F "'$$ver'" $@ >/dev/null 2>&1; then \
 		echo ">>> Updating version file"; \
-		echo "      CHARACTER(len=*), PARAMETER :: version ='$$ver'" | tee $@; \
+		printf "      CHARACTER(len=*), PARAMETER :: version =\n     $$ '%s'\n" "$$ver" | tee $@; \
 	else \
 		echo ">>> Git version unchanged!"; \
 	fi
@@ -235,7 +235,7 @@ rdcon: v neededdeps $(RDCON_OBJS) equil lsode vacuum
 	@ver="`git describe --tags`"; \
 	if [ ! -f $@ ] || ! grep -F "'$$ver'" $@ >/dev/null 2>&1; then \
 		echo ">>> Updating version file"; \
-		echo "      CHARACTER(len=*), PARAMETER :: version ='$$ver'" | tee $@; \
+		printf "      CHARACTER(len=*), PARAMETER :: version =\n     $$ '%s'\n" "$$ver" | tee $@; \
 	else \
 		echo ">>> Git version unchanged!"; \
 	fi
@@ -347,7 +347,7 @@ sum: v neededdeps $(SUM_OBJS) equil
 	@ver="`git describe --tags`"; \
 	if [ ! -f $@ ] || ! grep -F "'$$ver'" $@ >/dev/null 2>&1; then \
 		echo ">>> Updating version file"; \
-		echo "      CHARACTER(len=*), PARAMETER :: version ='$$ver'" | tee $@; \
+		printf "      CHARACTER(len=*), PARAMETER :: version =\n     $$ '%s'\n" "$$ver" | tee $@; \
 	else \
 		echo ">>> Git version unchanged!"; \
 	fi
@@ -365,7 +365,7 @@ coil: v neededdeps $(COIL_OBJS)
 	@ver="`git describe --tags`"; \
 	if [ ! -f $@ ] || ! grep -F "'$$ver'" $@ >/dev/null 2>&1; then \
 		echo ">>> Updating version file"; \
-		echo "      CHARACTER(len=*), PARAMETER :: version ='$$ver'" | tee $@; \
+		printf "      CHARACTER(len=*), PARAMETER :: version =\n     $$ '%s'\n" "$$ver" | tee $@; \
 	else \
 		echo ">>> Git version unchanged!"; \
 	fi
