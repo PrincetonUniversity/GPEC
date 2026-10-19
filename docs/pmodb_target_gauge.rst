@@ -41,6 +41,8 @@ real space before the existing output-coordinate transform. Identities are
 exact; numerical output retains GPEC's finite spectral/spline resolution.
 A nonzero resonant source is rejected because no periodic solution exists.
 At a resonant zero source the free homogeneous shift is set to zero.
+Numerically, abs(m-nq)<1e-10 is classified as resonant; a source coefficient
+below 1e-12 times the largest source coefficient is treated as zero there.
 The near-resonant result can be large: this feature applies no smoothing.
 
 The input pair is ``b_X=b_lag_perp`` and the ordinary perpendicular
