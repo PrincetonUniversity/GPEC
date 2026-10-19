@@ -3186,12 +3186,14 @@ c-----------------------------------------------------------------------
      $               "Lagrangian perturbed field") )
          CALL check( nf90_put_att(fncid,bml_id,"units","Tesla") )
          CALL check( nf90_put_att(fncid,bml_id,"jacobian",jac_out) )
+         IF(.NOT.reg_flag)THEN
          CALL check( nf90_def_var(fncid, "b_lag_perp", nf90_double,
      $               (/p_id,m_id,i_id/),bmp_id) )
          CALL check( nf90_put_att(fncid,bmp_id,"long_name",
      $               "Lagrangian perturbed field of xi_perp") )
          CALL check( nf90_put_att(fncid,bmp_id,"units","Tesla") )
          CALL check( nf90_put_att(fncid,bmp_id,"jacobian",jac_out) )
+         ENDIF
          IF(gauge)THEN
             CALL check(nf90_def_var(fncid,TRIM(gauge_name),nf90_double,
      $           (/p_id,m_id,i_id/),target_id))
@@ -3230,7 +3232,8 @@ c-----------------------------------------------------------------------
      $      eulbparmout),AIMAG(eulbparmout)/),(/mstep,lmpert,2/))) )
          CALL check( nf90_put_var(fncid,bml_id,RESHAPE((/REAL(
      $      lagbparmout),AIMAG(lagbparmout)/),(/mstep,lmpert,2/))) )
-         CALL check( nf90_put_var(fncid,bmp_id,RESHAPE((/REAL(
+         IF(.NOT.reg_flag)
+     $        CALL check( nf90_put_var(fncid,bmp_id,RESHAPE((/REAL(
      $      lagbprpmout),AIMAG(lagbprpmout)/),(/mstep,lmpert,2/))) )
          IF(gauge) CALL check(nf90_put_var(fncid,target_id,RESHAPE(
      $        (/REAL(target_out),AIMAG(target_out)/),

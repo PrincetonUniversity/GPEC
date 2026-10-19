@@ -1,9 +1,10 @@
 Optional perturbed-coordinate field strength
 =============================================
 
-With ``pmodb_flag=t``, NetCDF ``b_lag_perp`` supplies
+With ``pmodb_flag=t`` and ``reg_flag=f``, NetCDF ``b_lag_perp`` supplies
 ``eulb+xi_perp.grad B``. It is the perpendicular-displacement value called
-``llagb`` in ``gpdiag_pmodb``. Existing ASCII columns keep their format.
+``llagb`` in ``gpdiag_pmodb``. It is omitted for regularized solutions, whose reconstructed surface
+displacement need not equal xms/chi1. Existing ASCII columns keep their format.
 This scalar alone is not the perturbed-Boozer input to NEO-RT or NEO-2.
 
 Set ``pmodb_gauge_flag=t`` in ``GPEC_OUTPUT`` for an additional NetCDF
@@ -50,8 +51,8 @@ Verification and scope
 -----------------------
 
 ``gen/pmodb_gauge/prove.py`` proves Q1-Q8 and K5/P1 using FortSym's native
-zero test, with no probe fallback (verified at ae635c80). The inverse
-coefficient is separately proved and emitted by
+zero test, with no probe fallback (verified at ae635c80). The source, complex inverse
+coefficient and scalar correction are separately proved and emitted by
 ``gen/pmodb_gauge/generate.py`` to ``gpec/pmodb_gauge_kernel.f90``.
 Regenerate and check the resulting diff; ordinary builds require no CAS.
 
