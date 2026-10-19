@@ -174,11 +174,11 @@ GPEC_singfld_n#.out
 
     **Info** Additional section showing the overlap field (Tesla) and overlap percentage for each eigenmode in the singcoup_svd output. See :ref:`coupling_overlap` for definitions.
 
-GPEC_pmod_n#.out
+GPEC_pmodb_n#.out
 
     **Flag** pmodb_flag
 
-    **Info** Eulerian and Lagrangian \left|\mathbf{B}\right|(real and imaginary) for each poloidal mode number at each value of \Psi_{N} output. This output is necessary for NTV post processing.
+    **Info** Perturbed field strength (real and imaginary, Tesla) for each poloidal mode number at each value of \Psi_{N} output: the Eulerian \delta B (eulb), the Lagrangian \delta B of the displacement with zero \xi^\zeta in the working (jac_type) coordinates (lagb), B\nabla\cdot\xi_\perp (Bdivxprp) and the force-balance form of B\kappa\cdot\xi_\perp (Bkxprp). lagb is not the \xi_\perp-only Lagrangian \delta B; that is -(Bdivxprp+Bkxprp) up to the equilibrium force-balance residual. See :doc:`pmodb_gauge` before using these columns for NTV post processing.
 
 GPEC_xbnormal_n#.out
 
