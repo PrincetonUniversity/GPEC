@@ -275,16 +275,16 @@ Source map and literature
 ==========================
 
 Verified code contracts (line numbers at Fortran base 3622c25c):
-``gpec/idcon.f:93`` (chi1=2pi psio), ``:617`` (projection geometry),
-``:675`` (pressure in Pa), ``:1026`` (curvature and divergence matrices),
-``gpec/gpeq.f:114`` (regularization selection), ``:183`` (surface-displacement
-closure), ``gpec/gpout.f:3035`` (eulb/lagb), ``:3047`` (divergence and
-pressure curvature), ``gpec/gpdiag.f:1003`` (diagnostic projection),
-``:1061`` (llagb), ``pentrc/inputs.f90:469`` (ASCII columns),
-``:487`` (old gauge mixing), ``:944`` (perpendicular matrix pair),
+``gpec/idcon.f:93`` (chi1=2pi psio), ``:616`` (projection geometry),
+``:677`` (pressure in Pa), ``:1026`` (curvature and divergence matrices),
+``gpec/gpeq.f:131`` (regularization selection), ``:208`` (surface-displacement
+closure), ``gpec/gpout.f:3041`` (eulb/lagb), ``:3050`` (divergence and
+pressure curvature), ``gpec/gpdiag.f:1012`` (diagnostic projection),
+``:1061`` (llagb), ``pentrc/inputs.f90:376`` (ASCII columns),
+``:396`` (old gauge mixing), ``:856`` (perpendicular matrix pair),
 ``pentrc/torque.F90:379`` (old CGL half).
 
-Julia base 0304fd54c: ``src/KineticForces/KineticForcesStructs.jl:435``
+Julia base 0304fd54c: ``src/KineticForces/KineticForcesStructs.jl:437``
 uses the correct perpendicular dbob convention;
 ``src/KineticForces/Torque.jl:295`` repeats the CGL half.
 ``src/PerturbedEquilibrium/FieldReconstruction.jl``'s xi_s is Glasser's

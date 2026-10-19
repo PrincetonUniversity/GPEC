@@ -155,7 +155,7 @@ class Setup:
 
 
 def induction(sp):
-    """G1: GPEC's J dB^i (gpeq.f:107-109) is J curl(xi x B)^i for any Jacobian."""
+    """G1: GPEC's J dB^i (gpeq.f:114-116) is J curl(xi x B)^i for any Jacobian."""
     S = Setup(sp)
     xi, B = S.xi, S.Bup
     JdB = [S.J * c for c in S.curl_up(S.cross_cov(xi, B))]
@@ -586,7 +586,7 @@ def open_gaps(sp):
 
     G6 is the coordinate form of C1 + C2 (proved on Cartesian 1-jets) with
     det g = J^2 imposed through g_33.  On ae635c80 the zero test still returns UNKNOWN for this large rational
-    residual; the variable cap removed by #84 is no longer the explanation; it is recorded, not
+    residual; the removed variable cap is no longer the explanation; it is recorded, not
     counted as proved.
     """
     return force_balance_identity(sp)
