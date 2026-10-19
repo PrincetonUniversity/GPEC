@@ -233,6 +233,8 @@ c-----------------------------------------------------------------------
             !Divide by mode num. m^2 to finish, units are (psi_pol_norm)^4
             !Note, psi coordinate in original paper is toroidal flux 
             !per radian `psi_tor'. *Using small island approximation.
+            !Overbars are bare V'<f>; S-H Eq. 15 averages over angles
+            !(V'<f>/(2pi)^2), so this Wc^4 is (2pi)^4 x S-H Eq. 50.
 c-----------------------------------------------------------------------
 c     parallel current density from Freidberg Ideal MHD eqs. 6.15, 6.16.
 c     note psi in eqs. 6.15, 6.16 is poloidal flux/(2pi), same as psi_in
