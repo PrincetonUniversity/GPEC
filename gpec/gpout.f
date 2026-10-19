@@ -2934,22 +2934,22 @@ c-----------------------------------------------------------------------
       REAL(r8) :: jac,psi
 
       INTEGER :: p_id,t_id,i_id,m_id,r_id,z_id,b_id,bme_id,be_id,
-     $   bml_id,bl_id,xm_id,x_id,km_id,k_id,rzstat
+     $   bml_id,bl_id,xm_id,x_id,km_id,k_id,rzstat,bmp_id,bp_id
 
       REAL(r8), DIMENSION(0:mthsurf) :: dphi
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: rs,zs,equilbfun
       COMPLEX(r8), DIMENSION(mpert) :: eulbpar_mn,lagbpar_mn,
-     $     divxprp_mn,curv_mn
+     $     divxprp_mn,curv_mn,lagbprp_mn
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xsp_fun,xms_fun,
      $     bvt_fun,bvz_fun,xmz_fun,xvt_fun,xvz_fun,xmt_fun,xsp1_fun
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: eulbparmns,
      $     lagbparmns,divxprpmns,curvmns,
      $     xmp1mns,xspmns,xmsmns,xmtmns,xmzmns
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: eulbparmout,
-     $     lagbparmout,divxprpmout,curvmout
+     $     lagbparmout,divxprpmout,curvmout,lagbprpmout
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: eulbparfun,lagbparfun,
      $     divxprpfun,curvfun,eulbparfout,lagbparfout,divxprpfout,
-     $     curvfout
+     $     curvfout,lagbprpfun,lagbprpfout
 
       REAL(r8), DIMENSION(:), ALLOCATABLE :: psis,ches,chex
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE ::chea,chelagbmns
@@ -2965,11 +2965,13 @@ c-----------------------------------------------------------------------
      $   xmp1mns(mstep,mpert),xspmns(mstep,mpert),xmsmns(mstep,mpert),
      $   xmtmns(mstep,mpert),xmzmns(mstep,mpert))
       ALLOCATE(eulbparmout(mstep,lmpert),lagbparmout(mstep,lmpert),
-     $   divxprpmout(mstep,lmpert),curvmout(mstep,lmpert))
+     $   divxprpmout(mstep,lmpert),curvmout(mstep,lmpert),
+     $   lagbprpmout(mstep,lmpert))
       ALLOCATE(eulbparfun(mstep,0:mthsurf),lagbparfun(mstep,0:mthsurf),
      $   divxprpfun(mstep,0:mthsurf),curvfun(mstep,0:mthsurf),
      $   eulbparfout(mstep,0:mthsurf),lagbparfout(mstep,0:mthsurf),
-     $   divxprpfout(mstep,0:mthsurf),curvfout(mstep,0:mthsurf))
+     $   divxprpfout(mstep,0:mthsurf),curvfout(mstep,0:mthsurf),
+     $   lagbprpfun(mstep,0:mthsurf),lagbprpfout(mstep,0:mthsurf))
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
@@ -3042,6 +3044,12 @@ c-----------------------------------------------------------------------
      $           eulbparfun(istep,itheta)+
      $           xsp_fun(itheta)*eqfun%fx(1)+
      $           xms_fun(itheta)/(chi1*sq%f(4))*eqfun%fy(1)
+c           Lagrangian dB of xi_perp alone: lagb plus the gauge term
+c           (xi_perp^zeta/q) d_theta B (docs/pmodb_gauge.rst).
+            lagbprpfun(istep,itheta)=lagbparfun(istep,itheta)+
+     $           eqfun%fy(1)*(xmz_fun(itheta)/(jac*sq%f(4))-
+     $           (chi1/(jac*eqfun%f(1)))**2*
+     $           (xvt_fun(itheta)+sq%f(4)*xvz_fun(itheta)))
             divxprpfun(istep,itheta)=xsp1_fun(itheta)+
      $           (jac1/jac)*xsp_fun(itheta)+
      $           cspl%f1(1)/jac-(twopi*ifac*nn)*cspl%f(2)/jac
@@ -3064,6 +3072,8 @@ c-----------------------------------------------------------------------
      $        mthsurf,divxprp_mn)
          CALL iscdftf(mfac,mpert,curvfun(istep,:),
      $        mthsurf,curv_mn)
+         CALL iscdftf(mfac,mpert,lagbprpfun(istep,:),
+     $        mthsurf,lagbprp_mn)
 c-----------------------------------------------------------------------
 c     Save working coordinate verions for pent files.
 c-----------------------------------------------------------------------
@@ -3084,10 +3094,12 @@ c-----------------------------------------------------------------------
          CALL gpeq_bcoordsout(lagbparmout(i,:),lagbpar_mn,psi,tout,0)
          CALL gpeq_bcoordsout(divxprpmout(i,:),divxprp_mn,psi,tout,0)
          CALL gpeq_bcoordsout(curvmout(i,:)   ,curv_mn,psi,tout,0)
+         CALL gpeq_bcoordsout(lagbprpmout(i,:),lagbprp_mn,psi,tout,0)
          eulbparfout(istep,:)=eulbparfun(istep,:)*EXP(ifac*nn*dphi)
          lagbparfout(istep,:)=lagbparfun(istep,:)*EXP(ifac*nn*dphi)
          divxprpfout(istep,:)=divxprpfun(istep,:)*EXP(ifac*nn*dphi)
          curvfout(istep,:)=curvfun(istep,:)*EXP(ifac*nn*dphi)
+         lagbprpfout(istep,:)=lagbprpfun(istep,:)*EXP(ifac*nn*dphi)
       ENDDO
 
       CALL cspline_dealloc(cspl)
@@ -3134,6 +3146,17 @@ c-----------------------------------------------------------------------
      $               "Lagrangian perturbed field") )
          CALL check( nf90_put_att(fncid,bml_id,"units","Tesla") )
          CALL check( nf90_put_att(fncid,bml_id,"jacobian",jac_out) )
+         CALL check( nf90_def_var(fncid, "b_lag_perp_fun", nf90_double,
+     $               (/p_id,t_id,i_id/),bp_id) )
+         CALL check( nf90_put_att(fncid,bp_id,"long_name",
+     $               "Lagrangian perturbed field of xi_perp") )
+         CALL check( nf90_put_att(fncid,bp_id,"units","Tesla") )
+         CALL check( nf90_def_var(fncid, "b_lag_perp", nf90_double,
+     $               (/p_id,m_id,i_id/),bmp_id) )
+         CALL check( nf90_put_att(fncid,bmp_id,"long_name",
+     $               "Lagrangian perturbed field of xi_perp") )
+         CALL check( nf90_put_att(fncid,bmp_id,"units","Tesla") )
+         CALL check( nf90_put_att(fncid,bmp_id,"jacobian",jac_out) )
          CALL check( nf90_def_var(fncid, "Bdivxi_perp_fun", nf90_double,
      $               (/p_id,t_id,i_id/),x_id) )
          CALL check( nf90_put_att(fncid,x_id,"long_name",
@@ -3165,6 +3188,11 @@ c-----------------------------------------------------------------------
      $      eulbparmout),AIMAG(eulbparmout)/),(/mstep,lmpert,2/))) )
          CALL check( nf90_put_var(fncid,bml_id,RESHAPE((/REAL(
      $      lagbparmout),AIMAG(lagbparmout)/),(/mstep,lmpert,2/))) )
+         CALL check( nf90_put_var(fncid,bmp_id,RESHAPE((/REAL(
+     $      lagbprpmout),AIMAG(lagbprpmout)/),(/mstep,lmpert,2/))) )
+         CALL check( nf90_put_var(fncid,bp_id,RESHAPE(
+     $      (/REAL(lagbprpfout),-helicity*AIMAG(lagbprpfout)/),
+     $      (/mstep,mthsurf,2/))) )
          CALL check( nf90_put_var(fncid,xm_id,RESHAPE((/REAL(
      $      -divxprpmout),AIMAG(-divxprpmout)/),(/mstep,lmpert,2/))) )
          CALL check( nf90_put_var(fncid,km_id,RESHAPE((/REAL(
@@ -3385,7 +3413,8 @@ c-----------------------------------------------------------------------
       DEALLOCATE(rs,zs,equilbfun)
       DEALLOCATE(eulbparmns,lagbparmns,divxprpmns,curvmns,
      $   xmp1mns,xspmns,xmsmns,xmtmns,xmzmns)
-      DEALLOCATE(eulbparmout,lagbparmout,divxprpmout,curvmout)
+      DEALLOCATE(eulbparmout,lagbparmout,divxprpmout,curvmout,
+     $   lagbprpmout,lagbprpfun,lagbprpfout)
       DEALLOCATE(eulbparfun,lagbparfun,divxprpfun,curvfun,
      $   eulbparfout,lagbparfout,divxprpfout,curvfout)
 c-----------------------------------------------------------------------
