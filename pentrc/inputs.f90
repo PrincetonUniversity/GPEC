@@ -31,7 +31,7 @@ module inputs
 
     use params, only : r8,xj,mp,me,e,mu0,twopi
     use utilities, only : get_free_file_unit,readtable,nunique,progressbar,iscdftf,iscdftb
-    use spline_mod, only : spline_type,spline_alloc,spline_fit,spline_fit_pchip,spline_eval,spline_write1
+    use spline_mod, only : spline_type,spline_alloc,spline_dealloc,spline_fit,spline_fit_pchip,spline_eval,spline_write1
     use cspline_mod, only : cspline_type,cspline_alloc,cspline_dealloc,&
                             cspline_fit,cspline_write,cspline_eval
     use fspline_mod, only : fspline_eval
@@ -203,7 +203,8 @@ module inputs
         integer :: i,out_unit, tshape(2)
         real(r8) :: psi
         real(r8), dimension(0:nkin) :: zeff,zpitch,welec,wdian,wdiat,wpefac
-        type(spline_type) :: tmp
+        real(r8), dimension(0:nkin,2) :: tkev
+        type(spline_type) :: tmp,tmp_nu
 
         call readtable(file,table,titles,verbose,write_log)
         tshape = shape(table)
@@ -228,19 +229,28 @@ module inputs
               kin%xs(i) = psi
               kin%fs(i,1:5) = tmp%f(1:5)
         enddo
+        if(any(kin%fs(:,1:2) <= 0)) error stop "ERROR: read_kin - densities must be positive"
+        if(any(kin%fs(:,3:4) < 0)) error stop "ERROR: read_kin - temperatures must be non-negative"
 
         ! convert temperatures to si units
         kin%fs(:,3:4) = kin%fs(:,3:4)*1.602e-19 !ev to j
 
         ! collisionalities **assumes si units for n,t**
+        ! floor T (keV) at 1 meV and logLambda at 1 so cold (T -> 0) edges give large positive nu
+        tkev = max(kin%fs(:,3:4)/1.602e-16, 1.0e-6_r8)
+        if(any(kin%fs(:,3:4)/1.602e-16 < 1.0e-6_r8)) &
+            print *, "  ! WARNING ! Flooring T at 1e-3 eV in collision frequencies"
         zeff = zimp-(kin%fs(:,1)/kin%fs(:,2))*zi*(zimp-zi)
         zpitch = 1.0+(1.0+mimp)/(2.0*mimp)*zimp*(zeff-1.0)/(zimp-zeff)
         kin%fs(:,6) = 17.3-0.5*log(kin%fs(:,2)/1.0e20) &
-            +1.5*log(kin%fs(:,4)/1.602e-16)
+            +1.5*log(tkev(:,2))
+        if(any(kin%fs(:,6) < 1)) &
+            print *, "  ! WARNING ! Flooring logLambda at 1 in collision frequencies"
+        kin%fs(:,6) = max(kin%fs(:,6), 1.0_r8)
         kin%fs(:,7) = (zpitch/3.5e17)*kin%fs(:,1)*kin%fs(:,6) &
-            /(sqrt(1.0*mi)*(kin%fs(:,3)/1.602e-16)**1.5)
+            /(sqrt(1.0*mi)*tkev(:,1)**1.5)
         kin%fs(:,8) = (zpitch/3.5e17)*kin%fs(:,2)*kin%fs(:,6) &
-            /(sqrt(me/mp)*(kin%fs(:,4)/1.602e-16)**1.5)
+            /(sqrt(me/mp)*tkev(:,2)**1.5)
         kin%fs(:,9) = zeff
 
         call spline_fit(kin,"extrap")
@@ -275,6 +285,13 @@ module inputs
             print *,'     by indirect manipulation of omegae profile'
         endif
         call spline_fit(kin,"extrap")
+        ! local monotone slopes for loglam, nu_i, nu_e so steep edge nu cannot ring inward
+        call spline_alloc(tmp_nu,nkin,3)
+        tmp_nu%xs = kin%xs
+        tmp_nu%fs = kin%fs(:,6:8)
+        call spline_fit_pchip(tmp_nu)
+        kin%fs1(:,6:8) = tmp_nu%fs1
+        call spline_dealloc(tmp_nu)
         if(write_log) print *,"Reformed kin spline with rotation manipulations"
 
         ! write log - designed as check of reading routines
