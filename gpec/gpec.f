@@ -811,6 +811,13 @@ c     $        power_rcout)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
+      IF(singcoup_set) THEN
+c        retain coupling vectors through output and diagnostic calls,
+c        then release them even when singular-field output is disabled.
+         DEALLOCATE(singcoup_out_vecs)
+         IF(osing<msing) DEALLOCATE(localcoup_out_vecs)
+         singcoup_set=.FALSE.
+      ENDIF
       CALL gpec_dealloc
       CALL gpec_stop("Normal termination.")
       END PROGRAM gpec_main

@@ -779,9 +779,9 @@ c-----------------------------------------------------------------------
      $        work,lwork,rwork,info)                           ! note zgesvd vt is actually V^dagger
          singcoup_out_vals(i,:) = s                            ! singular values of power normalized coupling
          singcoup_out_vecs(i,:,:) = CONJG(TRANSPOSE(vt))       ! right singular vectors of power normalized coupling
-         ! overlap = V.Phi_xe = V.W.b, and we record V.W so we can dot with b
-         singcoup_out_bvecs(i,:,:) = MATMUL(CONJG(fldflxmat),  ! note fldflxmat is hermitian (W*=W^T)
-     $                                  CONJG(TRANSPOSE(vt)))  ! vectors converted so overlap is with b
+c        overlap = V^H W b, so exported vectors must be W^H V.
+         singcoup_out_bvecs(i,:,:) = MATMUL(
+     $        CONJG(TRANSPOSE(fldflxmat)),CONJG(TRANSPOSE(vt)))
       ENDDO
 
       DEALLOCATE(s,u,a,vt,work,rwork,ipiv)
@@ -809,9 +809,9 @@ c-----------------------------------------------------------------------
      $           work,lwork,rwork,info)                             ! note zgesvd vt is actually V^dagger
             localcoup_out_vals(i,:) = s                             ! singular values of power normalized coupling
             localcoup_out_vecs(i,:,:) = CONJG(TRANSPOSE(vt))        ! right singular vectors of power normalized coupling
-            ! overlap = V.Phi_xe = V.W.b, and we record V.W so we can dot with b
-            localcoup_out_bvecs(i,:,:) = MATMUL(CONJG(fldflxmat),   ! note fldflxmat is hermitian (W*=W^T)
-     $                                       CONJG(TRANSPOSE(vt)))  ! vectors converted so overlap is with b
+c           overlap = V^H W b, so exported vectors must be W^H V.
+            localcoup_out_bvecs(i,:,:) = MATMUL(
+     $           CONJG(TRANSPOSE(fldflxmat)),CONJG(TRANSPOSE(vt)))
          ENDDO
          DEALLOCATE(s,u,a,vt,work,rwork,ipiv)
       ENDIF
@@ -1021,7 +1021,7 @@ c-----------------------------------------------------------------------
             CALL check( nf90_put_var(mncid,s_id(i),
      $           singcoup_out_vals(i,:)) )
             IF(osing<msing)THEN
-               matmo = TRANSPOSE(localcoup_out_vecs(i,:,:))
+               matmo = TRANSPOSE(singcoup_out(i,ol:ou,:))
                CALL check( nf90_put_var(mncid,cl_id(i),RESHAPE(
      $              (/REAL(matmo), AIMAG(matmo)/),(/tmpert,osing,2/))))
                CALL check( nf90_put_var(mncid,rl_id(i),RESHAPE(
@@ -1044,7 +1044,7 @@ c-----------------------------------------------------------------------
      $     tmfac, fldflxmn, temp1, flxtofld, matms)
       IF (osing<msing) THEN
          DEALLOCATE(localcoup_out_bvecs, localcoup_out_vals,
-     $        localcoup_out_vecs, matmo)
+     $        matmo)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -2467,12 +2467,6 @@ c-----------------------------------------------------------------------
       ENDIF
 
       IF(ascii_flag) CALL ascii_close(out_unit)
-      IF(singcoup_set) THEN
-         DEALLOCATE(singcoup_out_vecs)
-         IF(osing<msing) THEN
-            DEALLOCATE(localcoup_out_vecs)
-         ENDIF
-      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
