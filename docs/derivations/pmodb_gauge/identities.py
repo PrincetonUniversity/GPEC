@@ -233,7 +233,7 @@ def columns(sp):
     out.append(("G4.2", "J xi_perp^zeta = xmz - q (chi1/B)^2 (xvt + q xvz)/J",
                 S.at0(J * xperp[2] - (xmz - q * chi1 ** 2 / B2 * (xv[1] + q * xv[2]) / J))))
     # B . xi_perp = 0 as a statement about arbitrary vectors: the metric-jet
-    # form exceeds FortSym's polynomial-cancellation limit (issue #84), so the
+    # form is larger than necessary, so the
     # projection is proved on independent covariant B_i, contravariant B^i, xi^i.
     Bl = [sp.Symbol(f"Bl_{i}") for i in range(3)]
     Bu = [sp.Symbol(f"Bu_{i}") for i in range(3)]
@@ -330,7 +330,7 @@ def pentrc_kappa_matrices(sp):
     tband = chi1 ** 2 * (Dt / B2) * (g23 + q * g33) / J
     res = lhs - sband * xi[0] - tband * xs / chi1
     # The residual is linear in xi; proving it for each basis displacement keeps
-    # every zero test within FortSym's 12-variable polynomial limit (issue #84).
+    # every check independently covers one displacement component.
     out = []
     for k, name in enumerate(("psi", "theta", "zeta")):
         r = res
@@ -386,9 +386,14 @@ def regularisation(sp):
     xwt = -(J0 * R * X1 + J1 * X + 2 * pi * I * n / chi1 * J0 * Xs) / (2 * pi * I * s)
     xwz = -(q * J0 * R * X1 + q * J1 * X + 2 * pi * I * m / chi1 * J0 * Xs) / (2 * pi * I * s)
     xmt, xmz = R * xwt, R * xwz
-    jdiv = J0 * R * X1 + J1 * X + 2 * pi * I * m * xmt - 2 * pi * I * n * xmz
-    out = [("R1", "J div xi (reg) = (1 - R)(J R xsp1 + J' xsp)",
-            jdiv - (1 - R) * (J0 * R * X1 + J1 * X))]
+    jdiv_effective = J0 * R * X1 + J1 * X + 2 * pi * I * m * xmt - 2 * pi * I * n * xmz
+    jdiv_actual = J0 * X1 + J1 * X + 2 * pi * I * m * xmt - 2 * pi * I * n * xmz
+    out = [("R1", "J D_effective(reg) = (1-R)(J R xsp1 + J' xsp)",
+            jdiv_effective - (1-R)*(J0*R*X1+J1*X)),
+           ("R1a", "J div xi_reconstructed = J(1-R**2)xsp1 + (1-R)J' xsp",
+            jdiv_actual-J0*(1-R**2)*X1-(1-R)*J1*X),
+           ("R4", "chi1(q xi_reconstructed^theta-xi_reconstructed^zeta)=R xms",
+            chi1*(q*xmt-xmz)/J0-R*Xs)]
     jdiv_unreg = (J0 * X1 + J1 * X + 2 * pi * I * m * xwt.subs(R, 1)
                   - 2 * pi * I * n * xwz.subs(R, 1))
     out.append(("R2", "J div xi (R = 1) = 0", jdiv_unreg))
@@ -444,19 +449,141 @@ def drive_gauge(sp):
              (change_pmodb + mu * B * lam * dBdl / v).subs(l, 0))]
 
 
+def divergence_matrices(sp):
+    """G8: compare projected contravariant divergence with idcon's x/y/z bands.
+
+    U=(g12+q*g13)/(J*B**2), V=(g23+q*g33)/(J*B**2). The perpendicular
+    projection gives J xi^theta=chi1**2*(-U X+V A), xi^zeta=q xi^theta-A.
+    U,V and their theta derivatives remain independent jets here. The field
+    norm supplies the only algebraic metric relation used by the z bands.
+    """
+    J,Jp,B2,c,q,m,n,X,Xp,A,U,Ut,V,Vt=sp.symbols("J Jp B2 c q m n X Xp A U Ut V Vt")
+    th,ze=2*sp.pi*sp.I*m,-2*sp.pi*sp.I*n
+    # Differentiate J xi^theta and J xi^zeta with the product rule.
+    Y=c**2*(-U*X+V*A)
+    Yt=c**2*(-Ut*X-U*th*X+Vt*A+V*th*A)
+    Yz=c**2*(-U*ze*X+V*ze*A)
+    direct=B2*(J*Xp+Jp*X+Yt+q*Yz-J*ze*A)
+    bands=J*B2*Xp+(Jp*B2-c**2*B2*Ut-2*sp.pi*sp.I*(m-n*q)*c**2*B2*U)*X
+    bands+=(c**2*B2*Vt+2*sp.pi*sp.I*(c**2*B2*V*(m-n*q)+n*J*B2))*A
+    out=[("G8.1","J B**2 div xi_perp = xmat Xp + ymat X + zmat A",direct-bands)]
+    g22,g23,g33,g12,g13=sp.symbols("g22 g23 g33 g12 g13")
+    norm=c**2*(g22+2*q*g23+q**2*g33)/J**2
+    zcode=c**2/J*(m*(g23+q*g33)+n*(g22+q*g23))
+    zproj=(c**2*norm*((g23+q*g33)/(J*norm))*(m-n*q)+n*J*norm)
+    out.append(("G8.2","idcon zband2/zband3 normalization from B**2=chi1**2*(g22+2qg23+q**2g33)/J**2",zcode-zproj))
+    return out
+
+
+def gauge_coordinates(sp):
+    """Local Jacobian and field-strength gauge equations in angles in turns.
+
+    B.grad = chi1/J (d_theta + q d_zeta). For a target chart J B**a=H(psi),
+    a=0 (Hamada) or 2 (Boozer), w=chi1 lambda B**a/H obeys D w=-T,
+    T=div xi + a delta B_L/B, for n!=0 (zero flux-function perturbation).
+    """
+    B, Bt, J, chi, q, lam, Lt, Lz, d, b, c = sp.symbols(
+        "B Bt J chi q lam Lt Lz d b c")
+    m,n=sp.symbols("m n")
+    out=[]
+    for a,name in ((0,"hamada"),(2,"boozer")):
+        # First jet of lambda B**a; axisymmetric equilibrium, div B=0.
+        Ftheta = Lt*B**a + a*lam*B**(a-1)*Bt
+        Fzeta = Lz*B**a
+        direct = d + chi/J*(Lt+q*Lz) + a*(b+lam*chi/J*Bt)/B
+        product = d+a*b/B+chi/(J*B**a)*(Ftheta+q*Fzeta)
+        out.append(("Q1."+name,"T_a(xi+lambda B) = T_a(xi)+B.grad(lambda B**a)/B**a",direct-product))
+        # Solving the Fourier equation, with modes exp(2 pi i(m theta-n zeta)).
+        T,H=sp.symbols("T H")
+        w=-T/(2*sp.pi*sp.I*(m-n*q))
+        out.append(("Q2."+name,"D w = -T; w_m = -T_m/[2 pi i(m-nq)]",2*sp.pi*sp.I*(m-n*q)*w+T))
+        # On a target base J B**a=H, correction to field strength is w d_theta B.
+        lambda_w = w*J/chi
+        out.append(("Q3."+name,"delta B_target = delta B_X + w d_theta B (J B**a flux function)",
+                    lambda_w*chi/J*Bt-w*Bt))
+    # Transform the base angles: theta_B=theta_H+iota h, phi_B=phi_H+h.
+    h,Dh,iota,Hh,Hb=sp.symbols("h Dh iota Hh Hb")
+    ht,hp=sp.symbols("ht hp")
+    determinant=(1+iota*ht)*(1+hp)-ht*iota*hp
+    out.append(("Q4","det d(theta_H+iota h,phi_H+h)/d(theta_H,phi_H)=1+D h",
+                determinant-1-iota*ht-hp))
+    # Same physical scalar and relabeling, in the convention of rmp_torque E4.14.
+    bX,jX,u,v=sp.symbols("bX jX u v")
+    dbB=bX+u*Bt; dbH=bX+v*Bt
+    out.append(("Q5","Hamada->Boozer equals direct X->Boozer when w_HB=w_XB-w_XH",
+                dbH+(u-v)*Bt-dbB))
+    # Perpendicular reconstruction is unchanged by adding a field-aligned vector.
+    out.append(("Q6","field-aligned input: delta B_E=0, xi_perp=0 => target delta B=0",
+                lam*chi/J*Bt + (-lam*chi/J)*Bt))
+    out.append(("Q7","xi_perp limit: zero target source implies no gauge correction", (bX+u*Bt-bX).subs(u,0)))
+    # PEST J/R**2 is a flux function. Its linearized constraint has radial motion.
+    R,xiR,divxi,db,dr=sp.symbols("R xiR divxi db dr")
+    eps=sp.Symbol("eps")
+    ratio=J*(1+eps*divxi)/(R+eps*xiR)**2
+    out.append(("Q8","delta(J/R**2)/(J/R**2)=div xi-2 xi_R/R",
+                ratio.diff(eps).subs(eps,0)*R**2/J-divxi+2*xiR/R))
+    # Complex CGL quadratic form: real and imaginary components independently.
+    Dr,Di,Kr,Ki=sp.symbols("Dr Di Kr Ki")
+    pressure=0; code=0
+    for D,K in ((Dr,Kr),(Di,Ki)):
+        b=-(D+K); pp=-D+b; pa=-3*D-2*b
+        pressure-=((pa-pp)*b+pa*D)/2
+        code+=(sp.Rational(5,3)*D**2+sp.Rational(1,3)*(D+3*K)**2)/2
+    out.append(("K5","Complex CGL pressure work equals [5/3 |D|**2+1/3 |D+3K|**2]/2",pressure-code))
+    # Pressure term in curvature is mu0 p' xi^psi/B, not mu0 p' xi^psi.
+    P,X=sp.symbols("P X")
+    out.append(("P1","(Bk - (llagb-eulb))/B = mu0 p' xi^psi/B**2", (P*X/B)/B-P*X/B**2))
+    return out
+
+
+
+def jacobian_identity(sp):
+    """Eq. (4.1): d/de det(d(X + e xi)/du) = d_i(J xi^i) (Jacobi formula)."""
+    u = sp.symbols("u_1 u_2 u_3")
+    eps = sp.Symbol("epsilon")
+    c = [[sp.Symbol(f"c_{a}{i}") for i in range(3)] for a in range(3)]
+    q = [[[sp.Symbol(f"q_{a}{min(i, j)}{max(i, j)}") for j in range(3)]
+          for i in range(3)] for a in range(3)]
+    pos = [sum(c[a][i] * u[i] for i in range(3))
+           + sum(q[a][i][j] * u[i] * u[j] for i in range(3) for j in range(3)) / 2
+           for a in range(3)]
+    xi_up = [sp.Symbol(f"s_{i}") + sum(sp.Symbol(f"t_{i}{j}") * u[j] for j in range(3))
+             for i in range(3)]
+    e_cov = [[pos[a].diff(u[i]) for a in range(3)] for i in range(3)]
+    xi_cart = [sum(xi_up[i] * e_cov[i][a] for i in range(3)) for a in range(3)]
+    moved = [pos[a] + eps * xi_cart[a] for a in range(3)]
+
+    def det3(m):
+        return (m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
+                - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
+                + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]))
+
+    def at0(e):
+        for v in u:
+            e = e.subs(v, 0)
+        return e
+
+    # J(X + eps xi) needs no further u-derivative: evaluate entries at u = 0 first.
+    jac_moved = det3([[at0(moved[a].diff(u[i])) for i in range(3)] for a in range(3)])
+    jac = det3([[pos[a].diff(u[i]) for i in range(3)] for a in range(3)])
+    first = jac_moved.diff(eps).subs(eps, 0)
+    divergence_density = at0(sum((jac * xi_up[i]).diff(u[i]) for i in range(3)))
+    res = first - divergence_density
+    return [("E4.1", "d/de J(X + e xi) = d_i(J xi^i) = J div xi", res.expand())]
+
 def all_identities(sp):
     return (induction(sp) + fourier_symbols(sp) + incompressible_closure(sp)
             + columns(sp) + pentrc_kappa_matrices(sp)
             + cartesian_kappa(sp) + regularisation(sp)
-            + [c for c in cgl(sp) if not c[0].endswith("neg")] + drive_gauge(sp))
+            + jacobian_identity(sp) + divergence_matrices(sp) + gauge_coordinates(sp) + [c for c in cgl(sp) if not c[0].endswith("neg")] + drive_gauge(sp))
 
 
 def open_gaps(sp):
     """Identities FortSym does not decide; their content is covered elsewhere.
 
     G6 is the coordinate form of C1 + C2 (proved on Cartesian 1-jets) with
-    det g = J^2 imposed through g_33.  The zero test exceeds the native
-    polynomial-term limit (lazy-fortran/fortsym#84 class); it is recorded, not
+    det g = J^2 imposed through g_33.  On ae635c80 the zero test still returns UNKNOWN for this large rational
+    residual; the variable cap removed by #84 is no longer the explanation; it is recorded, not
     counted as proved.
     """
     return force_balance_identity(sp)

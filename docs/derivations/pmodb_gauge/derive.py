@@ -27,9 +27,7 @@ import identities  # noqa: E402
 
 
 def verdict(expr) -> str:
-    if not hasattr(expr, "is_zero"):
-        return "PROVED" if expr == 0 else "NONZERO"
-    value = expr.is_zero
+    value = fs.sympify(expr).is_zero
     return {True: "PROVED", False: "NONZERO"}.get(value, "UNKNOWN")
 
 
@@ -85,7 +83,7 @@ def main() -> int:
     out = {"engine": "fortsym native zero test via C ABI (fortsym.sympy)",
            "fortsym_revision": revision(), "checks": records, "failed": failed}
     (HERE / "fortsym_verdicts.json").write_text(json.dumps(out, indent=2) + "\n")
-    print("FAILED: " + " ".join(failed) if failed else "all identities proved")
+    print("FAILED: " + " ".join(failed) if failed else "required identities proved; see explicit open-gap records")
     return 1 if failed else 0
 
 
