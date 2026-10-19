@@ -69,7 +69,7 @@ relabeling must precede this conversion. PEST output is not supported as a
 target; its J/R^2 constraint also involves radial geometric displacement.
 This feature does not infer a new equilibrium chart from a scalar spectrum.
 
-Source contracts: ``gpec/gpeq.f:114`` selects the derivative;
+Source contracts: ``gpec/gpeq.f:131`` selects the derivative;
 ``gpec/gpdiag.f:1061`` defines the existing perpendicular scalar;
 ``gpec/gpout.f`` computes it before output transformation. The scalar-only
 consumer formulas are those derived in rmp_torque c3614334,
