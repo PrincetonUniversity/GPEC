@@ -1017,7 +1017,7 @@ c-----------------------------------------------------------------------
             CALL check( nf90_put_var(mncid,s_id(i),
      $           singcoup_out_vals(i,:)) )
             IF(osing<msing)THEN
-               matmo = TRANSPOSE(localcoup_out_vecs(i,:,:))
+               matmo = TRANSPOSE(singcoup_out(i,ol:ou,:))
                CALL check( nf90_put_var(mncid,cl_id(i),RESHAPE(
      $              (/REAL(matmo), AIMAG(matmo)/),(/tmpert,osing,2/))))
                CALL check( nf90_put_var(mncid,rl_id(i),RESHAPE(

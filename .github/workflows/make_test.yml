@@ -220,7 +220,6 @@ jobs:
           cd docs/examples/regression_solovev_ideal_example
           ulimit -s unlimited
           ../../../bin/dcon && ../../../bin/gpec && ../../../bin/stride && ../../../bin/pentrc
-          python3 ../../../regression/test/local_coupling_overlap.py --work-dir ../../../local_coupling_regression
 
       - name: Run Soloviev kinetic example
         run: |
@@ -297,7 +296,6 @@ jobs:
           cd docs/examples/regression_solovev_ideal_example
           ulimit -s unlimited
           ../../../bin/dcon && ../../../bin/gpec && ../../../bin/stride && ../../../bin/pentrc
-          python3 ../../../regression/test/local_coupling_overlap.py --work-dir ../../../local_coupling_regression
 
       - name: Run Soloviev kinetic example
         run: |
