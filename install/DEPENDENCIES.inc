@@ -197,11 +197,12 @@
 ../gpec/gpec.o: ../coil/coil.o ../gpec/gpdiag.o ../gpec/gpout.o ../gpec/rdcon.o
 ../gpec/gpeq.o: ../gpec/idcon.o
 ../gpec/gpglobal.o: ../equil/bicube.o ../equil/fspline.o ../equil/local.o
-../gpec/gpout.o: ../coil/field.o ../gpec/gpdiag.o ../gpec/gpglobal.o ../gpec/gpresp.o ../gpec/gpvacuum.o ../gpec/idcon.o ../gpec/version.inc ../pentrc/inputs.o ../pentrc/pentrc_interface.o ../pentrc/utilities.o ../slayer/gslayer.o
+../gpec/gpout.o: ../coil/field.o ../gpec/gpdiag.o ../gpec/gpglobal.o ../gpec/gpresp.o ../gpec/gpvacuum.o ../gpec/idcon.o ../gpec/pmodb_gauge.o ../gpec/version.inc ../pentrc/inputs.o ../pentrc/pentrc_interface.o ../pentrc/utilities.o ../slayer/gslayer.o
 ../gpec/gpresp.o: ../gpec/gpeq.o
 ../gpec/gpvacuum.o: ../gpec/gpeq.o ../vacuum/vacuum_ma.o
 ../gpec/idcon.o: ../equil/equil.o ../gpec/gpglobal.o ../gpec/ismath.o ../vacuum/vacuum_ma.o
 ../gpec/ismath.o: ../equil/bicube.o ../equil/fspline.o ../equil/local.o ../gpec/gpglobal.o
+../gpec/pmodb_gauge.o: ../equil/local.o ../gpec/ismath.o ../gpec/pmodb_gauge_kernel.o
 ../gpec/rdcon.o: ../gpec/gpglobal.o ../gpec/idcon.o ../gpec/ismath.o
 
 # XDraw

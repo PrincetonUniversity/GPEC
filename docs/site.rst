@@ -16,3 +16,4 @@ GPEC documentation website site map
    source_documentation.rst
    installation.rst
 
+   pmodb_target_gauge.rst

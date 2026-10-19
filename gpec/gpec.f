@@ -33,6 +33,7 @@ c-----------------------------------------------------------------------
       CHARACTER(8) :: filter_types
       CHARACTER(128) :: infile
       LOGICAL :: singcoup_flag,singfld_flag,vsingfld_flag,pmodb_flag,
+     $     pmodb_gauge_flag,
      $     xbcontra_flag,xbnormal_flag,vbnormal_flag,xbnobo_flag,
      $     d3_flag,xbst_flag,rzphibx_flag,jacfac_flag,dw_flag,
      $     radvar_flag,eigen_flag,magpot_flag,xbtangent_flag,
@@ -64,7 +65,8 @@ c-----------------------------------------------------------------------
      $     reg_spot,chebyshev_flag,nche,nchr,nchz,use_classic_splines,
      $     use_res_spot
       NAMELIST/gpec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
-     $     singfld_flag,pmodb_flag,xbnormal_flag,rstep,jsurf_out,
+     $     singfld_flag,pmodb_flag,pmodb_gauge_flag,xbnormal_flag,
+     $     rstep,jsurf_out,
      $     jac_out,power_bout,power_rout,power_bpout,power_rcout,
      $     tmag_out,mlim_out,eqbrzphi_flag,brzphi_flag,xrzphi_flag,
      $     vbrzphi_flag,vvbrzphi_flag,divzero_flag,dw_flag,opsi1,opsi2,
@@ -144,6 +146,7 @@ c-----------------------------------------------------------------------
       singfld_flag=.TRUE.
       vsingfld_flag=.FALSE.
       pmodb_flag=.FALSE.
+      pmodb_gauge_flag=.FALSE.
       xbnormal_flag=.TRUE.
       vbnormal_flag=.FALSE.
       xbtangent_flag=.FALSE.
@@ -622,7 +625,7 @@ c-----------------------------------------------------------------------
          CALL gpout_dw_matrix(coil_flag)
       ENDIF
       IF (pmodb_flag) THEN
-         CALL gpout_pmodb(mode,xspmn)
+         CALL gpout_pmodb(mode,xspmn,pmodb_gauge_flag)
       ENDIF
       IF (xbnormal_flag) THEN
          CALL gpout_xbnormal(mode,xspmn,sing_spots,sing_interpspot,

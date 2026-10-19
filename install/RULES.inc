@@ -140,6 +140,8 @@ FCGPEC = $(FC) $(FFLAGS) $(OMPFLAG) $(RECURSFLAG) $(LEGACYFLAG) -I$(MATHINC) -I$
 	$(FCGPEC) $(MODFLAG) ../gpec -c $< -o $@
 ../gpec/%.o: ../gpec/%.F
 	$(FCGPEC) $(MODFLAG) ../gpec -c $< -o $@
+../gpec/%.o: ../gpec/%.f90
+	$(FCGPEC) $(MODFLAG) ../gpec -c $< -o $@
 
 # XDRAW
 CCXDRAW = $(CC) $(X11_INC_DIR) $(CFLAGS) -DUNIX -O2

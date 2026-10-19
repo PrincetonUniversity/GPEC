@@ -37,6 +37,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE gpout_mod
+      USE pmodb_gauge_mod, ONLY: pmodb_target_gauge
       USE netcdf
       USE gpglobal_mod, ONLY : recon_out
       USE gpresp_mod
@@ -2923,18 +2924,26 @@ c-----------------------------------------------------------------------
 c     subprogram 8. gpout_pmodb.
 c     compute perturbed mod b.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpout_pmodb(egnum,xspmn)
+      SUBROUTINE gpout_pmodb(egnum,xspmn,gauge)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
+      LOGICAL, INTENT(IN) :: gauge
+      INTEGER :: gauge_power,target_id
+      COMPLEX(r8), DIMENSION(mpert) :: target_mn
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: source_fun,gauge_div,
+     $     actual_dx
+      REAL(r8), DIMENSION(0:mthsurf) :: btheta_fun
+      COMPLEX(r8), ALLOCATABLE :: target_out(:,:)
+      CHARACTER(16) :: gauge_name
       INTEGER :: i,istep,ipert,itheta,cstep,tout
       REAL(r8) :: jac,psi
 
       INTEGER :: p_id,t_id,i_id,m_id,r_id,z_id,b_id,bme_id,be_id,
-     $   bml_id,bl_id,xm_id,x_id,km_id,k_id,rzstat,bmp_id,bp_id
+     $   bml_id,bl_id,xm_id,x_id,km_id,k_id,rzstat,bmp_id
 
       REAL(r8), DIMENSION(0:mthsurf) :: dphi
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: rs,zs,equilbfun
@@ -2949,7 +2958,7 @@ c-----------------------------------------------------------------------
      $     lagbparmout,divxprpmout,curvmout,lagbprpmout
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: eulbparfun,lagbparfun,
      $     divxprpfun,curvfun,eulbparfout,lagbparfout,divxprpfout,
-     $     curvfout,lagbprpfun,lagbprpfout
+     $     curvfout,lagbprpfun
 
       REAL(r8), DIMENSION(:), ALLOCATABLE :: psis,ches,chex
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE ::chea,chelagbmns
@@ -2971,10 +2980,25 @@ c-----------------------------------------------------------------------
      $   divxprpfun(mstep,0:mthsurf),curvfun(mstep,0:mthsurf),
      $   eulbparfout(mstep,0:mthsurf),lagbparfout(mstep,0:mthsurf),
      $   divxprpfout(mstep,0:mthsurf),curvfout(mstep,0:mthsurf),
-     $   lagbprpfun(mstep,0:mthsurf),lagbprpfout(mstep,0:mthsurf))
+     $   lagbprpfun(mstep,0:mthsurf))
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
+      IF(gauge)THEN
+         IF(.NOT.netcdf_flag) ERROR STOP 'pmodb gauge needs NetCDF'
+         IF(reg_flag) ERROR STOP 'pmodb gauge needs reg_flag=f'
+         SELECT CASE(jac_type)
+         CASE('boozer')
+            gauge_power=2
+            gauge_name='b_lag_boozer'
+         CASE('hamada')
+            gauge_power=0
+            gauge_name='b_lag_hamada'
+         CASE DEFAULT
+            ERROR STOP 'pmodb gauge needs boozer or hamada jac_type'
+         END SELECT
+         ALLOCATE(target_out(mstep,lmpert))
+      ENDIF
       IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*)"Computing |b| and del.x_prp"
       CALL cspline_alloc(cspl,mthsurf,2)
@@ -3010,6 +3034,7 @@ c-----------------------------------------------------------------------
          singfac=mfac-nn*sq%f(4)
          xsp1_mn=xsp1_mn*(singfac**2/(singfac**2+reg_spot**2))
          CALL iscdftb(mfac,mpert,xsp1_fun,mthsurf,xsp1_mn)
+         IF(gauge) CALL iscdftb(mfac,mpert,actual_dx,mthsurf,xmp1_mn)
 
          DO itheta=0,mthsurf
             CALL bicube_eval(eqfun,psifac(istep),theta(itheta),0)
@@ -3045,7 +3070,7 @@ c-----------------------------------------------------------------------
      $           xsp_fun(itheta)*eqfun%fx(1)+
      $           xms_fun(itheta)/(chi1*sq%f(4))*eqfun%fy(1)
 c           Lagrangian dB of xi_perp alone: lagb plus the gauge term
-c           (xi_perp^zeta/q) d_theta B (docs/pmodb_gauge.rst).
+c           (xi_perp^zeta/q) d_theta B (docs/pmodb_target_gauge.rst).
             lagbprpfun(istep,itheta)=lagbparfun(istep,itheta)+
      $           eqfun%fy(1)*(xmz_fun(itheta)/(jac*sq%f(4))-
      $           (chi1/(jac*eqfun%f(1)))**2*
@@ -3053,6 +3078,8 @@ c           (xi_perp^zeta/q) d_theta B (docs/pmodb_gauge.rst).
             divxprpfun(istep,itheta)=xsp1_fun(itheta)+
      $           (jac1/jac)*xsp_fun(itheta)+
      $           cspl%f1(1)/jac-(twopi*ifac*nn)*cspl%f(2)/jac
+            IF(gauge) gauge_div(itheta)=divxprpfun(istep,itheta)+
+     $           actual_dx(itheta)-xsp1_fun(itheta)
             divxprpfun(istep,itheta)=-eqfun%f(1)*
      $           divxprpfun(istep,itheta)
             curvfun(istep,itheta)=-xsp_fun(itheta)/eqfun%f(1)*sq%f1(2)-
@@ -3064,6 +3091,19 @@ c           (xi_perp^zeta/q) d_theta B (docs/pmodb_gauge.rst).
             equilbfun(istep,itheta) = eqfun%f(1)
             dphi(itheta) = rzphi%f(3)
          ENDDO
+         IF(gauge)THEN
+            DO itheta=0,mthsurf
+               CALL bicube_eval(eqfun,psifac(istep),theta(itheta),1)
+               btheta_fun(itheta)=eqfun%fy(1)
+            ENDDO
+            CALL pmodb_target_gauge(mfac,nn,sq%f(4),
+     $           equilbfun(istep,:),btheta_fun,lagbprpfun(istep,:),
+     $           gauge_div,gauge_power,
+     $           source_fun)
+            CALL iscdftf(mfac,mpert,source_fun,mthsurf,target_mn)
+            CALL gpeq_bcoordsout(target_out(istep,:),target_mn,
+     $           psifac(istep),tout,0)
+         ENDIF
          CALL iscdftf(mfac,mpert,eulbparfun(istep,:),
      $        mthsurf,eulbpar_mn)
          CALL iscdftf(mfac,mpert,lagbparfun(istep,:),
@@ -3099,7 +3139,7 @@ c-----------------------------------------------------------------------
          lagbparfout(istep,:)=lagbparfun(istep,:)*EXP(ifac*nn*dphi)
          divxprpfout(istep,:)=divxprpfun(istep,:)*EXP(ifac*nn*dphi)
          curvfout(istep,:)=curvfun(istep,:)*EXP(ifac*nn*dphi)
-         lagbprpfout(istep,:)=lagbprpfun(istep,:)*EXP(ifac*nn*dphi)
+
       ENDDO
 
       CALL cspline_dealloc(cspl)
@@ -3146,17 +3186,19 @@ c-----------------------------------------------------------------------
      $               "Lagrangian perturbed field") )
          CALL check( nf90_put_att(fncid,bml_id,"units","Tesla") )
          CALL check( nf90_put_att(fncid,bml_id,"jacobian",jac_out) )
-         CALL check( nf90_def_var(fncid, "b_lag_perp_fun", nf90_double,
-     $               (/p_id,t_id,i_id/),bp_id) )
-         CALL check( nf90_put_att(fncid,bp_id,"long_name",
-     $               "Lagrangian perturbed field of xi_perp") )
-         CALL check( nf90_put_att(fncid,bp_id,"units","Tesla") )
          CALL check( nf90_def_var(fncid, "b_lag_perp", nf90_double,
      $               (/p_id,m_id,i_id/),bmp_id) )
          CALL check( nf90_put_att(fncid,bmp_id,"long_name",
      $               "Lagrangian perturbed field of xi_perp") )
          CALL check( nf90_put_att(fncid,bmp_id,"units","Tesla") )
          CALL check( nf90_put_att(fncid,bmp_id,"jacobian",jac_out) )
+         IF(gauge)THEN
+            CALL check(nf90_def_var(fncid,TRIM(gauge_name),nf90_double,
+     $           (/p_id,m_id,i_id/),target_id))
+            CALL check(nf90_put_att(fncid,target_id,'units','Tesla'))
+            CALL check(nf90_put_att(fncid,target_id,'gauge',jac_type))
+            CALL check(nf90_put_att(fncid,target_id,'jacobian',jac_out))
+         ENDIF
          CALL check( nf90_def_var(fncid, "Bdivxi_perp_fun", nf90_double,
      $               (/p_id,t_id,i_id/),x_id) )
          CALL check( nf90_put_att(fncid,x_id,"long_name",
@@ -3190,9 +3232,9 @@ c-----------------------------------------------------------------------
      $      lagbparmout),AIMAG(lagbparmout)/),(/mstep,lmpert,2/))) )
          CALL check( nf90_put_var(fncid,bmp_id,RESHAPE((/REAL(
      $      lagbprpmout),AIMAG(lagbprpmout)/),(/mstep,lmpert,2/))) )
-         CALL check( nf90_put_var(fncid,bp_id,RESHAPE(
-     $      (/REAL(lagbprpfout),-helicity*AIMAG(lagbprpfout)/),
-     $      (/mstep,mthsurf,2/))) )
+         IF(gauge) CALL check(nf90_put_var(fncid,target_id,RESHAPE(
+     $        (/REAL(target_out),AIMAG(target_out)/),
+     $        (/mstep,lmpert,2/))))
          CALL check( nf90_put_var(fncid,xm_id,RESHAPE((/REAL(
      $      -divxprpmout),AIMAG(-divxprpmout)/),(/mstep,lmpert,2/))) )
          CALL check( nf90_put_var(fncid,km_id,RESHAPE((/REAL(
@@ -3410,11 +3452,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     deallocation cleans memory in heap
 c-----------------------------------------------------------------------
+      IF(gauge) DEALLOCATE(target_out)
       DEALLOCATE(rs,zs,equilbfun)
       DEALLOCATE(eulbparmns,lagbparmns,divxprpmns,curvmns,
      $   xmp1mns,xspmns,xmsmns,xmtmns,xmzmns)
       DEALLOCATE(eulbparmout,lagbparmout,divxprpmout,curvmout,
-     $   lagbprpmout,lagbprpfun,lagbprpfout)
+     $   lagbprpmout,lagbprpfun)
       DEALLOCATE(eulbparfun,lagbparfun,divxprpfun,curvfun,
      $   eulbparfout,lagbparfout,divxprpfout,curvfout)
 c-----------------------------------------------------------------------

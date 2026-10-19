@@ -290,3 +290,5 @@ solutions.bin, solutions<n>.bin
     **Flag** sol_num (match.in, MATCH)
 
     **Info** Ideal Euler-Lagrange solution built from DCON eigenfunction sol_num (1 is the most unstable). sol_num=1 writes solutions.bin; sol_num=n>1 writes solutions<n>.bin so several eigenfunctions can be kept side by side.
+
+See :doc:`pmodb_target_gauge` for ``b_lag_perp`` and optional perturbed Boozer/Hamada field strength.

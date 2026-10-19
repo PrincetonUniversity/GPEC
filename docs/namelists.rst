@@ -45,3 +45,5 @@ This namelist sets the inputs, controls the behavior, and determines the outputs
 .. include:: ../input/pentrc.in
    :literal:
 
+
+See :doc:`pmodb_target_gauge` for the optional ``pmodb_gauge_flag`` output.

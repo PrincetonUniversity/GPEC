@@ -221,6 +221,14 @@ jobs:
           ulimit -s unlimited
           ../../../bin/dcon && ../../../bin/gpec && ../../../bin/stride && ../../../bin/pentrc
 
+      - name: Check perturbed-coordinate gauge operator
+        run: |
+          export LD_LIBRARY_PATH=$PREFIX/lib:$LD_LIBRARY_PATH
+          gfortran -O0 -fopenmp -Igpec -Iequil regression/test/pmodb_target_gauge.f90 gpec/pmodb_gauge.o gpec/pmodb_gauge_kernel.o gpec/ismath.o gpec/gpglobal.o -Ldeps/lib -lequil -llapack -lblas -o /tmp/pmodb_target_gauge
+          /tmp/pmodb_target_gauge
+          if /tmp/pmodb_target_gauge resonant > /tmp/resonant.log 2>&1; then exit 1; fi
+          python3 -c "assert 'Nonzero resonant pmodb gauge source' in open('/tmp/resonant.log').read()"
+
       - name: Run Soloviev kinetic example
         run: |
           export GPECHOME=$(pwd)
