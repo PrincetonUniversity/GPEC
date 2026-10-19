@@ -483,6 +483,14 @@ else
     MATHLIBS = -lopenblas
 endif
 
+# RDCON_LIBSCIHOME (opt-in, e.g. $CRAY_LIBSCI_PREFIX_DIR on Cray systems): link rdcon alone to serial Cray LibSci
+# (rpath). Serial LibSci is not thread-safe under STRIDE's OpenMP, so the other codes keep the libraries above.
+ifdef RDCON_LIBSCIHOME
+    RDCON_MATHLIBS = -L$(RDCON_LIBSCIHOME)/lib -lsci_gnu -Wl,-rpath,$(RDCON_LIBSCIHOME)/lib
+else
+    RDCON_MATHLIBS = $(MATHLIBS)
+endif
+
 # specifics of which libraries are used
 #---------------------------------------
 
