@@ -148,7 +148,7 @@ vacuum: v neededdeps $(VACUUM_OBJS) equil lsode
 
 # PENTRC code
 ../pentrc/version.inc:
-	@ver="`git describe --tags`"; \
+	@ver="`git describe --tags --match 'v[0-9]*'`"; \
 	if [ ! -f $@ ] || ! grep -F "'$$ver'" $@ >/dev/null 2>&1; then \
 		echo ">>> Updating version file"; \
 		echo "      CHARACTER(len=*), PARAMETER :: version ='$$ver'" | tee $@; \
@@ -201,7 +201,7 @@ dcon: v neededdeps $(DCON_OBJS) equil lsode vacuum pentrc
 
 # RDCON code
 ../rdcon/version.inc:
-	@ver="`git describe --tags`"; \
+	@ver="`git describe --tags --match 'v[0-9]*'`"; \
 	if [ ! -f $@ ] || ! grep -F "'$$ver'" $@ >/dev/null 2>&1; then \
 		echo ">>> Updating version file"; \
 		echo "      CHARACTER(len=*), PARAMETER :: version ='$$ver'" | tee $@; \
@@ -232,7 +232,7 @@ rdcon: v neededdeps $(RDCON_OBJS) equil lsode vacuum
 
 # STRIDE code
 ../stride/version.inc:
-	@ver="`git describe --tags`"; \
+	@ver="`git describe --tags --match 'v[0-9]*'`"; \
 	if [ ! -f $@ ] || ! grep -F "'$$ver'" $@ >/dev/null 2>&1; then \
 		echo ">>> Updating version file"; \
 		echo "      CHARACTER(len=*), PARAMETER :: version ='$$ver'" | tee $@; \
@@ -344,7 +344,7 @@ sum: v neededdeps $(SUM_OBJS) equil
 
 # Coil library
 ../coil/version.inc:
-	@ver="`git describe --tags`"; \
+	@ver="`git describe --tags --match 'v[0-9]*'`"; \
 	if [ ! -f $@ ] || ! grep -F "'$$ver'" $@ >/dev/null 2>&1; then \
 		echo ">>> Updating version file"; \
 		echo "      CHARACTER(len=*), PARAMETER :: version ='$$ver'" | tee $@; \
@@ -362,7 +362,7 @@ coil: v neededdeps $(COIL_OBJS)
 # note gpec keeps track of its own version, which can differ from the synced dcon, pentrc, and stride ones
 # this enables faster compiling during development
 ../gpec/version.inc:
-	@ver="`git describe --tags`"; \
+	@ver="`git describe --tags --match 'v[0-9]*'`"; \
 	if [ ! -f $@ ] || ! grep -F "'$$ver'" $@ >/dev/null 2>&1; then \
 		echo ">>> Updating version file"; \
 		echo "      CHARACTER(len=*), PARAMETER :: version ='$$ver'" | tee $@; \
