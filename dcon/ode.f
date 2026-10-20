@@ -984,6 +984,7 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(1) :: jmax
       REAL(r8) :: uratio
       LOGICAL :: fix_required
+      INTEGER :: isol
 c-----------------------------------------------------------------------
 c     compute norms of first solution vectors, abort if any are zero.
 c-----------------------------------------------------------------------
@@ -1001,6 +1002,8 @@ c-----------------------------------------------------------------------
       IF(new)THEN
          new=.FALSE.
          unorm0(1:msol)=unorm(1:msol)
+c     keep the ordering of the reduction just done at this point.
+         IF(sing_flag)unorm(index(1:msol))=(/(msol-isol,isol=1,msol)/)
       ELSE
          unorm(1:msol)=unorm(1:msol)/unorm0(1:msol)
          uratio=MAXVAL(unorm(1:msol))/MINVAL(unorm(1:msol))
