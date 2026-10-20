@@ -222,7 +222,7 @@ c-----------------------------------------------------------------------
      $           twopi*psio,ro,nn,jac_type,mlow,mhigh,mpert,mthvac)
             ! manually set the kinetic profiles
             CALL read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,
-     $          tfac,wefac,wpfac,indebug)
+     $          tfac,wefac,wpfac,indebug,kinetic_format)
             ! manually set the perturbed equilibrium displacements
             ! use false flat xi and xi' for equal weighting
             ALLOCATE(psitmp(sq%mx+1),mtmp(mpert),xtmp(sq%mx+1,mpert))
