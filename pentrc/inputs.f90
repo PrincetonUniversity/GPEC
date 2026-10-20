@@ -221,9 +221,11 @@ module inputs
 
         ! optional supplied logLambda, nu_i, nu_e columns
         supplied = .false.
-        if(present(format)) supplied = (format == "rates-v1")
-        if(present(format) .and. .not. supplied .and. format /= "legacy") &
-            error stop "ERROR: read_kin - kinetic_format must be legacy or rates-v1"
+        if(present(format))then
+            supplied = (format == "rates-v1")
+            if(.not. supplied .and. format /= "legacy") &
+                error stop "ERROR: read_kin - kinetic_format must be legacy or rates-v1"
+        endif
         nq = 5
         if(supplied)then
             if(tshape(2) /= 9) error stop "ERROR: read_kin - rates-v1 needs 9 columns"
