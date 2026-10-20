@@ -1422,7 +1422,7 @@ c-----------------------------------------------------------------------
       CALL iscdftb(mfac,mpert,xoutfun,mthsurf,xoutmn)
 
       DO itheta=0,mthsurf
-         CALL bicube_eval(rzphi,psilim,theta(itheta),0)
+         CALL bicube_eval(rzphi,psilim,theta(itheta),1)
          rfac=SQRT(rzphi%f(1))
          eta=twopi*(theta(itheta)+rzphi%f(2))
          r(itheta)=ro+rfac*COS(eta)
