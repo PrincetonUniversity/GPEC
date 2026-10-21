@@ -150,7 +150,6 @@ module inputs
 
         ! set additional geometry spline
         call set_geom
-        WRITE(*,*)chi1
 
     end subroutine read_equil
 

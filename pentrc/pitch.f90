@@ -165,7 +165,7 @@ module pitch_integration
         integer :: istep, ilambda, j, out_unit, ix
         real(r8) :: lmda,wb,wd,nueff,lnq
         complex(r8) :: xint
-        real(r8), dimension(nfs,maxstep) :: fs
+        real(r8), dimension(:,:), allocatable :: fs
         real(r8), dimension(turns%nqty) :: turns_f
         complex(r8), dimension(flambda%nqty) :: flmabda_f
         ! declare lsode input variables
@@ -181,6 +181,7 @@ module pitch_integration
         lrw  = 20 + 16*neq      ! for mf 10
         allocate(iwork(liw))
         allocate(atol(neq),rtol(neq),rwork(lrw),y(neq),dky(neq))
+        allocate(fs(nfs,maxstep))     ! heap, not OpenMP worker stack
         neqarray(:) = (/ neq /)
         y(:) = 0                      ! initial value of integral
         x = flambda%xs(0)             ! lower bound of integration
