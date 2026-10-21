@@ -499,10 +499,10 @@ module pitch_integration
                ! calculate for forward and backward banana
                call bicube_eval_external(fnml,kappa,marray(i)-n*q-l,0, &
                        ix, iy, fnml_f, fnml_fx, fnml_fy)
-               fm(i,1) = fnml%f(1)
+               fm(i,1) = fnml_f(1)
                call bicube_eval_external(fnml,kappa,marray(i)-n*q+l,0, &
                        ix, iy, fnml_f, fnml_fx, fnml_fy)
-               fm(i,2) = fnml%f(1)
+               fm(i,2) = fnml_f(1)
             enddo
             do i = 1,mpert
                do j = 1,mpert
