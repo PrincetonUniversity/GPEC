@@ -376,7 +376,7 @@ module torque
                         jbb = (rzphi_f(4) * eqfun_f(1)**2)
                         dbob = sum( dbob_m_f(:)*expm )   ! dB/B
                         divx = sum( divx_m_f(:)*expm ) ! nabla.xi_perp
-                        kapx = -0.5*(dbob+divx)
+                        kapx = -(dbob+divx)
                         cglspl%xs(i) = theta
                         ! include 0.5 correction for quadratic calculations in complex analysis
                         cglspl%fs(i,1) = rzphi_f(4)*0.5*abs(divx)**2
@@ -386,8 +386,8 @@ module torque
                     call spline_int(cglspl)
                     ! torque
                     tpsi_var = 2.0*n*xj*kin_f(s)*kin_f(s+2) &       ! T = 2nidW
-                         *(0.5*(5.0/3.0)*cglspl%fsi(cglspl%mx,1)&
-                         + 0.5*(1.0/3.0)*cglspl%fsi(cglspl%mx,2))
+                         *(0.5_r8*(5.0_r8/3.0_r8)*cglspl%fsi(cglspl%mx,1)&
+                         + 0.5_r8*(1.0_r8/3.0_r8)*cglspl%fsi(cglspl%mx,2))
                     call spline_dealloc(cglspl)
                else
                     tpsi_var=0
