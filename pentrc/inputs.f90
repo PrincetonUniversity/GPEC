@@ -434,9 +434,8 @@ module inputs
                     +xj*reshape(table(:,10),(/npsi,nm/),order=(/1,2/))
         endif
 
-        ! For consistency with GPEC-0.3.0 and smaller values near rationals
-        if(verbose) print *,"  -> Using div(xi_perp) = -(dB/B+kappa.xi_perp)"
-        divxmni = -(lagbmni+kapxmni)
+        ! Keep the supplied divergence and use its perpendicular gauge.
+        lagbmni = -(divxmni+kapxmni)
 
         ! convert to chebyshev coordinates
         if(jac_in=="" .or. jac_in=="default")then
