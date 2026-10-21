@@ -3019,9 +3019,8 @@ c-----------------------------------------------------------------------
 
          CALL spline_eval(sq,psifac(istep),1)
 
-         singfac=mfac-nn*sq%f(4)
-         xsp1_mn=xsp1_mn*(singfac**2/(singfac**2+reg_spot**2))
-         CALL iscdftb(mfac,mpert,xsp1_fun,mthsurf,xsp1_mn)
+c        Use the radial derivative selected by reg_flag in gpeq_sol.
+         CALL iscdftb(mfac,mpert,xsp1_fun,mthsurf,xmp1_mn)
 
          DO itheta=0,mthsurf
             CALL bicube_eval(eqfun,psifac(istep),theta(itheta),0)
