@@ -1009,6 +1009,7 @@ c-----------------------------------------------------------------------
             CALL bicube_eval(eqfun,psifac(istep),theta(itheta),0)
             CALL bicube_eval(rzphi,psifac(istep),theta(itheta),0)
 
+            jac=rzphi%f(4)
             cspl%fs(itheta,1)=xmt_fun(itheta)-
      $           (chi1/eqfun%f(1))**2/jac*
      $           (xvt_fun(itheta)+sq%f(4)*xvz_fun(itheta))
