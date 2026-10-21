@@ -3,7 +3,6 @@
     !!! FOR READING IN ASCII TABLE, SET INPUT_FLAG = TRUE
     input_flag=f         ! reads profile quantities (n_e, t_e, etc.) from an ascii table
     infile=''  ! Path to ascii table of profile quantities read when using input_flag
-    ncfile=''  ! Path to netCDF file of STRIDE outputs
 
     !!! FOR MANUALLY ENTERING KINETIC QUANTITIES @ RATIONAL SURFACE, SET PARAMS_FLAG = TRUE
     params_flag=f        ! calculates normalized parameters from profile quantities
@@ -34,7 +33,7 @@
     inds=6.0             ! normalized ion sound radius
     intau=1.0            ! ion temperature divided by electron temperature
     Q0=4.0               ! unnecessary placeholder variable for inQ?
-    delta_n_p=0          ! delta offset used for jxb calculations. Default is (1e-2,1e-2).
+    delta_n_p=(0,0)      ! complex delta offset used for jxb calculations. Default is (1e-2,1e-2).
 /
 &SLAYER_CONTROL
     inum=400             ! resolution to find error field thresholds.
@@ -59,9 +58,9 @@
     bin_flag=f           ! writes results to binary files
     netcdf_flag=f        ! writes results to netcdf files
     stability_flag=f     ! calculate delta dependence on complex Q
-    bal_flag=f           ! calculate the resonant field penetration threshold from torque balance
 /
 &SLAYER_DIAGNOSE
     riccati_out=f        ! writes LSDOE Riccati integration to an ascii file
     params_check=t       ! prints the primary parameters to the terminal when they are calculated
+    bal_flag=f           ! calculate the resonant field penetration threshold from torque balance
 /
