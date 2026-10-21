@@ -1779,6 +1779,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE gal_read_input
+      LOGICAL :: rpec_flag0
       NAMELIST/gal_input/nx,nq,dx0,dx1,dx2,pfac,diagnose_map,solver,
      $     diagnose_grid,diagnose_lsode,ndiagnose,diagnose_integrand,
      $     diagnose_mat,gal_tol,dx1dx2_flag,cutoff,prefac,dpsi_intvl,
@@ -1792,7 +1793,11 @@ c     accepted here so v1.5 rdcon.in files still run.
 c-----------------------------------------------------------------------
       READ(UNIT=in_unit,NML=gal_input)
       REWIND(UNIT=in_unit)
+      rpec_flag0=coil%rpec_flag
       READ(UNIT=in_unit,NML=gal_output)
+      IF(coil%rpec_flag .NEQV. rpec_flag0)WRITE(*,*)
+     $     "WARNING: coil%rpec_flag in gal_output is deprecated;"//
+     $     " set it in rdcon_control instead."
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
