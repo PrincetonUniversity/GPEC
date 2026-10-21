@@ -155,7 +155,7 @@ module energy_integration
         logical, intent(in), optional :: op_record
         ! declare variables
         integer :: i, j, xout_unit
-        real(r8), dimension(6,maxstep) :: xprofile
+        real(r8), dimension(:,:), allocatable :: xprofile
         logical :: record_this
         ! declare lsode input variables
         integer  iopt, istate, itask, itol, mf, iflag
@@ -170,6 +170,7 @@ module energy_integration
         
         ! set default recording flag
         i = 0
+        allocate(xprofile(6,maxstep)) ! heap, not OpenMP worker stack
         xprofile = 0.0
         record_this = .false.
         if(present(op_record)) record_this = op_record

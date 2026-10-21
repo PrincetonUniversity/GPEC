@@ -1175,13 +1175,11 @@ c-----------------------------------------------------------------------
 
       INTEGER :: ix,imap,ipert,ip,npp
       INTEGER :: ix0,np0
-      INTEGER :: imap_error
       TYPE(interval_type), POINTER :: intvl
       TYPE(cell_type), POINTER :: cell
 c-----------------------------------------------------------------------
 c     start loops over intervals and grid cells.
 c-----------------------------------------------------------------------
-      imap_error=0
       gal%rhs=0
       intvl => gal%intvl
       ix0=1
@@ -1206,14 +1204,9 @@ c-----------------------------------------------------------------------
          DO ip=np0,npp
             DO ipert=1,mpert
                imap=cell%map(ipert,ip)
-               IF (imap>gal%ndim) THEN
-                  imap_error = imap
-                  CYCLE
-               ENDIF
-               IF( imap_error>0 ) THEN
-                  WRITE (*,*) "ERROR: imap error. imap=",imap_error,
-     $              " gal%ndim=",gal%ndim
-               ENDIF
+c     skip unknowns beyond ndim, as deltac_assemble_mat does
+c     (the small-solution rows dropped by noexp).
+               IF (imap>gal%ndim) CYCLE
                SELECT CASE (fulldomain)
                CASE (0)
                   gal%rhs(imap,1)=gal%rhs(imap,1)+cell%rhs(ipert,ip)
