@@ -1785,9 +1785,10 @@ c-----------------------------------------------------------------------
      $     dpsi1_intvl,gal_xmin_flag,gal_eps_xmin,gnstep
       NAMELIST /gal_output/interp_np,interp_np_res,restore_uh,
      $     restore_us,restore_ul,bin_delmatch,out_galsol,bin_galsol,
-     $     b_flag,bin_coilsol
+     $     b_flag,bin_coilsol,coil
 c-----------------------------------------------------------------------
-c     read input.
+c     read input. coil now belongs in rdcon_control, but is also
+c     accepted here so v1.5 rdcon.in files still run.
 c-----------------------------------------------------------------------
       READ(UNIT=in_unit,NML=gal_input)
       REWIND(UNIT=in_unit)
