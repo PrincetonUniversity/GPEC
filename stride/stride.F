@@ -55,7 +55,7 @@ c-----------------------------------------------------------------------
       NAMELIST/stride_params/grid_packing,asymp_at_sing,
      $     integrate_riccati,calc_delta_prime,calc_dp_with_vac,
      $     axis_mid_pt_skew,
-     $     big_soln_err_tol, kill_big_soln_for_ideal_dW,
+     $     big_soln_err_tol, kill_big_soln_for_ideal_dW, dprime_banded,
      $     ric_dt,ric_tol,riccati_bounce,verbose_riccati_output,
      $     riccati_match_hamiltonian_evals,verbose_performance_output,
      $     fourfit_metric_parallel,vac_parallel,nIntervalsTot,nThreads
