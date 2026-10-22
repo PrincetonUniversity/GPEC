@@ -60,6 +60,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: calc_delta_prime
       LOGICAL :: kill_big_soln_for_ideal_dW
       LOGICAL :: calc_dp_with_vac
+      LOGICAL :: dprime_banded=.FALSE.
 
       TYPE(sing_calculator), DIMENSION(:), TARGET, ALLOCATABLE :: scalc
       REAL(r8) :: axisPsi, outerPsi
@@ -1046,8 +1047,8 @@ c-----------------------------------------------------------------------
          REAL(r8), DIMENSION(:,:), ALLOCATABLE :: atol
 
          INTEGER :: nMat, nSp, i, j, k, jsing, ksing, s2, m2
-         INTEGER :: iChg, info, ipert0, dRow
-         REAL(r8) :: rcond, mnorm, ZLANGE
+         INTEGER :: iChg, info, ipert0, dRow, rs, rb, kl, ku
+         REAL(r8) :: rcond, mnorm, ZLANGE, ZLANGB
          INTEGER, DIMENSION(:), ALLOCATABLE :: isp, jsp
          COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: asp, b, x
          COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: M, MInv, TempMat
@@ -1077,6 +1078,11 @@ c-----------------------------------------------------------------------
      $        s2 * (m2-2) +     !each side of each sing
      $        (msing-1) * m2*m2*2 + !intervals sandwiched b/w sings
      $        s2  !driven big solution coefficients (2sides * msing)
+         !rows per singular surface: the banded solve keeps each
+         !surface's two big solution rows in its block (the dense
+         !solve puts them last), so kl = ku = 3*mpert-1
+         rs = 2*m2-2
+         IF (dprime_banded) rs = 2*m2
 
          ALLOCATE(b(nMat),x(nMat),isp(nSp),jsp(nSp),asp(nSp))
          ALLOCATE(TempMat(m2,m2),ipivTemp(m2),rworkTemp(2*m2),
@@ -1108,7 +1114,7 @@ c-----------------------------------------------------------------------
             DO i = 1,m2
                DO j = 1,m2
                   k=k+1
-                  isp(k) = i + (2*m2-2) * (jsing-1)
+                  isp(k) = i + rs * (jsing-1)
                   jsp(k) = j + mpert + (2*m2) * (jsing-1)
                   asp(k) = s%uShootL(i,j)
                ENDDO
@@ -1120,7 +1126,7 @@ c-----------------------------------------------------------------------
             DO i = 1,m2
                IF (i/=ipert0 .AND. i/=ipert0+mpert) THEN
                   k=k+1
-                  isp(k) = i + iChg + m2 + (2*m2-2) * (jsing-1)
+                  isp(k) = i + iChg + m2 + rs * (jsing-1)
                   jsp(k) = i + mpert + (2*m2) * (jsing-1)
                   asp(k) = 1.0
 
@@ -1138,7 +1144,7 @@ c-----------------------------------------------------------------------
             DO i = 1,m2
                DO j = 1,m2
                   k=k+1
-                  isp(k) = i + (2*m2-2) * jsing
+                  isp(k) = i + rs * jsing
                   jsp(k) = j + mpert + m2 + (2*m2)*(jsing-1)
                   asp(k) = -s%uShootR(i,j)
                ENDDO
@@ -1150,7 +1156,7 @@ c-----------------------------------------------------------------------
          DO i = 1,m2
             DO j = 1,mpert
                k=k+1
-               isp(k) = i + (2*m2-2) * msing
+               isp(k) = i + rs * msing
                jsp(k) = j + mpert + (2*m2) * msing
                asp(k) = uEdge(i,j+mpert)
             ENDDO
@@ -1161,14 +1167,16 @@ c-----------------------------------------------------------------------
          DO jsing = 1,msing
             s => scalc(jsing)
             ipert0 = s%sing_col
+            rb = nMat-s2+2*(jsing-1)
+            IF (dprime_banded) rb = rs*jsing-2
             !left side
             k=k+1
-            isp(k) = isp(k-1)+1
+            isp(k) = rb+1
             jsp(k) = ipert0 + mpert + (2*m2)*(jsing-1)
             asp(k) = 1.0
             !right side
             k=k+1
-            isp(k) = isp(k-1)+1
+            isp(k) = rb+2
             jsp(k) = ipert0 + mpert + m2 + (2*m2)*(jsing-1)
             asp(k) = 1.0
          ENDDO
@@ -1181,16 +1189,30 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     check condition number of BVP matrix.
 c-----------------------------------------------------------------------
-         ALLOCATE(M(nMat,nMat),MInv(nMat,nMat))
          ALLOCATE(ipiv(nMat),uwork(nMat),cwork(2*nMat),rwork(2*nMat))
-         M=0.0
-         DO k = 1,nSp
-            M(isp(k),jsp(k)) = asp(k)
-         ENDDO
-         MInv = M
-         CALL ZGETRF(nMat,nMat,MInv,nMat,ipiv,info)
-         mnorm = ZLANGE('O',nMat,nMat,MInv,nMat,rwork)
-         CALL ZGECON('O',nMat,MInv,nMat,mnorm,rcond,cwork,rwork,info)
+         IF (dprime_banded) THEN
+            kl = MAXVAL(isp-jsp)
+            ku = MAXVAL(jsp-isp)
+            ALLOCATE(MInv(2*kl+ku+1,nMat))
+            MInv=0.0
+            DO k = 1,nSp
+               MInv(kl+ku+1+isp(k)-jsp(k),jsp(k)) = asp(k)
+            ENDDO
+            mnorm = ZLANGB('O',nMat,kl,ku,MInv(kl+1,1),2*kl+ku+1,rwork)
+            CALL ZGBTRF(nMat,nMat,kl,ku,MInv,2*kl+ku+1,ipiv,info)
+            CALL ZGBCON('O',nMat,kl,ku,MInv,2*kl+ku+1,ipiv,mnorm,rcond,
+     $           cwork,rwork,info)
+         ELSE
+            ALLOCATE(M(nMat,nMat),MInv(nMat,nMat))
+            M=0.0
+            DO k = 1,nSp
+               M(isp(k),jsp(k)) = asp(k)
+            ENDDO
+            MInv = M
+            CALL ZGETRF(nMat,nMat,MInv,nMat,ipiv,info)
+            mnorm = ZLANGE('O',nMat,nMat,MInv,nMat,rwork)
+            CALL ZGECON('O',nMat,MInv,nMat,mnorm,rcond,cwork,rwork,info)
+         ENDIF
          print *,"Delta' sparse matrix condition number = ",rcond
 c-----------------------------------------------------------------------
 c     solve BVP matrix without sparse matrix.
@@ -1201,15 +1223,19 @@ c-----------------------------------------------------------------------
                b = 0.0
                IF (i == 1) THEN
                   !Left side driving term
-                  b(nMat-s2+2*jsing-1) = 1.0
                   dRow = 2*jsing-1
                ELSE
                   !Right side driving term
-                  b(nMat-s2+2*jsing) = 1.0
                   dRow = 2*jsing
                ENDIF
+               b(isp(nSp-s2+dRow)) = 1.0  !its big solution row
                x = b
-               CALL ZGETRS('N',nMat,1,MInv,nMat,ipiv,x,nMat,info)
+               IF (dprime_banded) THEN
+                  CALL ZGBTRS('N',nMat,kl,ku,1,MInv,2*kl+ku+1,ipiv,x,
+     $                 nMat,info)
+               ELSE
+                  CALL ZGETRS('N',nMat,1,MInv,nMat,ipiv,x,nMat,info)
+               ENDIF
                IF (info /= 0) THEN
                   print *,"info was not zero! info=",info
                ENDIF
@@ -1229,7 +1255,15 @@ c-----------------------------------------------------------------------
 c     error-check non-sparse matrix solution.
 c-----------------------------------------------------------------------
                !Error-check big solution elements by backward solve.
-               b = ABS(MATMUL(M,x))
+               IF (dprime_banded) THEN
+                  b = 0.0
+                  DO k = 1,nSp
+                     b(isp(k)) = b(isp(k)) + asp(k)*x(jsp(k))
+                  ENDDO
+                  b = ABS(b)
+               ELSE
+                  b = ABS(MATMUL(M,x))
+               ENDIF
                IF (ABS(1-SUM(ABS(b))) > big_soln_err_tol) THEN
                   print *,"Big sol'n error, surface #",jsing,"side",i
                   print *,"=",ABS(1-SUM(ABS(b)))
