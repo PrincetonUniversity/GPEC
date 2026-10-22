@@ -184,7 +184,7 @@ c-----------------------------------------------------------------------
      $     gal%mat(gal%ldab,gal%ndim),gal%ipiv(gal%ndim))
       gal%rhs=0
       gal%sol=0
-      gal%mat=0
+c     mat is zeroed in gal_assemble_mat as assembly reaches each column.
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -211,7 +211,8 @@ c-----------------------------------------------------------------------
          intvl => gal%intvl(ising)
          DO ix=1,gal%nx
             cell => intvl%cell(ix)
-            DEALLOCATE(cell%map,cell%mat)
+            DEALLOCATE(cell%map)
+            IF(ALLOCATED(cell%mat))DEALLOCATE(cell%mat)
             IF(ALLOCATED(cell%emat))DEALLOCATE(cell%emat)
             IF(ALLOCATED(cell%rhs))DEALLOCATE(cell%rhs)
          ENDDO
@@ -699,7 +700,7 @@ c-----------------------------------------------------------------------
 
       TYPE(gal_type), INTENT(INOUT) :: gal
 
-      INTEGER :: ising,ix,ip,ipert,i,jp,jpert,j,offset
+      INTEGER :: ising,ix,ip,ipert,i,jp,jpert,j,offset,jzero
       TYPE(interval_type), POINTER :: intvl
       TYPE(cell_type), POINTER :: cell
 c-----------------------------------------------------------------------
@@ -710,10 +711,18 @@ c-----------------------------------------------------------------------
       ELSEIF (solver == "cholesky") THEN
          offset=1
       ENDIF
+      jzero=0
       DO ising=0,msing
          intvl => gal%intvl(ising)
          DO ix=1,gal%nx
             cell => intvl%cell(ix)
+c-----------------------------------------------------------------------
+c     zero mat (allocated untouched) up to this cell's last column, so
+c     its memory grows as the element matrices are freed.
+c-----------------------------------------------------------------------
+            j=MAX(MAXVAL(cell%map),cell%emap)
+            gal%mat(:,jzero+1:j)=0
+            jzero=MAX(jzero,j)
             DO ip=0,np
                DO ipert=1,mpert
                   i=cell%map(ipert,ip)
@@ -762,6 +771,11 @@ c     finish loops over intervals and grid cells.
 c-----------------------------------------------------------------------
                ENDDO
             ENDDO
+c-----------------------------------------------------------------------
+c     LU never reassembles, so free the element matrix now (cholesky
+c     keeps it for its LU fallback).
+c-----------------------------------------------------------------------
+            IF (solver == "LU") DEALLOCATE(cell%mat)
             IF (cell%extra /= "none") THEN
                IF (cell%etype == "ext1".OR.cell%etype == "ext2") CYCLE
                j=cell%emap
@@ -769,6 +783,7 @@ c-----------------------------------------------------------------------
             ENDIF
          ENDDO
       ENDDO
+      gal%mat(:,jzero+1:)=0
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -1435,7 +1450,6 @@ c-----------------------------------------------------------------------
             gal%ldab=2*gal%kl+gal%ku+1
             DEALLOCATE(gal%mat)
             ALLOCATE(gal%mat(gal%ldab,gal%ndim))
-            gal%mat=0
             CALL gal_assemble_mat(gal)
          ELSE
             WRITE(*,*)"Calculating Galerkin matrix solution"
