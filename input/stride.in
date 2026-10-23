@@ -61,7 +61,6 @@
     calc_delta_prime=t                  ! When false, sing_order=2 is better for speed, (with less accuracy).
     calc_dp_with_vac=t                  ! When vac_flag=t, this will use vacuum edge conditions to calculate delta prime.
     big_soln_err_tol=1e-7               ! Threshold error for correct solution to the delta prime bvp.
-    dprime_banded=f                     ! Solve the delta prime bvp with a banded LU instead of a dense one: same result, much faster and smaller with many rational surfaces.
 
     integrate_riccati=f                 ! Use Riccati integration for dW. Cannot calculate delta_prime.
     riccati_bounce=t                    ! Toggle integration mode to control growth of matrix
