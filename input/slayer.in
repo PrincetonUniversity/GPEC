@@ -83,11 +83,11 @@
     coupled_stabscan_flag=f      ! uniform-grid scan of the coupled determinant, output as ASCII
     amr_flag=t           ! adaptive Re(Q),Im(Q) scan and root extraction for match_gamma_flag (results in the netcdf file)
     br_th_flag=f         ! Calculate br_th
-    bal_flag=f           ! calculate the resonant field penetration threshold from torque balance
 /
 
 &SLAYER_DIAGNOSE
     riccati_out=f        ! writes LSDOE Riccati integration to an ascii file
     riccatiscan_flag=f
     params_check=f       ! prints the primary parameters to the terminal when they are calculated
+    bal_flag=f           ! calculate the resonant field penetration threshold from torque balance
 /

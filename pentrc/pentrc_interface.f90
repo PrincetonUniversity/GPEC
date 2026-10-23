@@ -143,13 +143,14 @@ module pentrc_interface
         pmodb_file ="none", &
         data_dir ="."
     character(32) :: &
+        kinetic_format = "legacy",&
         nutype = "harmonic",&
         f0type = "maxwellian",&
         jac_in = "default",&
         moment = "pressure"
 
     ! namelists
-    namelist/pent_input/kinetic_file, gpec_file, peq_file, pmodb_file, idconfile, &
+    namelist/pent_input/kinetic_file, kinetic_format, gpec_file, peq_file, pmodb_file, idconfile, &
             data_dir, zi, zimp, mi, mimp, nl, electron, nutype, f0type, &
             jac_in, jsurf_in, tmag_in, power_bin, power_bpin, power_rin, power_rcin
 
@@ -238,7 +239,7 @@ module pentrc_interface
         ! read (perturbed) equilibrium inputs
         if(indebug .and. in_kin) print *,"  read_kin args: ",trim(kinetic_file),zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,indebug
         if(in_deq) call read_equil(idconfile)
-        if(in_kin) call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,indebug)
+        if(in_kin) call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,indebug,kinetic_format)
         if(in_peq)then
             if(peq_file=="")then
                write(nstr,'(i3)')nn
@@ -297,7 +298,7 @@ module pentrc_interface
             print *,"read_kin args:"
             print *,"  ",trim(kinetic_file),zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,tdebug
         endif
-        call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,indebug)
+        call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,indebug,kinetic_format)
 
         ! transfer torque function variables to external program
         get_nl = nl

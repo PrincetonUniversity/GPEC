@@ -77,6 +77,11 @@ c-----------------------------------------------------------------------
             DEALLOCATE(cellinfos%icell,cellinfos%iintvl,
      $  cellinfos%etypes,cellinfos%etypes_int,cellinfos%x1,cellinfos%x2)
       ENDIF
+      IF(MRE_flag)THEN
+         CALL spline_dealloc(mreterms)
+         DEALLOCATE(Zeff_)
+         DEALLOCATE(psi_N_Zeff_)
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -217,6 +222,7 @@ c-----------------------------------------------------------------------
 
       LOGICAL :: cyl_flag=.FALSE.,regrid_flag=.FALSE.,verbose=.TRUE.
       INTEGER :: mmin,ipsi
+      REAL(r8) :: zeff0
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: mx0
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: vx0
 
@@ -226,7 +232,8 @@ c-----------------------------------------------------------------------
      $     tol_nr,tol_r,crossover,ucrit,singfac_min,singfac_max,
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,sort_type,
      $     gal_flag,regrid_flag,sing1_flag,qlow,qhigh,
-     $     sing_order_ceiling,degen_tol,coil,Zeff,reform_eq_with_psilim
+     $     sing_order_ceiling,degen_tol,coil,reform_eq_with_psilim,
+     $     Zeff, psi_N_Zeff
       NAMELIST/rdcon_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
@@ -260,7 +267,6 @@ c-----------------------------------------------------------------------
          CALL gal_read_input
       ENDIF
       CALL ascii_close(in_unit)
-
 c-----------------------------------------------------------------------
 c     open output files, read, process, and diagnose equilibrium.
 c-----------------------------------------------------------------------
@@ -339,6 +345,26 @@ c-----------------------------------------------------------------------
 c     optionally compute modified Rutherford equation (MRE) terms.
 c-----------------------------------------------------------------------
       IF(MRE_flag)THEN
+         CALL read_var_len(Zeff,Zeff_)
+         CALL read_var_len(psi_N_Zeff,psi_N_Zeff_)
+c        one Zeff value (default 1.52) without psi_N_Zeff: flat profile.
+         IF(.NOT.ALLOCATED(psi_N_Zeff_))THEN
+            zeff0=1.52_r8
+            IF(ALLOCATED(Zeff_))THEN
+               IF(SIZE(Zeff_) > 1)
+     $              CALL program_stop("A Zeff profile needs psi_N_Zeff")
+               zeff0=Zeff_(1)
+               DEALLOCATE(Zeff_)
+            ENDIF
+            ALLOCATE(Zeff_(2),psi_N_Zeff_(2))
+            Zeff_=zeff0
+            psi_N_Zeff_=(/0.0_r8,1.0_r8/)
+         ENDIF
+         IF(.NOT.ALLOCATED(Zeff_) .OR. SIZE(Zeff_) /= SIZE(psi_N_Zeff_)
+     $     .OR. SIZE(Zeff_) < 2)
+     $     CALL program_stop("Zeff, psi_N_Zeff: equal sizes, >= 2")
+         IF(ANY(psi_N_Zeff_(2:) <= psi_N_Zeff_(:SIZE(psi_N_Zeff_)-1)))
+     $     CALL program_stop("psi_N_Zeff must be strictly increasing")
          CALL spline_alloc(mreterms,mpsi,30)
          mreterms%xs=sq%xs
          mreterms%fs=0

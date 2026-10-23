@@ -32,6 +32,8 @@ c     20. spline_get_yp.
 c     21. spline_thomas.
 c     22. spline_roots.
 c     23. spline_refine_root.
+c     24. spline_fit_hermite.
+c     25. spline_fit_pchip.
 c-----------------------------------------------------------------------
 c     subprogram 0. spline_type definition.
 c     defines spline_type.
@@ -208,9 +210,11 @@ c-----------------------------------------------------------------------
       SELECT CASE(endmode)
       CASE("extrap")
          DO iqty=1,spl%nqty
-            spl%fs1(0,iqty)=SUM(cl(1:4)*spl%fs(0:3,iqty))
-            spl%fs1(spl%mx,iqty)=SUM(cr(1:4)
-     $           *spl%fs(spl%mx:spl%mx-3:-1,iqty))
+            spl%fs1(0,iqty)=SUM(cl(2:4)
+     $           *(spl%fs(1:3,iqty)-spl%fs(0,iqty)))
+            spl%fs1(spl%mx,iqty)=SUM(cr(2:4)
+     $           *(spl%fs(spl%mx-1:spl%mx-3:-1,iqty)
+     $           -spl%fs(spl%mx,iqty)))
             spl%fs1(1,iqty)=spl%fs1(1,iqty)-spl%fs1(0,iqty)
      $           /(spl%xs(1)-spl%xs(0))
             spl%fs1(spl%mx-1,iqty)=
@@ -1692,7 +1696,7 @@ c-----------------------------------------------------------------------
             r = (2.0 * a * a * a - 9.0 * a * b + 27.0 * c) / 54.0
             m = r**2 - q**3  ! discrimenent
             IF(m > 0)THEN ! one real root
-               s = -sign(1.0_r8, r) * (abs(r) + sqrt(m))**(1.0/3.0)
+               s = -sign(1.0_r8,r)*(abs(r)+sqrt(m))**(1.0_r8/3.0_r8)
                t = q / s
                z1 = s + t - (a / 3.0)
                z2 = -huge(z2)
@@ -1849,5 +1853,101 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE spline_refine_root
+c-----------------------------------------------------------------------
+c     subprogram 24. spline_fit_hermite.
+c     fits cubic splines, keeping the caller's knot derivatives fs1
+c     for the quantities flagged in keep (cubic Hermite interpolation).
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE spline_fit_hermite(spl,endmode,keep)
+
+      TYPE(spline_type), INTENT(INOUT) :: spl
+      CHARACTER(*), INTENT(IN) :: endmode
+      LOGICAL, DIMENSION(spl%nqty), INTENT(IN) :: keep
+
+      INTEGER :: iqty
+      REAL(r8), DIMENSION(0:spl%mx,spl%nqty) :: fs1
+c-----------------------------------------------------------------------
+c     fit all quantities, then restore the supplied derivatives.
+c-----------------------------------------------------------------------
+      DO iqty=1,spl%nqty
+         IF(keep(iqty) .AND. ANY(spl%xpower(:,iqty) /= 0))
+     $        CALL program_stop("spline_fit_hermite: "//
+     $        "supplied derivatives incompatible with xpower")
+      ENDDO
+      fs1=spl%fs1
+      CALL spline_fit(spl,endmode)
+      DO iqty=1,spl%nqty
+         IF(keep(iqty))spl%fs1(:,iqty)=fs1(:,iqty)
+      ENDDO
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE spline_fit_hermite
+c-----------------------------------------------------------------------
+c     subprogram 25. spline_fit_pchip.
+c     monotone piecewise cubic Hermite fit (pchip) for tabulated data
+c     without derivatives: no overshoot between points. Slopes as in
+c     scipy's PchipInterpolator (Fritsch and Butland, SIAM J. Sci.
+c     Stat. Comput. 5, 300, 1984).
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE spline_fit_pchip(spl)
+
+      TYPE(spline_type), INTENT(INOUT) :: spl
+
+      INTEGER :: iqty,ix,mx
+      REAL(r8) :: w1,w2
+      REAL(r8), DIMENSION(spl%mx) :: h,del
+c-----------------------------------------------------------------------
+c     interior slopes: weighted harmonic mean, zero at extrema.
+c-----------------------------------------------------------------------
+      IF(ANY(spl%xpower /= 0))CALL program_stop("spline_fit_pchip: "//
+     $     "xpower not supported")
+      mx=spl%mx
+      h=spl%xs(1:mx)-spl%xs(0:mx-1)
+      DO iqty=1,spl%nqty
+         del=(spl%fs(1:mx,iqty)-spl%fs(0:mx-1,iqty))/h
+         DO ix=1,mx-1
+            IF(del(ix)*del(ix+1) <= 0)THEN
+               spl%fs1(ix,iqty)=0
+            ELSE
+               w1=2*h(ix+1)+h(ix)
+               w2=h(ix+1)+2*h(ix)
+               spl%fs1(ix,iqty)=(w1+w2)/(w1/del(ix)+w2/del(ix+1))
+            ENDIF
+         ENDDO
+         IF(mx == 1)THEN
+            spl%fs1(:,iqty)=del(1)
+         ELSE
+            spl%fs1(0,iqty)=pchip_end(h(1),h(2),del(1),del(2))
+            spl%fs1(mx,iqty)=pchip_end(h(mx),h(mx-1),del(mx),del(mx-1))
+         ENDIF
+      ENDDO
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+
+      CONTAINS
+c-----------------------------------------------------------------------
+c     shape-preserving three-point end slope.
+c-----------------------------------------------------------------------
+      REAL(r8) FUNCTION pchip_end(h0,h1,d0,d1)
+      REAL(r8), INTENT(IN) :: h0,h1,d0,d1
+      pchip_end=((2*h0+h1)*d0-h0*d1)/(h0+h1)
+      IF(SIGN(one,pchip_end) /= SIGN(one,d0) .OR. d0 == 0)THEN
+         pchip_end=0
+      ELSEIF(SIGN(one,d0) /= SIGN(one,d1)
+     $        .AND. ABS(pchip_end) > ABS(3*d0))THEN
+         pchip_end=3*d0
+      ENDIF
+      END FUNCTION pchip_end
+      END SUBROUTINE spline_fit_pchip
 
       END MODULE spline_mod

@@ -72,6 +72,21 @@ Interfacing with VACUUM
 Vacuum is the code used in DCON to calculate the vacuum energy matrices, which combine with the plasma energy matrix to describe the full system eigenmodes. The VACUUM code uses CCW :math:`\phi` and downward outboard :math:`\theta`. We thus use the complex conjugate of RH configurations to interface GPEC and VACUUM.
 
 
+.. _coupling_overlap:
+
+Resonant Coupling and Dominant Mode Overlap
+===========================================
+
+Coupling matrices (singcoup_flag) relate area-weighted resonant quantities to the root-area-weighted vacuum field, making their SVD coordinate invariant (Park 2008, Pharr 2026):
+
+.. math::
+
+   \bar{b}^r_i = C_{im} \tilde{b}^x_m, \qquad
+   \tilde{b}^x_m = \frac{1}{\sqrt{A^x}} \oint d\theta\, d\phi \, \delta\mathbf{B}^x\cdot\hat{n} \, \sqrt{\mathcal{J}|\nabla\psi|} \, e^{i(n\phi - m\theta)}.
+
+Singular values carry the units of each C; right-singular vectors :math:`\mathbf{v}_j` are unitless.
+
+
 .. _inputs:
 
 Inputs
@@ -157,7 +172,7 @@ GPEC_singfld_n#.out
 
     **Flag** singcoup_flag
 
-    **Info** Additional section showing the overlap field and overlap percentage for each eigenmode in the singcoup_svd output.
+    **Info** Additional section showing the overlap field (Tesla) and overlap percentage for each eigenmode in the singcoup_svd output. See :ref:`coupling_overlap` for definitions.
 
 GPEC_pmod_n#.out
 
@@ -208,6 +223,39 @@ A number of output files have a similar structure. Here the * in the file name i
 
     **Info** The false perturbed magnetic field in the vacuum region on the \left(r,z,\phi\right) grid calculated using the GPEC boundary surface current from the external fields alone.
 
+Energy Decomposition Outputs
+----------------------------
+
+These outputs reconstruct the ideal plasma energy :math:`\delta W_p` of a single DCON eigenmode on every flux surface and break it into physically distinct terms. They require a pure DCON eigenmode: set mode_flag=t, choose mode (1 is the least stable eigenmode), and keep reg_flag=f and coil_flag=data_flag=harmonic_flag=f. GPEC stops at input if any of the three decomposition flags is set otherwise. The derivations, integrands and the meaning of every printed quantity are documented in :download:`docs/tex/recon/main.tex <tex/recon/main.tex>` (build with pdflatex and bibtex).
+
+Each route prints a summary to the terminal that ends with its :math:`\delta W_p` total, the same total in DCON normalization (dW_p(recon-normalize) and its analogues), the DCON eigenvalue ep(mode) it should reproduce, and the :math:`\psi` range it integrated over beside the DCON range psilow to psilim. In the files below <mode> is the selected mode. recon_out=f keeps only the terminal summary, and recon_int ("spline", the default, or "trapezoid") selects the radial quadrature.
+
+The three routes converge differently with the number of poloidal harmonics. The standard form (standard_form_flag) reproduces the DCON eigenvalue at any truncation, because it evaluates the same Galerkin energy DCON minimizes. The two effective-field forms rely on identities that hold only for the untruncated fields, so they need extra harmonics: in the Soloviev regression example they miss ep(1) by about 20% with the default band and agree to 0.4% with delta_mlow=delta_mhigh=8. The curl check and the identity residual measure this truncation; a PASS on the curl check does not by itself confirm the energy.
+
+gpec_recon_*_sol<mode>.out
+
+    **Flag** effective_field_flag
+
+    **Info** Bernstein effective-field form :math:`2\delta W_p = \int |\mathbf{C}|^2/\mu_0 - \int K \xi_n^2`. integration: radial integrands and running totals. terms: per-(psi,theta) densities of the C and K terms. k, k_sigma_check, shear_fun, curvature: the K kernel and its shear, parallel-current and curvature parts on the (psi,theta,R,Z) grid. cwfun/cwmn, cvfun/cvmn, cv2fun/cv2mn: contravariant and covariant components of C in real and mode space. qvmn: covariant components of the bare perturbed field Q. A summary block is appended to gpec.log.
+
+gpec_recon_cveri_sol<mode>.out
+
+    **Flag** curl_check_flag (with effective_field_flag)
+
+    **Info** Pointwise residual of :math:`(\nabla\times\mathbf{C})\cdot\nabla\psi = 0` on the (psi,theta,R,Z) grid. The terminal and gpec.log report PASS or WARN for the maximum residual relative to the size of the two cancelling terms :math:`(|\partial_\theta C_\zeta|+|\partial_\zeta C_\theta|)/|J|`, together with the absolute maximum and rms.
+
+gpec_recon2_terms_sol<mode>.out, gpec_recon2_integration_sol<mode>.out
+
+    **Flag** standard_form_flag
+
+    **Info** Standard (first) form of the energy with the :math:`\gamma|\nabla\cdot\xi|^2` term omitted: :math:`|Q|^2/\mu_0`, :math:`\mathbf{j}\cdot(\mathbf{Q}\times\xi^*)`, and :math:`(\nabla\cdot\xi)^*(\xi\cdot\nabla p)` densities per surface (terms) and their radial integrals (integration).
+
+gpec_recon3_terms_sol<mode>.out, gpec_recon3_integration_sol<mode>.out
+
+    **Flag** effective_field_terms_flag
+
+    **Info** Split of :math:`|\mathbf{C}|^2 = |\mathbf{Q}|^2 + 2\mathrm{Re}(\mathbf{V}^*\cdot\mathbf{Q}) + |\mathbf{V}|^2` into A, B, Cpar and Iperp, with the identity check epf = A + B + Cpar + Iperp, per surface (terms) and integrated (integration).
+
 Binary File Outputs
 -------------------
 
@@ -237,3 +285,8 @@ bnormal_spectrum.bin
 
     **Info** Surfmn type contours of the normal perturbed magnetic fields as a function of poloidal harmonic number and \Psi_{N}.
 
+solutions.bin, solutions<n>.bin
+
+    **Flag** sol_num (match.in, MATCH)
+
+    **Info** Ideal Euler-Lagrange solution built from DCON eigenfunction sol_num (1 is the most unstable). sol_num=1 writes solutions.bin; sol_num=n>1 writes solutions<n>.bin so several eigenfunctions can be kept side by side.

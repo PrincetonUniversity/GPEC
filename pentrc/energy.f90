@@ -105,7 +105,7 @@ module energy_integration
     !   Module global variable xnutype is used to determine collision
     !   operator. Default is harmonic, and valid choices are:
     !       "zero" : collisionless
-    !       "small" : 1e-6*(we+wd) (krook value ignored)
+    !       "small" : 1e-5*abs(we) (krook value ignored)
     !       "krook" : krook operator (unmodified argument)
     !       "harmoinc" : (1+(l/2)^2)*krook*x^-3/2
     !
@@ -155,7 +155,7 @@ module energy_integration
         logical, intent(in), optional :: op_record
         ! declare variables
         integer :: i, j, xout_unit
-        real(r8), dimension(6,maxstep) :: xprofile
+        real(r8), dimension(:,:), allocatable :: xprofile
         logical :: record_this
         ! declare lsode input variables
         integer  iopt, istate, itask, itol, mf, iflag
@@ -170,6 +170,7 @@ module energy_integration
         
         ! set default recording flag
         i = 0
+        allocate(xprofile(6,maxstep)) ! heap, not OpenMP worker stack
         xprofile = 0.0
         record_this = .false.
         if(present(op_record)) record_this = op_record
@@ -209,6 +210,7 @@ module energy_integration
                 do while (x<xout)
                     call lsode2(xintgrnd, neq, yi, x, xout, itol, rtol,&
                         atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
+                    if(istate<0) exit
                     call dintdy2(x, 1, rwork(21), neq(1), dky, iflag)
                     i = i+1
                     xprofile(:,i) = (/real(0,r8), x, dky(1:2), y(1:2)/)
@@ -225,6 +227,7 @@ module energy_integration
                 stop "ERROR: xintgrl_lsode - too many steps in x required &
                     &along imaginary axis. Consider changing ximag."
             endif
+            if(istate<0) call xintgrl_lsode_fail(istate, x, psi, lambda)
         endif
 
         ! integration in real space to xmax
@@ -242,6 +245,7 @@ module energy_integration
             do while (x<xout)
                 call lsode2(xintgrnd, neq, y, x, xout, itol, rtol,&
                     atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
+                if(istate<0) exit
                 call dintdy2(x, 1, rwork(21), neq(1), dky, iflag)
                 i = i+1
                 xprofile(:,i) = (/x, real(0,r8), dky(1:2),y(1:2)/)
@@ -280,6 +284,7 @@ module energy_integration
             stop "ERROR: xintgrl_lsode - too many steps in x required. &
                 &consider complex contour (ximag>0)."
         endif
+        if(istate<0) call xintgrl_lsode_fail(istate, x, psi, lambda)
 
         ! save integration profile to memory
         if(record_this) then
@@ -298,6 +303,23 @@ module energy_integration
         return
     end function xintgrl_lsode
 
+    !=======================================================================
+    subroutine xintgrl_lsode_fail(istate, x, psi, lambda)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Stop on an LSODE failure (ISTATE < 0) other than too many steps,
+    !   which xintgrl_lsode reports itself. LSODE returns the integral only
+    !   up to the failure point x on that contour leg, so the result
+    !   must not be used.
+    !-----------------------------------------------------------------------
+        integer, intent(in) :: istate
+        real(r8), intent(in) :: x, psi, lambda
+
+        print *, "psi =", psi, ", lambda =", lambda, ", leff =", energy_leff
+        print *, "LSODE istate =", istate, " at x =", x
+        error stop "ERROR: xintgrl_lsode - LSODE failed before the end of the energy contour."
+    end subroutine xintgrl_lsode_fail
+
     
     
     
@@ -314,7 +336,7 @@ module energy_integration
     !    Module global variable xnutype is used to determine collision
     !    operator. Default is harmonic, and valid choices are:
     !       "zero" : collisionless
-    !       "small" : 1e-6*(we+wd) (krook value ignored)
+    !       "small" : 1e-5*abs(we) (krook value ignored)
     !       "krook" : krook operator (unmodified argument)
     !       "harmoinc" : (1+(l/2)^2)*krook*x^-3/2
     !
@@ -356,7 +378,7 @@ module energy_integration
             case ("zero")
                 nux = 0.0
             case ("small")
-                nux = 1e-5*energy_we
+                nux = 1.0e-5_r8*abs(energy_we)
             case ("krook")
                 nux = energy_nuk
             case ("harmonic")

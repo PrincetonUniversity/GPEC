@@ -39,7 +39,8 @@ c-----------------------------------------------------------------------
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
      $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag,
      $     arzphifun_flag,xbrzphifun_flag,pmodbmn_flag,xclebsch_flag,
-     $     filter_flag,gal_flag,delpsi_flag,use_res_spot,
+     $     filter_flag,gal_flag,delpsi_flag,effective_field_flag,
+     $     use_res_spot,
      $     singthresh_callen_flag,singthresh_slayer_flag,singthresh_flag
       LOGICAL, DIMENSION(100) :: ss_flag
       COMPLEX(r8), DIMENSION(:), POINTER :: finmn,foutmn,xspmn,
@@ -73,7 +74,9 @@ c-----------------------------------------------------------------------
      $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout,filter_flag,
      $     netcdf_flag,ascii_flag,singthresh_flag,
      $     singthresh_callen_flag,singthresh_slayer_flag,
-     $     singthresh_slayer_inpr,singthresh_slayer_inpr_prof
+     $     singthresh_slayer_inpr,singthresh_slayer_inpr_prof,
+     $     effective_field_flag,recon_int,curl_check_flag,recon_out,
+     $     standard_form_flag,effective_field_terms_flag
       NAMELIST/gpec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,jacfac_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
@@ -199,6 +202,12 @@ c-----------------------------------------------------------------------
       test_flag=.FALSE.
       eigm_flag=.FALSE.
       mutual_test_flag=.FALSE.
+      effective_field_flag=.FALSE.
+      standard_form_flag=.FALSE.
+      effective_field_terms_flag=.FALSE.
+      recon_int="spline"
+      curl_check_flag=.FALSE.
+      recon_out=.TRUE.
 
       majr=10.0
       minr=1.0
@@ -229,6 +238,28 @@ c-----------------------------------------------------------------------
       READ(in_unit,NML=gpec_output)
       READ(in_unit,NML=gpec_diagnose)
       CALL ascii_close(in_unit)
+      SELECT CASE(TRIM(recon_int))
+      CASE("spline","trapezoid")
+      CASE DEFAULT
+         CALL gpec_stop("gpec_output recon_int must be spline or "//
+     $        "trapezoid")
+      END SELECT
+      ! recon diagnostics compare against ep(mode), so they need the
+      ! bare, unregularized DCON eigenmode selected by mode_flag.
+      IF (effective_field_flag .OR. standard_form_flag .OR.
+     $     effective_field_terms_flag) THEN
+         IF (.NOT. mode_flag .OR. reg_flag .OR. coil_flag .OR.
+     $        data_flag .OR. harmonic_flag) THEN
+            CALL gpec_stop("effective_field_flag/standard_form_flag/"//
+     $           "effective_field_terms_flag "//
+     $           "require mode_flag=t, reg_flag=f, and "//
+     $           "coil_flag=data_flag=harmonic_flag=f")
+         ENDIF
+      ENDIF
+      IF (curl_check_flag .AND. .NOT. effective_field_flag) THEN
+         PRINT *,"!! WARNING: curl_check_flag has no effect without "//
+     $        "effective_field_flag"
+      ENDIF
       galsol%gal_flag=gal_flag
       IF(timeit) CALL gpec_timer(0)
 c-----------------------------------------------------------------------
@@ -619,7 +650,15 @@ c-----------------------------------------------------------------------
       IF (arzphifun_flag) THEN
          CALL gpout_arzphifun(mode,xspmn)
       ENDIF
-
+      IF (effective_field_flag) THEN
+         CALL gpout_recon(mode,xspmn)
+      ENDIF
+      IF (standard_form_flag) THEN
+         CALL gpout_recon2(mode,xspmn)
+      ENDIF
+      IF (effective_field_terms_flag) THEN
+         CALL gpout_recon3(mode,xspmn)
+      ENDIF
 c-----------------------------------------------------------------------
 c     diagnose.
 c-----------------------------------------------------------------------
@@ -772,7 +811,13 @@ c     $        power_rcout)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
+      IF(singcoup_set) THEN
+c        retain coupling vectors through output and diagnostic calls,
+c        then release them even when singular-field output is disabled.
+         DEALLOCATE(singcoup_out_vecs)
+         IF(osing<msing) DEALLOCATE(localcoup_out_vecs)
+         singcoup_set=.FALSE.
+      ENDIF
       CALL gpec_dealloc
       CALL gpec_stop("Normal termination.")
       END PROGRAM gpec_main
-

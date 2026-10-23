@@ -31,7 +31,7 @@ module inputs
 
     use params, only : r8,xj,mp,me,e,mu0,twopi
     use utilities, only : get_free_file_unit,readtable,nunique,progressbar,iscdftf,iscdftb
-    use spline_mod, only : spline_type,spline_alloc,spline_fit,spline_eval,spline_write1
+    use spline_mod, only : spline_type,spline_alloc,spline_dealloc,spline_fit,spline_fit_pchip,spline_eval,spline_write1
     use cspline_mod, only : cspline_type,cspline_alloc,cspline_dealloc,&
                             cspline_fit,cspline_write,cspline_eval
     use fspline_mod, only : fspline_eval
@@ -150,13 +150,12 @@ module inputs
 
         ! set additional geometry spline
         call set_geom
-        WRITE(*,*)chi1
 
     end subroutine read_equil
 
 
     !=======================================================================
-    subroutine read_kin(file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,write_log)
+    subroutine read_kin(file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,write_log,format)
     !-----------------------------------------------------------------------
     !*DESCRIPTION:
     !   Read ascii file containing table of kinetic profiles ni, ne, ti,
@@ -167,6 +166,10 @@ module inputs
     !   T_i(eV), T_e(eV), omega_E(rad/s). File can (nearly) arbitrary
     !   header and/or footer, with the exception that no lines start with
     !   a number.
+    !
+    !   With format="rates-v1" the table has 9 columns, the 6 above plus
+    !   logLambda, nu_i(s^-1), nu_e(s^-1). These positive supplied values
+    !   replace the internal collision model (interpolated in log).
     !
     !*ARGUMENTS:
     !    file : character(256) (in)
@@ -185,6 +188,8 @@ module inputs
     !       Scaling of rotation profile, done via manipulation of omegaE
     !   write_log : bool
     !       Writes kinetic spline to log file
+    !   format : character (optional)
+    !       "legacy" (default) or "rates-v1"
     !
     !-----------------------------------------------------------------------
 
@@ -194,28 +199,48 @@ module inputs
         integer, intent(in) :: zi,zimp,mi,mimp
         real(r8), intent(in) :: wefac,wpfac,nfac,tfac
         logical :: write_log
+        character(*), intent(in), optional :: format
         ! declare local variables
         logical :: warning_printed = .false.
         real(r8), dimension(:,:), allocatable :: table
         character(32), dimension(:), allocatable :: titles
 
         integer, parameter :: nkin = 100
-        integer :: i,out_unit, tshape(2)
+        integer :: i,out_unit, tshape(2), nq
+        logical :: supplied
         real(r8) :: psi
         real(r8), dimension(0:nkin) :: zeff,zpitch,welec,wdian,wdiat,wpefac
-        type(spline_type) :: tmp
+        real(r8), dimension(0:nkin,2) :: tkev
+        real(r8), dimension(0:nkin,3) :: nu_supplied
+        type(spline_type) :: tmp,tmp_nu
 
         call readtable(file,table,titles,verbose,write_log)
         tshape = shape(table)
         if(write_log) print *,"Table shaped ",tshape
 
+        ! optional supplied logLambda, nu_i, nu_e columns
+        supplied = .false.
+        if(present(format))then
+            supplied = (format == "rates-v1")
+            if(.not. supplied .and. format /= "legacy") &
+                error stop "ERROR: read_kin - kinetic_format must be legacy or rates-v1"
+        endif
+        nq = 5
+        if(supplied)then
+            if(tshape(2) /= 9) error stop "ERROR: read_kin - rates-v1 needs 9 columns"
+            if(any(table(:,7:9) <= 0)) &
+                error stop "ERROR: read_kin - rates-v1 logLambda and nu must be positive"
+            table(:,7:9) = log(table(:,7:9))  ! interpolate in log to stay positive
+            nq = 8
+        endif
+
         ! temp spline on experimental grid
-        call spline_alloc(tmp,tshape(1)-1,5)
+        call spline_alloc(tmp,tshape(1)-1,nq)
         tmp%xs(0:) = table(1:,1)
-        do i=1,5
+        do i=1,nq
             tmp%fs(0:,i) = table(1:,i+1)
         enddo
-        call spline_fit(tmp,"extrap")
+        call spline_fit_pchip(tmp)  ! monotone between table points
         if(write_log) print *,"Formed temporary spline"
 
         ! extrapolate to regular spline (helps smooth core??)
@@ -227,21 +252,32 @@ module inputs
               call spline_eval(tmp,psi,0)
               kin%xs(i) = psi
               kin%fs(i,1:5) = tmp%f(1:5)
+              if(supplied) nu_supplied(i,:) = exp(tmp%f(6:8))
         enddo
+        if(any(kin%fs(:,1:2) <= 0)) error stop "ERROR: read_kin - densities must be positive"
+        if(any(kin%fs(:,3:4) < 0)) error stop "ERROR: read_kin - temperatures must be non-negative"
 
         ! convert temperatures to si units
         kin%fs(:,3:4) = kin%fs(:,3:4)*1.602e-19 !ev to j
 
         ! collisionalities **assumes si units for n,t**
+        ! floor T (keV) at 1 meV and logLambda at 1 so cold (T -> 0) edges give large positive nu
+        tkev = max(kin%fs(:,3:4)/1.602e-16, 1.0e-6_r8)
+        if(any(kin%fs(:,3:4)/1.602e-16 < 1.0e-6_r8) .and. .not. supplied) &
+            print *, "  ! WARNING ! Flooring T at 1e-3 eV in collision frequencies"
         zeff = zimp-(kin%fs(:,1)/kin%fs(:,2))*zi*(zimp-zi)
         zpitch = 1.0+(1.0+mimp)/(2.0*mimp)*zimp*(zeff-1.0)/(zimp-zeff)
         kin%fs(:,6) = 17.3-0.5*log(kin%fs(:,2)/1.0e20) &
-            +1.5*log(kin%fs(:,4)/1.602e-16)
+            +1.5*log(tkev(:,2))
+        if(any(kin%fs(:,6) < 1) .and. .not. supplied) &
+            print *, "  ! WARNING ! Flooring logLambda at 1 in collision frequencies"
+        kin%fs(:,6) = max(kin%fs(:,6), 1.0_r8)
         kin%fs(:,7) = (zpitch/3.5e17)*kin%fs(:,1)*kin%fs(:,6) &
-            /(sqrt(1.0*mi)*(kin%fs(:,3)/1.602e-16)**1.5)
+            /(sqrt(1.0*mi)*tkev(:,1)**1.5)
         kin%fs(:,8) = (zpitch/3.5e17)*kin%fs(:,2)*kin%fs(:,6) &
-            /(sqrt(me/mp)*(kin%fs(:,4)/1.602e-16)**1.5)
+            /(sqrt(me/mp)*tkev(:,2)**1.5)
         kin%fs(:,9) = zeff
+        if(supplied) kin%fs(:,6:8) = nu_supplied
 
         call spline_fit(kin,"extrap")
         if(write_log) print *,"Formed kin spline"
@@ -275,6 +311,13 @@ module inputs
             print *,'     by indirect manipulation of omegae profile'
         endif
         call spline_fit(kin,"extrap")
+        ! local monotone slopes for loglam, nu_i, nu_e so steep edge nu cannot ring inward
+        call spline_alloc(tmp_nu,nkin,3)
+        tmp_nu%xs = kin%xs
+        tmp_nu%fs = kin%fs(:,6:8)
+        call spline_fit_pchip(tmp_nu)
+        kin%fs1(:,6:8) = tmp_nu%fs1
+        call spline_dealloc(tmp_nu)
         if(write_log) print *,"Reformed kin spline with rotation manipulations"
 
         ! write log - designed as check of reading routines
@@ -391,9 +434,8 @@ module inputs
                     +xj*reshape(table(:,10),(/npsi,nm/),order=(/1,2/))
         endif
 
-        ! For consistency with GPEC-0.3.0 and smaller values near rationals
-        if(verbose) print *,"  -> Using div(xi_perp) = -(dB/B+kappa.xi_perp)"
-        divxmni = -(lagbmni+kapxmni)
+        ! Keep the supplied divergence and use its perpendicular gauge.
+        lagbmni = -(divxmni+kapxmni)
 
         ! convert to chebyshev coordinates
         if(jac_in=="" .or. jac_in=="default")then
@@ -497,7 +539,7 @@ module inputs
             write(out_unit,'(a8,es16.8e3,2/)') " chi1 = ",chi1
             write(out_unit,'(1x,a16,a5,8(1x,a16))')"psi_n","m",&
                 'real(deltaB/B)','imag(deltaB/B)','real(divxprp)','imag(divxprp)',&
-                'real(deltaB)','imag(deltaB)','real(Bdivxprp)','imag(Bdivxprp)'
+                'real(deltaBprp)','imag(deltaBprp)','real(Bdivxprp)','imag(Bdivxprp)'
             do i=0,npsi-1
                 do j=1,mpert
                     write(out_unit,'(1x,es16.8e3,i5,14(1x,es16.8e3))') &

@@ -185,7 +185,7 @@ c     compute qlim.
 c-----------------------------------------------------------------------
          qlim=(INT(nn*qlim)+dmlim)/nn
          DO
-            IF(qlim <= qmax)EXIT
+            IF(qlim <= MIN(qmax,qhigh))EXIT
             qlim=qlim-1._r8/nn
          ENDDO
       ENDIF
@@ -259,7 +259,7 @@ c-----------------------------------------------------------------------
       INTEGER :: ipert0,ipert,k
       REAL(r8) :: psifac,di,di0,q,q1,rho,dpsi
       REAL(r8), PARAMETER :: half=.5_r8
-      COMPLEX(r8) :: det
+      COMPLEX(r8) :: det,tr,sqrtd
       TYPE(sing_type), POINTER :: singp
 c-----------------------------------------------------------------------
 c     allocate and initialize solution array.
@@ -304,11 +304,16 @@ c-----------------------------------------------------------------------
       m0mat=TRANSPOSE(singp%mmat(r1(1),r2,:,0))
       di=m0mat(1,1)*m0mat(2,2)-m0mat(2,1)*m0mat(1,2)
       singp%di=di
-      singp%alpha=SQRT(-CMPLX(singp%di))
+      singp%alpha=SQRT(-CMPLX(singp%di,KIND=r8))
+c-----------------------------------------------------------------------
+c     eigenvalues of m0mat: tr/2 -+ SQRT(tr**2/4-det(m0mat)).
+c-----------------------------------------------------------------------
+      tr=m0mat(1,1)+m0mat(2,2)
+      sqrtd=SQRT(tr*tr/4-m0mat(1,1)*m0mat(2,2)+m0mat(2,1)*m0mat(1,2))
       ALLOCATE(singp%power(2*mpert))
       singp%power=0
-      singp%power(ipert0)=-singp%alpha
-      singp%power(ipert0+mpert)=singp%alpha
+      singp%power(ipert0)=tr/2-sqrtd
+      singp%power(ipert0+mpert)=tr/2+sqrtd
       WRITE(out_unit,'(i3,1p,7e11.3)')ising,psifac,rho,q,q1,di0,
      $     singp%di,singp%di/di0-1
 c-----------------------------------------------------------------------
@@ -325,9 +330,9 @@ c-----------------------------------------------------------------------
       singp%vmat(ipert0,ipert0,1,0)=1
       singp%vmat(ipert0,ipert0+mpert,1,0)=1
       singp%vmat(ipert0,ipert0,2,0)
-     $     =-(m0mat(1,1)+singp%alpha)/m0mat(1,2)
+     $     =-(m0mat(1,1)-singp%power(ipert0))/m0mat(1,2)
       singp%vmat(ipert0,ipert0+mpert,2,0)
-     $     =-(m0mat(1,1)-singp%alpha)/m0mat(1,2)
+     $     =-(m0mat(1,1)-singp%power(ipert0+mpert))/m0mat(1,2)
       det=CONJG(singp%vmat(ipert0,ipert0,1,0))
      $     *singp%vmat(ipert0,ipert0+mpert,2,0)
      $     -CONJG(singp%vmat(ipert0,ipert0+mpert,1,0))
@@ -449,7 +454,7 @@ c-----------------------------------------------------------------------
      $           =10*singfac(ipert,2)*fmats%f3(iqty)
      $           +10*singfac(ipert,3)*fmats%f2(iqty)
             IF(sing_order < 6)CYCLE
-            f(1+ipert-jpert,jpert,5)
+            f(1+ipert-jpert,jpert,6)
      $           =20*singfac(ipert,3)*fmats%f3(iqty)
          ENDDO
       ENDDO
@@ -530,7 +535,7 @@ c-----------------------------------------------------------------------
             IF(sing_order < 2)CYCLE
             g(1+ipert-jpert,jpert,2)=gmats%f2(iqty)/2
             IF(sing_order < 3)CYCLE
-            g(1+ipert-jpert,jpert,3)=gmats%f2(iqty)/6
+            g(1+ipert-jpert,jpert,3)=gmats%f3(iqty)/6
          ENDDO
       ENDDO
 c-----------------------------------------------------------------------
@@ -764,7 +769,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: iorder
       INTEGER, DIMENSION(:), POINTER :: r1,r2
-      COMPLEX(r8) :: dpsi,pfac,sqrtfac
+      COMPLEX(r8) :: dpsi,sqrtfac
       COMPLEX(r8), DIMENSION(:,:,:,:), POINTER :: vmat
       TYPE(sing_type), POINTER :: singp
 c-----------------------------------------------------------------------
@@ -779,7 +784,6 @@ c     compute distance from singular surface and its powers.
 c-----------------------------------------------------------------------
       dpsi=psifac-singp%psifac
       sqrtfac=SQRT(dpsi)
-      pfac=ABS(dpsi)**singp%alpha
 c-----------------------------------------------------------------------
 c     compute power series by Horner's method.
 c-----------------------------------------------------------------------
@@ -792,8 +796,8 @@ c     restore powers.
 c-----------------------------------------------------------------------
       ua(r1,:,1)=ua(r1,:,1)/sqrtfac
       ua(r1,:,2)=ua(r1,:,2)*sqrtfac
-      ua(:,r2(1),:)=ua(:,r2(1),:)/pfac
-      ua(:,r2(2),:)=ua(:,r2(2),:)*pfac
+      ua(:,r2(1),:)=ua(:,r2(1),:)*ABS(dpsi)**singp%power(r2(1))
+      ua(:,r2(2),:)=ua(:,r2(2),:)*ABS(dpsi)**singp%power(r2(2))
 c-----------------------------------------------------------------------
 c     renormalize.
 c-----------------------------------------------------------------------

@@ -30,6 +30,15 @@ Ideal
 
 `Park, J.-K., Boozer, A.H. & Glasser, A.H., 2007. Computation of three-dimensional tokamak and spherical torus equilibria. Physics of Plasmas, 14(5), p.052110 <http://aip.scitation.org/doi/10.1063/1.2732170>`_.
 
+Resonant Coupling
+------------------
+
+`Park, J.-K., Boozer, A.H., Menard, J.E. & Schaffer, M.J., 2008. Error field correction in ITER. Nuclear Fusion, 48(4), p.045006 <https://doi.org/10.1088/0029-5515/48/4/045006>`_.
+
+`Park, J.-K., Boozer, A.H. & Menard, J.E., 2008. Spectral asymmetry due to magnetic coordinates. Physics of Plasmas, 15(6), p.064501 <https://doi.org/10.1063/1.2932110>`_.
+
+`Pharr, M., Bursch, E.M., Logan, N.C., Lunia, P., Park, J.-K. & Paz-Soldan, C., 2026. Coordinate-invariant flux-surface Fourier analysis in tokamaks. Physics of Plasmas, 33(9), p.092503 <https://doi.org/10.1063/5.0346311>`_.
+
 Kinetic
 --------
 

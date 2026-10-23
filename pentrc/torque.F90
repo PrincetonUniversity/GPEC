@@ -376,7 +376,7 @@ module torque
                         jbb = (rzphi_f(4) * eqfun_f(1)**2)
                         dbob = sum( dbob_m_f(:)*expm )   ! dB/B
                         divx = sum( divx_m_f(:)*expm ) ! nabla.xi_perp
-                        kapx = -0.5*(dbob+divx)
+                        kapx = -(dbob+divx)
                         cglspl%xs(i) = theta
                         ! include 0.5 correction for quadratic calculations in complex analysis
                         cglspl%fs(i,1) = rzphi_f(4)*0.5*abs(divx)**2
@@ -386,8 +386,8 @@ module torque
                     call spline_int(cglspl)
                     ! torque
                     tpsi_var = 2.0*n*xj*kin_f(s)*kin_f(s+2) &       ! T = 2nidW
-                         *(0.5*(5.0/3.0)*cglspl%fsi(cglspl%mx,1)&
-                         + 0.5*(1.0/3.0)*cglspl%fsi(cglspl%mx,2))
+                         *(0.5_r8*(5.0_r8/3.0_r8)*cglspl%fsi(cglspl%mx,1)&
+                         + 0.5_r8*(1.0_r8/3.0_r8)*cglspl%fsi(cglspl%mx,2))
                     call spline_dealloc(cglspl)
                else
                     tpsi_var=0
@@ -1230,7 +1230,7 @@ module torque
         complex(r8), dimension(maxsteps,mpert**2,6) :: kel_flat_mats
         character(8) :: methcom
         ! declare lsode input variables
-        integer  iopt, istate, itask, itol, mf, iflag,neqarray(6),&
+        integer  iopt, istate, itask, itol, mf,neqarray(6),&
             neq,liw,lrw
         integer, dimension(:), allocatable :: iwork
         real(r8) :: x,xout
@@ -1287,7 +1287,17 @@ module torque
             xlast = x
             call lsode(tintgrnd, neqarray, y, x, xout, itol, rtol,&
                 atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
-            call dintdy(x, 1, rwork(21), neq, dky, iflag)
+            if (istate < 0) then
+                write(*,'(a,i0,a,es24.15,a,a)') &
+                    'PENTRC radial LSODE ISTATE=',istate, &
+                    ' at psi=',x,' method=',trim(method)
+                error stop 'ERROR: tintgrl_lsode - radial integration failed.'
+            endif
+            ! Export the surface response, rather than the derivative of
+            ! LSODE's integral polynomial. At TCRIT, returned x can exceed
+            ! internal TN by a few ulps: DINTDY then leaves dky stale. Direct
+            ! evaluation also keeps flux functions and matrices at this x.
+            call tintgrnd(neqarray, x, y, dky)
 
             ! flux/diffusivity profiles
             call spline_eval(sq,x,0)

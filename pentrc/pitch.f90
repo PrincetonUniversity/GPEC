@@ -165,7 +165,7 @@ module pitch_integration
         integer :: istep, ilambda, j, out_unit, ix
         real(r8) :: lmda,wb,wd,nueff,lnq
         complex(r8) :: xint
-        real(r8), dimension(nfs,maxstep) :: fs
+        real(r8), dimension(:,:), allocatable :: fs
         real(r8), dimension(turns%nqty) :: turns_f
         complex(r8), dimension(flambda%nqty) :: flmabda_f
         ! declare lsode input variables
@@ -181,6 +181,7 @@ module pitch_integration
         lrw  = 20 + 16*neq      ! for mf 10
         allocate(iwork(liw))
         allocate(atol(neq),rtol(neq),rwork(lrw),y(neq),dky(neq))
+        allocate(fs(nfs,maxstep))     ! heap, not OpenMP worker stack
         neqarray(:) = (/ neq /)
         y(:) = 0                      ! initial value of integral
         x = flambda%xs(0)             ! lower bound of integration
@@ -499,10 +500,10 @@ module pitch_integration
                ! calculate for forward and backward banana
                call bicube_eval_external(fnml,kappa,marray(i)-n*q-l,0, &
                        ix, iy, fnml_f, fnml_fx, fnml_fy)
-               fm(i,1) = fnml%f(1)
+               fm(i,1) = fnml_f(1)
                call bicube_eval_external(fnml,kappa,marray(i)-n*q+l,0, &
                        ix, iy, fnml_f, fnml_fx, fnml_fy)
-               fm(i,2) = fnml%f(1)
+               fm(i,2) = fnml_f(1)
             enddo
             do i = 1,mpert
                do j = 1,mpert

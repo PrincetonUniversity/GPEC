@@ -154,6 +154,10 @@ c-----------------------------------------------------------------------
 c     resistive perturbed equilibrium solution.
 c-----------------------------------------------------------------------
       IF (coil%rpec_flag ) THEN
+         IF (solver == "cholesky") THEN
+            WRITE(*,*)"WARNING: rpec_flag needs solver='LU'; switching."
+            solver="LU"
+         ENDIF
          coil%mcoil=mpert
          coil%m1=2*msing+1
          coil%m2=2*msing+coil%mcoil
@@ -403,7 +407,7 @@ c-----------------------------------------------------------------------
          intvl%x(ixmax)=psihigh
       ELSE
          x1=sing(ising+1)%psifac
-         nq1=ABS(sing(ising+1)%q1)
+         nq1=ABS(nn*sing(ising+1)%q1)
          intvl%x(nx)=x1
          IF (gal_xmin_flag .AND. sing1_flag) THEN
             CALL sing1_xmin(ising+1,gal_eps_xmin,myxmin)
@@ -1016,6 +1020,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,mpert), INTENT(OUT) :: f,k,g
 
       INTEGER :: ipert,jpert,iqty
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: lmat
       REAL(r8) :: q
       REAL(r8), DIMENSION(mpert) :: singfac
 c-----------------------------------------------------------------------
@@ -1025,20 +1030,19 @@ c-----------------------------------------------------------------------
       q=sq%f(4)
       singfac=mlow-nn*q+(/(ipert,ipert=0,mpert-1)/)
 c-----------------------------------------------------------------------
-c     compute f.
+c     compute f = (Q L)(Q L)^H from fmats, the spline of L that
+c     sing_mmat uses, so both use the same F.
 c-----------------------------------------------------------------------
-      CALL cspline_eval(fmats_gal,psifac,0)
+      CALL cspline_eval(fmats,psifac,0)
+      lmat=0
       iqty=1
       DO jpert=1,mpert
          DO ipert=jpert,MIN(mpert,jpert+mband)
-            f(ipert,jpert)=fmats_gal%f(iqty)
-     $          *singfac(ipert)*singfac(jpert)
-            IF(ipert /= jpert)THEN
-               f(jpert,ipert)=CONJG(f(ipert,jpert))
-            ENDIF
+            lmat(ipert,jpert)=fmats%f(iqty)*singfac(ipert)
             iqty=iqty+1
          ENDDO
       ENDDO
+      f=MATMUL(lmat,CONJG(TRANSPOSE(lmat)))
 c-----------------------------------------------------------------------
 c     compute k.
 c-----------------------------------------------------------------------
@@ -1398,7 +1402,9 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE gal_solve
 
-      INTEGER :: info,isol,jsol,imap,ising,ix,msol_old
+      INTEGER :: info,isol,jsol,imap,ising,ix,msol_old,i,j,irow
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: dscale
+      CHARACTER(128) :: message
       TYPE(gal_type) :: gal
 c-----------------------------------------------------------------------
 c     allocate and compute arrays.
@@ -1413,19 +1419,71 @@ c     solve global matrix.
 c-----------------------------------------------------------------------
       gal%sol=gal%rhs
       WRITE(*,*)"Grid generated with ",gal%ndim," DOF"
+c-----------------------------------------------------------------------
+c     Cholesky (zpbtrf reads the lower band and the real part of the
+c     diagonal). If it fails, reassemble the full band from the element
+c     matrices, which already hold the boundary conditions, and use LU.
+c-----------------------------------------------------------------------
+      IF (solver == "cholesky") THEN
+         WRITE(*,*)"Performing Galerkin matrix Cholesky factorization"
+         CALL zpbtrf('L',gal%ndim,gal%kl,gal%mat,gal%ldab,info)
+         IF (info /= 0) THEN
+            WRITE(*,'(a,i0,a)')" WARNING: zpbtrf info = ",info,
+     $           ": Galerkin matrix is not positive definite;"
+     $           //" switching to solver='LU'."
+            solver="LU"
+            gal%ldab=2*gal%kl+gal%ku+1
+            DEALLOCATE(gal%mat)
+            ALLOCATE(gal%mat(gal%ldab,gal%ndim))
+            gal%mat=0
+            CALL gal_assemble_mat(gal)
+         ELSE
+            WRITE(*,*)"Calculating Galerkin matrix solution"
+            CALL zpbtrs('L',gal%ndim,gal%kl,gal%nsol,gal%mat,gal%ldab,
+     $           gal%sol,gal%ndim,info)
+         ENDIF
+      ENDIF
+c-----------------------------------------------------------------------
+c     LU.
+c-----------------------------------------------------------------------
       IF (solver == "LU") THEN
+c-----------------------------------------------------------------------
+c     symmetric diagonal scaling, D^-1/2 A D^-1/2. the unscaled Galerkin
+c     matrix has a condition number near 1e20, so the pivot order of the
+c     LU factorization, and with it the result, depends on roundoff
+c     (e.g. on the BLAS threading). cholesky does not need this.
+c-----------------------------------------------------------------------
+         ALLOCATE(dscale(gal%ndim))
+         DO j=1,gal%ndim
+            dscale(j)=ABS(gal%mat(gal%kl+gal%ku+1,j))
+            IF(dscale(j) > 0)THEN
+               dscale(j)=1/SQRT(dscale(j))
+            ELSE
+               dscale(j)=1
+            ENDIF
+         ENDDO
+         DO j=1,gal%ndim
+            DO i=MAX(1,j-gal%ku),MIN(gal%ndim,j+gal%kl)
+               irow=gal%kl+gal%ku+1+i-j
+               gal%mat(irow,j)=gal%mat(irow,j)*dscale(i)*dscale(j)
+            ENDDO
+            gal%sol(j,:)=gal%sol(j,:)*dscale(j)
+         ENDDO
          WRITE(*,*)"Performing Galerkin matrix LU factorization"
          CALL zgbtrf(gal%ndim,gal%ndim,gal%kl,gal%ku,gal%mat,gal%ldab,
      $        gal%ipiv,info)
+         IF (info /= 0) THEN
+            WRITE(message,'(a,i0,a)')"zgbtrf info = ",info,
+     $           ": Galerkin matrix is singular."
+            CALL program_stop(TRIM(message))
+         ENDIF
          WRITE(*,*)"Calculating Galerkin matrix solution"
          CALL zgbtrs("N",gal%ndim,gal%kl,gal%ku,gal%nsol,gal%mat,
      $        gal%ldab,gal%ipiv,gal%sol,gal%ndim,info )
-      ELSEIF (solver == "cholesky") THEN
-         WRITE(*,*)"Performing Galerkin matrix Cholesky factorization"
-         CALL zpbtrf('L',gal%ndim,gal%kl,gal%mat,gal%ldab,info)
-         WRITE(*,*)"Calculating Galerkin matrix solution"
-         CALL zpbtrs('L',gal%ndim,gal%kl,gal%nsol,gal%mat,gal%ldab,
-     $        gal%sol,gal%ndim,info)
+         DO j=1,gal%ndim
+            gal%sol(j,:)=gal%sol(j,:)*dscale(j)
+         ENDDO
+         DEALLOCATE(dscale)
       ENDIF
 c-----------------------------------------------------------------------
 c     compute and write delta from small resonant coefficients.
@@ -1480,9 +1538,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
- 10   FORMAT('(/1x,"i\j",',i2.2,'(4x,"re ",i1,a1,6x,"im ",i1,a1,2x)/)')
- 20   FORMAT('(i3,a1,1p,',i2.2,'e11.3)')
- 30   FORMAT('(i3,"c",1p,',i2.2,'e11.3)')
+ 10   FORMAT('(/1x,"i\j",',i0,'(4x,"re ",i1,a1,6x,"im ",i1,a1,2x)/)')
+ 20   FORMAT('(i3,a1,1p,',i0,'e11.3)')
+ 30   FORMAT('(i3,"c",1p,',i0,'e11.3)')
 c-----------------------------------------------------------------------
 c     create formats.
 c-----------------------------------------------------------------------
@@ -1721,19 +1779,25 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE gal_read_input
+      LOGICAL :: rpec_flag0
       NAMELIST/gal_input/nx,nq,dx0,dx1,dx2,pfac,diagnose_map,solver,
      $     diagnose_grid,diagnose_lsode,ndiagnose,diagnose_integrand,
      $     diagnose_mat,gal_tol,dx1dx2_flag,cutoff,prefac,dpsi_intvl,
      $     dpsi1_intvl,gal_xmin_flag,gal_eps_xmin,gnstep
       NAMELIST /gal_output/interp_np,interp_np_res,restore_uh,
      $     restore_us,restore_ul,bin_delmatch,out_galsol,bin_galsol,
-     $     b_flag,bin_coilsol
+     $     b_flag,bin_coilsol,coil
 c-----------------------------------------------------------------------
-c     read input.
+c     read input. coil now belongs in rdcon_control, but is also
+c     accepted here so v1.5 rdcon.in files still run.
 c-----------------------------------------------------------------------
       READ(UNIT=in_unit,NML=gal_input)
       REWIND(UNIT=in_unit)
+      rpec_flag0=coil%rpec_flag
       READ(UNIT=in_unit,NML=gal_output)
+      IF(coil%rpec_flag .NEQV. rpec_flag0)WRITE(*,*)
+     $     "WARNING: coil%rpec_flag in gal_output is deprecated;"//
+     $     " set it in rdcon_control instead."
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -2020,6 +2084,32 @@ c-----------------------------------------------------------------------
       COMPLEX(r8),DIMENSION(:,:,:), ALLOCATABLE :: sol,sol_cut,dsol
       TYPE(cell_type), POINTER :: cell
 c-----------------------------------------------------------------------
+c     cell grid for the netcdf output, whatever the output flags.
+c-----------------------------------------------------------------------
+      DO iintvl=0,msing
+         DO icell=1,gal%nx
+            cell=>gal%intvl(iintvl)%cell(icell)
+            j=iintvl*gal%nx+icell
+            cellinfos%etypes(j)=cell%etype
+            SELECT CASE(cell%etype)
+            CASE("res")
+               cellinfos%etypes_int(j)=1
+            CASE("ext")
+               cellinfos%etypes_int(j)=2
+            CASE("ext1")
+               cellinfos%etypes_int(j)=3
+            CASE("ext2")
+               cellinfos%etypes_int(j)=4
+            CASE DEFAULT
+               cellinfos%etypes_int(j)=0
+            END SELECT
+            cellinfos%icell(j)=icell
+            cellinfos%iintvl(j)=iintvl
+            cellinfos%x1(j)=cell%x(1)
+            cellinfos%x2(j)=cell%x(2)
+         ENDDO
+      ENDDO
+c-----------------------------------------------------------------------
 c     check flag
 c-----------------------------------------------------------------------
       IF (.NOT.(bin_delmatch.OR.out_galsol.OR.bin_galsol)) RETURN
@@ -2040,33 +2130,23 @@ c-----------------------------------------------------------------------
       DO iintvl=0,msing
          DO icell=1,gal%nx
             cell=>gal%intvl(iintvl)%cell(icell)
-            cellinfos%etypes(iintvl*gal%nx+icell)=cell%etype
             SELECT CASE(cell%etype)
             CASE("res")
                psi(ip:ip+interp_np_res-1)=cell%x(1)+
      $                                     (cell%x(2)-cell%x(1))*xvarres
-               cellinfos%etypes_int(iintvl*gal%nx+icell)=1
             CASE("ext")
                psi(ip:ip+interp_np_res-1)=cell%x(1)+
      $                                     (cell%x(2)-cell%x(1))*xvarres
-               cellinfos%etypes_int(iintvl*gal%nx+icell)=2
             CASE("ext1")
                psi(ip:ip+interp_np-1)=cell%x(1)+
      $                                        (cell%x(2)-cell%x(1))*xvar
-               cellinfos%etypes_int(iintvl*gal%nx+icell)=3
             CASE("ext2")
                psi(ip:ip+interp_np-1)=cell%x(1)+
      $                                        (cell%x(2)-cell%x(1))*xvar
-               cellinfos%etypes_int(iintvl*gal%nx+icell)=4
             CASE("none")
                psi(ip:ip+interp_np-1)=cell%x(1)+
      $                                        (cell%x(2)-cell%x(1))*xvar
-               cellinfos%etypes_int(iintvl*gal%nx+icell)=0
             END SELECT
-            cellinfos%icell(iintvl*gal%nx+icell)=icell
-            cellinfos%iintvl(iintvl*gal%nx+icell)=iintvl
-            cellinfos%x1(iintvl*gal%nx+icell)=cell%x(1)
-            cellinfos%x2(iintvl*gal%nx+icell)=cell%x(2)
             IF (cell%extra=="right".AND.cell%etype=="res")
      $         issing(ip)=.TRUE.
             IF (cell%etype=="res".OR.cell%etype=="ext") THEN

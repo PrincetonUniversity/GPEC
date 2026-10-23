@@ -171,7 +171,7 @@ c-----------------------------------------------------------------------
      $           =10*singfac(ipert,2)*fmats%f3(iqty)
      $           +10*singfac(ipert,3)*fmats%f2(iqty)
             IF(singp%order < 6)CYCLE
-            f(1+ipert-jpert,jpert,5)
+            f(1+ipert-jpert,jpert,6)
      $           =20*singfac(ipert,3)*fmats%f3(iqty)
          ENDDO
       ENDDO
@@ -445,6 +445,7 @@ c-----------------------------------------------------------------------
       INTEGER :: ipert0,ipert,k
       REAL(r8) :: psifac,di,di0,q,q1,rho
       REAL(r8), PARAMETER :: half=.5_r8
+      COMPLEX(r8) :: tr,sqrtd
       COMPLEX(r8), DIMENSION(:,:,:,:), POINTER :: vmat,mmat
       COMPLEX(r8), DIMENSION(:,:,:,:), ALLOCATABLE :: amat,bmat
       TYPE(sing_type), POINTER :: singp
@@ -490,7 +491,12 @@ c-----------------------------------------------------------------------
       m0mat=TRANSPOSE(singp%mmat(r1(1),r2,:,0))
       di=m0mat(1,1)*m0mat(2,2)-m0mat(2,1)*m0mat(1,2)
       singp%di=di
-      singp%alpha=SQRT(-CMPLX(singp%di))
+      singp%alpha=SQRT(-CMPLX(singp%di,KIND=r8))
+c-----------------------------------------------------------------------
+c     eigenvalues of m0mat: tr/2 -+ SQRT(tr**2/4-det(m0mat)).
+c-----------------------------------------------------------------------
+      tr=m0mat(1,1)+m0mat(2,2)
+      sqrtd=SQRT(tr*tr/4-m0mat(1,1)*m0mat(2,2)+m0mat(2,1)*m0mat(1,2))
 c      singp%degen=.TRUE.
       singp%degen=ABS(di+0.25_r8) < degen_tol
 c$$$      WRITE(*,*)'SINGP%DEGEN=',singp%degen,'di+0.25=',di+0.25_r8
@@ -500,7 +506,7 @@ c     reset order and compute higher-order terms.
 c-----------------------------------------------------------------------
       singp%order=sing_order
       IF(sing_order_ceiling)
-     $     singp%order=singp%order+CEILING(2*REAL(singp%alpha))
+     $     singp%order=singp%order+CEILING(2*REAL(sqrtd))
       DEALLOCATE(singp%mmat)
       CALL sing1_mmat(ising)
 c-----------------------------------------------------------------------
@@ -508,8 +514,8 @@ c     compute powers.
 c-----------------------------------------------------------------------
       ALLOCATE(singp%power(2*mpert))
       singp%power=0
-      singp%power(ipert0)=-singp%alpha
-      singp%power(ipert0+mpert)=singp%alpha
+      singp%power(ipert0)=tr/2-sqrtd
+      singp%power(ipert0+mpert)=tr/2+sqrtd
 c-----------------------------------------------------------------------
 c     write to table of singular surface quantities.
 c-----------------------------------------------------------------------
@@ -536,9 +542,9 @@ c-----------------------------------------------------------------------
       vmat(ipert0,ipert0,1,0)=1
       vmat(ipert0,ipert0+mpert,1,0)=1
       vmat(ipert0,ipert0,2,0)
-     $     =-(m0mat(1,1)+singp%alpha)/m0mat(1,2)
+     $     =-(m0mat(1,1)-singp%power(ipert0))/m0mat(1,2)
       vmat(ipert0,ipert0+mpert,2,0)
-     $     =-(m0mat(1,1)-singp%alpha)/m0mat(1,2)
+     $     =-(m0mat(1,1)-singp%power(ipert0+mpert))/m0mat(1,2)
 c-----------------------------------------------------------------------
 c     compute higher-order solutions.
 c-----------------------------------------------------------------------
@@ -587,7 +593,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: iorder,isol
       INTEGER, DIMENSION(:), POINTER :: r1,r2
-      COMPLEX(r8) :: pfac,z,sqrtfac,phase
+      COMPLEX(r8) :: z,sqrtfac,phase
       COMPLEX(r8), DIMENSION(:,:,:,:), POINTER :: vmat
       TYPE(sing_type), POINTER :: singp
 c-----------------------------------------------------------------------
@@ -609,11 +615,10 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     restore powers.
 c-----------------------------------------------------------------------
-      pfac=z**singp%alpha
       ua(r1,:,1)=ua(r1,:,1)/sqrtfac
       ua(r1,:,2)=ua(r1,:,2)*sqrtfac
-      ua(:,r2(1),:)=ua(:,r2(1),:)/pfac
-      ua(:,r2(2),:)=ua(:,r2(2),:)*pfac
+      ua(:,r2(1),:)=ua(:,r2(1),:)*z**singp%power(r2(1))
+      ua(:,r2(2),:)=ua(:,r2(2),:)*z**singp%power(r2(2))
 c-----------------------------------------------------------------------
 c     compute degenerate solutions.
 c-----------------------------------------------------------------------
@@ -622,10 +627,9 @@ c-----------------------------------------------------------------------
 c     adjust phase.
 c-----------------------------------------------------------------------
       IF(psifac < singp%psifac .AND. uad%phase)THEN
-         phase=EXP(ifac*pi*(.5+singp%alpha))
          DO isol=1,2
+            phase=EXP(ifac*pi*(.5-singp%power(r2(isol))))
             ua(:,r2(isol),:)=ua(:,r2(isol),:)*phase
-            phase=EXP(ifac*pi*(.5-singp%alpha))
          ENDDO
       ENDIF
 c-----------------------------------------------------------------------
@@ -648,7 +652,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: iorder,ipert0,isol
       INTEGER, DIMENSION(:), POINTER :: r1,r2
-      COMPLEX(r8) :: pfac,z,sqrtfac,phase
+      COMPLEX(r8) :: z,sqrtfac,phase
       COMPLEX(r8), DIMENSION(mpert,2*mpert,2) :: power
       COMPLEX(r8), DIMENSION(:,:,:,:), POINTER :: vmat
       TYPE(sing_type), POINTER :: singp
@@ -666,8 +670,8 @@ c-----------------------------------------------------------------------
       power=2*singp%order
       power(r1,:,1)=power(r1,:,1)-1
       power(r1,:,2)=power(r1,:,2)+1
-      power(:,r2(1),:)=power(:,r2(1),:)-2*singp%alpha
-      power(:,r2(2),:)=power(:,r2(2),:)+2*singp%alpha
+      power(:,r2(1),:)=power(:,r2(1),:)+2*singp%power(r2(1))
+      power(:,r2(2),:)=power(:,r2(2),:)+2*singp%power(r2(2))
 c-----------------------------------------------------------------------
 c     compute power series by Horner's method.
 c-----------------------------------------------------------------------
@@ -681,11 +685,10 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     restore powers.
 c-----------------------------------------------------------------------
-      pfac=z**singp%alpha
       dua(r1,:,1)=dua(r1,:,1)/sqrtfac
       dua(r1,:,2)=dua(r1,:,2)*sqrtfac
-      dua(:,r2(1),:)=dua(:,r2(1),:)/pfac
-      dua(:,r2(2),:)=dua(:,r2(2),:)*pfac
+      dua(:,r2(1),:)=dua(:,r2(1),:)*z**singp%power(r2(1))
+      dua(:,r2(2),:)=dua(:,r2(2),:)*z**singp%power(r2(2))
       dua=dua/(2*z)
 c-----------------------------------------------------------------------
 c     compute degenerate solutions.
@@ -695,10 +698,9 @@ c-----------------------------------------------------------------------
 c     adjust phase.
 c-----------------------------------------------------------------------
       IF(psifac < singp%psifac .AND. uad%phase)THEN
-         phase=EXP(ifac*pi*(.5+singp%alpha))
          DO isol=1,2
+            phase=EXP(ifac*pi*(.5-singp%power(r2(isol))))
             dua(:,r2(isol),:)=dua(:,r2(isol),:)*phase
-            phase=EXP(ifac*pi*(.5-singp%alpha))
          ENDDO
       ENDIF
 c-----------------------------------------------------------------------
@@ -1526,7 +1528,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: isol
       INTEGER, DIMENSION(:), POINTER :: r1,r2
-      COMPLEX(r8) :: pfac,z,sqrtfac,phase
+      COMPLEX(r8) :: z,sqrtfac,phase
       COMPLEX(r8), DIMENSION(:,:,:,:), POINTER :: vmat
       TYPE(sing_type), POINTER :: singp
 c-----------------------------------------------------------------------
@@ -1548,11 +1550,10 @@ c      ENDDO
 c-----------------------------------------------------------------------
 c     restore powers.
 c-----------------------------------------------------------------------
-      pfac=z**singp%alpha
       ua(r1,:,1)=ua(r1,:,1)/sqrtfac
       ua(r1,:,2)=ua(r1,:,2)*sqrtfac
-      ua(:,r2(1),:)=ua(:,r2(1),:)/pfac
-      ua(:,r2(2),:)=ua(:,r2(2),:)*pfac
+      ua(:,r2(1),:)=ua(:,r2(1),:)*z**singp%power(r2(1))
+      ua(:,r2(2),:)=ua(:,r2(2),:)*z**singp%power(r2(2))
 c-----------------------------------------------------------------------
 c     compute degenerate solutions.
 c-----------------------------------------------------------------------
@@ -1561,10 +1562,9 @@ c-----------------------------------------------------------------------
 c     adjust phase.
 c-----------------------------------------------------------------------
       IF(psifac < singp%psifac .AND. uad%phase)THEN
-         phase=EXP(ifac*pi*(.5+singp%alpha))
          DO isol=1,2
+            phase=EXP(ifac*pi*(.5-singp%power(r2(isol))))
             ua(:,r2(isol),:)=ua(:,r2(isol),:)*phase
-            phase=EXP(ifac*pi*(.5-singp%alpha))
          ENDDO
       ENDIF
 c-----------------------------------------------------------------------

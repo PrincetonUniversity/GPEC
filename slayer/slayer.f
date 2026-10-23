@@ -112,12 +112,13 @@ c-----------------------------------------------------------------------
       REAL(r8) :: inQ_i              ! normalized ion diamagnetic
       REAL(r8) :: inQ_e_ovr(8)      ! per-surface Q_e overrides (read_eq)
       REAL(r8) :: inQ_i_ovr(8)      ! per-surface Q_i overrides (read_eq)
-      REAL(r8) :: inpr               ! normalized pressure gradient
+      REAL(r8) :: inpr               ! Prandtl number
+      REAL(r8), DIMENSION(8) :: inpr_prof ! read for OMFIT; unused
       REAL(r8) :: inpe               ! normalized electron pressure
       REAL(r8) :: inc_beta           ! normalized beta
       REAL(r8) :: inds               ! normalized D (magnetic diffusion)
       REAL(r8) :: intau              ! normalized tau = T_i/T_e
-      REAL(r8) :: inlu               ! normalized Lundquist number
+      REAL(r8) :: inlu               ! Lundquist number (params_flag=f)
 c-----------------------------------------------------------------------
 c     local scalars — derived / scratch quantities.
 c-----------------------------------------------------------------------
@@ -193,20 +194,23 @@ c-----------------------------------------------------------------------
      $    ncfile,params_flag,mm,nn,n_e,t_e,t_i,sval,bt,rs,R0,omega,
      $    l_t,l_n,qval,mu_i,zeff,dr_val,dgeo_val,chi_p_prof,
      $    chi_t_prof,kappa_prof,inpr,inpe,inQ,inQ_e,inQ_i,inc_beta,
-     $    inds,intau,Q0,delta_prime,delta_n_p,ingamma,
+     $    inds,intau,inlu,inpr_prof,Q0,delta_prime,delta_n_p,ingamma,
      $    inQ_e_ovr,inQ_i_ovr
       NAMELIST/slayer_control/inum,jnum,knum,Q_num,scan_width,
      $    scan_center,rotation_flag,
      $    AMR_passes,msing_max,dc_type,read_eq,Pperp_Ptor_flag,
      $    coupling_flag,QPscan_flag,Qscan_flag,QPescan_flag,
      $    Qbscan_flag,onscan_flag,otscan_flag,ntscan_flag,
-     $    nbtscan_flag,parflow_flag,peohmonly_flag,Pe_flag,layfac
+     $    nbtscan_flag,parflow_flag,peohmonly_flag,Pe_flag,layfac,
+     $    QPscan2_flag,QDscan2_flag,Qratio
       NAMELIST/slayer_output/verbose,ascii_flag,bin_flag,netcdf_flag,
      $    est_gamma_flag,match_gamma_flag,stability_flag,
      $    stabscan_flag,coupled_stabscan_flag,amr_flag,br_th_flag,
      $    bal_flag
+      ! bal_flag is documented in slayer_diagnose, as on develop; it
+      ! is also accepted in slayer_output so either input layout reads
       NAMELIST/slayer_diagnose/riccati_out,riccatiscan_flag,
-     $    params_check
+     $    params_check,bal_flag
 c-----------------------------------------------------------------------
 c     set initial values.
 c     defaults are overridden by namelist reads below.
@@ -242,11 +246,12 @@ c-----------------------------------------------------------------------
       inQ_e_ovr = 0.0
       inQ_i_ovr = 0.0
       inpr     = 0.0
+      inpr_prof = 1.0_r8
       inpe     = 0.0
       inc_beta = 0.0
       inds     = 0.0
       intau    = 0.0
-      inlu     = 0.0
+      inlu     = 1.0e8_r8
       Q0       = 0.0
 
       ! transport profile coefficients
@@ -300,6 +305,8 @@ c-----------------------------------------------------------------------
       ! parameter-space scan flags
       QPscan_flag          = .FALSE.
       QPescan_flag         = .FALSE.
+      QPscan2_flag         = .FALSE.
+      QDscan2_flag         = .FALSE.
       Qbscan_flag          = .FALSE.
       onscan_flag          = .FALSE.
       otscan_flag          = .FALSE.
