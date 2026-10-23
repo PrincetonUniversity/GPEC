@@ -84,13 +84,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     prepare new spline type for surface quantities.
 c-----------------------------------------------------------------------
-      IF(grid_type == "original" .OR. grid_type == "orig")THEN
-         IF(sq_in%xs(sq_in%mx) < 1-1e-6)THEN
-            mpsi=sq_in%mx-1
-         ELSE
-            mpsi=sq_in%mx-2
-         ENDIF
-      ENDIF
+      IF(grid_type == "original" .OR. grid_type == "orig")
+     $     mpsi=SIZE(clipspace(sq_in%xs,psilow,psihigh))-1
       IF(.NOT. sq%allocated)THEN
          CALL spline_alloc(sq,mpsi,4)
       ELSE
@@ -116,7 +111,7 @@ c-----------------------------------------------------------------------
       CASE("rho")
          sq%xs=psihigh*(/(ipsi**2,ipsi=1,mpsi+1)/)/(mpsi+1)**2
       CASE("original","orig")
-         sq%xs=sq_in%xs(1:mpsi)
+         sq%xs=clipspace(sq_in%xs,psilow,psihigh)
       CASE("mypack")
          rholow=SQRT(psilow)
          rhohigh=SQRT(psihigh)
