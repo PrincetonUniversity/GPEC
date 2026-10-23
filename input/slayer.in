@@ -50,7 +50,7 @@
     Q_num=100            ! number of points per axis of the initial Re(Q),Im(Q) scan grid
     scan_width=1.5       ! half-width of the Re(Q),Im(Q) scan window, in normalized Q
     AMR_passes=4         ! number of adaptive refinement passes of the scan grid
-    !scan_center=0.0     ! Re(Q) centre of the scan window. Unset: 0, or the middle of the Doppler-shifted branches of a coupled scan
+    !scan_center=0.0     ! Re(Q) center of the scan window. Unset: 0, or the middle of the Doppler-shifted branches of a coupled scan
     msing_max=2          ! number of rational surfaces (counted from the core) to scan, and to couple when coupling_flag=t
     dc_type="rfitzp"     ! critical Delta model: "rfitzp" (default), "lar", or "none"
     read_eq=f            ! read the equilibrium and Delta' from STRIDE (ncfile) and profiles from the kinetic file (infile)

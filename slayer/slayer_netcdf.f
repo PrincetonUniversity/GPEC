@@ -339,7 +339,7 @@ c-----------------------------------------------------------------------
      $     nf90_double, (/qsing_dim, i_dim/), dpp_id) )
       CALL sl_check( nf90_put_att(ncid, dpp_id, "long_name",
      $     "Outer-region Delta_prime diagonal, referenced to unit "//
-     $     "normalised poloidal flux (as written by STRIDE)") )
+     $     "normalized poloidal flux (as written by STRIDE)") )
       CALL sl_check( nf90_def_var(ncid, "Delta_prime_rs_rational",
      $     nf90_double, (/qsing_dim, i_dim/), dprs_id) )
       CALL sl_check( nf90_put_att(ncid, dprs_id, "long_name",
@@ -412,7 +412,7 @@ c     roots and poles of the dispersion function from each AMR scan.
      $        (/root_dim, nAMR_dim, i_dim/), qpole_id) )
          CALL sl_check( nf90_put_att(ncid, qpole_id, "long_name",
      $        "Poles of the dispersion function, (omega, gamma)*"//
-     $        "tau_k, AMR cell centres") )
+     $        "tau_k, AMR cell centers") )
          CALL sl_check( nf90_def_var(ncid, "gamma_roots",
      $        NF90_DOUBLE, (/root_dim, nAMR_dim/), groot_id) )
          CALL sl_check( nf90_put_att(ncid, groot_id, "units", "1/s") )

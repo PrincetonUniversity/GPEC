@@ -270,7 +270,7 @@ c-----------------------------------------------------------------------
       knum       = 100   ! 2-D scan axis-2 resolution
       Q_num      = 100   ! stability scan Re(Q) resolution
       scan_width = 2.0   ! half-width for complex-Q scans
-      ! Re(Q) centre of the scans. Left at HUGE, it is chosen by the
+      ! Re(Q) center of the scans. Left at HUGE, it is chosen by the
       ! code: zero, or the middle of the Doppler-shifted branches in
       ! a coupled scan with rotation.
       scan_center = HUGE(scan_center)
@@ -831,7 +831,7 @@ c-----------------------------------------------------------------------
          END IF
          IF (scan_center >= HUGE(scan_center)) scan_center = 0.0_r8
          WRITE(*,'(A,ES11.4,A,ES11.4)')
-     $      ' Scan window: Re(Q) centre =',scan_center,
+     $      ' Scan window: Re(Q) center =',scan_center,
      $      ', half-width =',scan_width
 
 c-----------------------------------------------------------------------
@@ -1046,7 +1046,7 @@ c-----------------------------------------------------------------------
             CALL dispersion_AMR_v2(n_k,sl_in,msing_max,scan_width,
      $                  Q_num,AMR_passes,coupling_flag,scan_center)
 
-            ! Zeros of the coupled determinant. Q is normalised by
+            ! Zeros of the coupled determinant. Q is normalized by
             ! the first surface's tau_k. The coupled eigenvalue is
             ! global, so it is reported through roots_out only and
             ! the per-surface gamma_sol_arr is left as NaN.
@@ -1111,7 +1111,7 @@ c-----------------------------------------------------------------------
                DO j = 1, Q_num
                   ! This scan passes g = gamma_hat + i*omega_hat
                   ! directly, so its imaginary axis is the frequency
-                  ! and carries the scan-window centre.
+                  ! and carries the scan-window center.
                   ing_coarse = -scan_width + (i - 1) * ing_step
                   iing_coarse = scan_center - scan_width
      $                          + (j - 1) * ing_step
