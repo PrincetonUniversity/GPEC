@@ -477,6 +477,7 @@ c-----------------------------------------------------------------------
          INTEGER :: i, j, jsing, iS, nIntervalsMin
          INTEGER, PARAMETER :: nAxisMin = 8
          INTEGER :: newItvls, cumulItvls, innerItvls, nbad
+         INTEGER :: minItvls, restItvls
          REAL(r8) :: s1, s2, sLast, alpha
          REAL(r8), DIMENSION(:), ALLOCATABLE :: aT
          LOGICAL, DIMENSION(:), ALLOCATABLE :: aMask
@@ -554,12 +555,18 @@ c-----------------------------------------------------------------------
                   newItvls = 1 !Inner layer case
                ELSE
                   innerItvls = msing-NINT((iS-1)/2.0) !Inner layers
-                  IF (iS .LE. nIntervals) THEN
-                     newItvls = MAX(1,NINT((nIntervalsTot-innerItvls-
-     $                    cumulItvls) * (s2-s1)/(sLast-s1)))
+                  IF (iS == 1) THEN
+                     minItvls = nAxisMin
+                  ELSEIF (psiInters(1+cumulItvls,2) == 1) THEN
+                     minItvls = 2
                   ELSE
-                     newItvls = nIntervalsTot-cumulItvls
+                     minItvls = 1
                   ENDIF
+                  restItvls = MAX(0,3*innerItvls-1)
+                  newItvls = MAX(minItvls,NINT((nIntervalsTot-
+     $                 innerItvls-cumulItvls) * (s2-s1)/(sLast-s1)))
+                  newItvls = MIN(newItvls,
+     $                 nIntervalsTot-cumulItvls-restItvls)
                ENDIF
                IF (newItvls > 1 .AND. aMask(iS)) THEN
                   !Copy data forward in array to avoid overwriting

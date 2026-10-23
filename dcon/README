@@ -279,14 +279,20 @@ rho=sqrt(psi), a generalized radius.  The second, grid_type="ldp", uses
 a method suggested by L. Don Pearlstein (LDP), which packs the grid in
 the neighborhood of the axis and the edge.  I have a slight preference
 for "ldp", but they both work well.  A third type, "original", uses the
-same radial grid used in the input data.  (Sorry, there's no "extra
-crispy" option.)  The poloidal grid is uniformly distributed in the
-straight-fieldline coordinate theta.  Throughout the code, cubic spline
-and Fourier representations are used to minimize the effects of grid
-discreteness.
+radial grid of the input data between psilow and psihigh: psilow, then
+the input surfaces strictly between them, then psihigh; mpsi is set by
+the number of these points.  Its accuracy is only as good as the input
+file's resolution near the edge.  An EFIT g-file's grid is uniform in
+psi, which is too coarse at the edge for DCON and STRIDE: with
+"original", the DIIID_ideal_example reports an unstable n=1 mode that
+"ldp" finds stable.  Prefer "ldp" unless the input grid is packed toward
+the edge.  (Sorry, there's no "extra crispy" option.)  The poloidal grid
+is uniformly distributed in the straight-fieldline coordinate theta.
+Throughout the code, cubic spline and Fourier representations are used
+to minimize the effects of grid discreteness.
 
-The input parameter psilow is used only for grid_type="ldp".  A good
-value is 1e-4.  For the most part, results are insensitive to this
+The input parameter psilow is used by every grid type except "rho".  A
+good value is 1e-4.  For the most part, results are insensitive to this
 value, but substantially smaller values cause the code to run longer,
 and substantially larger values may cause accuracy problems.
 
