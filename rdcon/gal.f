@@ -184,6 +184,7 @@ c-----------------------------------------------------------------------
      $     gal%mat(gal%ldab,gal%ndim),gal%ipiv(gal%ndim))
       gal%rhs=0
       gal%sol=0
+c     mat is zeroed in gal_assemble_mat as assembly reaches each column.
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -766,12 +767,14 @@ c-----------------------------------------------------------------------
                      ENDIF
                   ENDIF
 c-----------------------------------------------------------------------
-c     finish loops over intervals and grid cells. LU never reassembles,
-c     so its element matrices are freed (cholesky keeps them for the LU
-c     fallback).
+c     finish loops over intervals and grid cells.
 c-----------------------------------------------------------------------
                ENDDO
             ENDDO
+c-----------------------------------------------------------------------
+c     LU never reassembles, so free the element matrix now (cholesky
+c     keeps it for its LU fallback).
+c-----------------------------------------------------------------------
             IF (solver == "LU") DEALLOCATE(cell%mat)
             IF (cell%extra /= "none") THEN
                IF (cell%etype == "ext1".OR.cell%etype == "ext2") CYCLE
