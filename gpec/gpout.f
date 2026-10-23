@@ -1583,6 +1583,7 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(msing) :: resnum
       REAL(r8), DIMENSION(msing) :: area,j_c,aq,asingflx
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,sqreqb,jcfun
+      REAL(r8), DIMENSION(0:mthsurf) :: saved_r,saved_z
       COMPLEX(r8), DIMENSION(mpert) :: fkaxmn
       REAL(r8), DIMENSION(msing) :: hw_isl,hw_v,
      $     chirikov,hw_v_crit,hw_sat,hw_min
@@ -1620,6 +1621,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     solve equation from the given poloidal perturbation.
 c-----------------------------------------------------------------------
+c     Preserve coordinates consumed by subsequent profile diagnostics.
+      saved_r=r
+      saved_z=z
       IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*)"Computing total resonant fields"
       CALL gpeq_alloc
@@ -2485,6 +2489,8 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       IF(timeit) CALL gpec_timer(2)
+      r=saved_r
+      z=saved_z
       RETURN
       END SUBROUTINE gpout_singfld
 c-----------------------------------------------------------------------
