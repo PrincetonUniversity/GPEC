@@ -2955,7 +2955,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert) :: eulbpar_mn,lagbpar_mn,
      $     divxprp_mn,curv_mn
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xsp_fun,xms_fun,
-     $     bvt_fun,bvz_fun,xmz_fun,xvt_fun,xvz_fun,xmt_fun,xsp1_fun
+     $     bvt_fun,bvz_fun,xsp1_fun
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: eulbparmns,
      $     lagbparmns,divxprpmns,curvmns,
      $     xmp1mns,xspmns,xmsmns,xmtmns,xmzmns
@@ -3012,10 +3012,6 @@ c-----------------------------------------------------------------------
          CALL iscdftb(mfac,mpert,xms_fun,mthsurf,xms_mn)
          CALL iscdftb(mfac,mpert,bvt_fun,mthsurf,bvt_mn)
          CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
-         CALL iscdftb(mfac,mpert,xmt_fun,mthsurf,xmt_mn)
-         CALL iscdftb(mfac,mpert,xmz_fun,mthsurf,xmz_mn)
-         CALL iscdftb(mfac,mpert,xvt_fun,mthsurf,xvt_mn)
-         CALL iscdftb(mfac,mpert,xvz_fun,mthsurf,xvz_mn)
 
          CALL spline_eval(sq,psifac(istep),1)
 
@@ -3027,12 +3023,12 @@ c        Use the radial derivative selected by reg_flag in gpeq_sol.
             CALL bicube_eval(rzphi,psifac(istep),theta(itheta),0)
             jac=rzphi%f(4)
 
-            cspl%fs(itheta,1)=xmt_fun(itheta)-
-     $           (chi1/eqfun%f(1))**2/jac*
-     $           (xvt_fun(itheta)+sq%f(4)*xvz_fun(itheta))
-            cspl%fs(itheta,2)=xmz_fun(itheta)-
-     $           sq%f(4)*(chi1/eqfun%f(1))**2/jac*
-     $           (xvt_fun(itheta)+sq%f(4)*xvz_fun(itheta))
+c           Form J*xi_perp directly from xi^psi and xi^alpha=xi^s/chi1.
+            cspl%fs(itheta,1)=chi1**2*
+     $           (-eqfun%f(2)*xsp_fun(itheta)+
+     $           eqfun%f(3)*xms_fun(itheta)/chi1)
+            cspl%fs(itheta,2)=sq%f(4)*cspl%fs(itheta,1)-
+     $           jac*xms_fun(itheta)/chi1
          ENDDO
 
          CALL cspline_fit(cspl,"periodic")
@@ -3062,10 +3058,7 @@ c        Use the radial derivative selected by reg_flag in gpeq_sol.
      $           divxprpfun(istep,itheta)
             curvfun(istep,itheta)=-xsp_fun(itheta)/eqfun%f(1)*sq%f1(2)-
      $           (xsp_fun(itheta)*eqfun%fx(1)+eqfun%fy(1)*
-     $           (xms_fun(itheta)/(chi1*sq%f(4))+
-     $           xmz_fun(itheta)/(jac*sq%f(4))-
-     $           (chi1/(jac*eqfun%f(1)))**2*
-     $           (xvt_fun(itheta)+sq%f(4)*xvz_fun(itheta))))
+     $           cspl%f(1)/jac)
             equilbfun(istep,itheta) = eqfun%f(1)
             dphi(itheta) = rzphi%f(3)
          ENDDO
