@@ -407,7 +407,7 @@ c-----------------------------------------------------------------------
          intvl%x(ixmax)=psihigh
       ELSE
          x1=sing(ising+1)%psifac
-         nq1=ABS(sing(ising+1)%q1)
+         nq1=ABS(nn*sing(ising+1)%q1)
          intvl%x(nx)=x1
          IF (gal_xmin_flag .AND. sing1_flag) THEN
             CALL sing1_xmin(ising+1,gal_eps_xmin,myxmin)
@@ -1779,19 +1779,25 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE gal_read_input
+      LOGICAL :: rpec_flag0
       NAMELIST/gal_input/nx,nq,dx0,dx1,dx2,pfac,diagnose_map,solver,
      $     diagnose_grid,diagnose_lsode,ndiagnose,diagnose_integrand,
      $     diagnose_mat,gal_tol,dx1dx2_flag,cutoff,prefac,dpsi_intvl,
      $     dpsi1_intvl,gal_xmin_flag,gal_eps_xmin,gnstep
       NAMELIST /gal_output/interp_np,interp_np_res,restore_uh,
      $     restore_us,restore_ul,bin_delmatch,out_galsol,bin_galsol,
-     $     b_flag,bin_coilsol
+     $     b_flag,bin_coilsol,coil
 c-----------------------------------------------------------------------
-c     read input.
+c     read input. coil now belongs in rdcon_control, but is also
+c     accepted here so v1.5 rdcon.in files still run.
 c-----------------------------------------------------------------------
       READ(UNIT=in_unit,NML=gal_input)
       REWIND(UNIT=in_unit)
+      rpec_flag0=coil%rpec_flag
       READ(UNIT=in_unit,NML=gal_output)
+      IF(coil%rpec_flag .NEQV. rpec_flag0)WRITE(*,*)
+     $     "WARNING: coil%rpec_flag in gal_output is deprecated;"//
+     $     " set it in rdcon_control instead."
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

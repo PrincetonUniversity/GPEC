@@ -936,7 +936,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert) :: eulbpar_mn,lagbpar_mn,
      $     llagbpar_mn,divx_mn,curv_mn,divx2_mn,curv2_mn
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xsp_fun,xms_fun,
-     $     bvt_fun,bvz_fun,xmt_fun,xmz_fun,xvt_fun,xvz_fun,xmp1_fun
+     $     bvt_fun,bvz_fun,xmt_fun,xmp1_fun
 
       REAL(r8), DIMENSION(:,:), POINTER :: rs,zs,eqfunx,eqfuny,eqfuns
       COMPLEX(r8), DIMENSION(:,:), POINTER :: eulbparmns,lagbparmns,
@@ -989,9 +989,6 @@ c-----------------------------------------------------------------------
          CALL iscdftb(mfac,mpert,bvt_fun,mthsurf,bvt_mn)
          CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
          CALL iscdftb(mfac,mpert,xmt_fun,mthsurf,xmt_mn)
-         CALL iscdftb(mfac,mpert,xmz_fun,mthsurf,xmz_mn)
-         CALL iscdftb(mfac,mpert,xvt_fun,mthsurf,xvt_mn)
-         CALL iscdftb(mfac,mpert,xvz_fun,mthsurf,xvz_mn)
          CALL iscdftb(mfac,mpert,xmp1_fun,mthsurf,xmp1_mn)
 
          xspmns(istep,:)=xsp_mn
@@ -1009,12 +1006,13 @@ c-----------------------------------------------------------------------
             CALL bicube_eval(eqfun,psifac(istep),theta(itheta),0)
             CALL bicube_eval(rzphi,psifac(istep),theta(itheta),0)
 
-            cspl%fs(itheta,1)=xmt_fun(itheta)-
-     $           (chi1/eqfun%f(1))**2/jac*
-     $           (xvt_fun(itheta)+sq%f(4)*xvz_fun(itheta))
-            cspl%fs(itheta,2)=xmz_fun(itheta)-
-     $           sq%f(4)*(chi1/eqfun%f(1))**2/jac*
-     $           (xvt_fun(itheta)+sq%f(4)*xvz_fun(itheta))
+            jac=rzphi%f(4)
+c           Form J*xi_perp directly from xi^psi and xi^alpha=xi^s/chi1.
+            cspl%fs(itheta,1)=chi1**2*
+     $           (-eqfun%f(2)*xsp_fun(itheta)+
+     $           eqfun%f(3)*xms_fun(itheta)/chi1)
+            cspl%fs(itheta,2)=sq%f(4)*cspl%fs(itheta,1)-
+     $           jac*xms_fun(itheta)/chi1
             cspl%fs(itheta,3)=xmt_fun(itheta)
          ENDDO
 
@@ -1059,10 +1057,9 @@ c-----------------------------------------------------------------------
      $           xsp_fun(itheta)*eqfun%fx(1)+
      $           xms_fun(itheta)/(chi1*sq%f(4))*eqfun%fy(1)
             llagbparfun(istep,itheta)=
-     $           lagbparfun(istep,itheta)+eqfun%fy(1)*
-     $           (xmz_fun(itheta)/(jac*sq%f(4))-
-     $           (chi1/(jac*eqfun%f(1)))**2*
-     $           (xvt_fun(itheta)+sq%f(4)*xvz_fun(itheta)))
+     $           eulbparfun(istep,itheta)+
+     $           xsp_fun(itheta)*eqfun%fx(1)+
+     $           eqfun%fy(1)*cspl%f(1)/jac
 
             divxfun(istep,itheta)=xmp1_fun(itheta)+
      $           (jac1/jac)*xsp_fun(itheta)+
@@ -1073,10 +1070,7 @@ c-----------------------------------------------------------------------
 
             curvfun(istep,itheta)=-xsp_fun(itheta)/eqfun%f(1)*sq%f1(2)-
      $           xsp_fun(itheta)*eqfun%fx(1)-eqfun%fy(1)*
-     $           (xms_fun(itheta)/(chi1*sq%f(4))+
-     $           xmz_fun(itheta)/(jac*sq%f(4))-
-     $           (chi1/(jac*eqfun%f(1)))**2*
-     $           (xvt_fun(itheta)+sq%f(4)*xvz_fun(itheta)))
+     $           cspl%f(1)/jac
             curv2fun(istep,itheta)=-jac*eqfun%f(1)*curvfun(istep,itheta)
          ENDDO
 
