@@ -588,6 +588,7 @@ c-----------------------------------------------------------------------
       INTEGER :: isol,ipert,iqty
       INTEGER, DIMENSION(1) :: jmax
       REAL(r8) :: uratio,umax,umin
+      LOGICAL :: fix_required
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -626,25 +627,29 @@ c-----------------------------------------------------------------------
          CALL program_stop(message)
       ENDIF
 c-----------------------------------------------------------------------
-c     normalize unorm and perform Gaussian reduction if required.
+c     preserve singular reductions while resetting norm baselines.
 c-----------------------------------------------------------------------
+      fix_required=sing_flag
       IF(new)THEN
          new=.FALSE.
          unorm0(1:msol)=unorm(1:msol)
+c     keep the ordering of the reduction just done at this point.
+         IF(sing_flag)unorm(index(1:msol))=(/(msol-isol,isol=1,msol)/)
       ELSE
          unorm(1:msol)=unorm(1:msol)/unorm0(1:msol)
          umax=MAXVAL(unorm(1:msol))
          umin=MINVAL(unorm(1:msol))
          uratio=umax/umin
-         IF(uratio > ucrit .OR. sing_flag)THEN
-            CALL ode_fixup(sing_flag,.FALSE.)
-            IF(diagnose1)CALL ode_test_fixup
-            new=.TRUE.
-         ENDIF
+         fix_required=fix_required .OR. uratio > ucrit
          IF(diagnose_fixup)
      $        WRITE(fixup_unit)REAL(istep,4),REAL(psifac,4),
      $        REAL(q,4),REAL(LOG10(singfac),4),REAL(LOG10(umax),4),
      $        REAL(LOG10(umin),4),REAL(LOG10(uratio),4)
+      ENDIF
+      IF(fix_required)THEN
+         CALL ode_fixup(sing_flag,.FALSE.)
+         IF(diagnose1)CALL ode_test_fixup
+         new=.TRUE.
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.

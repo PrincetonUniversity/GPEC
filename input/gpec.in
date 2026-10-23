@@ -89,6 +89,14 @@
    bin_2d_flag=f            ! Write 2D binary outputs for use with xdraw
 
    verbose=t                ! Print run log to terminal
+
+   effective_field_flag=f   ! Calculate each contribution of destabilizing term and effective perturbed field [Bernstein, Handbook of Plasma Physics, 1983].
+   standard_form_flag=f     ! Calculate the first-form plasma energy terms of Eq. (3.1) in docs/tex/recon/main.tex with the gamma|div xi|^2 term omitted.
+   effective_field_terms_flag=f ! Bernstein |C|^2 decomposition: |C|^2 = |Q|^2 + 2Re(V*.Q) + |V|^2, reported as A, B, Cpar, Iperp with the identity check epf = A+B+Cpar+Iperp.
+   curl_check_flag=f        ! Under effective_field_flag, verify (curl C).grad(psi)=0 and write gpec_recon_cveri_sol*.out.
+   recon_out=t              ! Under effective_field_flag/standard_form_flag/effective_field_terms_flag, write recon diagnostic files and gpec.log entries. If false, keep terminal summary only.
+   recon_int="spline"       ! Radial quadrature of all three routes on the psifac grid: "spline" (default) or "trapezoid". The integrated psi range is printed beside the DCON psilow-psilim range.
+                            ! effective_field_flag, standard_form_flag and effective_field_terms_flag require mode_flag=t (choose mode) with coil_flag, data_flag, harmonic_flag and reg_flag all f; GPEC stops at input otherwise.
 /
 &GPEC_DIAGNOSE
    timeit=f                 ! Print timer splits for major subroutines
