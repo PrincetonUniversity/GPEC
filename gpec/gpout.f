@@ -2955,7 +2955,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert) :: eulbpar_mn,lagbpar_mn,
      $     divxprp_mn,curv_mn
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xsp_fun,xms_fun,
-     $     bvt_fun,bvz_fun,xmz_fun,xmt_fun,xsp1_fun
+     $     bvt_fun,bvz_fun,xsp1_fun
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: eulbparmns,
      $     lagbparmns,divxprpmns,curvmns,
      $     xmp1mns,xspmns,xmsmns,xmtmns,xmzmns
@@ -3012,8 +3012,6 @@ c-----------------------------------------------------------------------
          CALL iscdftb(mfac,mpert,xms_fun,mthsurf,xms_mn)
          CALL iscdftb(mfac,mpert,bvt_fun,mthsurf,bvt_mn)
          CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
-         CALL iscdftb(mfac,mpert,xmt_fun,mthsurf,xmt_mn)
-         CALL iscdftb(mfac,mpert,xmz_fun,mthsurf,xmz_mn)
 
          CALL spline_eval(sq,psifac(istep),1)
 

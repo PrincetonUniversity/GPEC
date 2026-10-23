@@ -539,7 +539,7 @@ module inputs
             write(out_unit,'(a8,es16.8e3,2/)') " chi1 = ",chi1
             write(out_unit,'(1x,a16,a5,8(1x,a16))')"psi_n","m",&
                 'real(deltaB/B)','imag(deltaB/B)','real(divxprp)','imag(divxprp)',&
-                'real(deltaB)','imag(deltaB)','real(Bdivxprp)','imag(Bdivxprp)'
+                'real(deltaBprp)','imag(deltaBprp)','real(Bdivxprp)','imag(Bdivxprp)'
             do i=0,npsi-1
                 do j=1,mpert
                     write(out_unit,'(1x,es16.8e3,i5,14(1x,es16.8e3))') &
