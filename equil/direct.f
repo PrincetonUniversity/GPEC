@@ -159,6 +159,8 @@ c-----------------------------------------------------------------------
          CALL direct_fl_int(ipsi,y_out,bf,y4tot,ys)
          DO itheta=0,mtheta
             theta=rzphi%ys(itheta)
+            CALL direct_refine(ys(itheta,2),ys(itheta,0),
+     $           psio*(1-sq%xs(ipsi)))
             CALL direct_fl_der(4,ys(itheta,0),ys(itheta,1:4),dy)
             rzphi%fs(ipsi,itheta,1)=ys(itheta,2)**2
             rzphi%fs(ipsi,itheta,2)=ys(itheta,0)/twopi-theta
@@ -513,6 +515,7 @@ c-----------------------------------------------------------------------
          z=zo+rfac*SIN(eta)
          CALL direct_get_bfield(r,z,bf,2)
          y_out(istep,:)=(/eta,y/)
+         y_out(istep,2)=rfac
          err=(bf%psi-psi0)/bf%psi
 c-----------------------------------------------------------------------
 c     compute and print output for each step.
