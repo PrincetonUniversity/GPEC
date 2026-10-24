@@ -420,10 +420,16 @@ c-----------------------------------------------------------------------
          END IF
       END IF
       ! Cole-model inputs: needed by the single-surface riccati() call
-      ! below, which runs unless a growth-rate or Br-threshold mode is
-      ! on, and by the legacy scans. inpr is a namelist input there.
+      ! below, which runs unless a per-surface mode is on, and by the
+      ! legacy scans, which run unless a mode that stops first is on.
+      ! inpr is a namelist input in all of them.
       IF (.NOT. (est_gamma_flag .OR. match_gamma_flag .OR.
-     $     br_th_flag)) THEN
+     $     br_th_flag .OR. input_flag) .OR.
+     $     (.NOT. (match_gamma_flag .OR. br_th_flag) .AND.
+     $     (bal_flag .OR. stability_flag .OR. riccatiscan_flag .OR.
+     $     QPscan_flag .OR. QPescan_flag .OR. QPscan2_flag .OR.
+     $     QDscan2_flag .OR. Qscan_flag .OR. onscan_flag .OR.
+     $     otscan_flag .OR. ntscan_flag .OR. nbtscan_flag))) THEN
          IF (.NOT. inpr > 0.0_r8)
      $        CALL slayer_unset('inpr',inpr,'1.0',nbad)
          IF (.NOT. params_flag) THEN
@@ -488,11 +494,11 @@ c     baseline single-surface delta, reconnected flux, & torque.
 c     skipped when the matched-gamma path is active (it computes
 c     its own delta internally).
 c-----------------------------------------------------------------------
-c     Also skipped for the growth-rate estimate and the Br threshold,
-c     which do not use it and are usually run with these namelist
-c     inputs unset.
+c     Also skipped for the growth-rate estimate, the Br threshold and
+c     the multi-surface input file, which compute their own deltas per
+c     surface and are usually run with these namelist inputs unset.
       IF (.NOT. (match_gamma_flag .OR. est_gamma_flag .OR.
-     $     br_th_flag)) THEN
+     $     br_th_flag .OR. input_flag)) THEN
          delta=riccati(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe)
          psi0=1.0/ABS(delta+delta_n_p)     ! reconnected flux  [a.u.]
          jxb=-AIMAG(1.0/(delta+delta_n_p)) ! j x B torque      [a.u.]
@@ -568,6 +574,7 @@ c-----------------------------------------------------------------------
             ENDDO
 
             iloc=MAXLOC(bal)
+            iloc(1)=iloc(1)-1   ! MAXLOC counts from 1, inQs from 0
             Q_soll(k)=inQs(iloc(1))
             br_thl(k)=sqrt(MAXVAL(bal)/lu*(svals(k)**2.0/2.0))*1e4
 
@@ -1086,8 +1093,9 @@ c-----------------------------------------------------------------------
                      IF (Pperp_Ptor_flag) THEN
                         delta=riccati_f()
                      ELSE
+                        ! the Cole riccati() takes ds, not D_norm
                         delta=riccati(iing_coarse,Q_e,Q_i,P_perp,
-     $                             c_beta,D_norm,tau,pe,
+     $                             c_beta,sl_in%ds_arr(k),tau,pe,
      $                             iinQ=ing_coarse)
                      END IF
                      inQs(i) = ing_coarse
@@ -1334,10 +1342,21 @@ c-----------------------------------------------------------------------
                bal(i)=2.0*inpr*(Q0-inQs(i))/jxbl(i)
             ENDDO
 
-            iloc=MAXLOC(bal)
-            Q_sol=inQs(iloc(1))
-            br_th=SQRT(MAXVAL(bal)/sl_in%lu_arr(k)
-     $           *(sl_in%shear_arr(k)**2.0/2.0))
+            ! as in gpec_slayer: ignore non-finite entries (0/0, or a
+            ! near-zero jxb) and floor at zero with a warning when the
+            ! balance has no positive maximum, rather than a NaN
+            iloc=MAXLOC(bal,MASK=(bal==bal .AND. ABS(bal)<HUGE(bal)))
+            iloc(1)=iloc(1)-1   ! MAXLOC counts from 1, bal from 0
+            Q_sol=inQs(MAX(iloc(1),0))
+            IF (iloc(1) >= 0 .AND. bal(MAX(iloc(1),0))>0.0_r8) THEN
+               br_th=SQRT(bal(iloc(1))/sl_in%lu_arr(k)
+     $              *(sl_in%shear_arr(k)**2.0/2.0))
+            ELSE
+               br_th=0.0_r8
+               WRITE(*,'(1x,a,i0,a)') "!! WARNING: torque balance "//
+     $              "has no positive maximum at m=",sl_in%qval_arr(k),
+     $              "; br_th set to 0"
+            ENDIF
 
             sl_out%br_th_arr(k) = br_th
             sl_out%gamma_sol_arr(k) = 0.0
@@ -1399,9 +1418,18 @@ c-----------------------------------------------------------------------
             CLOSE(out_unit)
          ENDIF
 
-         iloc=MAXLOC(bal)
-         Q_sol=inQs(iloc(1))
-         br_th=sqrt(MAXVAL(bal)/lu*(sval**2.0/2.0))*1e4
+         ! as in gpec_slayer: ignore non-finite entries and floor at
+         ! zero with a warning when the balance has no positive maximum
+         iloc=MAXLOC(bal,MASK=(bal==bal .AND. ABS(bal)<HUGE(bal)))
+         iloc(1)=iloc(1)-1   ! MAXLOC counts from 1, bal from 0
+         Q_sol=inQs(MAX(iloc(1),0))
+         IF (iloc(1) >= 0 .AND. bal(MAX(iloc(1),0))>0.0_r8) THEN
+            br_th=sqrt(bal(iloc(1))/lu*(sval**2.0/2.0))*1e4
+         ELSE
+            br_th=0.0_r8
+            WRITE(*,*)"!! WARNING: torque balance has no positive "//
+     $           "maximum; br_th set to 0"
+         ENDIF
          WRITE(*,*)"Q_sol=",Q_sol
          WRITE(*,*)"br_th=",br_th
          DEALLOCATE(inQs,deltal,jxbl,bal)
@@ -1785,6 +1813,7 @@ c-----------------------------------------------------------------------
                   bal(i)=2.0*inpr*(Q0-inQs(i))/jxb
                ENDDO
                iloc=MAXLOC(bal)
+               iloc(1)=iloc(1)-1   ! MAXLOC counts from 1, inQs from 0
                Q_sols(j,k)=inQs(iloc(1))
                br_ths(j,k)=sqrt(MAXVAL(bal)/lu)*1e4
                WRITE(*,*)"br_ths=",br_ths(j,k)
@@ -1871,6 +1900,7 @@ c-----------------------------------------------------------------------
                   bal(i)=2.0*inpr*(Q0-inQs(i))/jxb
                ENDDO
                iloc=MAXLOC(bal)
+               iloc(1)=iloc(1)-1   ! MAXLOC counts from 1, inQs from 0
                Q_sols(j,k)=inQs(iloc(1))
                br_ths(j,k)=sqrt(MAXVAL(bal)/lu)*1e4
                WRITE(*,*)"t_e=",t_e*ks(j,k),"br_ths=",br_ths(j,k)
@@ -1957,6 +1987,7 @@ c-----------------------------------------------------------------------
                   bal(i)=2.0*inpr*(Q0-inQs(i))/jxb
                ENDDO
                iloc=MAXLOC(bal)
+               iloc(1)=iloc(1)-1   ! MAXLOC counts from 1, inQs from 0
                Q_sols(j,k)=inQs(iloc(1))
                br_ths(j,k)=sqrt(MAXVAL(bal)/lu)*1e4
                WRITE(*,*)"br_ths=",br_ths(j,k)
@@ -2044,6 +2075,7 @@ c-----------------------------------------------------------------------
                   bal(i)=2.0*inpr*(Q0-inQs(i))/jxb
                ENDDO
                iloc=MAXLOC(bal)
+               iloc(1)=iloc(1)-1   ! MAXLOC counts from 1, inQs from 0
                Q_sols(j,k)=inQs(iloc(1))
                br_ths(j,k)=sqrt(MAXVAL(bal)/lu)*1e4
                WRITE(*,*)"br_ths=",br_ths(j,k)

@@ -164,7 +164,9 @@ c     used in the SLAYER dispersion relation (Cole scaling).
 c-----------------------------------------------------------------------
       Qconv = lu**(1.0_r8/3.0_r8) * tau_h     ! frequency normalisation (Cole)
       tauk  = Qconv                      ! stored in sglobal_mod
-      Q     = Qconv * omega             ! normalised rotation frequency
+c     the layer sees the mode at the Doppler frequency n*omega_E, as in
+c     the coupled determinant's shift (slayer.f) and gpec_slayer
+      Q     = Qconv * REAL(nn,r8) * omega   ! normalised ExB frequency
 
 c     Diamagnetic frequencies require gradient lengths; skip when the
 c     caller does not provide them (l_n <= 0 or l_t <= 0). Callers that

@@ -177,12 +177,13 @@ c-----------------------------------------------------------------------
       lu=tau_r/tau_h                    ! Lundquist number
       Qconv=lu**(1.0/3.0)*tau_h        ! Q normalisation factor
 
-c --- normalised frequencies. GPEC passes the bare diamagnetic
-c     frequencies (dp/dpsi)/(e*n_e) with no toroidal mode number
-c     attached (gpout.f); omega_* = k_theta*v_* = n*(dp/dpsi)/(e*n_e),
-c     so GPEC's n (nns) multiplies them here, as in build_inputs
-c     (layerinputs.f).
-      Q=Qconv*omega
+c --- normalised frequencies. GPEC passes the bare ExB and
+c     diamagnetic frequencies with no toroidal mode number attached
+c     (gpout.f). The layer sees the mode at the Doppler frequency
+c     n*omega_E, and omega_* = k_theta*v_* = n*(dp/dpsi)/(e*n_e), so
+c     GPEC's n (nns) multiplies all three here, as in build_inputs
+c     and the coupled determinant's Doppler shift (slayer.f).
+      Q=Qconv*nns*omega
       Q_e=-Qconv*nns*omega_e
       Q_i=-Qconv*nns*omega_i
 
@@ -291,7 +292,7 @@ c --- optionally write torque balance curve to ASCII file
          rhi=xpk+2.0*rdq
       ENDDO
       Q_sol=xpk
-      omega_sol=xpk/Qconv
+      omega_sol=xpk/(Qconv*nns)     ! back to a fluid rotation frequency
       ! If even the refined nose is non-positive the surface has no
       ! finite penetration threshold; floor at zero and warn rather
       ! than propagating a NaN into b_crit/Phi_res_crit downstream.

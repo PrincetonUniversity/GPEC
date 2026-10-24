@@ -52,7 +52,7 @@ c --- input arguments: physical parameters for this surface
       REAL(r8),INTENT(IN) :: inpr      ! Prandtl number
       REAL(r8),INTENT(IN) :: inpe      ! electron Prandtl number
       REAL(r8),INTENT(IN) :: inc_beta  ! c_beta parameter
-      REAL(r8),INTENT(IN) :: inds      ! magnetic shear ds
+      REAL(r8),INTENT(IN) :: inds      ! ds, normalised rho_s
       REAL(r8),INTENT(IN) :: intau     ! ion-to-electron temp ratio
 c --- optional arguments
       REAL(r8),INTENT(IN),OPTIONAL :: iinQ ! imaginary part of Q
