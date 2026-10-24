@@ -52,7 +52,7 @@
     AMR_passes=4         ! number of adaptive refinement passes of the scan grid
     !scan_center=0.0     ! Re(Q) center of the scan window. Unset: 0, or the middle of the Doppler-shifted branches of a coupled scan
     msing_max=3          ! number of rational surfaces (counted from the core) to scan, and to couple when coupling_flag=t
-    dc_type="rfitzp"     ! critical Delta model: "rfitzp" (default), "lar", or "none"
+    dc_type="rfitzp"     ! critical Delta model: "rfitzp" (default) or "none"
     read_eq=t            ! read the equilibrium and Delta' from STRIDE (ncfile) and profiles from the kinetic file (infile)
     Pperp_Ptor_flag=t    ! Use R. Fitzpatrick formalism (inc. anomalous diffusion) for growth rate calculation
     coupling_flag=f      ! solve the coupled multi-surface determinant instead of each surface separately. Requires read_eq=t

@@ -169,7 +169,7 @@ c-----------------------------------------------------------------------
       b_l=(nrs/mrs)*nrs*sval*bt/R0     ! characteristic magnetic field
       rho_s=1.02e-4*(mu_i*t_e)**0.5/bt ! ion Larmor radius at T_e
 
-      tau_h=R0*(mu0*rho)**0.5/(nns*sval*bt) ! Alfven transit time
+      tau_h=R0*(mu0*rho)**0.5/(nns*ABS(sval)*bt) ! Alfven time, |s|
       tau_r=mu0*rs**2.0/eta            ! resistive diffusion time
       tau_v=tau_r/inpr                  ! viscous diffusion time
       visc= rho*rs**2.0/tau_v          ! back-calculated viscosity
@@ -177,10 +177,12 @@ c-----------------------------------------------------------------------
       lu=tau_r/tau_h                    ! Lundquist number
       Qconv=lu**(1.0/3.0)*tau_h        ! Q normalisation factor
 
-c --- normalised frequencies
+c --- normalised frequencies. GPEC passes the n = 1 diamagnetic
+c     frequencies (gpout.f); omega_* = n*(dp/dpsi)/(e*n_e), as in
+c     build_inputs (layerinputs.f).
       Q=Qconv*omega
-      Q_e=-Qconv*omega_e
-      Q_i=-Qconv*omega_i
+      Q_e=-Qconv*nns*omega_e
+      Q_i=-Qconv*nns*omega_i
 
       ds=lu**(1.0/3.0)*rho_s/rs        ! normalised ion sound radius
 

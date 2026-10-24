@@ -97,7 +97,8 @@ c-----------------------------------------------------------------------
      $  sl_in%Re_dp_psi_arr(n_k),sl_in%Im_dp_psi_arr(n_k),
      $  sl_in%k_ref_arr(n_k),sl_in%alpha_arr(n_k),
      $  sl_in%D_fac_arr(n_k),sl_in%q_shift_arr(n_k),
-     $  sl_in%q_arr(n_k))
+     $  sl_in%q_arr(n_k),sl_in%Qexb_arr(n_k),sl_in%shear_arr(n_k),
+     $  sl_in%ds_arr(n_k))
       sl_in%q_shift_arr = 0.0_r8
 c     namelist inputs are taken as already r_s-referenced: identity
 c     reference-length conversion (K = 1).

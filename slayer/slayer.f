@@ -26,6 +26,7 @@ c-----------------------------------------------------------------------
       INTEGER :: i,j,k              ! general loop indices
       INTEGER :: inn                 ! number of input-file surfaces
       INTEGER :: count               ! generic counter
+      INTEGER :: nbad                ! namelist inputs left unset
 c-----------------------------------------------------------------------
 c     local scalars — numerical resolution.
 c-----------------------------------------------------------------------
@@ -359,18 +360,86 @@ c-----------------------------------------------------------------------
       ! Critical-Delta model: fail on a misspelt name rather than
       ! silently running without the stabilising offset.
       SELECT CASE (TRIM(dc_type))
-         CASE ('rfitzp','lar','none','')
+         CASE ('rfitzp','none','')
          CASE ('toroidal')
             WRITE(*,*) "ERROR: dc_type='toroidal' is not available."
             WRITE(*,*) "  Its geometric factor was not correct in the"
             WRITE(*,*) "  r_s reference length and has been removed."
             WRITE(*,*) "  Use dc_type='rfitzp'."
             STOP 'slayer: dc_type toroidal removed'
+         CASE ('lar')
+            WRITE(*,*) "ERROR: dc_type='lar' is not available."
+            WRITE(*,*) "  It was the rfitzp formula without its r_s"
+            WRITE(*,*) "  normalization (rfitzp/r_s) and has been"
+            WRITE(*,*) "  removed. Use dc_type='rfitzp' or 'none'."
+            STOP 'slayer: dc_type lar removed'
          CASE DEFAULT
             WRITE(*,*) "ERROR: unknown dc_type='",TRIM(dc_type),"'."
-            WRITE(*,*) "  Use 'rfitzp', 'lar' or 'none'."
+            WRITE(*,*) "  Use 'rfitzp' or 'none'."
             STOP 'slayer: unknown dc_type'
       END SELECT
+
+c-----------------------------------------------------------------------
+c     check that the inputs this run needs were set. Since v1.6 the
+c     namelist has no silent defaults: zero means "not set", or for
+c     inQ, inQ_e and inQ_i "compute from the profiles". A v1.5 input
+c     that omitted a variable is reported with the old default.
+c-----------------------------------------------------------------------
+      nbad = 0
+      ! dimensional inputs: needed when params() runs on the namelist
+      IF (.NOT. read_eq .AND. (params_flag .OR. est_gamma_flag .OR.
+     $     match_gamma_flag .OR. br_th_flag .OR. onscan_flag .OR.
+     $     otscan_flag .OR. ntscan_flag .OR. nbtscan_flag)) THEN
+         IF (mm <= 0) CALL slayer_unset('mm',REAL(mm,r8),'2',nbad)
+         IF (nn <= 0) CALL slayer_unset('nn',REAL(nn,r8),'1',nbad)
+         IF (.NOT. n_e > 0.0_r8)
+     $        CALL slayer_unset('n_e',n_e,'1e19 [m^-3]',nbad)
+         IF (.NOT. t_e > 0.0_r8)
+     $        CALL slayer_unset('t_e',t_e,'1e3 [eV]',nbad)
+         IF (.NOT. t_i > 0.0_r8)
+     $        CALL slayer_unset('t_i',t_i,'1e3 [eV]',nbad)
+         IF (sval == 0.0_r8) CALL slayer_unset('sval',sval,'2.0',nbad)
+         IF (.NOT. bt > 0.0_r8) CALL slayer_unset('bt',bt,'1.0',nbad)
+         IF (.NOT. rs > 0.0_r8) CALL slayer_unset('rs',rs,'0.5',nbad)
+         IF (.NOT. R0 > 0.0_r8) CALL slayer_unset('R0',R0,'1.0',nbad)
+         IF (.NOT. mu_i > 0.0_r8)
+     $        CALL slayer_unset('mu_i',mu_i,'2.0',nbad)
+         IF (.NOT. zeff > 0.0_r8)
+     $        CALL slayer_unset('zeff',zeff,'2.0',nbad)
+         ! the gradient lengths give omega_e, omega_i unless a
+         ! growth-rate run overrides both Q_e and Q_i
+         IF (.NOT. ((est_gamma_flag .OR. match_gamma_flag) .AND.
+     $        inQ_e /= 0.0_r8 .AND. inQ_i /= 0.0_r8)) THEN
+            IF (.NOT. l_n > 0.0_r8)
+     $           CALL slayer_unset('l_n',l_n,'0.2 [m]',nbad)
+            IF (.NOT. l_t > 0.0_r8)
+     $           CALL slayer_unset('l_t',l_t,'0.2 [m]',nbad)
+         END IF
+      END IF
+      ! Cole-model inputs: needed by the single-surface riccati() call
+      ! below and the legacy scans, which run unless a growth-rate or
+      ! Br-threshold mode is on. inpr is a namelist input there.
+      IF (.NOT. (est_gamma_flag .OR. match_gamma_flag .OR.
+     $     br_th_flag)) THEN
+         IF (.NOT. inpr > 0.0_r8)
+     $        CALL slayer_unset('inpr',inpr,'1.0',nbad)
+         IF (.NOT. params_flag) THEN
+            IF (.NOT. inds > 0.0_r8)
+     $           CALL slayer_unset('inds',inds,'6.0',nbad)
+            IF (.NOT. intau > 0.0_r8)
+     $           CALL slayer_unset('intau',intau,'1.0',nbad)
+         END IF
+      END IF
+      IF (nbad > 0) THEN
+         WRITE(*,*) '  Since v1.6 SLAYER sets none of these silently.'
+         WRITE(*,*) '  Set them in slayer.in, or set read_eq=t to take'
+         WRITE(*,*) '  them from STRIDE and the kinetic profile file.'
+         WRITE(*,*) '  Other v1.5 defaults, for reference: inQ=20,'
+         WRITE(*,*) '  inQ_e=2, inQ_i=-2.6, inc_beta=0.7, Q0=4,'
+         WRITE(*,*) '  delta_n_p=(1e-2,1e-2). Zero is a valid choice'
+         WRITE(*,*) '  for those (no rotation or drift).'
+         STOP 'slayer: required inputs unset'
+      END IF
 
       ! Real copies of the mode numbers, read by params() in every
       ! namelist-driven branch below. build_inputs resets them from
@@ -415,9 +484,11 @@ c     baseline single-surface delta, reconnected flux, & torque.
 c     skipped when the matched-gamma path is active (it computes
 c     its own delta internally).
 c-----------------------------------------------------------------------
-c     Also skipped for the growth-rate estimate, which does not use
-c     it and is usually run with these namelist inputs unset.
-      IF (.NOT. (match_gamma_flag .OR. est_gamma_flag)) THEN
+c     Also skipped for the growth-rate estimate and the Br threshold,
+c     which do not use it and are usually run with these namelist
+c     inputs unset.
+      IF (.NOT. (match_gamma_flag .OR. est_gamma_flag .OR.
+     $     br_th_flag)) THEN
          delta=riccati(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe)
          psi0=1.0/ABS(delta+delta_n_p)     ! reconnected flux  [a.u.]
          jxb=-AIMAG(1.0/(delta+delta_n_p)) ! j x B torque      [a.u.]
@@ -601,6 +672,9 @@ c           overridden Q_e, Q_i.
             ELSE
                D_norm = slayer_d_norm(D_fac,Q_e,Q_i)
             END IF
+            ! Deltaprime -> gamma conversion, formed as in build_inputs
+            ! from the r_s-referenced Deltaprime and the resistive time
+            gamma_fac = rs*REAL(delta_prime)/tau_r
 
             CALL allocate_inputs(n_k,sl_in)  ! growthrates_mod
             CALL allocate_outputs(n_k,sl_out) ! growthrates_mod
@@ -608,7 +682,9 @@ c           overridden Q_e, Q_i.
             sl_in%qval_arr = (/ mm /)
             sl_in%q_arr = (/ qval /)
             sl_in%omegas_arr = (/ omega /)
-            !sl_in%Q_arr = (/ Q /)
+            sl_in%Qexb_arr = (/ REAL(Q,r8) /)
+            sl_in%shear_arr = (/ sval /)
+            sl_in%ds_arr = (/ ds /)
             sl_in%Q_e_arr = (/ Q_e /)
             sl_in%Q_i_arr = (/ Q_i /)
             sl_in%psi_n_arr = (/ 0.0 /)
@@ -744,6 +820,9 @@ c           overridden Q_e, Q_i.
             ELSE
                D_norm = slayer_d_norm(D_fac,Q_e,Q_i)
             END IF
+            ! Deltaprime -> gamma conversion, formed as in build_inputs
+            ! from the r_s-referenced Deltaprime and the resistive time
+            gamma_fac = rs*REAL(delta_prime)/tau_r
 
             IF (.NOT. est_gamma_flag) THEN
                CALL allocate_inputs(n_k,sl_in)
@@ -753,7 +832,9 @@ c           overridden Q_e, Q_i.
             sl_in%qval_arr = (/ mm /)
             sl_in%q_arr = (/ qval /)
             sl_in%omegas_arr = (/ omega /)
-            !sl_in%Q_arr = (/ Q /)
+            sl_in%Qexb_arr = (/ REAL(Q,r8) /)
+            sl_in%shear_arr = (/ sval /)
+            sl_in%ds_arr = (/ ds /)
             sl_in%Q_e_arr = (/ Q_e /)
             sl_in%Q_i_arr = (/ Q_i /)
             sl_in%psi_n_arr = (/ 0.0 /)
@@ -1192,6 +1273,9 @@ c-----------------------------------------------------------------------
             sl_in%qval_arr    = (/ mm /)
             sl_in%q_arr = (/ qval /)
             sl_in%omegas_arr  = (/ omega /)
+            sl_in%Qexb_arr    = (/ REAL(Q,r8) /)
+            sl_in%shear_arr   = (/ sval /)
+            sl_in%ds_arr      = (/ ds /)
             sl_in%Q_e_arr     = (/ Q_e /)
             sl_in%Q_i_arr     = (/ Q_i /)
             sl_in%psi_n_arr   = (/ 0.0 /)
@@ -1230,9 +1314,11 @@ c-----------------------------------------------------------------------
             inQ_i = Q_i
             inpr  = sl_in%P_perp_arr(k)
             inc_beta = sl_in%c_beta_arr(k)
-            inds  = sl_in%D_norm_arr(k)
+            ! riccati() takes the Cole ds and the torque balance the
+            ! unperturbed ExB Q, as at the other call sites above
+            inds  = sl_in%ds_arr(k)
             intau = sl_in%tau_arr(k)
-            Q0    = sl_in%Q_e_arr(k)
+            Q0    = sl_in%Qexb_arr(k)
 
             ALLOCATE(inQs(0:inum),deltal(0:inum),
      $               jxbl(0:inum),bal(0:inum))
@@ -1247,7 +1333,7 @@ c-----------------------------------------------------------------------
             iloc=MAXLOC(bal)
             Q_sol=inQs(iloc(1))
             br_th=SQRT(MAXVAL(bal)/sl_in%lu_arr(k)
-     $           *(sval**2.0/2.0))
+     $           *(sl_in%shear_arr(k)**2.0/2.0))
 
             sl_out%br_th_arr(k) = br_th
             sl_out%gamma_sol_arr(k) = 0.0
@@ -1989,6 +2075,28 @@ c-----------------------------------------------------------------------
          ENDIF
       DEALLOCATE(inQs,bal,js,ks,Q_sols,br_ths)
       ENDIF
+
+      CONTAINS
+c-----------------------------------------------------------------------
+c     report a namelist input that this run needs but was left unset,
+c     with the default v1.5 used silently in its place.
+c-----------------------------------------------------------------------
+      SUBROUTINE slayer_unset(name,val,v15,nbad)
+
+      CHARACTER(*), INTENT(IN) :: name   ! namelist variable
+      REAL(r8), INTENT(IN) :: val        ! value read
+      CHARACTER(*), INTENT(IN) :: v15    ! v1.5 default
+      INTEGER, INTENT(INOUT) :: nbad     ! running count
+
+      IF (nbad == 0) THEN
+         WRITE(*,*) 'ERROR: slayer.in leaves required inputs unset:'
+      END IF
+      WRITE(*,'(4x,a,a,es10.3,a,a,a)') name,' = ',val,
+     $     '  (v1.5 default: ',v15,')'
+      nbad = nbad+1
+
+      RETURN
+      END SUBROUTINE slayer_unset
 
       END PROGRAM slayer
 

@@ -170,9 +170,14 @@ c     Diamagnetic frequencies require gradient lengths; skip when the
 c     caller does not provide them (l_n <= 0 or l_t <= 0). Callers that
 c     compute omega_e/omega_i by other means must set Q_e and Q_i
 c     themselves afterwards.
+c     omega_* = k_theta*v_* carries the toroidal mode number through
+c     m = n*q: the n = 1 expression is multiplied by n, as in
+c     build_inputs (layerinputs.f).
       IF (l_n > 0.0_r8 .AND. l_t > 0.0_r8) THEN
-         omega_e = -t_e/(bt*R0)*(1.0_r8/l_n + 1.0_r8/l_t)*qval
-         omega_i =  t_i/(bt*R0)*(1.0_r8/l_n + 1.0_r8/l_t)*qval
+         omega_e = -REAL(nn,r8)*t_e/(bt*R0)
+     $        *(1.0_r8/l_n + 1.0_r8/l_t)*qval
+         omega_i =  REAL(nn,r8)*t_i/(bt*R0)
+     $        *(1.0_r8/l_n + 1.0_r8/l_t)*qval
          Q_e = -Qconv * omega_e
          Q_i = -Qconv * omega_i
       END IF
@@ -228,7 +233,6 @@ c     Critical Deltaprime (dc_tmp) via iterative chi_parallel calculation.
 c     The island-width Wd is iterated to converge the
 c     short-mfp / long-mfp interpolation for chi_parallel.
 c     dc_type (from sglobal_mod) selects the formula:
-c       'lar'      -- cylindrical (Lutjens)
 c       'rfitzp'   -- R. Fitzpatrick
 c       default    -- dc_tmp = 0
 c-----------------------------------------------------------------------
@@ -266,10 +270,6 @@ c-----------------------------------------------------------------------
           END IF
 
           SELECT CASE(dc_type)
-              CASE('lar')
-                  dc_tmp = 0.5_r8*(-dr_val)*(pi**1.5_r8)
-     $                     *((chi_par/chis(1))**0.25_r8)
-     $                     *( (nr*ABS(sval))/(R0*rs) )**0.5_r8
               CASE('rfitzp')
                   dc_tmp = -(SQRT(2.0_r8)*(pi**(1.5_r8))*dr_val) / Wd
               CASE default

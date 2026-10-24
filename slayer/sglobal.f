@@ -85,7 +85,7 @@ c --- diamagnetic and rotation frequencies
 c --- stability / Delta_crit
       REAL(r8) :: dc_tmp           ! computed Delta_crit
       COMPLEX(r8) :: delta_eff     ! (Deltaprime - Delta_crit)/S^(1/3)
-      CHARACTER(20) :: dc_type     ! dc formula: 'rfitzp','lar','none'
+      CHARACTER(20) :: dc_type     ! dc formula: 'rfitzp','none'
 c --- solver workspace / results
       COMPLEX(r8) :: g_tmp         ! temporary complex growth rate
       REAL(r8) :: gamma_fac        ! growth-rate conversion factor
@@ -168,6 +168,9 @@ c     slayer_inputs_type -- per-surface input arrays for SLAYER
           REAL(r8), ALLOCATABLE :: P_perp_arr(:)      ! perp Prandtl number
           REAL(r8), ALLOCATABLE :: P_tor_arr(:)       ! toroidal Prandtl
           REAL(r8), ALLOCATABLE :: omegas_arr(:)      ! ExB rotation per unit n [rad/s]
+          REAL(r8), ALLOCATABLE :: Qexb_arr(:)   ! normalised ExB Q
+          REAL(r8), ALLOCATABLE :: shear_arr(:)  ! shear for params()
+          REAL(r8), ALLOCATABLE :: ds_arr(:)     ! Cole normalised rho_s
           REAL(r8), ALLOCATABLE :: q_shift_arr(:)     ! ExB Doppler shift of Q
           REAL(r8), ALLOCATABLE :: omegas_e_arr(:)    ! omega_e  [rad/s]
           REAL(r8), ALLOCATABLE :: omegas_i_arr(:)    ! omega_i  [rad/s]

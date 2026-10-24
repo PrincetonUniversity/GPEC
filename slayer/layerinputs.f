@@ -414,7 +414,9 @@ c --- allocate slayer_inputs_type arrays (one entry per surface)
      $  sl_in%Qconv_arr(msing),
      $  sl_in%Re_dp_psi_arr(msing),    sl_in%Im_dp_psi_arr(msing),
      $  sl_in%k_ref_arr(msing),        sl_in%alpha_arr(msing),
-     $  sl_in%q_shift_arr(msing),      sl_in%q_arr(msing))
+     $  sl_in%q_shift_arr(msing),      sl_in%q_arr(msing),
+     $  sl_in%Qexb_arr(msing),            sl_in%shear_arr(msing),
+     $  sl_in%ds_arr(msing))
       sl_in%q_shift_arr = 0.0_r8
 
 c --- allocate local kinetic arrays (for future NetCDF diagnostic output)
@@ -661,6 +663,11 @@ c        D_norm uses iota_e from the Q_e, Q_i just set above
          sl_in%P_perp_arr(ising)  = P_perp
          sl_in%P_tor_arr(ising)   = P_tor
          sl_in%Qconv_arr(ising)   = tauk
+c        the shear, Cole ds and unperturbed ExB Q as params() formed
+c        them, for the torque-balance (br_th_flag) path
+         sl_in%shear_arr(ising)   = s_fitz
+         sl_in%ds_arr(ising)      = ds
+         sl_in%Qexb_arr(ising)    = REAL(Q,r8)
       ENDDO
 
 c     convert the full Deltaprime matrix to the r_s reference length
