@@ -2,7 +2,6 @@
    dcon_dir   = ""                   ! Path to DCON outputs. Individual file paths are appended to this
    idconfile  = "euler.bin"          ! Eigenfunctions output by DCON run
    ieqfile    = "psi_in.bin"         ! Flux surfaces output by DCON run
-   ivacuumfile= "vacuum.bin"         ! Vacuum info output by DCON run
    rdconfile  = "globalsol.bin"      ! Galerkin eigenfunctions output by resistive DCON run
 
    gal_flag = f             ! Use the Galerkin eigenfunctions from resistive DCON instead of the ideal DCON shooting method solutions
@@ -35,8 +34,11 @@
    filter_modes = 0         ! Number of modes isolated, negative values isolate backwards from the last mode
 /
 &GPEC_CONTROL
-   resp_index=0             ! Integer 0-4, determining method of inductance matrix formation. 0 uses energy identity, and is recommended.
+   resp_index=0             ! Integer 0-4, determining method of inductance matrix formation. 0 uses energy identity, and is recommended. Use 1 when using resistive DCON.
    sing_spot=5e-4           ! Minimum distance to singular surface in (m-nq) space
+   sing_resspot=1.0         ! If use_res_spot=t, use inverse cube root of lundquist number scaled by sing_resspot in psi space as spot size
+   use_res_spot=f           ! Use resistive singular layer width instead of fixed sing_spot
+   sing_interpspot=1.0      ! Scaling of the interpolation width, in units of spot size, for smoothed outputs of singular surface quantities
    sing_npsi=100            ! Number of points between rational surfaces used for b-normal splines across sin_spot
    reg_flag=f               ! Regularize the solution near resonant surfaces
    reg_spot=5e-2            ! Regularize by (m-nq)^2/((m-nq)^2+reg_spot^2)
@@ -55,7 +57,9 @@
    singcoup_flag=f          ! Calculate coupling of each m to resonant surfaces
    singfld_flag=f           ! Output of resonant surface quantities (flux,current,etc.)
    vsingfld_flag=f          ! Output of vacuum resonant surface quantities
-   singthresh_flag=f       ! Calculate Callen resonant field penetration threshold (requires kinetic profiles from pentrc.in)
+   singthresh_flag=f        ! Calculate SLAYRE and CALLEN's resonant field penetration threshold (requires kinetic profiles from pentrc.in)
+   singthresh_slayer_inpr=5.0 ! Scalar Prandtl number (viscosity) used by SLAYER for all rational surfaces
+   singthresh_slayer_inpr_prof=-1.0 ! Per-rational-surface Prandtl number profile, comma-separated and ordered by ascending q, up to 20 entries (e.g. singthresh_slayer_inpr_prof=3.0,5.0,8.0,12.0 for the q=2,3,4,5 surfaces). Any entry <= 0 falls back to the scalar singthresh_slayer_inpr
 
    pmodb_flag=f             ! Outputs delta-B_Lagrangian
    xbnormal_flag=t          ! Outputs normal displacement and field in plasma
@@ -85,8 +89,17 @@
    bin_2d_flag=f            ! Write 2D binary outputs for use with xdraw
 
    verbose=t                ! Print run log to terminal
+
+   effective_field_flag=f   ! Calculate each contribution of destabilizing term and effective perturbed field [Bernstein, Handbook of Plasma Physics, 1983].
+   standard_form_flag=f     ! Calculate the first-form plasma energy terms of Eq. (3.1) in docs/tex/recon/main.tex with the gamma|div xi|^2 term omitted.
+   effective_field_terms_flag=f ! Bernstein |C|^2 decomposition: |C|^2 = |Q|^2 + 2Re(V*.Q) + |V|^2, reported as A, B, Cpar, Iperp with the identity check epf = A+B+Cpar+Iperp.
+   curl_check_flag=f        ! Under effective_field_flag, verify (curl C).grad(psi)=0 and write gpec_recon_cveri_sol*.out.
+   recon_out=t              ! Under effective_field_flag/standard_form_flag/effective_field_terms_flag, write recon diagnostic files and gpec.log entries. If false, keep terminal summary only.
+   recon_int="spline"       ! Radial quadrature of all three routes on the psifac grid: "spline" (default) or "trapezoid". The integrated psi range is printed beside the DCON psilow-psilim range.
+                            ! effective_field_flag, standard_form_flag and effective_field_terms_flag require mode_flag=t (choose mode) with coil_flag, data_flag, harmonic_flag and reg_flag all f; GPEC stops at input otherwise.
 /
 &GPEC_DIAGNOSE
    timeit=f                 ! Print timer splits for major subroutines
    radvar_flag=f            ! Map various radial variables (rho,psi_tor) on psi_n grid
+   mutual_test_flag=f 	    ! Test outputs for eigenvalues of mutual inductances and wall currents
 /

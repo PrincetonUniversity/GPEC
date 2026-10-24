@@ -1,6 +1,7 @@
 &PENT_INPUT
     idconfile  = "euler.bin"            ! Eigenfunctions output by DCON run
     kinetic_file = "kinetic.txt"        ! Ascii profiles. columns: psi_n, ni(m^-3), ne(m^-3), ti(eV), te(eV), omega_EXB(rad/s)
+    kinetic_format = "legacy"           ! "rates-v1" adds columns logLambda, nu_i(s^-1), nu_e(s^-1) that replace the internal collision model
     data_dir = ""                       ! Location of pre-formed fnml matrix used in rlar and clar methods. "default" uses $GPECHOME/pentrc.
     peq_file = ""			! Ascii displacement. columns: psi_n, m, real(xi^psi), imag(xi^psi), real(xi^alpha), imag(xi^alpha). Default uses "gpec_xclebsch_n#.out"
 
@@ -25,8 +26,10 @@
 
     force_xialpha = .false.             ! Calculates tangential displacement from radial displacement and toroidal force balance (overwrites peq_file values)
 
-    atol_xlmda = 1e-9                   ! Absolute tolerance in energy and pitch integration
-    rtol_xlmda = 1e-5                   ! Relative tolerance in energy and pitch integration
+    atol_xlmda = 1e-9                   ! Absolute tolerance in pitch integration (energy tolerance derived from this unless atol_x is set)
+    rtol_xlmda = 1e-5                   ! Relative tolerance in pitch integration (energy tolerance derived from this unless rtol_x is set)
+    atol_x = -1                         ! Absolute tolerance in energy integration. Negative (default) derives 1e-2*atol_xlmda so the nested quadrature converges
+    rtol_x = -1                         ! Relative tolerance in energy integration. Negative (default) derives 1e-2*rtol_xlmda so the nested quadrature converges
     atol_psi = 1e-4                     ! Absolute tolerance in psi_n integration
     rtol_psi = 1e-4                     ! Relative tolerance in psi_n integration
     ntheta = 128                        ! Poloidal angle grid for bounce integration
@@ -36,6 +39,7 @@
     ximag = 0.0                         ! Step off real energy axis (use to avoid zero collisionality singularities)
     psilims = 0 1                       ! Range in psi_n
     use_classic_splines = f             ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
+    pentrc_threads = 0                  ! Sets the number of parallel openMP threads for PENTRC. Setting <=0 defaults to OMP_NUM_THREADS env variable
 /
 &PENT_OUTPUT
     moment = "pressure"                 ! Use 'pressure' for torque and particle transport, 'heat' for heat transport

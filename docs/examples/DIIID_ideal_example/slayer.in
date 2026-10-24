@@ -1,0 +1,93 @@
+&SLAYER_INPUT
+    input_flag=f         ! reads profile quantities (n_e, t_e, etc.) from an ascii table
+    infile='TkMkr_D3Dlike_Hmode.gpeckf' ! Path to the kinetic profile file (read_eq=t), or to an ascii table of surface quantities (input_flag=t)
+    ncfile='stride_output_n1.nc' ! Path to netCDF file of STRIDE outputs
+    params_flag=f        ! calculates normalized parameters from profile quantities
+    ! >>>
+    ! >>> Input rational surface quantities
+    ! >>>
+    mm=2                 ! poloidal mode number
+    nn=1                 ! toroidal mode number
+    n_e=5.50E+19         ! electron density [m^-3]
+    t_e=1000.0           ! electron temperature [eV]
+    t_i=1000.0           ! ion temperature [eV]
+    sval=1.5             ! magnetic shear at the layer
+    bt=2.0               ! toroidal field [T]
+    rs=0.5               ! minor radius of resonant surface [m]
+    R0=1.67              ! major radius of magnetic axis [m]
+    omega=5.00E+03       ! ExB rotation frequency [rad/s]
+    l_t=0.11             ! temperature gradient scale length
+    l_n=0.25             ! density gradient scale length
+    qval=2.0             ! q of resonant surface
+    mu_i=2.0             ! ion mass ratio to proton mass, 2 for deuterium plasma. Also used when read_eq=t
+    zeff=2.0             ! plasma Z_effective. Also used when read_eq=t (the kinetic file's Z_eff is not used)
+    dr_val=-0.1          ! GGJ resistive interchange index D_R (taken from STRIDE when read_eq=t)
+    dgeo_val=0.0         ! unused (the toroidal critical Delta was removed); accepted so older inputs still read
+    chi_p_prof=0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2 ! Rational surface anomalous perpendicular energy diffusivity profile
+    chi_t_prof=0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2 ! Rational surface anomalous perpendicular ion momentum diffusivity profile
+    kappa_prof=0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0 ! Rational surface thermal conductivity profile (NOTE: set > 0 to override chi_p_prof)
+    ! >>>
+    ! >>> Input normalized layer parameters. If read_eq=f, each will individually override internal calcuation using above inputs
+    ! >>>
+    inpr=0.0             ! Prantdl number. Set /= 0.0 to override internal calculation
+    inpe=0.0             ! electron viscosity
+    inQ=1.0              ! normalized ExB frequency. TO DO: update for mode rotation frequency calculation! 
+    inQ_e=0.0            ! normalized electron diamagnetic frequency. Set /= 0.0 to override internal calculation
+    inQ_i=0.0            ! normalized ion diamagnetic frequency. Set /= 0.0 to override internal calculation
+    inc_beta=0.0         ! dimensionless measure of the plasma pressure. Set /= 0.0 to override internal calculation
+    inds=0.0             ! normalized ion sound radius, or normalized ion skin depth. Set /= 0.0 to override internal calculation
+    intau=1.0            ! ratio of ion to electron temperature
+    Q0=1.0               ! unnecessary placeholder variable for inQ?
+    delta_prime=(0.0,0.0)  ! input Delta' for the growth rate calculation when read_eq=f, referenced to the minor radius (r_s*Delta')
+    delta_n_p=(0.01,0.01)  ! delta offset used for jxb calculations. Default for latter is (1e-2,1e-2).
+    ingamma=(0.0,0.0)     ! input (Re(Q),Im(Q)) to calculate inner layer Delta. Set /= 0.0 to override internal root finding
+/
+
+&SLAYER_CONTROL
+    inum=400             ! resolution to find error field thresholds.
+    jnum=100             ! resolution for 2d scan along with Q,omega.
+    knum=100             ! resolution for 2d scan along with the other.
+    Q_num=100            ! number of points per axis of the initial Re(Q),Im(Q) scan grid
+    scan_width=1.5       ! half-width of the Re(Q),Im(Q) scan window, in normalized Q
+    AMR_passes=4         ! number of adaptive refinement passes of the scan grid
+    !scan_center=0.0     ! Re(Q) center of the scan window. Unset: 0, or the middle of the Doppler-shifted branches of a coupled scan
+    msing_max=3          ! number of rational surfaces (counted from the core) to scan, and to couple when coupling_flag=t
+    dc_type="rfitzp"     ! critical Delta model: "rfitzp" (default) or "none"
+    read_eq=t            ! read the equilibrium and Delta' from STRIDE (ncfile) and profiles from the kinetic file (infile)
+    Pperp_Ptor_flag=t    ! Use R. Fitzpatrick formalism (inc. anomalous diffusion) for growth rate calculation
+    coupling_flag=f      ! solve the coupled multi-surface determinant instead of each surface separately. Requires read_eq=t
+    rotation_flag=t      ! Doppler-shift each surface by its ExB rotation in the coupled determinant (root reported in the lab frame)
+    QPscan_flag=f        ! scan (Q,P) space for delta and torque.
+    Qscan_flag=f         ! scan Q space
+    QPescan_flag=f       ! scan (Q,Pe) space for delta and torque.
+    Qbscan_flag=f        ! scan (Q,beta) space for delta and torque.
+    onscan_flag=f        ! scan (omega,n) space for error fields.
+    otscan_flag=f        ! scan (omega,t) space for error fields.
+    ntscan_flag=f        ! scan (n,te) space for error fields.
+    nbtscan_flag=f       ! scan (n,bt) space for error fields.
+    parflow_flag=f       ! set parallel flow on
+    PeOhmOnly_flag=t     ! only include Pe from Ohm's law
+    Pe_flag=f            ! if true, calculate classical inpe value from inpr and include in SLAYER run
+    layfac=0.02          ! layfac*EXP(ifac*ATAN2(AIMAG(Q-Q_e),REAL(Q-Q_e)) is added to Q_e if ABS(Q-Q_e)<layfac). Default is 0.02.
+/
+
+&SLAYER_OUTPUT
+    verbose=t            ! prints progress to terminal
+    ascii_flag=f         ! writes results to ascii files
+    bin_flag=f           ! writes results to binary files
+    netcdf_flag=f        ! writes results to netcdf files
+    est_gamma_flag=f     ! Calculate and output growth rate estimate
+    match_gamma_flag=t   ! match the layer Delta to Delta' and solve for the growth rate
+    stability_flag=f     ! calculate delta dependence on complex Q
+    stabscan_flag=f      ! Generate Re(Q),Im(Q) scan and output as ASCII
+    coupled_stabscan_flag=f      ! uniform-grid scan of the coupled determinant, output as ASCII
+    amr_flag=t           ! adaptive Re(Q),Im(Q) scan and root extraction for match_gamma_flag (results in the netcdf file)
+    br_th_flag=f         ! Calculate br_th
+/
+
+&SLAYER_DIAGNOSE
+    riccati_out=f        ! writes LSDOE Riccati integration to an ascii file
+    riccatiscan_flag=f
+    params_check=f       ! prints the primary parameters to the terminal when they are calculated
+    bal_flag=f           ! calculate the resonant field penetration threshold from torque balance
+/

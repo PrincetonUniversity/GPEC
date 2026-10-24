@@ -3,13 +3,13 @@ c     file dcon_mod.f.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
-c     subprogram 0. dcon_mod.
+c     subprogram 0. rdcon_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE dcon_mod
+      MODULE rdcon_mod
       USE spline_mod
       USE global_mod
       USE equil_mod
@@ -51,10 +51,12 @@ c-----------------------------------------------------------------------
       LOGICAL :: feval_flag=.FALSE.
       LOGICAL :: fft_flag=.FALSE.
       LOGICAL :: bin_euler=.FALSE.
+      LOGICAL :: bin_vac=.FALSE.
       LOGICAL :: out_evals=.FALSE.
       LOGICAL :: bin_evals=.FALSE.
       LOGICAL :: out_sol=.FALSE.
       LOGICAL :: bin_sol=.FALSE.
+      LOGICAL :: netcdf_out=.TRUE.
 
       LOGICAL :: bal_flag=.FALSE.
       LOGICAL :: mat_flag=.FALSE.
@@ -67,17 +69,24 @@ c-----------------------------------------------------------------------
       LOGICAL :: node_flag=.FALSE.
       LOGICAL :: res_flag=.FALSE.
       LOGICAL :: ahb_flag=.FALSE.
+      LOGICAL :: MRE_flag=.FALSE.
+      LOGICAL :: geom_flag=.FALSE.
+      LOGICAL :: reform_eq_with_psilim=.FALSE.
 
       INTEGER, PARAMETER :: sol_base=50
       INTEGER :: mlow,mhigh,mpert,mband,nn,nstep=HUGE(0),bin_sol_min,
      $     bin_sol_max,euler_stride=1,mthvac=480,ksing=-1,delta_mlow=0,
      $     delta_mhigh=0,delta_mband=0,out_sol_min,out_sol_max,
-     $     sing_start=0
+     $     sing_start=0,nzero=0
       REAL(r8) :: thmax0=1,ucrit=1e4,tol_r=1e-5,tol_nr=1e-5,
-     $     crossover=1e-2,mthsurf0=1,prefac=1.0
+     $     crossover=1e-2,mthsurf0=1,prefac=1.0,
+     $     plasma1=0.0,vacuum1=0.0,total1=0.0
+
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: Zeff_, psi_N_Zeff_
+      REAL(r8), DIMENSION(1:1000) :: Zeff=-1.0, psi_N_Zeff=-1.0
 
       REAL(r8) :: dpsi_intvl=0.1,dpsi1_intvl=0.1
-      TYPE(spline_type) :: locstab
+      TYPE(spline_type) :: locstab, mreterms
 
       TYPE :: resist_type
       REAL(r8) :: e,f,h,m,g,k,eta,rho,taua,taur,v1
@@ -90,6 +99,8 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(2) :: r2
       INTEGER, DIMENSION(:), POINTER :: n1,n2
       REAL(r8) :: psifac,rho,q,q1,di
+      REAL(r8) :: auxextleft,extleft,resleft,resright,extright,
+     $                                               auxextright
       COMPLEX(r8) :: alpha,beta
       COMPLEX(r8), DIMENSION(:), POINTER :: power
       COMPLEX(r8), DIMENSION(:,:,:,:), POINTER :: vmatr,mmatr,
@@ -97,11 +108,36 @@ c-----------------------------------------------------------------------
       TYPE(resist_type) :: restype
       END TYPE sing_type
 
+      TYPE :: coil_type
+         LOGICAL :: rpec_flag=.FALSE.
+         INTEGER :: mcoil,m1,m2
+      END TYPE coil_type
+
+      TYPE :: cellinfo_type
+         INTEGER, DIMENSION(:), ALLOCATABLE :: iintvl, icell
+         CHARACTER(6), DIMENSION(:), ALLOCATABLE :: etypes
+         INTEGER, DIMENSION(:), ALLOCATABLE :: etypes_int
+         REAL(r8), DIMENSION(:), ALLOCATABLE :: x1, x2
+         INTEGER :: ncell, nintvl
+      END TYPE cellinfo_type
+
+      TYPE(coil_type) :: coil
+
       INTEGER :: msing
       TYPE(sing_type), DIMENSION(:), POINTER :: sing,sing_non0,sing_0
 
       LOGICAL :: sas_flag=.FALSE.,lim_flag
       EQUIVALENCE (sas_flag,lim_flag)
-      REAL(r8) :: psilim,qlim,q1lim,dmlim=.5_r8
+      REAL(r8) :: psilim,qlim,q1lim,dmlim=.5_r8,qhigh=1e3,qlow=0
+      REAL(r8) :: psilow_tmp, psilim_tmp
 
-      END MODULE dcon_mod
+      ! for recording dw(q) near the boundary
+      REAL(r8) :: psiedge = 1.0
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: q_edge, psi_edge
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: dw_edge
+      INTEGER :: nperq_edge=20, size_edge=0, pre_edge=1, i_edge=1
+
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: delta
+      TYPE(cellinfo_type) :: cellinfos
+
+      END MODULE rdcon_mod

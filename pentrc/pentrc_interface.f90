@@ -26,7 +26,7 @@ module pentrc_interface
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
-    ! EMAIL: nlogan@pppl.gov
+    ! EMAIL: nikolas.logan@columbia.edu
     !-----------------------------------------------------------------------
     
     use params, only: r8,xj, npsi_out, nmethods, methods, docs, version
@@ -39,22 +39,22 @@ module pentrc_interface
     use spline_mod, only: use_classic_splines
 
     use energy_integration, only: &
-        output_energy_netcdf,output_energy_ascii,&  ! subroutine
-        xatol,xrtol,xmax,ximag,xnufac, &            ! real
-        xnutype,xf0type,&                           ! character
-        qt,xdebug                                   ! logical
+        output_energy_netcdf,output_energy_ascii,&       ! subroutine
+        xatol,xrtol,xmax,ximag,xnufac, &                 ! real
+        xnutype,xf0type,&                                ! character
+        qt,xdebug                                        ! logical
     use pitch_integration, only: &
-        output_pitch_netcdf,output_pitch_ascii,&                       ! subroutines
-        lambdaatol,lambdartol,&                     ! real
-        lambdadebug                                 ! logical
+        output_pitch_netcdf,output_pitch_ascii,&         ! subroutines
+        lambdaatol,lambdartol,&                          ! real
+        lambdadebug                                      ! logical
     use torque, only : &
-        tintgrl_lsode,tintgrl_grid,tpsi,&           ! functions
+        tintgrl_lsode,tintgrl_grid,&                     ! functions
         output_orbit_ascii,&
-        output_orbit_netcdf,output_torque_netcdf,&  ! subroutines
-        ntheta,nlmda,nthetafuns,&                   ! integers
-        atol_psi,rtol_psi,&                         ! real
-        tdebug,output_ascii,output_netcdf,&         ! logical
-        mpert,mfac                                  !! hacked for test writing
+        output_orbit_netcdf,tpsi,output_torque_netcdf,&  ! subroutines
+        ntheta,nlmda,nthetafuns,&                        ! integers
+        atol_psi,rtol_psi,&                              ! real
+        tdebug,output_ascii,output_netcdf,&              ! logical
+        mpert,mfac                                       !! hacked for test writing
 
     implicit none
 
@@ -108,11 +108,18 @@ module pentrc_interface
         power_bpin = -1,&
         power_rin = -1,&
         power_rcin = -1,&
-        openmp_threads = 1
+        pentrc_threads = 0,&
+        openmp_threads = 0
+
+    !> How much tighter the energy integration is than the pitch integration
+    !> when atol_x/rtol_x are left at their derive-me default.
+    real(r8), parameter :: nested_tolerance_margin = 1e-2_r8
 
     real(r8) ::    &
         atol_xlmda=1e-6, &
         rtol_xlmda=1e-3, &
+        atol_x=-1, &
+        rtol_x=-1, &
         nfac=1.0,  &
         tfac=1.0,  &
         wefac=1.0, &
@@ -136,19 +143,21 @@ module pentrc_interface
         pmodb_file ="none", &
         data_dir ="."
     character(32) :: &
+        kinetic_format = "legacy",&
         nutype = "harmonic",&
         f0type = "maxwellian",&
         jac_in = "default",&
         moment = "pressure"
 
     ! namelists
-    namelist/pent_input/kinetic_file, gpec_file, peq_file, pmodb_file, idconfile, &
+    namelist/pent_input/kinetic_file, kinetic_format, gpec_file, peq_file, pmodb_file, idconfile, &
             data_dir, zi, zimp, mi, mimp, nl, electron, nutype, f0type, &
             jac_in, jsurf_in, tmag_in, power_bin, power_bpin, power_rin, power_rcin
 
     namelist/pent_control/nfac, tfac, wefac, wdfac, wpfac, nufac, divxfac, &
-            atol_xlmda, rtol_xlmda, atol_psi, rtol_psi, nlmda, ntheta, ximag, xmax, psilims, &
-            use_classic_splines,openmp_threads, force_xialpha
+            atol_xlmda, rtol_xlmda, atol_x, rtol_x, atol_psi, rtol_psi, &
+            nlmda, ntheta, ximag, xmax, psilims, &
+            use_classic_splines,pentrc_threads,openmp_threads,force_xialpha
 
     namelist/pent_output/moment, output_ascii, output_netcdf, &
             eq_out, theta_out, xlmda_out, eqpsi_out, equil_grid, input_grid, dynamic_grid, &
@@ -212,15 +221,15 @@ module pentrc_interface
         if(all(psi_out==-1)) psi_out = (/(i,i=1,30)/)/30.6 ! even spread if user doesn't pick any
 
         ! warnings if using deprecated inputs
-        if(eq_out) print *, "WARNING: eq_out has been deprecated. Behavior is always true."
-        if(eqpsi_out) print *, "WARNING: eqpsi_out has been deprecated. Use equil_grid."
-        if(term_flag) print *, "WARNING: term_flag has been deprecated. Use verbose."
-        !if(any(psiout/=0)) print *, "WARNING: psiout has been deprecated. Use psi_out." !! officially removed
-        !if(any(psilim/=0)) print *, "WARNING: psilim has been deprecated. Use psilims."
+        if(openmp_threads>0) print *,"!! WARNING: openmp_threads is deprecated. Use pentrc_threads or OMP_NUM_THREADS env variable."
+        if(eq_out) print *, "!! WARNING: eq_out has been deprecated. Behavior is always true."
+        if(eqpsi_out) print *, "!! WARNING: eqpsi_out has been deprecated. Use equil_grid."
+        if(term_flag) print *, "!! WARNING: term_flag has been deprecated. Use verbose."
+        !if(any(psiout/=0)) print *, "!! WARNING: psiout has been deprecated. Use psi_out." !! officially removed
+        !if(any(psilim/=0)) print *, "!! WARNING: psilim has been deprecated. Use psilims."
 
         ! distribute some simplified inputs to module circles
-        xatol = atol_xlmda
-        xrtol = rtol_xlmda
+        call set_nested_tolerances
         xnufac= nufac
         xnutype= nutype
         xf0type= f0type
@@ -230,7 +239,7 @@ module pentrc_interface
         ! read (perturbed) equilibrium inputs
         if(indebug .and. in_kin) print *,"  read_kin args: ",trim(kinetic_file),zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,indebug
         if(in_deq) call read_equil(idconfile)
-        if(in_kin) call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,indebug)
+        if(in_kin) call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,indebug,kinetic_format)
         if(in_peq)then
             if(peq_file=="")then
                write(nstr,'(i3)')nn
@@ -277,8 +286,7 @@ module pentrc_interface
         close(i)
         
         ! distribute inputs to PENTRC module circles
-        xatol = atol_xlmda
-        xrtol = rtol_xlmda
+        call set_nested_tolerances
         xnufac= nufac
         xnutype= nutype
         xf0type= f0type 
@@ -290,7 +298,7 @@ module pentrc_interface
             print *,"read_kin args:"
             print *,"  ",trim(kinetic_file),zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,tdebug
         endif
-        call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,indebug)
+        call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,indebug,kinetic_format)
 
         ! transfer torque function variables to external program
         get_nl = nl
@@ -305,6 +313,37 @@ module pentrc_interface
         
     end subroutine get_pentrc
     
+
+    !=======================================================================
+    subroutine set_nested_tolerances
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Give the energy integration its own, tighter tolerances.
+    !
+    !   The pitch integral's integrand IS the energy integral, so this is a
+    !   nested adaptive quadrature.  With one tolerance for both, the outer
+    !   integrator chases the inner one's quadrature error, which is not a
+    !   smooth function of lambda; LSODE then shrinks its step without bound
+    !   and stops with "too many steps in lambda required".
+    !
+    !   Negative atol_x/rtol_x, the default, means "derive from the pitch
+    !   tolerances".  A deck may set them explicitly, including back to the
+    !   old aliased values.
+    !-----------------------------------------------------------------------
+        implicit none
+        if(atol_x < 0) then
+            xatol = atol_xlmda * nested_tolerance_margin
+        else
+            xatol = atol_x
+        endif
+        if(rtol_x < 0) then
+            xrtol = rtol_xlmda * nested_tolerance_margin
+        else
+            xrtol = rtol_x
+        endif
+    end subroutine set_nested_tolerances
+
+
 end module pentrc_interface
     
 

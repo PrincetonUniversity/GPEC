@@ -25,7 +25,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE riccati_mod
-      USE sing_mod
+      USE stride_sing_mod
       USE zvode1_mod
       IMPLICIT NONE
 
@@ -400,7 +400,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE riccati_nojac(neq_jac, t, y, ml, mu, pd, nrpd)
          INTEGER  neq_jac, ml, mu, nrpd
-         REAL*8  t, y, pd(nrpd,2)
+         REAL(r8)  t, y, pd(nrpd,2)
          pd(:,:) = 0
 c-----------------------------------------------------------------------
 c     terminate.
@@ -458,6 +458,7 @@ c-----------------------------------------------------------------------
 
       CHARACTER(80) :: format2
       REAL(r8), DIMENSION(mpert) :: eigval
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: Xtemp
       REAL(r8), DIMENSION(3*mpert-1) :: rwork_diagnose
       COMPLEX(r8), DIMENSION(2*mpert-1) :: work_diagnose
       INTEGER, DIMENSION(1) :: jmin
@@ -473,7 +474,8 @@ c-----------------------------------------------------------------------
 c     preliminaries.
 c-----------------------------------------------------------------------
       lwork=2*mpert-1
-      CALL zheev('N','U',mpert,X,mpert,eigval,work_diagnose,
+      Xtemp=X  ! zheev destroys its input, and X is INTENT(IN)
+      CALL zheev('N','U',mpert,Xtemp,mpert,eigval,work_diagnose,
      $     lwork,rwork_diagnose,info)
       jmin=MINLOC(ABS(eigval))
       crit1=eigval(jmin(1)) * sq%f(3)**2

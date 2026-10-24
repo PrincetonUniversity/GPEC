@@ -13,7 +13,7 @@ program pentrc
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
-    ! EMAIL: nlogan@pppl.gov
+    ! EMAIL: nikolas.logan@columbia.edu
     !-----------------------------------------------------------------------
     use pentrc_interface
     use utilities, only: append_1d, append_2d, progressbar
@@ -59,10 +59,12 @@ program pentrc
 
     ! set the number of threads for OPENMP
 #ifdef _OPENMP
-    CALL OMP_SET_NUM_THREADS(openmp_threads)
+    IF(pentrc_threads > 0)THEN
+      CALL OMP_SET_NUM_THREADS(pentrc_threads)
+    ENDIF
 #else
-    if(openmp_threads /= 1) print *,"WARNING: Not compiled with OPENMP. Forcing openmp_threads = 1."
-    openmp_threads = 1
+    if(pentrc_threads > 1) print *,"!! WARNING: Not compiled with OPENMP. Forcing pentrc_threads = 1."
+    pentrc_threads = 1
 #endif
 
     ! run models
@@ -87,7 +89,7 @@ program pentrc
                  "imag(H_k)"
                 do l=0,0!! should be all
                     if(psi_out(i)>0 .and. psi_out(i)<=1)then
-                        tsurf = tpsi(psi_out(i),nn,l,zi,mi,wdfac,divxfac,electron,'twmm',&
+                        call tpsi(tsurf,psi_out(i),nn,l,zi,mi,wdfac,divxfac,electron,'twmm',&
                             op_wmats=wtw)
                         do j=1,mpert
                             do k=1,mpert
@@ -177,7 +179,7 @@ program pentrc
                         do i=1,nvalid
                             if(nvalid<10) print '(a8,es11.3E3)',"  psi = ",psi_out_valid(i)
                             do l=-nl,nl,max(1,nl)
-                                tsurf = tpsi(psi_out_valid(i),nn,l,zi,mi,wdfac,divxfac,electron,methods(m),&
+                                call tpsi(tsurf,psi_out_valid(i),nn,l,zi,mi,wdfac,divxfac,electron,methods(m),&
                                              op_erecord=xlmda_out,op_orecord=theta_out)
                             enddo
                             if(nvalid>10) call progressbar(i,1,nvalid,op_percent=20)

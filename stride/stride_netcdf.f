@@ -15,7 +15,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE stride_netcdf_mod
-      USE dcon_mod
+      USE stride_dcon_mod
       USE netcdf
       IMPLICIT NONE
 
@@ -48,21 +48,29 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE stride_netcdf_out(wp,wv,wt,epi,evi,eti,dp)
+      SUBROUTINE stride_netcdf_out(wp,wv,wt,epi,evi,eti,dp,
+     $                              pl1,va1,to1,shr)
 
       REAL(r8), DIMENSION(mpert), INTENT(IN) :: epi,evi,eti
       COMPLEX(r8), DIMENSION(mpert,mpert), INTENT(IN) :: wp,wv,wt
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: dp
+      REAL(r8), INTENT(IN) :: pl1,va1,to1
+      REAL(r8), DIMENSION(msing), INTENT(IN) :: shr
 
       INTEGER :: i, ncid,
      $    i_dim, m_dim, mo_dim, p_dim, i_id, m_id, mo_id, p_id,
      $    f_id, q_id, dv_id, mu_id, di_id, dr_id, ca_id,
      $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id,
      $    r_dim, rp_dim, l_dim, lp_dim, r_id, rp_id, l_id, lp_id,
-     $    pr_id, qr_id, dp_id, ap_id, bp_id, gp_id, dpp_id
+     $    pr_id, qr_id, dp_id, ap_id, bp_id, gp_id, dpp_id,
+     $    shear_id,resm_id,drr_id,dir_id
       COMPLEX(r8), DIMENSION(mpert) :: ep,ev,et
       CHARACTER(2) :: sn
       CHARACTER(64) :: ncfile
+
+      REAL(r8) :: respsi
+      REAL(r8), DIMENSION(msing) :: dr_rationals,di_rationals
+      INTEGER, DIMENSION(msing) :: resm
 
       INTEGER :: ising,jsing
       COMPLEX(r8), DIMENSION(msing,msing) :: ap,bp,gammap,deltap
@@ -84,6 +92,15 @@ c-----------------------------------------------------------------------
       ep = CMPLX(epi, 0.0)
       ev = CMPLX(evi, 0.0)
       et = CMPLX(eti, 0.0)
+
+      ! evaluate the Mercier (D_I) and resistive interchange (D_R)
+      ! indices on rational surfaces
+      DO i=1,msing
+         respsi = sing(i)%psifac
+         CALL spline_eval(locstab,respsi,0)
+         di_rationals(i)=locstab%f(1)/respsi
+         dr_rationals(i)=locstab%f(2)/respsi
+      END DO
 c-----------------------------------------------------------------------
 c     open files
 c-----------------------------------------------------------------------
@@ -108,6 +125,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_att(ncid,nf90_global,'mhigh', mhigh))
       CALL check( nf90_put_att(ncid,nf90_global,'mpert', mpert))
       CALL check( nf90_put_att(ncid,nf90_global,'mband', mband))
+      CALL check( nf90_put_att(ncid,nf90_global,'msing', msing))
       CALL check( nf90_put_att(ncid,nf90_global,'psilow', psilow))
       CALL check( nf90_put_att(ncid,nf90_global,'amean', amean))
       CALL check( nf90_put_att(ncid,nf90_global,'rmean', rmean))
@@ -140,6 +158,12 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_att(ncid,nf90_global,"time",INT(shottime)) )
       CALL check( nf90_put_att(ncid,nf90_global,"n", nn))
       CALL check( nf90_put_att(ncid,nf90_global,"version", version))
+      IF(vac_flag .AND. .NOT.
+     $     (ksing > 0 .AND. ksing <= msing+1 .AND. bin_sol))THEN
+        CALL check( nf90_put_att(ncid,nf90_global,"plasma1",pl1))
+        CALL check( nf90_put_att(ncid,nf90_global,"vacuum1",va1))
+        CALL check( nf90_put_att(ncid,nf90_global,"total1",to1))
+      ENDIF
       ! define dimensions
       IF(debug_flag) PRINT *," - Defining dimensions in netcdf"
       CALL check( nf90_def_dim(ncid, "i", 2, i_dim) )
@@ -151,19 +175,46 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_dim(ncid, "psi_n", sq%mx+1, p_dim) )
       CALL check( nf90_def_var(ncid, "psi_n", nf90_double, p_dim, p_id))
       IF(msing>0)THEN
+         DO i=1,msing
+            resm(i)=NINT(sing(i)%q*nn)
+         ENDDO
          CALL check( nf90_def_dim(ncid,"lr_index",2*msing,l_dim) )
          CALL check( nf90_def_var(ncid,"lr_index",nf90_int,l_dim,l_id))
+         CALL check( nf90_put_att(ncid,l_dim,"long_name",
+     $       "Left and Right of Rational Surfaces Index") )
          CALL check( nf90_def_dim(ncid,"lr_prime",2*msing,lp_dim) )
          CALL check( nf90_def_var(ncid,"lr_prime",nf90_int,lp_dim,
      $                            lp_id) )
+         CALL check( nf90_put_att(ncid,lp_id,"long_name",
+     $       "Left and Right of Rational Surfaces Prime Index") )
          CALL check( nf90_def_dim(ncid,"r",msing,r_dim) )
          CALL check( nf90_def_var(ncid,"r",nf90_int,r_dim,r_id))
+         CALL check( nf90_put_att(ncid,r_id,"long_name",
+     $       "Rational Surface Index") )
          CALL check( nf90_def_dim(ncid,"r_prime",msing,rp_dim) )
          CALL check( nf90_def_var(ncid,"r_prime",nf90_int,rp_dim,rp_id))
+         CALL check( nf90_put_att(ncid,rp_id,"long_name",
+     $       "Rational Surface Prime Index") )
          CALL check( nf90_def_var(ncid,"psi_n_rational",nf90_double,
      $                            r_dim,pr_id) )
+         CALL check( nf90_put_att(ncid,pr_id,"long_name",
+     $       "Normalized Poloidal Flux at Rational Surfaces") )
          CALL check( nf90_def_var(ncid,"q_rational",nf90_double,
      $                            r_dim,qr_id) )
+         CALL check( nf90_put_att(ncid,qr_id,"long_name",
+     $       "Safety Factor at Rational Surfaces") )
+         CALL check( nf90_def_var(ncid, "shear", nf90_double, r_dim,
+     $                            shear_id) )
+         CALL check( nf90_def_var(ncid, "resm", nf90_int, r_dim,
+     $                            resm_id) )
+         CALL check( nf90_def_var(ncid, "dr_rational", nf90_double,
+     $                            r_dim, drr_id) )
+         CALL check( nf90_put_att(ncid,drr_id,"long_name",
+     $       "Resistive Interchange Index D_R at Rational Surfaces") )
+         CALL check( nf90_def_var(ncid, "di_rational", nf90_double,
+     $                            r_dim, dir_id) )
+         CALL check( nf90_put_att(ncid,dir_id,"long_name",
+     $       "Mercier Index D_I at Rational Surfaces") )
       ENDIF
       ! define variables
       IF(debug_flag) PRINT *," - Defining variables in netcdf"
@@ -174,22 +225,27 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(ncid, "di", nf90_double, p_dim, di_id) )
       CALL check( nf90_def_var(ncid, "dr", nf90_double, p_dim, dr_id) )
       CALL check( nf90_def_var(ncid, "ca1", nf90_double, p_dim, ca_id))
-      CALL check( nf90_def_var(ncid, "W_p_eigenvector", nf90_double,
+      IF(ode_flag .AND. vac_flag)THEN !shift to .OR.
+        CALL check( nf90_def_var(ncid, "W_p_eigenvector", nf90_double,
      $    (/m_dim, mo_dim, i_dim/), wp_id) )
-      CALL check( nf90_def_var(ncid, "W_p_eigenvalue", nf90_double,
+        CALL check( nf90_def_var(ncid, "W_p_eigenvalue", nf90_double,
      $    (/mo_dim, i_dim/), wpv_id) )
-      CALL check( nf90_def_var(ncid, "W_v_eigenvector", nf90_double,
+      ENDIF
+      IF(vac_flag)THEN
+        CALL check( nf90_def_var(ncid, "W_v_eigenvector", nf90_double,
      $    (/m_dim, mo_dim, i_dim/), wv_id) )
-      CALL check( nf90_def_var(ncid, "W_v_eigenvalue", nf90_double,
+        CALL check( nf90_def_var(ncid, "W_v_eigenvalue", nf90_double,
      $    (/mo_dim, i_dim/), wvv_id) )
-      CALL check( nf90_def_var(ncid, "W_t_eigenvector", nf90_double,
+        CALL check( nf90_def_var(ncid, "W_t_eigenvector", nf90_double,
      $    (/m_dim, mo_dim, i_dim/), wt_id) )
-      CALL check( nf90_def_var(ncid, "W_t_eigenvalue", nf90_double,
+        CALL check( nf90_def_var(ncid, "W_t_eigenvalue", nf90_double,
      $    (/mo_dim, i_dim/), wtv_id) )
-      ! end definitions
+      ENDIF
       IF(msing>0 .AND. ALLOCATED(dp))THEN
          CALL check( nf90_def_var(ncid, "Delta", nf90_double,
      $       (/l_dim, lp_dim, i_dim/), dp_id) )
+         CALL check( nf90_put_att(ncid,dp_id,"long_name",
+     $      "Left and right of singular surface Delta matching matrix"))
          CALL check( nf90_def_var(ncid, "A_prime", nf90_double,
      $       (/r_dim, rp_dim, i_dim/), ap_id) )
          CALL check( nf90_def_var(ncid, "B_prime", nf90_double,
@@ -198,7 +254,10 @@ c-----------------------------------------------------------------------
      $       (/r_dim, rp_dim, i_dim/), gp_id) )
          CALL check( nf90_def_var(ncid, "Delta_prime", nf90_double,
      $       (/r_dim, rp_dim, i_dim/), dpp_id) )
+         CALL check( nf90_put_att(ncid,dpp_id,"long_name",
+     $     "PEST3 Delta Prime Matrix"))
       ENDIF
+      ! end definitions
       CALL check( nf90_enddef(ncid) )
 c-----------------------------------------------------------------------
 c     set variables
@@ -219,6 +278,10 @@ c-----------------------------------------------------------------------
      $                                           i=1,msing)/)) )
          CALL check( nf90_put_var(ncid,qr_id, (/(sing(i)%q,
      $                                           i=1,msing)/)) )
+         CALL check( nf90_put_var(ncid,shear_id, shr) )
+         CALL check( nf90_put_var(ncid,resm_id, resm) )
+         CALL check( nf90_put_var(ncid,drr_id, dr_rationals))
+         CALL check( nf90_put_var(ncid,dir_id, di_rationals))
       ENDIF
 
       IF(debug_flag) PRINT *," - Putting profile variables in netcdf"
@@ -231,18 +294,22 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,ca_id, locstab%fs(:,4)))
 
       IF(debug_flag) PRINT *," - Putting matrix variables in netcdf"
-      CALL check( nf90_put_var(ncid,wp_id,RESHAPE((/REAL(wp),
+      IF(ode_flag .AND. vac_flag)THEN !shift to .OR.
+        CALL check( nf90_put_var(ncid,wp_id,RESHAPE((/REAL(wp),
      $             AIMAG(wp)/),(/mpert,mpert,2/))) )
-      CALL check( nf90_put_var(ncid,wpv_id,RESHAPE((/REAL(ep),
+        CALL check( nf90_put_var(ncid,wpv_id,RESHAPE((/REAL(ep),
      $             AIMAG(ep)/),(/mpert,2/))) )
-      CALL check( nf90_put_var(ncid,wv_id,RESHAPE((/REAL(wv),
+      ENDIF
+      IF(vac_flag)THEN
+        CALL check( nf90_put_var(ncid,wv_id,RESHAPE((/REAL(wv),
      $             AIMAG(wv)/),(/mpert,mpert,2/))) )
-      CALL check( nf90_put_var(ncid,wvv_id,RESHAPE((/REAL(ev),
+        CALL check( nf90_put_var(ncid,wvv_id,RESHAPE((/REAL(ev),
      $             AIMAG(ev)/),(/mpert,2/))) )
-      CALL check( nf90_put_var(ncid,wt_id,RESHAPE((/REAL(wt),
+        CALL check( nf90_put_var(ncid,wt_id,RESHAPE((/REAL(wt),
      $             AIMAG(wt)/),(/mpert,mpert,2/))) )
-      CALL check( nf90_put_var(ncid,wtv_id,RESHAPE((/REAL(et),
+        CALL check( nf90_put_var(ncid,wtv_id,RESHAPE((/REAL(et),
      $             AIMAG(et)/),(/mpert,2/))) )
+      ENDIF
       IF(msing>0 .AND. ALLOCATED(dp))THEN
          ! construct PEST3 matching data (keep synced with RDCON!)
          ap=0.0

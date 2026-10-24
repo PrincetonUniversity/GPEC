@@ -20,7 +20,7 @@ module pitch_integration
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
-    ! EMAIL: nlogan@pppl.gov
+    ! EMAIL: nikolas.logan@columbia.edu
     !-----------------------------------------------------------------------
     
     use params, only : r8,xj,mp,e, npsi_out, nell_out, nlambda_out, &
@@ -165,15 +165,15 @@ module pitch_integration
         integer :: istep, ilambda, j, out_unit, ix
         real(r8) :: lmda,wb,wd,nueff,lnq
         complex(r8) :: xint
-        real(r8), dimension(nfs,maxstep) :: fs
+        real(r8), dimension(:,:), allocatable :: fs
         real(r8), dimension(turns%nqty) :: turns_f
         complex(r8), dimension(flambda%nqty) :: flmabda_f
         ! declare lsode input variables
         integer  iopt, istate, itask, itol, mf, iflag, neqarray(1), &
             neq, liw, lrw
         integer, dimension(:), allocatable :: iwork
-        real*8 :: x,xout
-        real*8, dimension(:), allocatable ::  atol,rtol,rwork,y,dky
+        real(r8) :: x,xout
+        real(r8), dimension(:), allocatable ::  atol,rtol,rwork,y,dky
 
         ! set lsode options - see lsode package for documentation
         neq = 2*(flambda%nqty-2)
@@ -181,6 +181,7 @@ module pitch_integration
         lrw  = 20 + 16*neq      ! for mf 10
         allocate(iwork(liw))
         allocate(atol(neq),rtol(neq),rwork(lrw),y(neq),dky(neq))
+        allocate(fs(nfs,maxstep))     ! heap, not OpenMP worker stack
         neqarray(:) = (/ neq /)
         y(:) = 0                      ! initial value of integral
         x = flambda%xs(0)             ! lower bound of integration
@@ -254,7 +255,7 @@ module pitch_integration
 
         ! write error file and stop program if integration fials
         if(iwork(11)>iwork(6)/2 .and. istate/=-1) then
-            print *, "WARNING: ",iwork(11)," of maximum ",iwork(6)," steps in lambda integration"
+            print *, "!! WARNING: ",iwork(11)," of maximum ",iwork(6)," steps in lambda integration"
         endif
         if(istate==-1) then
             out_unit = get_free_file_unit(-1)
@@ -330,7 +331,7 @@ module pitch_integration
     !-----------------------------------------------------------------------
         implicit none
         integer ::  neq
-        real*8 x, y(neq), ydot(neq)
+        real(r8) x, y(neq), ydot(neq)
     
         integer :: i,ix
         real(r8) :: wd,wb,lnq,fl,nueff
@@ -433,7 +434,7 @@ module pitch_integration
     !-----------------------------------------------------------------------
         implicit none
         integer  neq, ml, mu, nrpd
-        real*8  t, y, pd(nrpd,2)
+        real(r8)  t, y, pd(nrpd,2)
         ! null result
         pd(:,:) = 0
         return
@@ -499,10 +500,10 @@ module pitch_integration
                ! calculate for forward and backward banana
                call bicube_eval_external(fnml,kappa,marray(i)-n*q-l,0, &
                        ix, iy, fnml_f, fnml_fx, fnml_fy)
-               fm(i,1) = fnml%f(1)
+               fm(i,1) = fnml_f(1)
                call bicube_eval_external(fnml,kappa,marray(i)-n*q+l,0, &
                        ix, iy, fnml_f, fnml_fx, fnml_fy)
-               fm(i,2) = fnml%f(1)
+               fm(i,2) = fnml_f(1)
             enddo
             do i = 1,mpert
                do j = 1,mpert

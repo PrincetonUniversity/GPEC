@@ -16,6 +16,8 @@ c-----------------------------------------------------------------------
 
       CHARACTER(16) :: eq_type="fluxgrid"
       CHARACTER(128) :: eq_filename="fluxgrid.dat"
+      CHARACTER(16) :: profile_source="values"
+      LOGICAL, DIMENSION(4) :: sq_in_slopes=.FALSE.
 
       LOGICAL :: direct_flag=.FALSE.
       LOGICAL :: out_eq_1d=.FALSE.,bin_eq_1d=.FALSE.
@@ -23,12 +25,15 @@ c-----------------------------------------------------------------------
       LOGICAL :: out_2d=.FALSE.,bin_2d=.FALSE.,interp=.FALSE.
       LOGICAL :: input_only=.FALSE.
       LOGICAL :: out_fl=.FALSE.
+      LOGICAL :: out_ahg2msc=.FALSE.
+      LOGICAL :: vac_memory=.TRUE.
       LOGICAL :: bin_fl=.FALSE.
       LOGICAL :: gse_flag=.FALSE.
       LOGICAL :: power_flag=.TRUE.
       LOGICAL :: dump_flag=.FALSE.
       LOGICAL :: verbose=.TRUE.
-      LoGICAL :: use_galgrid=.TRUE.
+      LOGICAL :: use_galgrid=.TRUE.
+      LOGICAL :: wv_farwall_flag=.FALSE.
       REAL(r8) :: psilow=1e-4
       REAL(r8) :: psihigh=1-1e-6
       REAL(r8) :: newq0=0
@@ -45,9 +50,9 @@ c-----------------------------------------------------------------------
 
       CHARACTER(16) :: grid_type="ldp"
       INTEGER :: mpsi=128,mtheta=128
-      REAL(r8) :: ro,zo,psio,q0,qa,qmin,qmax,amean,rmean,aratio,kappa,
+      REAL(r8) :: ro=0,zo=0,psio,q0,qa,qmin,qmax,amean,rmean,aratio,
      $     delta1,delta2,bt0,bwall,crnt,betat,betaj,betan,betap1,betap2,
-     $     betap3,li1,li2,li3,volume,p0,ppeakfac,q95
+     $     betap3,li1,li2,li3,volume,p0,ppeakfac,q95,kappa
       REAL(r8) :: shotnum=0, shottime=0
       REAL(r8), DIMENSION(2) :: rext,rsep,zsep
       TYPE(spline_type) :: sq,sq_in

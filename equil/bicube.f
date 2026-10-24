@@ -50,6 +50,7 @@ c-----------------------------------------------------------------------
       CHARACTER(6), DIMENSION(:), ALLOCATABLE :: title
       CHARACTER(6) :: name
       LOGICAL, DIMENSION(2) :: periodic
+      LOGICAL :: allocated=.FALSE.
       END TYPE bicube_type
 
       CONTAINS
@@ -65,6 +66,11 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: mx,my,nqty
       TYPE(bicube_type), INTENT(OUT) :: bcs
 c-----------------------------------------------------------------------
+c     safety check.
+c-----------------------------------------------------------------------
+      IF(bcs%allocated)
+     $   CALL program_stop("bicube_alloc: bicube already allocated")
+c-----------------------------------------------------------------------
 c     set scalars.
 c-----------------------------------------------------------------------
       bcs%mx=mx
@@ -73,6 +79,7 @@ c-----------------------------------------------------------------------
       bcs%iy=0
       bcs%nqty=nqty
       bcs%periodic=.FALSE.
+      bcs%allocated=.TRUE.
 c-----------------------------------------------------------------------
 c     allocate space.
 c-----------------------------------------------------------------------
@@ -111,6 +118,11 @@ c-----------------------------------------------------------------------
 
       TYPE(bicube_type), INTENT(INOUT) :: bcs
 c-----------------------------------------------------------------------
+c     safety check.
+c-----------------------------------------------------------------------
+      IF(.NOT. bcs%allocated)
+     $   CALL program_stop("bicube_dealloc: bicube not allocated")
+c-----------------------------------------------------------------------
 c     allocate space.
 c-----------------------------------------------------------------------
       DEALLOCATE(bcs%xs)
@@ -135,6 +147,7 @@ c-----------------------------------------------------------------------
       IF(ALLOCATED(bcs%gsxx))DEALLOCATE(bcs%gsxx)
       IF(ALLOCATED(bcs%gsxy))DEALLOCATE(bcs%gsxy)
       IF(ALLOCATED(bcs%gsyy))DEALLOCATE(bcs%gsyy)
+      bcs%allocated=.FALSE.
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -734,7 +747,7 @@ c     find offsets and compute local coefficients.
 c-----------------------------------------------------------------------
       dx=xx-bcs%xs(b_ix)
       dy=yy-bcs%ys(b_iy)
-      c=bicube_getco_external(bcs,b_ix,b_iy)
+      call bicube_getco_external_sub(bcs,b_ix,b_iy,c)
 c-----------------------------------------------------------------------
 c     evaluate f.
 c-----------------------------------------------------------------------
@@ -1003,6 +1016,104 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END FUNCTION bicube_getco_external
+c-----------------------------------------------------------------------
+c     subprogram 6b. bicube_getco_external_sub.
+c     computes coefficient matrices for external arrays.
+c     Subroutine version.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE bicube_getco_external_sub(bcs,b_ix,b_iy, cmat)
+
+      TYPE(bicube_type), INTENT(IN) :: bcs
+      INTEGER, INTENT(IN) :: b_ix, b_iy
+      REAL(r8), DIMENSION(4,4,bcs%nqty), INTENT(OUT) :: cmat
+
+      REAL(r8) :: hxfac,hxfac2,hxfac3
+      REAL(r8) :: hyfac,hyfac2,hyfac3
+      REAL(r8), DIMENSION(3:4,4) :: gxmat,gymat
+      REAL(r8), DIMENSION(4,4,bcs%nqty) :: temp
+c-----------------------------------------------------------------------
+c     compute gxmat.
+c-----------------------------------------------------------------------
+      hxfac=1/(bcs%xs(b_ix+1)-bcs%xs(b_ix))
+      hxfac2=hxfac*hxfac
+      hxfac3=hxfac2*hxfac
+      gxmat(3,1)=-3*hxfac2
+      gxmat(3,2)=-2*hxfac
+      gxmat(3,3)=3*hxfac2
+      gxmat(3,4)=-hxfac
+      gxmat(4,1)=2*hxfac3
+      gxmat(4,2)=hxfac2
+      gxmat(4,3)=-2*hxfac3
+      gxmat(4,4)=hxfac2
+c-----------------------------------------------------------------------
+c     compute gymat.
+c-----------------------------------------------------------------------
+      hyfac=1/(bcs%ys(b_iy+1)-bcs%ys(b_iy))
+      hyfac2=hyfac*hyfac
+      hyfac3=hyfac2*hyfac
+      gymat(3,1)=-3*hyfac2
+      gymat(3,2)=-2*hyfac
+      gymat(3,3)=3*hyfac2
+      gymat(3,4)=-hyfac
+      gymat(4,1)=2*hyfac3
+      gymat(4,2)=hyfac2
+      gymat(4,3)=-2*hyfac3
+      gymat(4,4)=hyfac2
+c-----------------------------------------------------------------------
+c     compute smat.
+c-----------------------------------------------------------------------
+      cmat(1,1,:)=bcs%fs(b_ix,b_iy,:)
+      cmat(1,2,:)=bcs%fsy(b_ix,b_iy,:)
+      cmat(1,3,:)=bcs%fs(b_ix,b_iy+1,:)
+      cmat(1,4,:)=bcs%fsy(b_ix,b_iy+1,:)
+      cmat(2,1,:)=bcs%fsx(b_ix,b_iy,:)
+      cmat(2,2,:)=bcs%fsxy(b_ix,b_iy,:)
+      cmat(2,3,:)=bcs%fsx(b_ix,b_iy+1,:)
+      cmat(2,4,:)=bcs%fsxy(b_ix,b_iy+1,:)
+      cmat(3,1,:)=bcs%fs(b_ix+1,b_iy,:)
+      cmat(3,2,:)=bcs%fsy(b_ix+1,b_iy,:)
+      cmat(3,3,:)=bcs%fs(b_ix+1,b_iy+1,:)
+      cmat(3,4,:)=bcs%fsy(b_ix+1,b_iy+1,:)
+      cmat(4,1,:)=bcs%fsx(b_ix+1,b_iy,:)
+      cmat(4,2,:)=bcs%fsxy(b_ix+1,b_iy,:)
+      cmat(4,3,:)=bcs%fsx(b_ix+1,b_iy+1,:)
+      cmat(4,4,:)=bcs%fsxy(b_ix+1,b_iy+1,:)
+c-----------------------------------------------------------------------
+c     multiply by gymat^T.
+c-----------------------------------------------------------------------
+      temp(:,1:2,:)=cmat(:,1:2,:)
+      temp(:,3,:)
+     $     =cmat(:,1,:)*gymat(3,1)
+     $     +cmat(:,2,:)*gymat(3,2)
+     $     +cmat(:,3,:)*gymat(3,3)
+     $     +cmat(:,4,:)*gymat(3,4)
+        temp(:,4,:)
+     $     =cmat(:,1,:)*gymat(4,1)
+     $     +cmat(:,2,:)*gymat(4,2)
+     $     +cmat(:,3,:)*gymat(4,3)
+     $     +cmat(:,4,:)*gymat(4,4)
+c-----------------------------------------------------------------------
+c     multiply by gxmat.
+c-----------------------------------------------------------------------
+      cmat(1:2,:,:)=temp(1:2,:,:)
+      cmat(3,:,:)
+     $     =gxmat(3,1)*temp(1,:,:)
+     $     +gxmat(3,2)*temp(2,:,:)
+     $     +gxmat(3,3)*temp(3,:,:)
+     $     +gxmat(3,4)*temp(4,:,:)
+         cmat(4,:,:)
+     $     =gxmat(4,1)*temp(1,:,:)
+     $     +gxmat(4,2)*temp(2,:,:)
+     $     +gxmat(4,3)*temp(3,:,:)
+     $     +gxmat(4,4)*temp(4,:,:)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE bicube_getco_external_sub
 c-----------------------------------------------------------------------
 c     subprogram 7. bicube_all_eval.
 c     evaluates bicubic splines in all intervals.

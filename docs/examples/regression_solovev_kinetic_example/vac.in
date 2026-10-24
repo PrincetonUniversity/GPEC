@@ -1,0 +1,99 @@
+!    **** Running DCON's input ***
+
+&MODES
+   mth = 480
+   xiin(1:9) = 0 0 0 0 0 0 0 1 0
+   lsymz = .TRUE.
+   leqarcw = 1
+   lzio = 0
+   lgato = 0
+   lrgato = 0
+/
+&DEBUGS
+   checkd = .FALSE.
+   check1 = .FALSE.
+   check2 = .FALSE.
+   checke = .FALSE.
+   checks = .FALSE.
+   wall = .FALSE.
+   lkplt = 0
+/
+&VACDAT
+   ishape = 6
+   aw = 0.05
+   bw = 1.5
+   cw = 0
+   dw = 0.5
+   tw = 0.05
+   nsing = 500
+   epsq = 1e-05
+   noutv = 37
+   idgt = 6
+   idot = 0
+   idsk = 0
+   delg = 15.01
+   delfac = 0.001
+   cn0 = 1
+/
+&SHAPE
+   ipshp = 0
+   xpl = 100
+   apl = 1
+   a = 0.2415
+   b = 170
+   bpl = 1
+   dpl = 0
+   r = 1
+   abulg = 0.932
+   bbulg = 17.0
+   tbulg = 0.02
+   qain = 2.5
+/
+&DIAGNS
+   lkdis = .FALSE.
+   ieig = 0
+   iloop = 0
+   lpsub = 1
+   nloop = 128
+   nloopr = 0
+   nphil = 3
+   nphse = 1
+   xofsl = 0
+   ntloop = 32
+   aloop = 0.01
+   bloop = 1.6
+   dloop = 0.5
+   rloop = 1.0
+   deloop = 0.001
+   mx = 21
+   mz = 21
+   nph = 0
+   nxlpin = 6
+   nzlpin = 11
+   epslp = 0.02
+   xlpmin = 0.7
+   xlpmax = 2.7
+   zlpmin = -1.5
+   zlpmax = 1.5
+   linterior = 2
+/
+&SPRK
+   nminus = 0
+   nplus = 0
+   mphi = 16
+   lwrt11 = 0
+   civ = 0.0
+   sp2sgn1 = 1
+   sp2sgn2 = 1
+   sp2sgn3 = 1
+   sp2sgn4 = 1
+   sp2sgn5 = 1
+   sp3sgn1 = -1
+   sp3sgn2 = -1
+   sp3sgn3 = -1
+   sp3sgn4 = 1
+   sp3sgn5 = 1
+   lff = 0
+   ff = 1.6
+   fv = 1.6 1.6 1.6 1.6 1.6 1.0 1.6 1.6 1.6 1.6 1.6 1.6 1.6 1.6 1.6 1.6 1.6 1.6 1.6 1.6 1.6 1.6 1.6 1.6 1.6 1.6 1.6 1.6 1.6 1.6 1.6 1.6 1.6 1.6 1.6
+/

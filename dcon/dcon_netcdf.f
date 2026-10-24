@@ -17,6 +17,7 @@ c-----------------------------------------------------------------------
       MODULE dcon_netcdf_mod
       USE dcon_mod
       USE sing_mod, ONLY: sing_detf
+      USE local_mod, ONLY: r8, r4
       USE netcdf
       IMPLICIT NONE
 
@@ -51,7 +52,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE dcon_netcdf_out(wp,wv,wt,wt0,ep,ev,et)
 
-      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: ep,ev,et
+      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: ep,et
+      REAL(r8), DIMENSION(mpert), INTENT(IN) :: ev
       COMPLEX(r8), DIMENSION(mpert,mpert), INTENT(IN) :: wp,wv,wt,wt0
 
       INTEGER :: i, ncid,
@@ -59,7 +61,7 @@ c-----------------------------------------------------------------------
      $    f_id, q_id, dv_id, mu_id, di_id, dr_id, ca_id,
      $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id, wt0_id,
      $    pd_dim, pd_id, df_id, ep_id, ew_id, eq_id
-      REAL(4) :: cpusec, wallsec
+      REAL(r4) :: cpusec, wallsec
       CHARACTER(2) :: sn
       CHARACTER(64) :: ncfile
 
@@ -153,9 +155,9 @@ c-----------------------------------------------------------------------
      $       "Normalized Poloidal Flux") )
       ENDIF
       IF(ALLOCATED(sing_detf))THEN
-         CALL check( nf90_def_dim(ncid, "psi_n_detf", 
+         CALL check( nf90_def_dim(ncid, "psi_n_detf",
      $       SIZE(sing_detf, 2), pd_dim) )
-         CALL check( nf90_def_var(ncid, "psi_n_detf", nf90_double, 
+         CALL check( nf90_def_var(ncid, "psi_n_detf", nf90_double,
      $       pd_dim, pd_id))
          CALL check( nf90_put_att(ncid,pd_id,"long_name",
      $       "Normalized Poloidal Flux") )
@@ -181,7 +183,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(ncid, "W_v_eigenvector", nf90_double,
      $    (/m_dim, mo_dim, i_dim/), wv_id) )
       CALL check( nf90_def_var(ncid, "W_v_eigenvalue", nf90_double,
-     $    (/mo_dim, i_dim/), wvv_id) )
+     $    (/mo_dim/), wvv_id) )
       CALL check( nf90_put_att(ncid,wv_id,"long_name",
      $    "Vacuum Energy Eigenmodes") )
       CALL check( nf90_put_att(ncid,wvv_id,"long_name",
@@ -247,8 +249,7 @@ c-----------------------------------------------------------------------
      $             AIMAG(ep)/),(/mpert,2/))) )
       CALL check( nf90_put_var(ncid,wv_id,RESHAPE((/REAL(wv),
      $             AIMAG(wv)/),(/mpert,mpert,2/))) )
-      CALL check( nf90_put_var(ncid,wvv_id,RESHAPE((/REAL(ev),
-     $             AIMAG(ev)/),(/mpert,2/))) )
+      CALL check( nf90_put_var(ncid,wvv_id,ev) )
       CALL check( nf90_put_var(ncid,wt_id,RESHAPE((/REAL(wt),
      $             AIMAG(wt)/),(/mpert,mpert,2/))) )
       CALL check( nf90_put_var(ncid,wtv_id,RESHAPE((/REAL(et),

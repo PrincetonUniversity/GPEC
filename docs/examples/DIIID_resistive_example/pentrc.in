@@ -1,6 +1,6 @@
 &PENT_INPUT
-    kinetic_file="../DIIID_ideal_example/g147131.02300_DIIID_KEFIT.kin"          ! Ascii profiles. columns: psi_n, ni(m^-3), ne(m^-3), ti(eV), te(eV), omega_EXB(rad/s)
-    peq_file  = "ipec_xclebsch_n1.out"  ! Ascii displacement. columns: psi_n, m, real(xi^psi), imag(xi^psi), real(xi^alpha), imag(xi^alpha)
+    kinetic_file="TkMkr_D3Dlike_Hmode.gpeckf"          ! Ascii profiles. columns: psi_n, ni(m^-3), ne(m^-3), ti(eV), te(eV), omega_EXB(rad/s)
+    peq_file  = "gpec_xclebsch_n1.out"  ! Ascii displacement. columns: psi_n, m, real(xi^psi), imag(xi^psi), real(xi^alpha), imag(xi^alpha)
     idconfile = "euler.bin"             ! DCON output
     data_dir = "."                      ! Location of pre-formed fnml matrix used in rlar and clar methods (check release package)
 
@@ -25,8 +25,8 @@
 
     force_xialpha = .false.             ! Calculates tangential displacement from radial displacement and toroidal force balance (overwrites peq_file values)
 
-    atol_xlmda = 1e-9                   ! Absolute tolerance in energy and pitch integration
-    rtol_xlmda = 1e-6                   ! Relative tolerance in energy and pitch integration
+    atol_xlmda = 1e-9                   ! Absolute tolerance in pitch integration (energy tolerance derived from this unless atol_x is set)
+    rtol_xlmda = 1e-6                   ! Relative tolerance in pitch integration (energy tolerance derived from this unless rtol_x is set)
     atol_psi = 1e-4                     ! Absolute tolerance in psi_n integration
     rtol_psi = 1e-4                     ! Relative tolerance in psi_n integration
     ntheta = 128                        ! Poloidal angle grid for bounce integration

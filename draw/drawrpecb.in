@@ -1,0 +1,52 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+;rpec_sol_1_b_out.bin
+;rpec_sol_1_b_in.bin
+;rpec_sol_2_b_out.bin
+;rpec_sol_3_b_out.bin
+;rpec_sol_4_b_out.bin
+;rpec_sol_5_b_out.bin
+;rpec_sol_6_b_out.bin
+;rpec_sol_7_b_out.bin
+;rpec_sol_8_b_out.bin
+;rpec_sol_9_b_out.bin
+;rpec_sol_10_b_out.bin
+;rpec_sol_11_b_out.bin
+;rpec_sol_12_b_out.bin
+;rpec_sol_13_b_out.bin
+rpec_sol_14_b_out.bin
+;rpec_sol_14_b_in.bin
+;rpec_sol_15_b_out.bin
+;rpec_sol_16_b_out.bin
+;rpec_sol_17_b_out.bin
+;rpec_sol_18_b_out.bin
+;rpec_sol_19_b_out.bin
+;rpec_sol_20_b_out.bin
+;rpec_sol_21_b_out.bin
+;rpec_sol_22_b_out.bin
+;rpec_sol_23_b_out.bin
+;rpec_sol_24_b_out.bin
+;rpec_sol_25_b_out.bin
+;rpec_sol_26_b_out.bin
+;rpec_sol_27_b_out.bin
+;rpec_sol_28_b_out.bin
+;rpec_sol_29_b_out.bin
+;rpec_sol_30_b_out.bin
+;rpec_sol_12_b_in.bin
+
+graph title:	Perturbed Magnetic Field
+
+variable names
+0       psi
+1       q
+2       re xin
+3       im xin
+4       mylog xin
+
+ix      iy      title
+1       2
+;1       3
+;0      1
+;0      2
+;0      3

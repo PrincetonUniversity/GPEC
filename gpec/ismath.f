@@ -335,26 +335,26 @@ C
       CHARACTER*8  :: DUMC
       CHARACTER*72 :: FILE1, FILE2, FILEIN
       CHARACTER*72 :: DATALINE
-C     
+C
       INTEGER(KIND=8) :: IFIELD, I, I0, I1, I2, IS, J1, J2, K,
      >     IGOTO, NP, NT, IMAT, N3, N8, NF, NE, MMTHETA, MSOL, NNN,
      >     MTHETAP, IMODE, NUMEL, I4, IC, ID
-C     
+C
       INTEGER(KIND=8) :: IELE(4,MP)
-C     
+C
       REAL(KIND=8) :: PIE, DTR, QSURF, AN, DUM, D2, PHIR,
      >     PHIDEG, CC, SS, ANS, BIG, DPHI, DARC, ARC, THK, PPHI,
      >     ANSR, ANSZ, CCC, SSS, ANSRD, ANSZD, AMAG,
      >     ANSBNC, ANSBNS, DIST, DR, DZ, DS, DRN, DZN, DXN,
      >     EXPHID, EXPHIR, BNMAX, PHASED, PHASER, RAVG
-C     
+C
       REAL(KIND=8) :: RR(MT), ZZ(MT), ARCLEN(MT), BNCOS(MT),BNSIN(MT),
      >     ET(MS), R2(MT), Z2(MT), BNC2(MT), BNS2(MT),
      >     XYZ(3,MP), XYZP(3,MP), XYZN(3,MP), BN(MP),
      >     ARCPOS(MT), RS(MT), ZS(MT), BPCOS(MT), BPSIN(MT),
      >     BTCOS(MT), BTSIN(MT), BPC2(MT), BPS2(MT), BTC2(MT),
      >     BTS2(MT)
-C     
+C
       PIE = 2.*ASIN(1.)
       DTR = 180./PIE
       IFIELD = 0                !   DEFAULT SETTING ( NOT FOUND )
@@ -375,7 +375,7 @@ C
 
       IMODE=1
 
-C     
+C
  11   CLOSE ( 10 )
 
       DO  I=1,MTHETAP
@@ -401,7 +401,7 @@ C
 
       PHASED=0.0
       PHASER = PHASED / DTR
-C     
+C
       IF ( NT*NP .GT. MP ) THEN
          WRITE ( 6,*) ' SIZE PROBLEMS WITH NT,NP & MP  ',NT,NP,MP
          STOP
@@ -409,15 +409,15 @@ C
 
 C
 C     DO SPLINE FITS TO MAKE INTERPOLATION AUTOMATIC
-C     
+C
       BIG = 1.E+32              !  SETS KEY IN SPLINE ( FROM N.R. )
-C     
+C
       CALL SPLINE ( ARCLEN, RR,MTHETAP,BIG,BIG, R2)
-C     
+C
       CALL SPLINE ( ARCLEN, ZZ,MTHETAP,BIG,BIG, Z2)
-C     
+C
       CALL SPLINE ( ARCLEN, BNCOS,MTHETAP,BIG,BIG, BNC2)
-C     
+C
       CALL SPLINE ( ARCLEN, BNSIN,MTHETAP,BIG,BIG, BNS2)
 
       DPHI = 2.*PIE / REAL(NT)
@@ -443,19 +443,19 @@ C     FIND MAX B-NORMAL
          CALL SPLINT ( ARCLEN,ZZ,Z2,MTHETAP, ARC,ANSZ)
          CALL SPLINTD ( ARCLEN,RR,R2,MTHETAP, ARC,DR )
          CALL SPLINTD ( ARCLEN,ZZ,Z2,MTHETAP, ARC,DZ )
-C     
+C
 C     CALC NORMAL
-C     
+C
          DS = SQRT ( DR*DR + DZ*DZ )
          DRN = DR/DS
          DZN = DZ/DS
-C     
+C
          DXN = -DZN
          DZN = DRN              !   CROSS PRODUCT  PHI IS Y-DIR  R&Z (X) Y
-C     
+C
          RS(I) = ANSR + DIST*DXN
          ZS(I) = ANSZ + DIST*DZN !  THIS IS A SURF. CONFORMAL TO THE PLASMA
-C     
+C
       ENDDO
 
       NNN = 0
@@ -516,48 +516,48 @@ C     MOVE SURFACE IF DIST .NE. 0.
       I0 = 0
       I1 = 1                    !    CONVIENENT CONSTANTS LATER ON
       I4 = 4
-C     
-C     
+C
+C
       WRITE ( 11,1105)  NNN
       DO  I=1,NNN
          WRITE ( 11,2106) XYZ(1,I),XYZ(2,I),XYZ(3,I),BN(I),I
       ENDDO
  2106 FORMAT(3F10.5,E16.8,I6)
-C     
+C
       NUMEL = NE
       N3 = 0
       N8 = 0
       WRITE ( 11,2107) NUMEL
  2107 FORMAT(6I6,'    numel nmat n2 n3 n4 n8 ')
-C     
+C
       DO  I=1,NE
          WRITE ( 11,1110) I,IELE(1,I),IELE(2,I),IELE(3,I),IELE(4,I)
       ENDDO
-C     
+C
       CLOSE ( 11 )
 
       RETURN
       END SUBROUTINE ipidl_3dsurf
 
       SUBROUTINE SPLINE ( x, y, n, yp1, ypn, y2)
-C     
+C
       IMPLICIT NONE
-C     
+C
       INTEGER(KIND=8), PARAMETER :: NMAX=1800
-C     
+C
       INTEGER(KIND=8) :: N, I, K
-C     
+C
       REAL(KIND=8)    :: YP1, YPN, X(N), Y(N), Y2(N), P, QN, SIG,
      >     UN, U(NMAX)
-C     
+C
 C     CHECK ADEQUACY ON NMAX
-C     
+C
       IF ( NMAX .LT. N ) THEN
  6001    FORMAT(1X,'IN SPLINE  NMAX < N  STOP ASAP',
      >        /1X,'NMAX N = ',2I5 )
          STOP
       ENDIF
-C     
+C
       IF (yp1  .GT.  .99e30) THEN
          y2(1) = 0.
          u(1) = 0.
@@ -585,16 +585,16 @@ C
          y2(k) = y2(k)*y2(k+1)+u(k)
  12   continue
       return
-      END SUBROUTINE SPLINE 
+      END SUBROUTINE SPLINE
 
       SUBROUTINE SPLINT ( xa, ya, y2a, n, x, y)
-C     
+C
       IMPLICIT NONE
-C     
+C
       INTEGER(KIND=8) :: N, K, KHI, KLO
-C     
+C
       REAL(KIND=8)    :: X, Y, XA(N), Y2A(N), YA(N), A, B, H
-C     
+C
       klo = 1
       khi = n
  1    IF (khi-klo .GT. 1) THEN
@@ -619,13 +619,13 @@ C
       END SUBROUTINE SPLINT
 
       SUBROUTINE  SPLINTD ( xa, ya, y2a, n, x, YD)
-C     
+C
       IMPLICIT NONE
-C     
+C
       INTEGER(KIND=8) :: N, K, KHI, KLO
-C     
+C
       REAL(KIND=8)    :: X, Y, XA(N), Y2A(N), YA(N), A, B, H, YD
-C     
+C
       klo = 1
       khi = n
  1    IF (khi-klo .GT. 1) THEN
@@ -647,7 +647,7 @@ C
 
       YD  =  YA(KHI)/H - YA(KLO)/H +
      >     H*((3.*B*B-1.)*Y2A(KHI) - (3.*A*A-1.)*Y2A(KLO))/6.
-C     
+C
       return
       END SUBROUTINE SPLINTD
 c-----------------------------------------------------------------------

@@ -20,6 +20,7 @@ c-----------------------------------------------------------------------
       MODULE inverse_mod
       USE global_mod
       USE utils_mod
+      USE grid_mod
       IMPLICIT NONE
 
       TYPE(bicube_type) :: rz_in
@@ -53,7 +54,7 @@ c-----------------------------------------------------------------------
       sq_in%fs(:,4)=SQRT(sq_in%xs)
       sq_in%name="  sq  "
       sq_in%title=(/"psifac","  f   ","mu0 p ","  q   "," rho  "/)
-      CALL spline_fit(sq_in,"extrap")
+      CALL spline_fit_hermite(sq_in,"extrap",sq_in_slopes)
       rz_in%xs=sq_in%xs
       rz_in%ys=(/(itheta,itheta=0,rz_in%my)/)/REAL(rz_in%my,r8)
       rz_in%name="  rz  "
@@ -123,8 +124,14 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     prepare new spline type for surface quantities.
 c-----------------------------------------------------------------------
-      IF(grid_type == "original" .OR. grid_type == "orig")mpsi=sq_in%mx
-      CALL spline_alloc(sq,mpsi,4)
+      IF(grid_type == "original" .OR. grid_type == "orig")
+     $     mpsi=SIZE(clipspace(sq_in%xs,psilow,psihigh))-1
+      IF(.NOT. sq%allocated)THEN
+         CALL spline_alloc(sq,mpsi,4)
+      ELSE
+         CALL spline_dealloc(sq)
+         CALL spline_alloc(sq,mpsi,4)
+      ENDIF
       sq%name="  sq  "
       sq%title=(/"psifac","twopif","mu0 p ","dvdpsi","  q   "/)
 c-----------------------------------------------------------------------
@@ -143,7 +150,7 @@ c-----------------------------------------------------------------------
       CASE("rho")
          sq%xs=psihigh*(/(ipsi**2,ipsi=1,mpsi+1)/)/(mpsi+1)**2
       CASE("original","orig")
-         sq%xs=sq_in%xs
+         sq%xs=clipspace(sq_in%xs,psilow,psihigh)
       CASE("mypack")
          rholow=SQRT(psilow)
          rhohigh=SQRT(psihigh)
@@ -174,7 +181,7 @@ c-----------------------------------------------------------------------
       CALL spline_alloc(spl,mtheta,5)
       DO ipsi=0,mpsi
          psifac=rzphi%xs(ipsi)
-         CALL spline_eval(sq_in,psifac,0)
+         CALL spline_eval(sq_in,psifac,1)
          spl%xs=rzphi%ys
 c-----------------------------------------------------------------------
 c     interpolate to new surface.
@@ -226,12 +233,13 @@ c     compute surface quantities.
 c-----------------------------------------------------------------------
          sq%fs(ipsi,1)=sq_in%f(1)*twopi
          sq%fs(ipsi,2)=sq_in%f(2)
+         sq%fs1(ipsi,1)=sq_in%f1(1)*twopi
+         sq%fs1(ipsi,2)=sq_in%f1(2)
          sq%fs(ipsi,3)=spl%fsi(mtheta,3)*twopi*pi
          sq%fs(ipsi,4)=spl%fsi(mtheta,4)*sq%fs(ipsi,1)/(2*twopi*psio)
       ENDDO
-      CALL spline_fit(sq,"extrap")
+      CALL spline_fit_hermite(sq,"extrap",sq_in_slopes)
       q0=sq%fs(0,4)-sq%fs1(0,4)*sq%xs(0)
-      IF(newq0 == -1)newq0=-q0
 c-----------------------------------------------------------------------
 c     revise q profile.
 c-----------------------------------------------------------------------
@@ -240,12 +248,13 @@ c-----------------------------------------------------------------------
          f0fac=f0**2*((newq0/q0)**2-one)
          q0=newq0
          DO ipsi=0,mpsi
-            ffac=SQRT(1+f0fac/sq%fs(ipsi,1)**2)*SIGN(one,newq0)
+            ffac=SQRT(1+f0fac/sq%fs(ipsi,1)**2)
             sq%fs(ipsi,1)=sq%fs(ipsi,1)*ffac
+            sq%fs1(ipsi,1)=sq%fs1(ipsi,1)/ffac
             sq%fs(ipsi,4)=sq%fs(ipsi,4)*ffac
             rzphi%fs(ipsi,:,3)=rzphi%fs(ipsi,:,3)*ffac
          ENDDO
-         CALL spline_fit(sq,"extrap")
+         CALL spline_fit_hermite(sq,"extrap",sq_in_slopes)
       ENDIF
       qa=sq%fs(mpsi,4)+sq%fs1(mpsi,4)*(one-sq%xs(mpsi))
 c-----------------------------------------------------------------------
@@ -374,7 +383,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:,:), INTENT(IN) :: xx,ff
       REAL(r8), INTENT(IN) :: x
       REAL(r8), DIMENSION(SIZE(ff,2)) :: f
-      
+
       INTEGER :: i,j,m
       REAL(r8), DIMENSION(SIZE(ff,2)) :: term
 c-----------------------------------------------------------------------
@@ -459,8 +468,14 @@ ccc      deta(0,:)=inverse_extrap(r2(1:me,:),deta(1:me,:),zero)
 c-----------------------------------------------------------------------
 c     prepare new spline type for surface quantities.
 c-----------------------------------------------------------------------
-      IF(grid_type == "original" .OR. grid_type == "orig")mpsi=sq_in%mx
-      CALL spline_alloc(sq,mpsi,4)
+      IF(grid_type == "original" .OR. grid_type == "orig")
+     $     mpsi=SIZE(clipspace(sq_in%xs,psilow,psihigh))-1
+      IF(.NOT. sq%allocated)THEN
+         CALL spline_alloc(sq,mpsi,4)
+      ELSE
+         CALL spline_dealloc(sq)
+         CALL spline_alloc(sq,mpsi,4)
+      ENDIF
       sq%name="  sq  "
       sq%title=(/"psifac","twopif","mu0 p ","dvdpsi","  q   "/)
 c-----------------------------------------------------------------------
@@ -473,7 +488,7 @@ c-----------------------------------------------------------------------
       CASE("rho")
          sq%xs=psihigh*(/(ipsi**2,ipsi=1,mpsi+1)/)/(mpsi+1)**2
       CASE("original","orig")
-         sq%xs=sq_in%xs
+         sq%xs=clipspace(sq_in%xs,psilow,psihigh)
       CASE("mypack")
          rholow=SQRT(psilow)
          rhohigh=SQRT(psihigh)
@@ -568,7 +583,11 @@ c-----------------------------------------------------------------------
       ENDDO
       CALL spline_fit(sq,"extrap")
       q0=sq%fs(0,4)-sq%fs1(0,4)*sq%xs(0)
-      IF(newq0 == -1)newq0=-q0
+c-----------------------------------------------------------------------
+c     enforce positive q (chease4 takes q directly from the input file).
+c-----------------------------------------------------------------------
+      IF(MINVAL(sq%fs(:,4)) <= 0)CALL program_stop
+     $     ("chease4 input q must be positive (GPEC requires q > 0).")
 c-----------------------------------------------------------------------
 c     revise q profile.
 c-----------------------------------------------------------------------
@@ -577,7 +596,7 @@ c-----------------------------------------------------------------------
          f0fac=f0**2*((newq0/q0)**2-one)
          q0=newq0
          DO ipsi=0,mpsi
-            ffac=SQRT(1+f0fac/sq%fs(ipsi,1)**2)*SIGN(one,newq0)
+            ffac=SQRT(1+f0fac/sq%fs(ipsi,1)**2)
             sq%fs(ipsi,1)=sq%fs(ipsi,1)*ffac
             sq%fs(ipsi,4)=sq%fs(ipsi,4)*ffac
             rzphi%fs(ipsi,:,3)=rzphi%fs(ipsi,:,3)*ffac

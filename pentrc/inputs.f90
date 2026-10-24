@@ -1,8 +1,8 @@
 !@PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE
 
 module inputs
-    !----------------------------------------------------------------------- 
-    !*DESCRIPTION: 
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
     !   Input interface for PENTRC. Includes DCON interface developed by
     !   J.-K. Park in GPEC package, as well as ascii interfaces for
     !   kinetic profiles and perturbed equilibrium files.
@@ -26,17 +26,17 @@ module inputs
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
-    ! EMAIL: nlogan@pppl.gov
+    ! EMAIL: nikolas.logan@columbia.edu
     !-----------------------------------------------------------------------
-    
+
     use params, only : r8,xj,mp,me,e,mu0,twopi
     use utilities, only : get_free_file_unit,readtable,nunique,progressbar,iscdftf,iscdftb
-    use spline_mod, only : spline_type,spline_alloc,spline_fit,spline_eval,spline_write1
+    use spline_mod, only : spline_type,spline_alloc,spline_dealloc,spline_fit,spline_fit_pchip,spline_eval,spline_write1
     use cspline_mod, only : cspline_type,cspline_alloc,cspline_dealloc,&
                             cspline_fit,cspline_write,cspline_eval
     use fspline_mod, only : fspline_eval
     use bicube_mod, only : bicube_type,bicube_alloc,bicube_fit,bicube_eval
-    
+
     use dcon_interface, only : idcon_read,idcon_transform,idcon_metric,&
         idcon_matrix,idcon_action_matrices,idcon_build,set_geom,&
         geom,eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,amat,bmat,cmat,&
@@ -45,9 +45,9 @@ module inputs
         mfac,psifac,mpert,mstep,mthsurf,theta,&
         idcon_coords,&
         verbose
-    
+
     implicit none
-    
+
     private
     public &
         read_kin, &
@@ -62,7 +62,7 @@ module inputs
         chi1,ro,zo,bo,nn,mfac,mpert,mthsurf, &
         shotnum,shottime,machine,&
         verbose
-    
+
     ! global variables with defaults
     type(spline_type) :: kin
     type(cspline_type) :: dbob_m, divx_m, xs_m(3)
@@ -131,7 +131,7 @@ module inputs
     !       File path.
     !
     !-----------------------------------------------------------------------
-    
+
         implicit none
         ! declare arguments
         character(*), intent(in) :: file
@@ -145,19 +145,19 @@ module inputs
         CALL idcon_metric
         ! read vacuum data.
         !CALL idcon_vacuum
-        ! form action matrices (this will move !!)
-        call idcon_action_matrices!(egnum,xspmn)
+        ! form action matrices
+        call idcon_action_matrices
 
         ! set additional geometry spline
         call set_geom
 
     end subroutine read_equil
-    
-    
+
+
     !=======================================================================
-    subroutine read_kin(file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,write_log)
-    !----------------------------------------------------------------------- 
-    !*DESCRIPTION: 
+    subroutine read_kin(file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,write_log,format)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
     !   Read ascii file containing table of kinetic profiles ni, ne, ti,
     !   te, and omegaE, then form kin spline containing some additional
     !   information (krook nui,nue).
@@ -166,6 +166,10 @@ module inputs
     !   T_i(eV), T_e(eV), omega_E(rad/s). File can (nearly) arbitrary
     !   header and/or footer, with the exception that no lines start with
     !   a number.
+    !
+    !   With format="rates-v1" the table has 9 columns, the 6 above plus
+    !   logLambda, nu_i(s^-1), nu_e(s^-1). These positive supplied values
+    !   replace the internal collision model (interpolated in log).
     !
     !*ARGUMENTS:
     !    file : character(256) (in)
@@ -184,87 +188,140 @@ module inputs
     !       Scaling of rotation profile, done via manipulation of omegaE
     !   write_log : bool
     !       Writes kinetic spline to log file
-    !   
+    !   format : character (optional)
+    !       "legacy" (default) or "rates-v1"
+    !
     !-----------------------------------------------------------------------
-    
+
         implicit none
         ! declare arguments
         character(512), intent(in) :: file
         integer, intent(in) :: zi,zimp,mi,mimp
         real(r8), intent(in) :: wefac,wpfac,nfac,tfac
         logical :: write_log
+        character(*), intent(in), optional :: format
         ! declare local variables
+        logical :: warning_printed = .false.
         real(r8), dimension(:,:), allocatable :: table
         character(32), dimension(:), allocatable :: titles
-        
+
         integer, parameter :: nkin = 100
-        integer :: i,out_unit, tshape(2)
+        integer :: i,out_unit, tshape(2), nq
+        logical :: supplied
         real(r8) :: psi
         real(r8), dimension(0:nkin) :: zeff,zpitch,welec,wdian,wdiat,wpefac
-        type(spline_type) :: tmp
-        
+        real(r8), dimension(0:nkin,2) :: tkev
+        real(r8), dimension(0:nkin,3) :: nu_supplied
+        type(spline_type) :: tmp,tmp_nu
+
         call readtable(file,table,titles,verbose,write_log)
         tshape = shape(table)
         if(write_log) print *,"Table shaped ",tshape
-        
+
+        ! optional supplied logLambda, nu_i, nu_e columns
+        supplied = .false.
+        if(present(format))then
+            supplied = (format == "rates-v1")
+            if(.not. supplied .and. format /= "legacy") &
+                error stop "ERROR: read_kin - kinetic_format must be legacy or rates-v1"
+        endif
+        nq = 5
+        if(supplied)then
+            if(tshape(2) /= 9) error stop "ERROR: read_kin - rates-v1 needs 9 columns"
+            if(any(table(:,7:9) <= 0)) &
+                error stop "ERROR: read_kin - rates-v1 logLambda and nu must be positive"
+            table(:,7:9) = log(table(:,7:9))  ! interpolate in log to stay positive
+            nq = 8
+        endif
+
         ! temp spline on experimental grid
-        call spline_alloc(tmp,tshape(1)-1,5)
+        call spline_alloc(tmp,tshape(1)-1,nq)
         tmp%xs(0:) = table(1:,1)
-        do i=1,5
+        do i=1,nq
             tmp%fs(0:,i) = table(1:,i+1)
         enddo
-        call spline_fit(tmp,"extrap")
+        call spline_fit_pchip(tmp)  ! monotone between table points
         if(write_log) print *,"Formed temporary spline"
-        
+
         ! extrapolate to regular spline (helps smooth core??)
-        call spline_alloc(kin,nkin,8)
+        call spline_alloc(kin,nkin,9)
         kin%title(0:) = (/"psi_n ","n_i   ","n_e   ","t_i   ","t_e   ","omegae",&
-                    "loglam","nu_i  ","nu_e  " /)
+                    "loglam", "nu_i  ","nu_e  ", "zeff  "/)
         do i=0,kin%mx
               psi = (1.0*i)/kin%mx
               call spline_eval(tmp,psi,0)
               kin%xs(i) = psi
               kin%fs(i,1:5) = tmp%f(1:5)
+              if(supplied) nu_supplied(i,:) = exp(tmp%f(6:8))
         enddo
-        
+        if(any(kin%fs(:,1:2) <= 0)) error stop "ERROR: read_kin - densities must be positive"
+        if(any(kin%fs(:,3:4) < 0)) error stop "ERROR: read_kin - temperatures must be non-negative"
+
         ! convert temperatures to si units
         kin%fs(:,3:4) = kin%fs(:,3:4)*1.602e-19 !ev to j
 
         ! collisionalities **assumes si units for n,t**
+        ! floor T (keV) at 1 meV and logLambda at 1 so cold (T -> 0) edges give large positive nu
+        tkev = max(kin%fs(:,3:4)/1.602e-16, 1.0e-6_r8)
+        if(any(kin%fs(:,3:4)/1.602e-16 < 1.0e-6_r8) .and. .not. supplied) &
+            print *, "  ! WARNING ! Flooring T at 1e-3 eV in collision frequencies"
         zeff = zimp-(kin%fs(:,1)/kin%fs(:,2))*zi*(zimp-zi)
-        zpitch = 1.0+(1.0+mimp)/(2.0*mimp)*zimp*(zeff-1.0)/(zimp-zeff)   
+        zpitch = 1.0+(1.0+mimp)/(2.0*mimp)*zimp*(zeff-1.0)/(zimp-zeff)
         kin%fs(:,6) = 17.3-0.5*log(kin%fs(:,2)/1.0e20) &
-            +1.5*log(kin%fs(:,4)/1.602e-16)
+            +1.5*log(tkev(:,2))
+        if(any(kin%fs(:,6) < 1) .and. .not. supplied) &
+            print *, "  ! WARNING ! Flooring logLambda at 1 in collision frequencies"
+        kin%fs(:,6) = max(kin%fs(:,6), 1.0_r8)
         kin%fs(:,7) = (zpitch/3.5e17)*kin%fs(:,1)*kin%fs(:,6) &
-            /(sqrt(1.0*mi)*(kin%fs(:,3)/1.602e-16)**1.5)
+            /(sqrt(1.0*mi)*tkev(:,1)**1.5)
         kin%fs(:,8) = (zpitch/3.5e17)*kin%fs(:,2)*kin%fs(:,6) &
-            /(sqrt(me/mp)*(kin%fs(:,4)/1.602e-16)**1.5)
+            /(sqrt(me/mp)*tkev(:,2)**1.5)
+        kin%fs(:,9) = zeff
+        if(supplied) kin%fs(:,6:8) = nu_supplied
 
         call spline_fit(kin,"extrap")
         if(write_log) print *,"Formed kin spline"
-    
+
         ! manipulation of N and T profiles
         kin%fs(:,1:2) = nfac*kin%fs(:,1:2)
         kin%fs(:,3:4) = tfac*kin%fs(:,3:4)
 
         ! manipulation of rotation variables
         welec(:) = wefac*kin%fs(:,5) ! direct manipulation of omegae
+        ! note dividing by zero makes a nan that then ruins the whole spline
+        warning_printed = .false.
+        do i=0,nkin
+            if(welec(i) == 0) then
+                welec(i) = 1e-9
+                if(.not. warning_printed)then
+                    print *, "  ! WARNING ! Modifying omega_ExB = 0 to 1e-9 to avoid nans"
+                    warning_printed = .true.
+                end if
+            end if
+        end do
         if(wefac/=1.0 .and. verbose) print('(a55,es10.2e3)'),'  -> applying direct manipulation of omegaE by factor ',wefac
         wdian =-twopi*kin%fs(:,3)*kin%fs1(:,1)/(e*zi*chi1*kin%fs(:,1))
         wdiat =-twopi*kin%fs1(:,3)/(e*zi*chi1)
         wpefac= (wpfac*(welec+wdian+wdiat) - (wdian+wdiat))/welec
         welec = wpefac*welec   ! indirect manipulation of rotation
+        kin%fs(:,5)=welec
+
         if(wpfac/=1.0 .and. verbose) then
             print('(a40,es10.2e3)'),'  -> manipulating rotation by factor of ',wpfac
             print *,'     by indirect manipulation of omegae profile'
         endif
-        kin%fs(:,5) = welec(:)
         call spline_fit(kin,"extrap")
+        ! local monotone slopes for loglam, nu_i, nu_e so steep edge nu cannot ring inward
+        call spline_alloc(tmp_nu,nkin,3)
+        tmp_nu%xs = kin%xs
+        tmp_nu%fs = kin%fs(:,6:8)
+        call spline_fit_pchip(tmp_nu)
+        kin%fs1(:,6:8) = tmp_nu%fs1
+        call spline_dealloc(tmp_nu)
         if(write_log) print *,"Reformed kin spline with rotation manipulations"
 
         ! write log - designed as check of reading routines
         if(write_log)then
-        !if(.TRUE.)then
             out_unit = get_free_file_unit(-1)
             if(verbose) print *, "Writing kinetic spline to pentrc_kinetics.out"
             open(unit=out_unit,file="pentrc_kinetics.out",&
@@ -377,9 +434,8 @@ module inputs
                     +xj*reshape(table(:,10),(/npsi,nm/),order=(/1,2/))
         endif
 
-        ! For consistency with GPEC-0.3.0 and smaller values near rationals
-        if(verbose) print *,"  -> Using div(xi_perp) = -(dB/B+kappa.xi_perp)"
-        divxmni = -(lagbmni+kapxmni)
+        ! Keep the supplied divergence and use its perpendicular gauge.
+        lagbmni = -(divxmni+kapxmni)
 
         ! convert to chebyshev coordinates
         if(jac_in=="" .or. jac_in=="default")then
@@ -483,7 +539,7 @@ module inputs
             write(out_unit,'(a8,es16.8e3,2/)') " chi1 = ",chi1
             write(out_unit,'(1x,a16,a5,8(1x,a16))')"psi_n","m",&
                 'real(deltaB/B)','imag(deltaB/B)','real(divxprp)','imag(divxprp)',&
-                'real(deltaB)','imag(deltaB)','real(Bdivxprp)','imag(Bdivxprp)'
+                'real(deltaBprp)','imag(deltaBprp)','real(Bdivxprp)','imag(Bdivxprp)'
             do i=0,npsi-1
                 do j=1,mpert
                     write(out_unit,'(1x,es16.8e3,i5,14(1x,es16.8e3))') &
@@ -610,7 +666,7 @@ module inputs
             xmsmni(:,:) = reshape(table(:,7),(/npsi,nm/),order=(/1,2/))&
                     +xj*reshape(table(:,8),(/npsi,nm/),order=(/1,2/))
         endif
-        
+
         ! convert to chebyshev coordinates
         if(jac_in=="" .or. jac_in=="default")then
             jac_in = jac_type
@@ -719,16 +775,16 @@ module inputs
         ! set global variables (perturbed quantity csplines)
         call set_peq(psi(ipsilow:ipsihigh),mfac,xmp1mns(ipsilow:ipsihigh,:),xspmns(ipsilow:ipsihigh,:),&
                      xmsmns(ipsilow:ipsihigh,:),.true.,debug)
-        
+
         deallocate(ms,psi,xmp1mns,xspmns,xmsmns)
-        
+
     end subroutine read_peq
-    
-    
+
+
     !=======================================================================
     subroutine set_peq(psi,ms,xmp1mns,xspmns,xmsmns,op_set_dbdx,op_debug)
-    !----------------------------------------------------------------------- 
-    !*DESCRIPTION: 
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
     !   Set m quantity xs_m complex splines in psi for the 2 Clebsch
     !   displacement components from 2D (psi,m) distributions.
     !   **This routine sets global variables xs_m dbob_m and divx_m**
@@ -749,14 +805,14 @@ module inputs
     !       them to global complex spline variable dbob_m,divx_m. (Defaut True)
     !   op_debug : logical
     !       Print intermidient messages to terminal. (Default False)
-    !       
+    !
     !-----------------------------------------------------------------------
-    
+
         implicit none
-        
+
         ! declare arguments
         logical, intent(in), optional :: op_debug,op_set_dbdx
-        integer,  dimension(:), intent(in) :: ms        
+        integer,  dimension(:), intent(in) :: ms
         real(r8), dimension(:), intent(in) :: psi
         complex(r8), dimension(:,:), intent(in) :: xmp1mns,xspmns,xmsmns
         ! declare local variables
@@ -766,7 +822,7 @@ module inputs
         complex(r8), dimension(mpert,mpert) :: smat,tmat,xmat,ymat,zmat
         complex(r8), dimension(:,:), allocatable :: jbbkapxmns,jbbdivxmns,jbbdbobmns
         character(3) :: istring
-        
+
         ! defaults for optional args
         debug = .false.
         set_dbdx = .true.
@@ -777,7 +833,7 @@ module inputs
         istop_psi = UBOUND(psi,1)
         npsi = size(psi)
         nm = size(ms)
-        
+
         ! set global variables
         if(debug) print *,"  Setting global perturbed xi variables"
         !if(debug) print *,"  nm,mpert",nm,mpert
@@ -794,12 +850,12 @@ module inputs
         enddo
         do i =1,mpert
             ims = i+(mfac(1)-ms(1))
-            if(ims>0 .and. ims<=nm)then        
+            if(ims>0 .and. ims<=nm)then
                 xs_m(1)%fs(0:,i) =xmp1mns(1:,ims)
                 xs_m(2)%fs(0:,i) = xspmns(1:,ims)
                 xs_m(3)%fs(0:,i) = xmsmns(1:,ims)
             else
-                print *,"WARNING: Not input for DCON m ",mfac(i)
+                print *,"!! WARNING: Not input for DCON m ",mfac(i)
                 xs_m(1)%fs(0:,i) = 0
                 xs_m(2)%fs(0:,i) = 0
                 xs_m(3)%fs(0:,i) = 0
@@ -893,8 +949,8 @@ module inputs
 
     !=======================================================================
     subroutine read_fnml(file)
-    !----------------------------------------------------------------------- 
-    !*DESCRIPTION: 
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
     !   Read matrix of pre-integrated functions, Eq. (13)
     !   [Park, Phys. Rev. Let 2009]
     !
@@ -908,7 +964,7 @@ module inputs
         character(*) :: file
         ! declare variables
         integer :: nfk,nft,in_unit
-  
+
         if(verbose) print *, "Reading F^-1/2_mnl from file:"
         if(verbose) print *, "  ",trim(file)
         in_unit = get_free_file_unit(-1)
@@ -923,11 +979,11 @@ module inputs
         return
       end subroutine read_fnml
 
-      
+
     !=======================================================================
     subroutine read_gpec_peq(file,write_log)
-    !----------------------------------------------------------------------- 
-    !*DESCRIPTION: 
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
     !   Read pmodb and divxprp fourier components (psi,m) from input file.
     !   Holdover from PENT - used to test development.
     !
@@ -939,12 +995,12 @@ module inputs
         ! declare arguments
         logical :: write_log
         character(*), intent(in) :: file
-        ! declare variables            
+        ! declare variables
         complex(r8), dimension(mstep,mpert) :: lagbpar,divxprp
         integer :: i,ms,mp,iout,istep,in_unit,out_unit
         type(cspline_type) :: outspl
-    
-          
+
+
         if(verbose) print *, "Reading pmodb and divxprp input file: "
         if(verbose) print *, '  ',trim(file)
         in_unit = get_free_file_unit(-1)
@@ -956,7 +1012,7 @@ module inputs
         read(in_unit)lagbpar
         read(in_unit)divxprp
         close(in_unit)
-        
+
         ! form splines
         call cspline_alloc(dbob_m,mstep-1,mpert)
         call cspline_alloc(divx_m,mstep-1,mpert)
@@ -966,7 +1022,7 @@ module inputs
         divx_m%fs(0:,:) = divxprp(:,:)
         call cspline_fit(dbob_m,"extrap")
         call cspline_fit(divx_m,"extrap")
-        
+
         ! write log - designed as check of reading routines
         if(write_log)then
             out_unit = get_free_file_unit(-1)
@@ -996,5 +1052,5 @@ module inputs
         endif
     end subroutine read_gpec_peq
 
-    
+
 end module inputs

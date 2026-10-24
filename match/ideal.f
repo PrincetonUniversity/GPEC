@@ -26,7 +26,7 @@ c-----------------------------------------------------------------------
       USE bicube_mod
       IMPLICIT NONE
 
-      LOGICAL :: ripple_flag=.FALSE.
+      LOGICAL :: ripple_flag=.FALSE.,wv_farwall_flag
       INTEGER :: mpsi,mtheta,mripple
       REAL(r8) :: ro,zo
       TYPE(spline_type) :: sq
@@ -93,6 +93,7 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
          CASE(3)
+            READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
@@ -170,6 +171,7 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)et
             READ(UNIT=in_unit)wt
             READ(UNIT=in_unit)wt0
+            READ(UNIT=in_unit)wv_farwall_flag
          CASE(4)
             ising=ising+1
             singtype(ising)%jfix=ifix
@@ -303,21 +305,34 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE ideal_build
+      SUBROUTINE ideal_build(sol_num)
+
+      INTEGER, INTENT(IN) :: sol_num
 
       INTEGER :: istep,ifix,jfix,kfix,ieq,info
       INTEGER, DIMENSION(mpert) :: ipiv
       COMPLEX(r8), DIMENSION(mpert) :: uedge,temp1
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp2
+      CHARACTER(128) :: message
 c-----------------------------------------------------------------------
 c     construct uedge.
 c-----------------------------------------------------------------------
       WRITE(*,*)"Construct ideal eigenfunctions."
       IF(ripple_flag)THEN
+         IF(mripple < mlow .OR. mripple > mhigh)THEN
+            WRITE(message,'(a,i6,a,i6,a,i6)')"mripple = ",mripple,
+     $           " out of range ",mlow," to ",mhigh
+            CALL program_stop(message)
+         ENDIF
          uedge=0
          uedge(mripple-mlow+1)=1
       ELSE
-         uedge=wt(:,1)
+         IF(sol_num < 1 .OR. sol_num > mpert)THEN
+            WRITE(message,'(a,i6,a,i6)')"sol_num = ",sol_num,
+     $           " out of range 1 to ",mpert
+            CALL program_stop(message)
+         ENDIF
+         uedge=wt(:,sol_num)
       ENDIF
       temp2=soltype(mstep)%u(:,1:mpert,1)
       CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
@@ -355,12 +370,15 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE ideal_write
+      SUBROUTINE ideal_write(sol_num)
+
+      INTEGER, INTENT(IN) :: sol_num
 
       LOGICAL, PARAMETER :: diagnose=.FALSE.
       INTEGER :: ipert,istep,m
       REAL(r8), DIMENSION(mpert) :: singfac
       COMPLEX(r8), DIMENSION(mpert,0:mstep) :: b
+      CHARACTER(128) :: outputname
 c-----------------------------------------------------------------------
 c     compute normal perturbed magnetic field.
 c-----------------------------------------------------------------------
@@ -373,7 +391,14 @@ c-----------------------------------------------------------------------
 c     write binary output for graphs.
 c-----------------------------------------------------------------------
       WRITE(*,*)"Write binary output for graphs."
-      CALL bin_open(bin_unit,"solutions.bin","UNKNOWN","REWIND","none")
+
+      IF (sol_num == 1) THEN
+         outputname = "solutions.bin"
+      ELSE
+         WRITE(outputname, '(A,I0,A)') "solutions", sol_num, ".bin"
+      END IF
+
+      CALL bin_open(bin_unit, outputname, "UNKNOWN", "REWIND", "none")
       DO ipert=1,mpert
          DO istep=0,mstep
             WRITE(bin_unit)REAL(psifac(istep),4),REAL(rho(istep),4),
@@ -506,7 +531,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: psi,theta,theta0,theta1,zlevel,z,zz0,zz1
       REAL(r8), DIMENSION(0:mtheta) :: zz
       REAL(r8), DIMENSION(mstep,2) :: r,th0,z0,q
-      COMPLEX(r8), DIMENSION(mstep,2) :: xi_psi,b_psi,xi_norm,b_norm 
+      COMPLEX(r8), DIMENSION(mstep,2) :: xi_psi,b_psi,xi_norm,b_norm
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -536,7 +561,7 @@ c-----------------------------------------------------------------------
             CALL bicube_eval(rzphi,psi,theta,0)
             zz(itheta)=zo-zlevel
      $           +SQRT(rzphi%f(1))*SIN(twopi*(theta+rzphi%f(2)))
-         ENDDO         
+         ENDDO
 c-----------------------------------------------------------------------
 c     find theta indices intersecting chord.
 c-----------------------------------------------------------------------
@@ -617,7 +642,7 @@ c-----------------------------------------------------------------------
          jstep=jstep+1
       ENDDO
       WRITE(debug_unit,10)
-      CALL bin_close(bin_unit) 
+      CALL bin_close(bin_unit)
       CALL ascii_close(debug_unit)
 c-----------------------------------------------------------------------
 c     terminate.

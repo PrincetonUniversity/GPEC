@@ -39,7 +39,7 @@ c-----------------------------------------------------------------------
       USE local_mod
       USE spline_mod
       IMPLICIT NONE
-      
+
       TYPE :: cspline_type
       INTEGER :: mx,nqty,ix
       REAL(r8), DIMENSION(:), POINTER :: xs
@@ -50,8 +50,9 @@ c-----------------------------------------------------------------------
       CHARACTER(6), DIMENSION(:), POINTER :: title
       CHARACTER(6) :: name
       LOGICAL :: periodic
+      LOGICAL :: allocated=.FALSE.
       END TYPE cspline_type
-      
+
       CONTAINS
 c-----------------------------------------------------------------------
 c     subprogram 1. cspline_alloc.
@@ -61,9 +62,17 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE cspline_alloc(spl,mx,nqty)
-      
+
       INTEGER, INTENT(IN) :: mx,nqty
       TYPE(cspline_type), INTENT(INOUT) :: spl
+
+c-----------------------------------------------------------------------
+c     safety check.
+c-----------------------------------------------------------------------
+      IF(spl%allocated)THEN
+         CALL program_stop("cspline_alloc: already allocated")
+      ENDIF
+
 c-----------------------------------------------------------------------
 c     set scalars.
 c-----------------------------------------------------------------------
@@ -86,6 +95,7 @@ c-----------------------------------------------------------------------
       spl%xpower=0
       spl%x0=0
       NULLIFY(spl%fsi)
+      spl%allocated=.TRUE.
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -99,11 +109,20 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE cspline_dealloc(spl)
-      
+
       TYPE(cspline_type), INTENT(INOUT) :: spl
+c-----------------------------------------------------------------------
+c     safety check.
+c-----------------------------------------------------------------------
+      IF(.NOT.spl%allocated)THEN
+         CALL program_stop("cspline_dealloc: not allocated")
+      ENDIF
+
+
 c-----------------------------------------------------------------------
 c     deallocate space.
 c-----------------------------------------------------------------------
+
       DEALLOCATE(spl%xs)
       DEALLOCATE(spl%f)
       DEALLOCATE(spl%f1)
@@ -114,6 +133,7 @@ c-----------------------------------------------------------------------
       DEALLOCATE(spl%fs1)
       DEALLOCATE(spl%xpower)
       IF(ASSOCIATED(spl%fsi))DEALLOCATE(spl%fsi)
+      spl%allocated=.FALSE.
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -162,7 +182,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:spl%mx) :: xfac
 
       INTEGER :: iside,iqty,i
-      REAL(r8),DIMENSION(spl%nqty) :: bs,cs,ds
+      COMPLEX(r8),DIMENSION(spl%nqty) :: bs,cs,ds
 c-----------------------------------------------------------------------
 c     extract powers.
 c-----------------------------------------------------------------------
@@ -255,10 +275,10 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE cspline_fit_ahg(spl,endmode)
-      
+
       TYPE(cspline_type), INTENT(INOUT) :: spl
       CHARACTER(*), INTENT(IN) :: endmode
-      
+
       INTEGER :: iqty,iside
       REAL(r8), DIMENSION(-1:1,0:spl%mx) :: a
       REAL(r8), DIMENSION(spl%mx) :: b
@@ -295,9 +315,11 @@ c-----------------------------------------------------------------------
       SELECT CASE(endmode)
       CASE("extrap")
          DO iqty=1,spl%nqty
-            spl%fs1(0,iqty)=SUM(cl(1:4)*spl%fs(0:3,iqty))
-            spl%fs1(spl%mx,iqty)=SUM(cr(1:4)
-     $           *spl%fs(spl%mx:spl%mx-3:-1,iqty))
+            spl%fs1(0,iqty)=SUM(cl(2:4)
+     $           *(spl%fs(1:3,iqty)-spl%fs(0,iqty)))
+            spl%fs1(spl%mx,iqty)=SUM(cr(2:4)
+     $           *(spl%fs(spl%mx-1:spl%mx-3:-1,iqty)
+     $           -spl%fs(spl%mx,iqty)))
             spl%fs1(1,iqty)=spl%fs1(1,iqty)-spl%fs1(0,iqty)
      $           /(spl%xs(1)-spl%xs(0))
             spl%fs1(spl%mx-1,iqty)=
@@ -354,13 +376,13 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE cspline_fac(spl,a,b,cl,cr,endmode)
-      
+
       TYPE(cspline_type), INTENT(IN) :: spl
       REAL(r8), DIMENSION(-1:1,0:spl%mx), INTENT(OUT) :: a
       REAL(r8), DIMENSION(spl%mx), INTENT(OUT) :: b
       REAL(r8), DIMENSION(4), INTENT(OUT) :: cl,cr
       CHARACTER(*), INTENT(IN) :: endmode
-      
+
       INTEGER :: j
 c-----------------------------------------------------------------------
 c     compute interior matrix.
@@ -457,11 +479,11 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE cspline_eval(spl,x,mode)
-      
+
       TYPE(cspline_type), INTENT(INOUT) :: spl
       REAL(r8), INTENT(IN) :: x
       INTEGER, INTENT(IN) :: mode
-      
+
       INTEGER :: iqty,iside
       REAL(r8) :: xx,d,z,z1,xfac,dx
       COMPLEX(r8) :: g,g1,g2,g3
@@ -770,7 +792,7 @@ c-----------------------------------------------------------------------
             IF(mode > 1)g2=(f2(:,iqty)+spl%xpower(iside,iqty)/dx
      $           *(2*f1(:,iqty)+(spl%xpower(iside,iqty)-1)
      $           *f(:,iqty)/dx))*xfac
-     $           
+     $
             IF(mode > 2)g3=(f3(:,iqty)+spl%xpower(iside,iqty)/dx
      $           *(3*f2(:,iqty)+(spl%xpower(iside,iqty)-1)/dx
      $           *(3*f1(:,iqty)+(spl%xpower(iside,iqty)-2)/dx

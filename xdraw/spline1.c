@@ -18,9 +18,7 @@
 **	intermediate points, if so call spleval for those points.
 ***********************************************************************/
 #include <stdio.h>
-#if !defined(__MACH__)
-#include <malloc.h>
-#endif
+#include <stdlib.h>
 
 
 #define Float double

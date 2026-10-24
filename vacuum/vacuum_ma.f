@@ -10,12 +10,17 @@ c     2. mscfld
 c     3. defglo
 c     4. ent33
 c     5. funint
-c     6. grrget
-c     7. make_bltobp
-c     8. diaplt
-c     9. pickup
-c    10. loop
-c    11. chi
+c     6. make_bltobp
+c     7. diaplt
+c     8. pickup
+c     9. loop
+c    10. chi
+
+      module vacuum_mod
+      ! implicit none
+      contains
+
+
 c-----------------------------------------------------------------------
 c     subprogram 1. mscvac.
 c     calculate vacuum response matrix.
@@ -23,20 +28,29 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      subroutine mscvac(wv,mpert,mtheta,mthvac,nfmo,nthso,complex_flag,
-     $     kernelsignin)
+      subroutine mscvac(wv,mpert,mtheta,mthvac,complex_flag,
+     $     kernelsignin,wall_flag,farwal_flag,grrio,xzptso,op_ahgfile)
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
-      integer nfmo,nthso
-      real(8) :: kernelsignin
+      REAL(r8) :: kernelsignin
       integer mpert,mtheta,mthvac
-      complex*16 wv(mpert,mpert)
-      logical, intent(in) :: complex_flag
+      complex(r8) wv(mpert,mpert)
+      logical, intent(in) :: complex_flag,wall_flag,farwal_flag
+      REAL(r8) :: grrio(2*(mthvac+5),mpert*2),xzptso(mthvac+5,4)
 
-      complex(8), parameter :: ifac=(0,1)
+      complex(r8), parameter :: ifac=(0,1)
       dimension xi(nfm), xii(nfm), xilnq(nfm), xiilnq(nfm)
+      character(128), intent(in), optional :: op_ahgfile
+
+      if (present(op_ahgfile)) then
+         ahgfile = trim(op_ahgfile)
+      else
+         ahgfile = 'ahg2msc.out'
+      endif
+
+
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -58,20 +72,24 @@ c-----------------------------------------------------------------------
       nfm=mpert
       mtot=mpert
       call global_alloc(nths0,nfm,mtot,ntsin0)
+      farwal=.false.
+      IF (farwal_flag) farwal=.true.
 c-----------------------------------------------------------------------
 c     initialization.
 c-----------------------------------------------------------------------
-      call defglo
+      call defglo(mthvac)
       ldcon = 1
       lgpec = 0
       open (iotty,file='mscvac.out',status='unknown')
       open (outpest,file='pestotv',status='unknown',form='formatted')
-      open (inmode,file='vac.in',status='old', form='formatted' )
+      IF (wall_flag) THEN
+         open (inmode,file='vac_wall.in',status='old', form='formatted')
+      ELSE
+         open (inmode,file='vac.in',status='old', form='formatted' )
+      ENDIF
       open (outmod,file='modovmc',status='unknown', form='formatted' )
       call msctimer ( outmod, "top of main" )
       call ent33
-      nfmo=nfm2
-      nthso=nths2
 
       If ( lspark .ne. 0 ) call testvec
       if ( ieig .eq. 0 ) goto 99
@@ -135,6 +153,11 @@ c-----------------------------------------------------------------------
       close(outpest)
       close(inmode)
       close(outmod)
+      grrio(:,:)=grri(:,:)
+      xzptso(:,1)=xinf(:)
+      xzptso(:,2)=zinf(:)
+      xzptso(:,3)=xwal(:)
+      xzptso(:,4)=zwal(:)
       call global_dealloc
       call cleanup
       return
@@ -146,23 +169,30 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      subroutine mscfld(wv,mpert,mtheta,mthvac,nfmo,nthso,complex_flag,
-     $     lx,lz,vgdl,vgdx,vgdz,vbx,vbz,vbp)
+      subroutine mscfld(wv,mpert,mtheta,mthvac,complex_flag,
+     $     lx,lz,vgdl,vgdx,vgdz,vbx,vbz,vbp,op_ahgfile)
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
-      integer nfmo,nthso
       integer mpert,mtheta,mthvac
-      complex*16 wv(mpert,mpert)
+      complex(r8) wv(mpert,mpert)
       logical, intent(in) :: complex_flag
 
       integer, dimension(0:lx,0:lz) :: vgdl
-      real(8), dimension(0:lx,0:lz) :: vgdx,vgdz
-      complex(8), dimension(0:lx,0:lz) :: vbx,vbz,vbp
+      REAL(r8), dimension(0:lx,0:lz) :: vgdx,vgdz
+      complex(r8), dimension(0:lx,0:lz) :: vbx,vbz,vbp
 
-      complex(8), parameter :: ifac=(0,1)
+      complex(r8), parameter :: ifac=(0,1)
       dimension xi(nfm), xii(nfm), xilnq(nfm), xiilnq(nfm)
+      character(128), intent(in), optional :: op_ahgfile
+
+      if (present(op_ahgfile)) then
+         ahgfile = trim(op_ahgfile)
+      else
+         ahgfile = 'ahg2msc.out'
+      endif
+
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -189,7 +219,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     initialization.
 c-----------------------------------------------------------------------
-      call defglo
+      call defglo(mthvac)
       ldcon = 0
       lgpec = 1
       ieig = 0
@@ -199,9 +229,6 @@ c-----------------------------------------------------------------------
       open (outmod,file='modovmc',status='unknown', form='formatted' )
       call msctimer ( outmod, "top of main" )
       call ent33
-      nfmo=nfm2
-      nthso=nths2
-
       If ( lspark .ne. 0 ) call testvec
       if ( ieig .eq. 0 ) goto 99
       jmax1 = lmax(1) - lmin(1) + 1
@@ -280,10 +307,11 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      subroutine defglo
+      subroutine defglo(mthvac)
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
+      integer, intent(in) :: mthvac
 c-----------------------------------------------------------------------
 c     define constants.
 c-----------------------------------------------------------------------
@@ -306,7 +334,6 @@ c-----------------------------------------------------------------------
       m       = 2
       mp     = 3
       minc   = 10
-      mthvac = 0
       mth    = mthvac
       mth1   = mth + 1
       mth2   = mth1 + 1
@@ -394,7 +421,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine ent33
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 c-----------------------------------------------------------------------
 c     declarations.
@@ -418,7 +445,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine funint
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
       dimension zork1(nths), zork2(nths), dlenth(nths)
@@ -454,7 +481,7 @@ c-----------------------------------------------------------------------
          zork1(i+2) = dlenth(i)
       enddo
       zork1(1) = dlenth(mth-1)
-      zork1(2) = dlenth(mth) 
+      zork1(2) = dlenth(mth)
       zork1(mth3) = dlenth(1)
       zork1(mth4) = dlenth(2)
       zork1(mth5) = dlenth(3)
@@ -472,29 +499,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-c     subprogram 6. grrget.
-c     obtain grri matrix from vacuum calculation.
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     declarations.
-c-----------------------------------------------------------------------
-      subroutine grrget(nfmo,nthso,grrio)
-      USE vglobal_mod
-      implicit none
-
-      integer nfmo,nthso
-      real(8), dimension(nthso,nfmo) :: grrio
-
-      grrio(:,:)=grri(:,:)
-
-      deallocate(grri)
-c-----------------------------------------------------------------------
-c     termination.
-c-----------------------------------------------------------------------
-      return
-      end
-c-----------------------------------------------------------------------
-c     subprogram 7. make_bltobp
+c     subprogram 6. make_bltobp
 c     calculate normal field in real space.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -504,7 +509,7 @@ c-----------------------------------------------------------------------
       USE vglobal_mod
       IMPLICIT REAL (a-h,o-z)
 
-      DIMENSION chlagdy(nths,nfm)
+      ! DIMENSION chlagdy(nths,nfm)
       DIMENSION thmgr(nths), z1tmp(nths), z2tmp(nths)
 
       psipr = 1.0
@@ -515,7 +520,7 @@ c-----------------------------------------------------------------------
          xili(l) = -bnlr(l) / psilnq
       END DO
 
-      DO I = 1, mth1
+      DO i = 1, mth1
          zgr = 0.0
          zgi = 0.0
          DO l = 1, lrnge
@@ -547,7 +552,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-c     subprogram 8. diaplt
+c     subprogram 7. diaplt
 c     calculate tangential b field.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -555,15 +560,16 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine diaplt
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
-      dimension z1tmp(nths), z2tmp(nths), zorkr(nths),zorki(nths),
-     $     zorkpr(nths), zorkpi(nths), zork3(nths), chlagdy(nths,nfm),
-     $     thph(nths), cppgr(nths),cppgi(nths),
-     $     cplgr(nths), cplgi(nths), cplgtr(nths), cplgti(nths),
-     $     chwr1(nths),chwi1(nths),
-     $     dxdt(nths), dzdt(nths), zkt(nths,2), zkp(nths,2)
+   !    DIMENSION z1tmp(nths), z2tmp(nths), zorkr(nths),zorki(nths),
+   !   $     zorkpr(nths), zorkpi(nths), zork3(nths), !chlagdy(nths,nfm),
+   !   $     thph(nths), cppgr(nths),cppgi(nths),
+   !   $     cplgr(nths), cplgi(nths), cplgtr(nths), cplgti(nths),
+   !   $     chwr1(nths),chwi1(nths),
+   !   $     dxdt(nths), dzdt(nths), zkt(nths,2), zkp(nths,2)
+      DIMENSION zork3(nths), zorkpr(nths), zorkpi(nths)
 
       lrnge = nfm
       jmax1 = lrnge
@@ -609,7 +615,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-c     subprogram 9. pickup
+c     subprogram 8. pickup
 c     calculate vacuum b field.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -617,10 +623,18 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine pickup(blr,bli,lx,lz,vgdl,vgdx,vgdz,vbx,vbz,vbp)
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
-      DIMENSION xlp(nths),xloops(ndimlp),zloops(ndimlp),
+      INTEGER, DIMENSION(0:lx,0:lz) :: vgdl
+      REAL(r8), DIMENSION(0:lx,0:lz) :: vgdx,vgdz
+      COMPLEX(r8), DIMENSION(0:lx,0:lz) :: vbx,vbz,vbp
+
+      DIMENSION blr(*), bli(*)
+      ! CHARACTER(130), DIMENSION(10) :: string
+      COMPLEX(r8), PARAMETER :: ifac=(0,1)
+
+      DIMENSION xloops(ndimlp),zloops(ndimlp),
      $     chir(5,ndimlp),chii(5,ndimlp),
      $     zchipr(ndimlp),zchipi(ndimlp),chirr(ndimlp),
      $     cwrkr(5,ndimlp),cwrki(5,ndimlp),
@@ -628,14 +642,6 @@ c-----------------------------------------------------------------------
      $     bxr(ndimlp),bxi(ndimlp),bzr(ndimlp),bzi(ndimlp),
      $     btr(ndimlp),bti(ndimlp), bpr(ndimlp),bpi(ndimlp),
      $     bphir(ndimlp),bphii(ndimlp)
-
-      INTEGER, DIMENSION(0:lx,0:lz) :: vgdl
-      REAL(8), DIMENSION(0:lx,0:lz) :: vgdx,vgdz
-      COMPLEX(8), DIMENSION(0:lx,0:lz) :: vbx,vbz,vbp
-
-      DIMENSION blr(*), bli(*)
-      CHARACTER(130), DIMENSION(10) :: string
-      COMPLEX(8), PARAMETER :: ifac=(0,1)
 
       ndlp = mth / ntloop
 
@@ -833,9 +839,9 @@ c-----------------------------------------------------------------------
              cwrkr(nsew,i) = 0.0
              cwrki(nsew,i) = 0.0
            end do
-           
+
            isg = 1
-           
+
            call chi ( xwal,zwal,xwalp,zwalp,isg,chiwc,chiws, ns,0,
      $          cwrkr,cwrki,nsew, blr,bli,rwall )
 
@@ -877,7 +883,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-c     subprogram 10. loops.
+c     subprogram 9. loops.
 c     grid loops.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -885,15 +891,15 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine loops
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
-      REAL, DIMENSION(:,:), ALLOCATABLE :: xloopin, zloopin
-      REAL, DIMENSION(:), ALLOCATABLE :: sourcemat
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: xloopin, zloopin
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: sourcemat
 
 
-      dxlin = 1.0 / (nxlpin-1)
-      dzlin = 1.0 / (nzlpin-1)
+      dxlin = 1.0_r8 / (nxlpin-1)
+      dzlin = 1.0_r8 / (nzlpin-1)
       nxzlin = nxlpin * nzlpin
       nloop = nxzlin
 
@@ -954,7 +960,7 @@ c-----------------------------------------------------------------------
       RETURN
       END
 c-----------------------------------------------------------------------
-c     subprogram 11. chi.
+c     subprogram 10. chi.
 c     magnetic scalar potential.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -963,14 +969,13 @@ c-----------------------------------------------------------------------
       subroutine chi(xsce,zsce,xscp,zscp,isg,creal,cimag,ns,ip,
      $     chir,chii,nsew,blr,bli,rgdl)
       USE vglobal_mod
-      implicit real*8 (a-h,o-z)
+      implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
-      dimension iop(2), ww1(nths),ww2(nths),ww3(nths),tab(3)
-      dimension blr(*),bli(*), xsce(*),zsce(*),xscp(*),zscp(*)
-      dimension creal(nths,nfm), cimag(nths,nfm)
-      dimension chir(5,ndimlp), chii(5,ndimlp), rgdl(ndimlp)
-      real nq
+      DIMENSION blr(*),bli(*),xsce(*),zsce(*),xscp(*),zscp(*)
+      DIMENSION creal(nths,nfm), cimag(nths,nfm)
+      DIMENSION chir(5,ndimlp), chii(5,ndimlp), rgdl(ndimlp)
+      REAL nq
 
       factpi = twopi
       jmax1 = lmax(1) - lmin(1) + 1
@@ -995,11 +1000,9 @@ c-----------------------------------------------------------------------
             ztp = zscp(is)
 
             call green
-
             bval = bval / factpi
 
             do l1 = 1, jmax1
-
                zbr = blr(l1)
                zbi = bli(l1)
                chir(nsew,io) = chir(nsew,io) +
@@ -1028,4 +1031,4 @@ c-----------------------------------------------------------------------
       return
       end
 
-
+      end module vacuum_mod

@@ -22,10 +22,9 @@ c     13. gpdiag_rzpgrid
 c     14. gpdiag_rzpdiv
 c     15. gpdiag_radvar
 c     16. gpdiag_permeabev_orthogonality
-c     17. gpdiag_dw_matrix
-c     18. gpdiag_spline_roots
-c     19. gpdiag_jacfac
-c     20. gpdiag_delpsi
+c     17. gpdiag_spline_roots
+c     18. gpdiag_jacfac
+c     19. gpdiag_delpsi
 c-----------------------------------------------------------------------
 c     subprogram 0. gpdiag_mod.
 c     module declarations.
@@ -36,7 +35,8 @@ c-----------------------------------------------------------------------
       MODULE gpdiag_mod
       USE gpresp_mod
       USE gpvacuum_mod
-      USE field_mod
+   !    USE field_mod, ONLY : field_bs_psi, coil_dealloc,
+   !   $    coil_num, cmpert, cmlow
 
       IMPLICIT NONE
 
@@ -125,7 +125,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     construct 2d eigenvector sets in fourier space.
 c-----------------------------------------------------------------------
-      CALL gpvacuum_arbsurf(majr,minr)
+      CALL gpvacuum_arbsurf(majr=majr,minr=minr)
       vmpert=SIZE(vsurf_indev)
 
       WRITE(UNIT=smajr, FMT='(I4)')INT(100*majr)
@@ -936,7 +936,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert) :: eulbpar_mn,lagbpar_mn,
      $     llagbpar_mn,divx_mn,curv_mn,divx2_mn,curv2_mn
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xsp_fun,xms_fun,
-     $     bvt_fun,bvz_fun,xmt_fun,xmz_fun,xvt_fun,xvz_fun,xmp1_fun
+     $     bvt_fun,bvz_fun,xmt_fun,xmp1_fun
 
       REAL(r8), DIMENSION(:,:), POINTER :: rs,zs,eqfunx,eqfuny,eqfuns
       COMPLEX(r8), DIMENSION(:,:), POINTER :: eulbparmns,lagbparmns,
@@ -989,9 +989,6 @@ c-----------------------------------------------------------------------
          CALL iscdftb(mfac,mpert,bvt_fun,mthsurf,bvt_mn)
          CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
          CALL iscdftb(mfac,mpert,xmt_fun,mthsurf,xmt_mn)
-         CALL iscdftb(mfac,mpert,xmz_fun,mthsurf,xmz_mn)
-         CALL iscdftb(mfac,mpert,xvt_fun,mthsurf,xvt_mn)
-         CALL iscdftb(mfac,mpert,xvz_fun,mthsurf,xvz_mn)
          CALL iscdftb(mfac,mpert,xmp1_fun,mthsurf,xmp1_mn)
 
          xspmns(istep,:)=xsp_mn
@@ -1009,12 +1006,13 @@ c-----------------------------------------------------------------------
             CALL bicube_eval(eqfun,psifac(istep),theta(itheta),0)
             CALL bicube_eval(rzphi,psifac(istep),theta(itheta),0)
 
-            cspl%fs(itheta,1)=xmt_fun(itheta)-
-     $           (chi1/eqfun%f(1))**2/jac*
-     $           (xvt_fun(itheta)+sq%f(4)*xvz_fun(itheta))
-            cspl%fs(itheta,2)=xmz_fun(itheta)-
-     $           sq%f(4)*(chi1/eqfun%f(1))**2/jac*
-     $           (xvt_fun(itheta)+sq%f(4)*xvz_fun(itheta))
+            jac=rzphi%f(4)
+c           Form J*xi_perp directly from xi^psi and xi^alpha=xi^s/chi1.
+            cspl%fs(itheta,1)=chi1**2*
+     $           (-eqfun%f(2)*xsp_fun(itheta)+
+     $           eqfun%f(3)*xms_fun(itheta)/chi1)
+            cspl%fs(itheta,2)=sq%f(4)*cspl%fs(itheta,1)-
+     $           jac*xms_fun(itheta)/chi1
             cspl%fs(itheta,3)=xmt_fun(itheta)
          ENDDO
 
@@ -1059,10 +1057,9 @@ c-----------------------------------------------------------------------
      $           xsp_fun(itheta)*eqfun%fx(1)+
      $           xms_fun(itheta)/(chi1*sq%f(4))*eqfun%fy(1)
             llagbparfun(istep,itheta)=
-     $           lagbparfun(istep,itheta)+eqfun%fy(1)*
-     $           (xmz_fun(itheta)/(jac*sq%f(4))-
-     $           (chi1/(jac*eqfun%f(1)))**2*
-     $           (xvt_fun(itheta)+sq%f(4)*xvz_fun(itheta)))
+     $           eulbparfun(istep,itheta)+
+     $           xsp_fun(itheta)*eqfun%fx(1)+
+     $           eqfun%fy(1)*cspl%f(1)/jac
 
             divxfun(istep,itheta)=xmp1_fun(itheta)+
      $           (jac1/jac)*xsp_fun(itheta)+
@@ -1073,10 +1070,7 @@ c-----------------------------------------------------------------------
 
             curvfun(istep,itheta)=-xsp_fun(itheta)/eqfun%f(1)*sq%f1(2)-
      $           xsp_fun(itheta)*eqfun%fx(1)-eqfun%fy(1)*
-     $           (xms_fun(itheta)/(chi1*sq%f(4))+
-     $           xmz_fun(itheta)/(jac*sq%f(4))-
-     $           (chi1/(jac*eqfun%f(1)))**2*
-     $           (xvt_fun(itheta)+sq%f(4)*xvz_fun(itheta)))
+     $           cspl%f(1)/jac
             curv2fun(istep,itheta)=-jac*eqfun%f(1)*curvfun(istep,itheta)
          ENDDO
 
@@ -1096,8 +1090,8 @@ c-----------------------------------------------------------------------
      $        mthsurf,curv2_mn)
 
          eulbparmns(istep,:)=eulbpar_mn ! p'xsp_mn+bxcdeltamn
-         lagbparmns(istep,:)=lagbpar_mn ! with parallel components
-         llagbparmns(istep,:)=llagbpar_mn ! without parallel components
+         lagbparmns(istep,:)=lagbpar_mn ! xi^zeta=0 gauge (pmodb lagb)
+         llagbparmns(istep,:)=llagbpar_mn ! xi_perp only
          divxmns(istep,:)=-divx_mn ! Bdivxprp
          curvmns(istep,:)=-curv_mn ! Bkxprp
          divx2mns(istep,:)=divx2_mn ! jb-weighting
@@ -1821,7 +1815,8 @@ c-----------------------------------------------------------------------
       INTEGER :: i,j,lwork
       REAL(r8), DIMENSION(3*mpert-2) :: rwork
       COMPLEX(r8), DIMENSION(2*mpert-1) :: work
-      COMPLEX(r8), DIMENSION(mpert) :: temp,ev,evo
+      COMPLEX(r8), DIMENSION(mpert) :: temp
+      REAL(r8), DIMENSION(mpert) :: ev,evo
       COMPLEX(r8), DIMENSION(mpert,mpert) :: sqrta,mat,mato,
      $   sqrtao
 
@@ -1902,443 +1897,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpdiag_reluctpowout
 c-----------------------------------------------------------------------
-c     subprogram 17. gpdiag_dw_matrix.
-c     Some specific applications to test the ipout matrix calculations
-c     - Compare dw profile to gpout_dw profile
-c     - Compare eigenvalues to post.py optimize_torque
-c-----------------------------------------------------------------------
-      SUBROUTINE gpdiag_dw_matrix(coil_flag)
-c-----------------------------------------------------------------------
-c     declaration.
-c-----------------------------------------------------------------------
-      LOGICAL, INTENT(IN) :: coil_flag
-
-      INTEGER :: ipert,istep,itheta,i,j,mval,iindex,lwork
-      REAL(r8) :: jarea,ileft
-      COMPLEX(r8) :: t1,t2
-      LOGICAL :: diagnose1=.TRUE.,diagnose2=.TRUE.
-
-      INTEGER, DIMENSION(mpert) :: ipiv
-      REAL(r8), DIMENSION(mpert) :: teigen
-      REAL(r8), DIMENSION(3*mpert-2) :: rwork
-      REAL(r8), DIMENSION(2*mpert) :: rwork2
-      REAL(r8), DIMENSION(0:mthsurf) :: units
-      COMPLEX(r8), DIMENSION(2*mpert-1) :: work
-      COMPLEX(r8), DIMENSION(2*mpert+1) :: work2
-      COMPLEX(r8), DIMENSION(mpert*mpert) :: work3
-      COMPLEX(r8), DIMENSION(mpert) :: fldflxmn,tvec1,tvec2,reigen
-      COMPLEX(r8), DIMENSION(mstep) :: tprof
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,fldflxmat,vr,vl
-      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: bsurfmat,dwks,dwk,
-     $     gind,gindp,gres,gresp
-      COMPLEX(r8), DIMENSION(5,mpert) :: tvecs
-      COMPLEX(r8), DIMENSION(9,mpert,mpert) :: tgresp
-
-      INTEGER, DIMENSION(coil_num) :: cipiv
-      REAL(r8), DIMENSION(coil_num) :: ceigen
-      REAL(r8), DIMENSION(3*coil_num-2) :: crwork
-      REAL(r8), DIMENSION(2*coil_num) :: crwork2
-      COMPLEX(r8), DIMENSION(2*coil_num-1) :: cwork
-      COMPLEX(r8), DIMENSION(2*coil_num+1) :: cwork2
-      COMPLEX(r8), DIMENSION(coil_num*coil_num) :: cwork3
-      COMPLEX(r8), DIMENSION(coil_num) :: creigen
-      COMPLEX(r8), DIMENSION(coil_num,coil_num) :: cvr,cvl
-      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: coilmn
-      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: tmat,mmat,mdagger,
-     $    tempc
-      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: gcoil,
-     $    gcoilevmatt, gcoilevmats
-
-      TYPE(cspline_type) :: optorq
-c-----------------------------------------------------------------------
-c     allocation puts memory in heap, avoiding stack overfill
-c-----------------------------------------------------------------------
-      ALLOCATE(bsurfmat(mstep,mpert,mpert),dwks(mstep,mpert,mpert),
-     $   dwk(mstep,mpert,mpert),gind(mstep,mpert,mpert),
-     $   gindp(mstep,mpert,mpert),gres(mstep,mpert,mpert),
-     $   gresp(mstep,mpert,mpert))
-c-----------------------------------------------------------------------
-c     call solutions.
-c-----------------------------------------------------------------------
-      units = (/(1.0,itheta=0,mthsurf)/)
-      jarea = issurfint(units,mthsurf,psilim,0,0)
-      DO ipert=1,mpert
-         fldflxmn=0
-         fldflxmn(ipert)=1.0
-         CALL gpeq_weight(psilim,fldflxmn,mfac,mpert,2)
-         fldflxmat(:,ipert)=fldflxmn*sqrt(jarea)
-      ENDDO
-      WRITE(*,*)
-     $     "Call solutions for general response matrix functions"
-      edge_flag=.TRUE.
-      DO ipert=1,mpert
-         edge_mn=0
-         edge_mn(ipert)=1.0
-         CALL idcon_build(0,edge_mn)
-         DO istep=0,mstep
-            bsurfmat(istep,:,ipert)=u1%fs(istep,:)
-         ENDDO
-      ENDDO
-c-----------------------------------------------------------------------
-c     construct dws response matrix (normalized by xi).
-c-----------------------------------------------------------------------
-      WRITE(*,*)"Build general response matrix functions"
-      DO istep=1,mstep
-         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
-         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
-         IF ((istep-1 /= 0) .AND. (ileft == 0) .AND. verbose)
-     $        WRITE(*,'(1x,a9,i3,a30)')
-     $        "volume = ",iindex,"% response matrix calculations"
-         temp1=CONJG(TRANSPOSE(soltype(istep)%u(:,:,1)))
-         temp2=CONJG(TRANSPOSE(soltype(istep)%u(:,:,2)))
-         CALL zgetrf(mpert,mpert,temp1,mpert,ipiv,info)
-         CALL zgetrs('N',mpert,mpert,temp1,mpert,ipiv,temp2,mpert,info)
-         dwks(istep,:,:)=CONJG(TRANSPOSE(temp2))/(2.0*mu0)*2*nn*ifac
-c-----------------------------------------------------------------------
-c     construct dwk response matrix (normalized by xi boundary).
-c-----------------------------------------------------------------------
-         temp1=MATMUL(dwks(istep,:,:),bsurfmat(istep,:,:))
-         temp2=CONJG(TRANSPOSE(bsurfmat(istep,:,:)))
-         dwk(istep,:,:)=MATMUL(temp2,temp1)
-c-----------------------------------------------------------------------
-c     make general (2x) inductance matrix (normalized by phi boundary).
-c-----------------------------------------------------------------------
-         DO i=1,mpert
-            DO j=1,mpert
-               t1=-1/(chi1*(mfac(i)-nn*qlim)*twopi*ifac)
-               t2=1/(chi1*(mfac(j)-nn*qlim)*twopi*ifac)
-               gind(istep,i,j)=t1*dwk(istep,i,j)*t2
-            ENDDO
-         ENDDO
-c-----------------------------------------------------------------------
-c     make general response matrix (normalized by phix boundary).
-c-----------------------------------------------------------------------
-         temp1=MATMUL(gind(istep,:,:),permeabmats(resp_index,:,:))
-         temp2=CONJG(TRANSPOSE(permeabmats(resp_index,:,:)))
-         gres(istep,:,:)=MATMUL(temp2,temp1)
-c-----------------------------------------------------------------------
-c     make coordinate-independent matrix (normalized by phi power).
-c-----------------------------------------------------------------------
-         temp1=MATMUL(gind(istep,:,:),fldflxmat)
-         temp2=CONJG(TRANSPOSE(fldflxmat))
-         gindp(istep,:,:)=MATMUL(temp2,temp1)
-c-----------------------------------------------------------------------
-c     make coordinate-independent matrix (normalized by phix power).
-c-----------------------------------------------------------------------
-         temp1=MATMUL(gres(istep,:,:),fldflxmat)
-         temp2=CONJG(TRANSPOSE(fldflxmat))
-         gresp(istep,:,:)=MATMUL(temp2,temp1)
-      ENDDO
-c-----------------------------------------------------------------------
-c     test by field applications.
-c-----------------------------------------------------------------------
-      IF (diagnose1) THEN
-         mval=1
-         tvec1=0
-         tvec1(mval-mlow+1)=1e-3
-
-         CALL cspline_alloc(optorq,mstep,1)
-         optorq%xs=psifac
-
-         DO istep=1,mstep
-            temp1=MATMUL(gresp(istep,:,:),fldflxmat)
-            temp2=MATMUL(CONJG(TRANSPOSE(fldflxmat)),temp1)
-            temp1=(temp2+CONJG(TRANSPOSE(temp2)))/2.0
-            tvec2=MATMUL(temp1,tvec1)
-            tprof(istep)=DOT_PRODUCT(tvec1,tvec2)/jarea**2
-            optorq%fs(istep,1)=tprof(istep)
-         ENDDO
-
-         optorq%fs(0,1)=tprof(1)-(tprof(2)-tprof(1))/
-     $        (psifac(2)-psifac(1))*(psifac(1)-psifac(0))
-         CALL cspline_fit(optorq,"extrap")
-         CALL ascii_open(out_unit,"gpec_diagnostics_dw_matrix_profile"
-     $        //"_n"//TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"GPEC_dw_diag: "//
-     $        "Energy and torque profiles by self-consistent solutions."
-         WRITE(out_unit,*)
-
-         WRITE(out_unit,'(6(1x,a16))')"psi","T_phi","2ndeltaW",
-     $        "int(T_phi)","int(2ndeltaW)","dv/dpsi_n"
-         DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
-            CALL cspline_eval(optorq,psifac(istep),1)
-            CALL spline_eval(sq,psifac(istep),0)
-            WRITE(out_unit,'(6(1x,es16.8))')
-     $           psifac(istep),REAL(optorq%f1(1)),AIMAG(optorq%f1(1)),
-     $           REAL(optorq%f(1)),AIMAG(optorq%f(1)),sq%f(3)
-         ENDDO
-         CALL ascii_close(out_unit)
-         CALL cspline_dealloc(optorq)
-      ENDIF
-c-----------------------------------------------------------------------
-c     write general response matrix functions.
-c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"gpec_diagnostics_dw_matrix_n"//
-     $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"GPEC_dw_matrix: "//
-     $     "Self-consistent response matrix functions."
-      WRITE(out_unit,*)
-
-      WRITE(out_unit,'(1x,a16,2(1x,a4),10(1x,a16))')"psi","i","j",
-     $     "real(T_x)","imag(T_x)","real(T_f)","imag(T_f)",
-     $     "real(T_ef)","imag(T_ef)","real(T_fp)","imag(T_fp)",
-     $     "real(T_efp)","imag(T_efp)"
-      DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
-         DO i=1,mpert
-            DO j=1,mpert
-               WRITE(out_unit,'(1x,es16.8,2(1x,I4),10(1x,es16.8))')
-     $              psifac(istep),i,j,
-     $              REAL(dwk(istep,i,j)),AIMAG(dwk(istep,i,j)),
-     $              REAL(gind(istep,i,j)),AIMAG(gind(istep,i,j)),
-     $              REAL(gres(istep,i,j)),AIMAG(gres(istep,i,j)),
-     $              REAL(gindp(istep,i,j)),AIMAG(gindp(istep,i,j)),
-     $              REAL(gresp(istep,i,j)),AIMAG(gresp(istep,i,j))
-            ENDDO
-         ENDDO
-      ENDDO
-      CALL ascii_close(out_unit)
-c-----------------------------------------------------------------------
-c     calculate maximum torque eigenvalues.
-c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"gpec_diagnostics_dw_eigen_n"//
-     $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"GPEC_dw_eigen: "//
-     $     "Eigenvalue profiles by self-consistent solutions."
-      WRITE(out_unit,*)
-
-      WRITE(out_unit,'(3(1x,a16))')"psi","MAX(teigen)","MIN(teigen)"
-      lwork=2*mpert-1
-      DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
-         temp1=(gresp(istep,:,:)+CONJG(TRANSPOSE(gresp(istep,:,:))))/2.0
-         CALL zheev('V','U',mpert,temp1,mpert,teigen,
-     $        work,lwork,rwork,info)
-         WRITE(out_unit,'(3(1x,es16.8))')
-     $        psifac(istep),MAXVAL(teigen),MINVAL(teigen)
-      ENDDO
-      CALL ascii_close(out_unit)
-c-----------------------------------------------------------------------
-c     diagnose eigenvector.
-c-----------------------------------------------------------------------
-      IF (diagnose1) THEN
-         tvec1=temp1(:,1)
-         DO istep=1,mstep
-            temp2=gresp(istep,:,:)
-            temp1=(temp2+CONJG(TRANSPOSE(temp2)))/2.0
-            tvec2=MATMUL(temp1,tvec1)
-            tprof(istep)=DOT_PRODUCT(tvec1,tvec2)
-         ENDDO
-         CALL ascii_open(out_unit,"gpec_diagnostics_dw_minimum_torque"
-     $        //"_n"//TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"GPEC_dw_diag: "//
-     $        "Energy and torque profiles by self-consistent solutions."
-         WRITE(out_unit,*)
-
-         WRITE(out_unit,'(3(1x,a16))')"psi","int(T_phi)","int(2ndeltaW)"
-         DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
-            WRITE(out_unit,'(3(1x,es16.8))')psifac(istep),
-     $           REAL(tprof(istep)),AIMAG(tprof(istep))
-         ENDDO
-         CALL ascii_close(out_unit)
-      ENDIF
-c-----------------------------------------------------------------------
-c     calculate maximum torque-ratio TT^{-1}_b eigenvalues.
-c-----------------------------------------------------------------------
-      temp1=(gresp(mstep,:,:)+CONJG(TRANSPOSE(gresp(mstep,:,:))))/2.0
-      CALL zhetrf('L',mpert,temp1,mpert,ipiv,work3,mpert*mpert,info)
-
-      CALL ascii_open(out_unit,"gpec_diagnostics_dw_ratio_eigen_n"//
-     $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"GPEC_dw_ratio_eigen: "//
-     $     "Eigenvalue profiles by self-consistent solutions."
-      WRITE(out_unit,*)
-
-      WRITE(out_unit,'(3(1x,a16))')"psi","MAX(teigen)","MIN(teigen)"
-      lwork=2*mpert+1
-      DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
-         temp2=(gresp(istep,:,:)+CONJG(TRANSPOSE(gresp(istep,:,:))))/2.0
-         DO i=1,9
-            IF (ABS(psifac(istep)-0.1*i)<1e-3) THEN
-               tgresp(i,:,:)=temp2
-            ENDIF
-         ENDDO
-         CALL zhetrs('L',mpert,mpert,temp1,mpert,ipiv,temp2,mpert,info)
-         CALL zgeev('V','V',mpert,temp2,mpert,reigen,
-     $        vl,mpert,vr,mpert,work2,lwork,rwork2,info)
-         WRITE(out_unit,'(3(1x,es16.8))')
-     $        psifac(istep),MAXVAL(ABS(reigen)),MINVAL(ABS(reigen))
-         IF (ABS(psifac(istep)-0.5)<1e-3) THEN
-            tvecs(1,:)=vr(:,1)
-         ENDIF
-      ENDDO
-      DO i=1,4
-         temp2=tgresp(i+5,:,:)-tgresp(i,:,:)
-         CALL zhetrs('L',mpert,mpert,temp1,mpert,ipiv,temp2,mpert,info)
-         CALL zgeev('V','V',mpert,temp2,mpert,reigen,
-     $        vl,mpert,vr,mpert,work2,lwork,rwork2,info)
-         tvecs(i+1,:)=vr(:,1)
-      ENDDO
-      CALL ascii_close(out_unit)
-c-----------------------------------------------------------------------
-c     optimized torque profile (0-0.5,0.1-0.6,0.2-0.7..0.4-0.9)
-c-----------------------------------------------------------------------
-      IF (diagnose2) THEN
-         CALL cspline_alloc(optorq,mstep,5)
-         optorq%xs=psifac
-         DO i=1,5
-            tvec1=tvecs(i,:)
-            DO istep=1,mstep
-               temp2=gresp(istep,:,:)
-               temp1=(temp2+CONJG(TRANSPOSE(temp2)))/2.0
-               tvec2=MATMUL(temp1,tvec1)
-               tprof(istep)=DOT_PRODUCT(tvec1,tvec2)
-               optorq%fs(istep,i)=tprof(istep)
-            ENDDO
-            optorq%fs(0,i)=tprof(1)-(tprof(2)-tprof(1))/
-     $           (psifac(2)-psifac(1))*(psifac(1)-psifac(0))
-         ENDDO
-         CALL cspline_fit(optorq,"extrap")
-         CALL ascii_open(out_unit,"gpec_diagnostics_dw_optimized_torque"
-     $        //"_n"//TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"GPEC_dw_diag: "//
-     $        "Energy and torque profiles by self-consistent solutions."
-         WRITE(out_unit,*)
-
-         WRITE(out_unit,'(7(1x,a16))')"psi","T_phi05",
-     $        "T_phi16","T_phi27","T_phi38","T_phi49","dv/dpsi_n"
-         DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
-            CALL cspline_eval(optorq,psifac(istep),1)
-            CALL spline_eval(sq,psifac(istep),0)
-            WRITE(out_unit,'(7(1x,es16.8))')
-     $           psifac(istep),REAL(optorq%f1(1)),REAL(optorq%f1(2)),
-     $           REAL(optorq%f1(3)),REAL(optorq%f1(4)),
-     $           REAL(optorq%f1(5)),sq%f(3)
-         ENDDO
-         CALL ascii_close(out_unit)
-         CALL cspline_dealloc(optorq)
-      ENDIF
-c-----------------------------------------------------------------------
-c     construct coil-torque response matrix.
-c----------------------------------------------------------------------
-      IF (coil_flag) THEN
-         ! form mutual inductance between coils and pflasma surface
-         ALLOCATE(mmat(mpert,coil_num),mdagger(coil_num,mpert))
-         ALLOCATE(coilmn(cmpert))
-         DO j=1,coil_num
-            CALL field_bs_psi(psilim,coilmn,1,op_start=j,op_stop=j)
-            DO i=1,cmpert
-               IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
-                  mmat(cmlow-mlow+i,j)=coilmn(i)
-               ENDIF
-            ENDDO
-         ENDDO
-         mdagger = CONJG(TRANSPOSE(mmat))
-         DEALLOCATE(coilmn)
-         CALL coil_dealloc
-
-         WRITE(*,*)"Build coil response matrix functions"
-         ALLOCATE(gcoil(mstep,coil_num,coil_num),tmat(mpert,mpert))
-         DO istep=1,mstep
-            tmat = gres(istep,:,:)
-            gcoil(istep,:,:)=MATMUL(mdagger,MATMUL(tmat,mmat))
-         ENDDO
-c-----------------------------------------------------------------------
-c     write coil response matrix functions.
-c-----------------------------------------------------------------------
-         CALL ascii_open(out_unit,"gpec_diagnostics_coil_matrix_n"//
-     $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"GPEC_coil_matrix: "//
-     $        "Self-consistent coil response matrix functions."
-         WRITE(out_unit,*)
-
-         WRITE(out_unit,'(1x,a16,2(1x,a4),2(1x,a16))')"psi","m",
-     $        "m_prime","real(T_coil)","imag(T_coil)"
-         DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
-            DO i=1,coil_num
-               DO j=1,coil_num
-                  WRITE(out_unit,'(es17.8,2(1x,I4),2(es17.8))')
-     $                 psifac(istep),i,j,
-     $                 REAL(gcoil(istep,i,j)),AIMAG(gcoil(istep,i,j))
-               ENDDO
-            ENDDO
-         ENDDO
-         CALL ascii_close(out_unit)
-c-----------------------------------------------------------------------
-c     calculate maximum coil eigenvalues.
-c-----------------------------------------------------------------------
-         WRITE(*,*) "Writing coil response eigenvectors and eigenvalues"
-         CALL ascii_open(out_unit,"gpec_diagnostics_coil_eigen_n"//
-     $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"GPEC_coil_eigen: "//
-     $        "Coil eigenvalue profiles by self-consistent solutions."
-         WRITE(out_unit,*)
-
-         WRITE(out_unit,'(1x,a16,1x,a4,6(1x,a16))')"psi","i",
-     $        "real(T_ev_max)","imag(T_ev_max)","T_max",
-     $        "real(T_ev_min)","imag(T_ev_min)","T_min"
-
-         ALLOCATE(gcoilevmats(mstep,coil_num,coil_num))
-         lwork=2*coil_num-1
-         DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
-            gcoilevmats(istep,:,:)=(gcoil(istep,:,:)+
-     $          CONJG(TRANSPOSE(gcoil(istep,:,:))))/2.0
-            CALL zheev('V','U',coil_num,gcoilevmats(istep,:,:),coil_num,
-     $          ceigen,cwork,lwork,crwork,info)
-            DO i=1,coil_num
-               WRITE(out_unit,'(es17.8,i5,6(es17.8))')psifac(istep),i,
-     $           gcoilevmats(istep,i,coil_num),MAXVAL(ceigen),
-     $           gcoilevmats(istep,i,1),MINVAL(ceigen)
-            ENDDO
-         ENDDO
-         CALL ascii_close(out_unit)
-
-c-----------------------------------------------------------------------
-c     calculate maximum torque-ratio TT^{-1}_b coil eigenvalues.
-c-----------------------------------------------------------------------
-         CALL ascii_open(out_unit,"gpec_diagnostics_coil_ratio_eigen"
-     $        //"_n"//TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"GPEC_coil_ratio_eigen: "//
-     $        "Eigenvalue profiles by self-consistent solutions."
-         WRITE(out_unit,*)
-
-         WRITE(out_unit,'(1x,a16,1x,a4,6(1x,a16))')"psi","i",
-     $        "real(TT_ev_max)","imag(TT_ev_max)","TT_max",
-     $        "real(TT_ev_min)","imag(TT_ev_min)","TT_min"
-
-         ALLOCATE(tempc(coil_num,coil_num))
-         ALLOCATE(gcoilevmatt(mstep,coil_num,coil_num))
-         tempc=(gcoil(mstep,:,:)+CONJG(TRANSPOSE(gcoil(mstep,:,:))))/2.0
-         CALL zhetrf('L',coil_num,tempc,coil_num,cipiv,cwork3,
-     $       coil_num*coil_num,info)
-         lwork=2*coil_num+1
-         DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
-            gcoilevmatt(istep,:,:)=(gcoil(istep,:,:)+
-     $           CONJG(TRANSPOSE(gcoil(istep,:,:))))/2.0
-            CALL zhetrs('L',coil_num,coil_num,tempc,
-     $           coil_num,cipiv,gcoilevmatt(istep,:,:),coil_num,info)
-            CALL zgeev('V','V',coil_num,gcoilevmatt(istep,:,:),coil_num,
-     $           creigen,cvl,coil_num,cvr,coil_num,cwork2,lwork,crwork2,
-     $           info)
-            DO i=1,coil_num
-               WRITE(out_unit,'(es17.8,i5,6(es17.8))')psifac(istep),i,
-     $           gcoilevmatt(istep,i,coil_num),MAXVAL(REAL(creigen)),
-     $           gcoilevmatt(istep,i,1),MINVAL(REAL(creigen))
-            ENDDO
-         ENDDO
-         CALL ascii_close(out_unit)
-         DEALLOCATE(tempc,gcoilevmatt,gcoilevmats,gcoil,
-     $       tmat,mmat,mdagger)
-      ENDIF
-c-----------------------------------------------------------------------
-c     deallocation cleans memory in heap
-c-----------------------------------------------------------------------
-      DEALLOCATE(bsurfmat,dwks,dwk,gind,gindp,gres,gresp)
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE gpdiag_dw_matrix
-c-----------------------------------------------------------------------
-c     subprogram 18. gpdiag_spline_roots.
+c     subprogram 17. gpdiag_spline_roots.
 c     Make sure the spline_root finder is working.
 c-----------------------------------------------------------------------
       SUBROUTINE gpdiag_spline_roots
@@ -2369,9 +1928,9 @@ c-----------------------------------------------------------------------
       print *, 1," roots expected: ", 0.0_r8
       print *, nroots," roots found at: ",roots(1:nroots)
       if(abs(roots(1)) < 1e-9 .and. nroots==1) THEN
-         print *," > Spline root finder passes the test!"
+         print *,"  > Spline root finder passes the test!"
       else
-         print *, " > *** Spline root finder FAILED ***"
+         print *, "  > *** Spline root finder FAILED ***"
       endif
       open(unit=out_unit,file="spline_roots_linear.out",
      $     status="unknown")
@@ -2393,9 +1952,9 @@ c-----------------------------------------------------------------------
       print *, nroots," roots found at: ",roots(1:nroots)
       if(abs(roots(1)+1)<1e-9 .and. abs(roots(2))<1e-9 .and. nroots==2)
      $  then
-         print *," > Spline root finder passes the test!"
+         print *,"  > Spline root finder passes the test!"
       else
-         print *, " > *** Spline root finder FAILED ***"
+         print *, "  > *** Spline root finder FAILED ***"
       endif
       open(unit=out_unit,file="spline_roots_cubic.out",
      $     status="unknown")
@@ -2408,7 +1967,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpdiag_spline_roots
 c-----------------------------------------------------------------------
-c     subprogram 19. gpdiag_jacfac.
+c     subprogram 18. gpdiag_jacfac.
 c     Pure jacobian weighting factors for benchmarks.
 c-----------------------------------------------------------------------
       SUBROUTINE gpdiag_jacfac()
@@ -2484,7 +2043,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE gpdiag_jacfac
 
 c-----------------------------------------------------------------------
-c     subprogram 20. gpdiag_delpsi.
+c     subprogram 19. gpdiag_delpsi.
 c     delpsi function throughout plasma for benchmarking.
 c-----------------------------------------------------------------------
       SUBROUTINE gpdiag_delpsi()

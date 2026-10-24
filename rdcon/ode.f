@@ -5,7 +5,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. ode_mod.
+c     0. rdcon_ode_mod.
 c     1. ode_run.
 c     2. ode_axis_init.
 c     3. ode_sing_init.
@@ -15,15 +15,15 @@ c     6. ode_unorm.
 c     7. ode_fixup.
 c     8. ode_test_fixup.
 c-----------------------------------------------------------------------
-c     subprogram 0. ode_mod.
+c     subprogram 0. rdcon_ode_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE ode_mod
-      USE ode_output_mod
-      USE debug_mod
+      MODULE rdcon_ode_mod
+      USE rdcon_ode_output_mod
+      USE rdcon_debug_mod
       IMPLICIT NONE
 
       LOGICAL :: new,diagnose_fixup=.FALSE.
@@ -118,7 +118,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE ode_axis_init
-      
+
       INTEGER :: ipert
       REAL(r8), DIMENSION(mpert) :: key,m
 c-----------------------------------------------------------------------
@@ -346,7 +346,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
- 10   FORMAT(1x,a,1p,e10.3,0p,a,f6.3)
+ 10   FORMAT(1x,2x,a,1p,e10.3,0p,a,f6.3)
  20   FORMAT(/3x,"ising",3x,"psi",9x,"q",10x,"di",6x,"re alpha",
      $     3x,"im alpha"//i6,1p,5e11.3/)
  30   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
@@ -449,8 +449,11 @@ c         IF(ising > msing .OR. psilim < sing(ising)%psifac)EXIT
 c-----------------------------------------------------------------------
 c     compute conditions at next singular surface.
 c-----------------------------------------------------------------------
-C      IF(ising > msing .OR. psilim < sing(ising)%psifac)THEN
       IF(ising > msing)THEN
+         psimax=psilim*(1-eps)
+         m1=NINT(nn*qlim)+NINT(SIGN(one,nn*sq%fs1(mpsi,4)))
+         next="finish"
+      ELSE IF (psilim < sing(ising)%psifac)THEN
          psimax=psilim*(1-eps)
          m1=NINT(nn*qlim)+NINT(SIGN(one,nn*sq%fs1(mpsi,4)))
          next="finish"
@@ -585,6 +588,7 @@ c-----------------------------------------------------------------------
       INTEGER :: isol,ipert,iqty
       INTEGER, DIMENSION(1) :: jmax
       REAL(r8) :: uratio,umax,umin
+      LOGICAL :: fix_required
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -623,25 +627,29 @@ c-----------------------------------------------------------------------
          CALL program_stop(message)
       ENDIF
 c-----------------------------------------------------------------------
-c     normalize unorm and perform Gaussian reduction if required.
+c     preserve singular reductions while resetting norm baselines.
 c-----------------------------------------------------------------------
+      fix_required=sing_flag
       IF(new)THEN
          new=.FALSE.
          unorm0(1:msol)=unorm(1:msol)
+c     keep the ordering of the reduction just done at this point.
+         IF(sing_flag)unorm(index(1:msol))=(/(msol-isol,isol=1,msol)/)
       ELSE
          unorm(1:msol)=unorm(1:msol)/unorm0(1:msol)
          umax=MAXVAL(unorm(1:msol))
          umin=MINVAL(unorm(1:msol))
          uratio=umax/umin
-         IF(uratio > ucrit .OR. sing_flag)THEN
-            CALL ode_fixup(sing_flag,.FALSE.)
-            IF(diagnose1)CALL ode_test_fixup
-            new=.TRUE.
-         ENDIF
+         fix_required=fix_required .OR. uratio > ucrit
          IF(diagnose_fixup)
      $        WRITE(fixup_unit)REAL(istep,4),REAL(psifac,4),
      $        REAL(q,4),REAL(LOG10(singfac),4),REAL(LOG10(umax),4),
      $        REAL(LOG10(umin),4),REAL(LOG10(uratio),4)
+      ENDIF
+      IF(fix_required)THEN
+         CALL ode_fixup(sing_flag,.FALSE.)
+         IF(diagnose1)CALL ode_test_fixup
+         new=.TRUE.
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -861,4 +869,4 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ode_test_fixup
-      END MODULE ode_mod
+      END MODULE rdcon_ode_mod
