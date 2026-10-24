@@ -57,8 +57,8 @@ Toroidal Coordinate :math:`\zeta` and :math:`\phi`
 Working Coordinate Options
 --------------------------
 
-Controlled by ``jac_type`` in ``equil.in``. The Jacobian is
-:math:`J \propto B_p^{p_{bp}} \, B^{p_b} \, R^{-p_r}`:
+Controlled by ``jac_type`` in ``equil.in``. The Jacobian is set by
+:math:`\mathbf{B}\cdot\nabla\theta \propto 1/J \propto B_p^{p_{bp}} \, B^{p_b} \, R^{-p_r}`:
 
 .. list-table::
    :header-rows: 1
@@ -84,6 +84,14 @@ Controlled by ``jac_type`` in ``equil.in``. The Jacobian is
      - 1
      - 0
      - 0
+   * - Park
+     - 0
+     - 1
+     - 0
+   * - Other (powers set explicitly in ``equil.in``)
+     -
+     -
+     -
 
 See also the coordinate discussion in :doc:`outputs`.
 
