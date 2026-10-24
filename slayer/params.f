@@ -171,8 +171,8 @@ c     caller does not provide them (l_n <= 0 or l_t <= 0). Callers that
 c     compute omega_e/omega_i by other means must set Q_e and Q_i
 c     themselves afterwards.
 c     omega_* = k_theta*v_* carries the toroidal mode number through
-c     m = n*q: the n = 1 expression is multiplied by n, as in
-c     build_inputs (layerinputs.f).
+c     m = n*q: the bare gradient-length expression is multiplied by
+c     n, as in build_inputs (layerinputs.f).
       IF (l_n > 0.0_r8 .AND. l_t > 0.0_r8) THEN
          omega_e = -REAL(nn,r8)*t_e/(bt*R0)
      $        *(1.0_r8/l_n + 1.0_r8/l_t)*qval

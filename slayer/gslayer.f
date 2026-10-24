@@ -177,9 +177,11 @@ c-----------------------------------------------------------------------
       lu=tau_r/tau_h                    ! Lundquist number
       Qconv=lu**(1.0/3.0)*tau_h        ! Q normalisation factor
 
-c --- normalised frequencies. GPEC passes the n = 1 diamagnetic
-c     frequencies (gpout.f); omega_* = n*(dp/dpsi)/(e*n_e), as in
-c     build_inputs (layerinputs.f).
+c --- normalised frequencies. GPEC passes the bare diamagnetic
+c     frequencies (dp/dpsi)/(e*n_e) with no toroidal mode number
+c     attached (gpout.f); omega_* = k_theta*v_* = n*(dp/dpsi)/(e*n_e),
+c     so GPEC's n (nns) multiplies them here, as in build_inputs
+c     (layerinputs.f).
       Q=Qconv*omega
       Q_e=-Qconv*nns*omega_e
       Q_i=-Qconv*nns*omega_i

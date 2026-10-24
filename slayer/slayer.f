@@ -387,9 +387,10 @@ c     that omitted a variable is reported with the old default.
 c-----------------------------------------------------------------------
       nbad = 0
       ! dimensional inputs: needed when params() runs on the namelist
-      IF (.NOT. read_eq .AND. (params_flag .OR. est_gamma_flag .OR.
+      ! (params_flag does so even with read_eq)
+      IF (params_flag .OR. (.NOT. read_eq .AND. (est_gamma_flag .OR.
      $     match_gamma_flag .OR. br_th_flag .OR. onscan_flag .OR.
-     $     otscan_flag .OR. ntscan_flag .OR. nbtscan_flag)) THEN
+     $     otscan_flag .OR. ntscan_flag .OR. nbtscan_flag))) THEN
          IF (mm <= 0) CALL slayer_unset('mm',REAL(mm,r8),'2',nbad)
          IF (nn <= 0) CALL slayer_unset('nn',REAL(nn,r8),'1',nbad)
          IF (.NOT. n_e > 0.0_r8)
@@ -406,7 +407,7 @@ c-----------------------------------------------------------------------
      $        CALL slayer_unset('mu_i',mu_i,'2.0',nbad)
          IF (.NOT. zeff > 0.0_r8)
      $        CALL slayer_unset('zeff',zeff,'2.0',nbad)
-         ! the gradient lengths give omega_e, omega_i unless a
+         ! the gradient lengths and q give omega_e, omega_i unless a
          ! growth-rate run overrides both Q_e and Q_i
          IF (.NOT. ((est_gamma_flag .OR. match_gamma_flag) .AND.
      $        inQ_e /= 0.0_r8 .AND. inQ_i /= 0.0_r8)) THEN
@@ -414,11 +415,13 @@ c-----------------------------------------------------------------------
      $           CALL slayer_unset('l_n',l_n,'0.2 [m]',nbad)
             IF (.NOT. l_t > 0.0_r8)
      $           CALL slayer_unset('l_t',l_t,'0.2 [m]',nbad)
+            IF (.NOT. qval > 0.0_r8)
+     $           CALL slayer_unset('qval',qval,'2.0',nbad)
          END IF
       END IF
       ! Cole-model inputs: needed by the single-surface riccati() call
-      ! below and the legacy scans, which run unless a growth-rate or
-      ! Br-threshold mode is on. inpr is a namelist input there.
+      ! below, which runs unless a growth-rate or Br-threshold mode is
+      ! on, and by the legacy scans. inpr is a namelist input there.
       IF (.NOT. (est_gamma_flag .OR. match_gamma_flag .OR.
      $     br_th_flag)) THEN
          IF (.NOT. inpr > 0.0_r8)
@@ -431,9 +434,10 @@ c-----------------------------------------------------------------------
          END IF
       END IF
       IF (nbad > 0) THEN
-         WRITE(*,*) '  Since v1.6 SLAYER sets none of these silently.'
-         WRITE(*,*) '  Set them in slayer.in, or set read_eq=t to take'
-         WRITE(*,*) '  them from STRIDE and the kinetic profile file.'
+         WRITE(*,*) '  Since v1.6 SLAYER sets none of these silently;'
+         WRITE(*,*) '  set them in slayer.in. (With read_eq=t and'
+         WRITE(*,*) '  params_flag=f the dimensional inputs come from'
+         WRITE(*,*) '  STRIDE and the kinetic profile file instead.)'
          WRITE(*,*) '  Other v1.5 defaults, for reference: inQ=20,'
          WRITE(*,*) '  inQ_e=2, inQ_i=-2.6, inc_beta=0.7, Q0=4,'
          WRITE(*,*) '  delta_n_p=(1e-2,1e-2). Zero is a valid choice'
