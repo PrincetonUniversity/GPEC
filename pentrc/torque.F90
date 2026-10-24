@@ -786,8 +786,8 @@ module torque
                         enddo
 
                         ! build complete action mxm matrices W_X, W_Y, W_Z
-                        wmmt(1,:) = bwspl(1)%fsi(bwspl(1)%mx,:)
-                        wemt(1,:) = bwspl(2)%fsi(bwspl(2)%mx,:)
+                        wmmt(1,:) = conjg(bwspl(1)%fsi(bwspl(1)%mx,:))
+                        wemt(1,:) = conjg(bwspl(2)%fsi(bwspl(2)%mx,:))
                         wxmt = matmul(wmmt,xmat)
                         wymt = matmul(wmmt,3*smat+ymat)-2.0*matmul(wemt,smat)
                         wzmt = matmul(wmmt,3*tmat+zmat)-2.0*matmul(wemt,tmat)
