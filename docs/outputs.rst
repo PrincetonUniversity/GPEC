@@ -125,46 +125,46 @@ The binary GPEC outputs can be viewed using the commandxdraw filenamewhere filen
 Output Files
 ============
 
-The GPEC outputs are entirely specified by flags (bool types t or f) set in the GPEC_output section of GPEC.in. All outputs are ASCII files, and can be grouped into two major categories.
+The GPEC outputs are entirely specified by flags (bool types t or f) set in the gpec_output section of gpec.in. Outputs are written as ASCII tables (ascii_flag), xdraw binary files (bin_flag, bin_2d_flag) and netcdf files (netcdf_flag), and can be grouped into the categories below.
 
 ASCII File Outputs
 ------------------
 
-A number of the flag options in GPEC.in instruct GPEC to output ASCII file data. Some of these outputs are always available. Some, however, require a input error field instead of a hard coded harmonic_flag call. Both groups are listed in detail here.
+A number of the flag options in gpec.in instruct GPEC to output ASCII file data. Some of these outputs are always available. Some, however, require an external 3D field input (data_flag, coil_flag, harmonic_flag) or a single eigenmode (mode_flag). Both groups are listed in detail here.
 
 Outputs Always Available
 
-These GPEC outputs can always be obtained from a equil.bin file output from DCON.
+These GPEC outputs can always be obtained from a euler.bin file output from DCON.
 
-GPEC_response_n#.out
+gpec_response_n#.out
 
     **Flag** resp_flag
 
     **Info** Energy for DCON eigenmodes and stability indices. Eigenvalues and eigenvectors for vacuum and plasma inductance (virtual casing currents to fields), plasma permeability (external fields to total fields), and plasma reluctance.
 
-GPEC_singcoup_matrix_n#.out
+gpec_singcoup_matrix_n#.out
 
     **Flag** singcoup_flag
 
     **Info** The coupling matrix to resonant fields, coupling matrix to singular currents, and to island half-widths is given for each rational surface within the plasma (q=2, 3, etc) for each surface the real and imaginary coupling constants are given for each poloidal mode number on the control surface.
 
-GPEC_singcoup_svd_n#.out
+gpec_singcoup_svd_n#.out
 
     **Flag** singcoup_flag
 
-    **Info** The SVD singular values (s) and eigen vectors for each coupling matrix in GPEC_singcoup_matrix_n#.out. Large s corresponds to large amplification, with the largest (most important mode) listed at the top. The results should be dotted with the unweighted normal field spectrum to give physical meaning.
+    **Info** The SVD singular values (s) and eigen vectors for each coupling matrix in gpec_singcoup_matrix_n#.out. Large s corresponds to large amplification, with the largest (most important mode) listed at the top. The results should be dotted with the unweighted normal field spectrum to give physical meaning.
 
 Outputs Available When Error Field is Provided
 
-These outputs are only available when an external error field file is provided as an input to GPEC. This means GPEC.in must have the data_flag turned on and a infile specified.
+These outputs are only available when an external 3D field is provided as an input to GPEC. This means gpec.in must have data_flag (with an infile specified), coil_flag, harmonic_flag, or mode_flag turned on.
 
-GPEC_control_n#.out
+gpec_control_n#.out
 
-    **Flag** 
+    **Flag** none (always written with ascii_flag)
 
     **Info** The Plasma response for an external perturbation on the control surface. This includes the vacuum energy, surface energy, plasma energy, real and imaginary vacuum input \mathbf{B}_{in} and total field on plasma boundary\mathbf{B}_{out}as a function of poloidal mode number.
 
-GPEC_singfld_n#.out
+gpec_singfld_n#.out
 
     **Flag** singfld_flag
 
@@ -174,21 +174,21 @@ GPEC_singfld_n#.out
 
     **Info** Additional section showing the overlap field (Tesla) and overlap percentage for each eigenmode in the singcoup_svd output. See :ref:`coupling_overlap` for definitions.
 
-GPEC_pmod_n#.out
+gpec_pmodb_n#.out
 
     **Flag** pmodb_flag
 
-    **Info** Eulerian and Lagrangian \left|\mathbf{B}\right|(real and imaginary) for each poloidal mode number at each value of \Psi_{N} output. This output is necessary for NTV post processing.
+    **Info** Perturbed field strength (real and imaginary, Tesla) for each poloidal mode number at each value of \Psi_{N} output: the Eulerian \delta B (eulb), the Lagrangian \delta B of the displacement with zero \xi^\zeta in the working (jac_type) coordinates (lagb), B\nabla\cdot\xi_\perp (Bdivxprp) and the force-balance form of B\kappa\cdot\xi_\perp (Bkxprp). lagb is not the \xi_\perp-only Lagrangian \delta B; that is -(Bdivxprp+Bkxprp) up to the equilibrium force-balance residual. See :doc:`pmodb_gauge` before using these columns for NTV post processing.
 
-GPEC_xbnormal_n#.out
+gpec_xbnormal_n#.out
 
     **Flag** xbnormal_flag
 
-    **Info** The normal components of the displacement, magnetic field without the plasma response, and magnetic field with the plasma response included for each poloidal mode number at each value of \Psi_{N} output.??
+    **Info** The normal displacement (xno), the normal perturbed magnetic field (bno), and the Jacobian-weighted contravariant psi component of the perturbed field J\mathbf{B}\cdot\nabla\psi (bwp) for each poloidal mode number at each value of \Psi_{N} output.
 
-GPEC_*rzphi_n#.out
+gpec_*rzphi_n#.out
 
-A number of output files have a similar structure. Here the * in the file name is replaced by the appropriate leading letters of the corresponding flag. For example the xrzphi_flag for n=1 creates a GPEC_xrzphi_n1.out file. some common properties of these files are:
+A number of output files have a similar structure. Here the * in the file name is replaced by the appropriate leading letters of the corresponding flag. For example the xrzphi_flag for n=1 creates a gpec_xrzphi_n1.out file. some common properties of these files are:
 
 • real and imaginary components: Output files contain two dimensional data on an \left(r,z\right) grid for a single toroidal harmonic. To translate into three dimensions, perform the transformationB\left(r,z,\phi\right)=B_{real}\left(r,z\right)\cos\left(n\phi\right)+B_{imag}\left(r,z\right)\sin\left(n\phi\right)
  
@@ -211,7 +211,7 @@ A number of output files have a similar structure. Here the * in the file name i
 
     **Info** The false perturbed magnetic field in the vacuum region on the \left(r,z,\phi\right) grid calculated using the GPEC boundary surface current composed of both the vacuum component and the plasma response.
 
-    **Flag** vpbrzphi_flag
+    **Flag** pbrzphi_flag (writes gpec_vpbrzphi_n#.out)
 
     **Info** The true perturbed magnetic field in the vacuum region on the \left(r,z,\phi\right) grid due to the plasma response alone calculated from the plasma response surface condition.
 
@@ -219,9 +219,9 @@ A number of output files have a similar structure. Here the * in the file name i
 
     **Info** The false perturbed magnetic field in the vacuum region on the \left(r,z,\phi\right) grid calculated using the GPEC boundary surface current from the external fields alone.
 
-    **Flag** ssbrzphi_flag
+    **Flag** vsbrzphi_flag (with ss_flag(i) selecting surfaces; requires singfld_flag)
 
-    **Info** The false perturbed magnetic field in the vacuum region on the \left(r,z,\phi\right) grid calculated using the GPEC boundary surface current from the external fields alone.
+    **Info** The vacuum field on the \left(r,z,\phi\right) grid due to the currents on the selected resonant surfaces.
 
 Energy Decomposition Outputs
 ----------------------------
@@ -281,7 +281,7 @@ pflux_re(im)_2d.bin
 
 bnormal_spectrum.bin
 
-    **Flag** bin_flag
+    **Flag** bin_2d_flag
 
     **Info** Surfmn type contours of the normal perturbed magnetic fields as a function of poloidal harmonic number and \Psi_{N}.
 

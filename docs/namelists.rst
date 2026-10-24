@@ -1,5 +1,5 @@
 
-Fully annotated namelist input files can be found in the $GPECHOME/input directory and any of the examples in $GPECHOME/docs/examples directories of any `public installation <installation>`.
+Fully annotated namelist input files can be found in the $GPECHOME/input directory and any of the examples in $GPECHOME/docs/examples directories of any :ref:`public installation <installation>`.
 
 The major input files requiring user interaction are as follows.
 
@@ -40,7 +40,7 @@ This namelist controls the MATCH code, including which DCON eigenfunction (sol_n
 The PENTRC Namelist
 ====================
 
-This namelist sets the inputs, controls the behavior, and determines the outputs of the GPEC code.
+This namelist sets the inputs, controls the behavior, and determines the outputs of the PENTRC code.
 
 .. include:: ../input/pentrc.in
    :literal:

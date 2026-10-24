@@ -3047,6 +3047,9 @@ c           Form J*xi_perp directly from xi^psi and xi^alpha=xi^s/chi1.
             eulbparfun(istep,itheta)=
      $           chi1*(bvt_fun(itheta)+sq%f(4)*bvz_fun(itheta))
      $           /(rzphi%f(4)*eqfun%f(1))
+c           lagb: Lagrangian dB of xi_perp + lambda B with xi^zeta=0
+c           in the working coordinates, not the xi_perp-only value; see
+c           docs/pmodb_gauge.rst.
             lagbparfun(istep,itheta)=
      $           eulbparfun(istep,itheta)+
      $           xsp_fun(itheta)*eqfun%fx(1)+

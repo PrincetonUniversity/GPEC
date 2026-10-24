@@ -11,6 +11,7 @@ GPEC documentation website site map
    contact.rst
    outputs.rst
    sign_conventions.rst
+   pmodb_gauge.rst
    dcon_readme.rst
    examples.rst
    releases.rst
