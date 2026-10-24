@@ -5,10 +5,7 @@ Perturbed field strength (pmodb) and gauge
 ******************************************
 
 This page states what the columns of ``gpec_pmodb_n#.out`` are, how they are
-related, and which of them a field-strength consumer needs.  The identities
-are proved symbolically by ``docs/derivations/pmodb_gauge/derive.py``; the
-verdicts are stored in ``docs/derivations/pmodb_gauge/fortsym_verdicts.json``
-and the labels (G1, G5.5, ...) refer to that file.
+related, and which of them a field-strength consumer needs.
 
 .. contents:: On this page
    :local:
@@ -35,14 +32,14 @@ any straight-field-line Jacobian :math:`\mathcal{J}(\psi,\theta)` selected by
 
 the in-surface displacement across :math:`\mathbf B` (``xms``;
 ``gpec_xclebsch`` writes :math:`\xi^\alpha=\xi_s/\chi_1`).  A field-aligned
-displacement changes neither :math:`\xi^\psi` nor :math:`\xi_s` (G1.5), so
+displacement changes neither :math:`\xi^\psi` nor :math:`\xi_s`, so
 :math:`(\xi^\psi,\xi_s)` determine :math:`\boldsymbol\xi_\perp` completely.
 The parallel part used elsewhere in GPEC is fixed in ``gpeq_contra`` by
-:math:`\nabla\cdot\boldsymbol\xi=0` (G2), which gives ``xmt``
+:math:`\nabla\cdot\boldsymbol\xi=0`, which gives ``xmt``
 :math:`=\mathcal J\xi^\theta` and ``xmz`` :math:`=\mathcal J\xi^\zeta`.
 The pmodb columns do not use ``xmt`` or ``xmz``.
 
-For every ``jac_type`` (G1, G1F) the Jacobian-weighted perturbed field of
+For every ``jac_type`` the Jacobian-weighted perturbed field of
 ``gpeq_sol`` is :math:`\mathcal J\,\nabla\times(\boldsymbol\xi\times\mathbf B)`.
 
 
@@ -51,23 +48,23 @@ The pmodb columns
 
 ``eulb``
    :math:`\delta B_E=\hat{\mathbf b}\cdot\delta\mathbf B`, the Eulerian
-   field strength (G3).
+   field strength.
 
 ``lagb``
    :math:`\delta B_E+\xi^\psi\partial_\psi B+\xi_s/(\chi_1 q)\,\partial_\theta B`.
    This is the Lagrangian field strength of the displacement
    :math:`\boldsymbol\xi_g=\boldsymbol\xi_\perp+\lambda\mathbf B` with
-   :math:`\xi_g^\zeta=0` in the *working* chart (``jac_type``) (G5.1-G5.4).
-   It is neither the :math:`\boldsymbol\xi_\perp`-only value (negative
-   control N1) nor Park et al. (2009) Eq. 7 with the divergence-free
-   :math:`\boldsymbol\xi` that GPEC constructs (N2; G5.7 gives that value as
-   ``lagb`` :math:`+\,\xi^\zeta/q\,\partial_\theta B`).  ``jac_out`` only
+   :math:`\xi_g^\zeta=0` in the *working* chart (``jac_type``).
+   It is neither the :math:`\boldsymbol\xi_\perp`-only value nor Park et
+   al. (2009) Eq. 7 with the divergence-free :math:`\boldsymbol\xi` that
+   GPEC constructs (that value is ``lagb``
+   :math:`+\,\xi^\zeta/q\,\partial_\theta B`).  ``jac_out`` only
    relabels the harmonics; it does not change this gauge.
 
 ``Bdivxprp``
    :math:`B\,\nabla\cdot\boldsymbol\xi_\perp`.  ``gpout_pmodb`` forms
    :math:`\mathcal J\boldsymbol\xi_\perp` directly from :math:`\xi^\psi` and
-   :math:`\xi_s` (G4.1, G4.2),
+   :math:`\xi_s`,
 
    .. math::
 
@@ -79,28 +76,28 @@ The pmodb columns
    :math:`f_2=(g_{\psi\theta}+qg_{\psi\zeta})/(\mathcal JB^2)` and
    :math:`f_3=(g_{\theta\zeta}+qg_{\zeta\zeta})/(\mathcal JB^2)` (``eqfun``
    columns 2 and 3, covariant metric).  The same projection gives the
-   ``xmat``-``zmat`` matrices of ``idcon_build`` (G8).
+   ``xmat``-``zmat`` matrices of ``idcon_build``.
 
 ``Bkxprp``
-   :math:`\boldsymbol\xi_\perp\cdot\nabla B+\mu_0p'\xi^\psi/B` (G4.4).  This is
+   :math:`\boldsymbol\xi_\perp\cdot\nabla B+\mu_0p'\xi^\psi/B`.  This is
    :math:`B\boldsymbol\kappa\cdot\boldsymbol\xi_\perp` only through
    equilibrium force balance: exactly,
    :math:`B\boldsymbol\kappa\cdot\boldsymbol\xi_\perp=\boldsymbol\xi_\perp\cdot\nabla B
-   +\boldsymbol\xi_\perp\cdot[(\nabla\times\mathbf B)\times\mathbf B]/B` (C2).
+   +\boldsymbol\xi_\perp\cdot[(\nabla\times\mathbf B)\times\mathbf B]/B`.
    The PENTRC matrices ``smat``, ``tmat`` (``idcon_build``) form the
    same quantity times :math:`\mathcal J B^2` from :math:`\xi^\psi` and
-   :math:`\xi^\alpha` (G7).
+   :math:`\xi^\alpha`.
 
 ``llagb`` (``gpec_diagnostics_pmodb``, ``pmodbmn_flag``)
    :math:`\delta B_L(\boldsymbol\xi_\perp)=\delta B_E+\boldsymbol\xi_\perp\cdot\nabla B`
-   (G5.6).  ``lllagb`` is :math:`-(`\ ``Bdivxprp``\ :math:`+`\ ``Bkxprp``\ :math:`)`,
-   and ``Bkxprp`` :math:`=` ``llagb`` :math:`-` ``eulb`` :math:`+\mu_0p'\xi^\psi/B` (P1).
+   ``lllagb`` is :math:`-(`\ ``Bdivxprp``\ :math:`+`\ ``Bkxprp``\ :math:`)`,
+   and ``Bkxprp`` :math:`=` ``llagb`` :math:`-` ``eulb`` :math:`+\mu_0p'\xi^\psi/B`.
 
 
 Relations between the columns
 =============================
 
-Gauge of ``lagb`` (G5.5, G5.8):
+Gauge of ``lagb``:
 
 .. math::
 
@@ -108,8 +105,8 @@ Gauge of ``lagb`` (G5.5, G5.8):
    \qquad
    \xi_\perp^\zeta=-\frac{B_\theta\xi_s/\chi_1+qB_\psi\xi^\psi}{B_\theta+qB_\zeta}.
 
-Kinematic identity (C1; any :math:`\boldsymbol\xi_\perp`, no force balance)
-and its pmodb form (C2 with G4):
+Kinematic identity (any :math:`\boldsymbol\xi_\perp`, no force balance)
+and its pmodb form:
 
 .. math::
 
@@ -118,9 +115,7 @@ and its pmodb form (C2 with G4):
    =-(\mathrm{Bdivxprp}+\mathrm{Bkxprp})-\boldsymbol\xi_\perp\cdot\mathbf F/B,
    \qquad \mathbf F=(\nabla\times\mathbf B)\times\mathbf B-\mu_0\nabla p.
 
-C1 and C2 are proved on Cartesian 1-jets.  Their direct contraction in the
-GPEC chart with :math:`\det g=\mathcal J^2` (G6) is too large for either CAS
-to decide and is recorded as an open gap, not as proved.  Hence
+Hence
 
 .. math::
 
@@ -141,7 +136,7 @@ Regularisation
 With ``reg_flag`` (Park et al. 2009 Eq. 10), ``gpeq_sol`` replaces the
 radial derivative by :math:`R\,\partial_\psi\xi^\psi`,
 :math:`R=s^2/(s^2+\sigma^2)`, :math:`s=m-nq`, in the field and in ``xms``.
-The regularised field is then not divergence free (R3):
+The regularised field is then not divergence free:
 
 .. math::
 
@@ -150,8 +145,7 @@ The regularised field is then not divergence free (R3):
 ``Bdivxprp`` uses the same derivative ``xmp1`` as the field, and
 :math:`\boldsymbol\xi_\perp` is built from the same ``xms``, so the
 regularisation cancels between the columns and the relation above holds
-unchanged with the regularised quantities (R6-R8: a bookkeeping
-decomposition under the stated model, not a separate proof about the code).
+unchanged with the regularised quantities.
 Near rational surfaces the regularised field and displacement do not form
 an exact ideal-induction pair.  This is a limitation of the smoothing
 policy, not evidence of resistive physics.  With ``reg_flag=f`` the
@@ -166,7 +160,7 @@ PENTRC
    :math:`\nabla\cdot\boldsymbol\xi` of the *same* displacement; the
    combination is then invariant under
    :math:`\boldsymbol\xi\to\boldsymbol\xi+\lambda\mathbf B` up to a total
-   derivative along the field line (K3).  Both PENTRC input paths use the
+   derivative along the field line.  Both PENTRC input paths use the
    :math:`\boldsymbol\xi_\perp` pair
    :math:`\delta B/B=-(\nabla\cdot\boldsymbol\xi_\perp+\boldsymbol\kappa\cdot\boldsymbol\xi_\perp)`
    and :math:`\nabla\cdot\boldsymbol\xi_\perp`: the default path
@@ -185,8 +179,8 @@ Bounce-averaged codes in perturbed Boozer or Hamada coordinates (NEO-RT, NEO-2, 
    used as :math:`\delta B_L(\boldsymbol\xi_\perp)`.
 
 
-Target gauges in GPEC units (Q1-Q8)
-===================================
+Target gauges in GPEC units
+===========================
 
 Let :math:`D=\partial_\theta+q\partial_\zeta`, so
 :math:`\mathbf B\cdot\nabla=(\chi_1/\mathcal J)D`.
@@ -218,22 +212,9 @@ factor in :math:`\partial_\theta B`. Relabeling equilibrium harmonics
 with ``jac_out`` alone does not solve this equation.
 
 For a PEST chart :math:`\mathcal J/R^2` is a flux function; its
-linear perturbation is :math:`\nabla\cdot\boldsymbol\xi-2\xi_R/R`
-(Q8). PEST output is not automatically either target gauge. Transform the
-equilibrium chart first, then solve the target equation. Q4 proves the
-angular-map determinant and Q5 the composition of parallel shifts.
-
-
-Reproducing the proofs
-======================
-
-::
-
-   python3 docs/derivations/pmodb_gauge/derive.py
-
-This needs only SymPy and takes a few minutes, most of it the G6 attempt.
-FortSym (https://github.com/lazy-fortran/fortsym) is used instead when it is
-on ``PYTHONPATH``.  Neither is needed to build or run GPEC.
+linear perturbation is :math:`\nabla\cdot\boldsymbol\xi-2\xi_R/R`.
+PEST output is not automatically either target gauge. Transform the
+equilibrium chart first, then solve the target equation.
 
 
 History
