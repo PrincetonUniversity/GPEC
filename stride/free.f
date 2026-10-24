@@ -168,7 +168,6 @@ c-----------------------------------------------------------------------
       INTEGER :: ipert,jpert,isol,info,lwork
       INTEGER, DIMENSION(mpert) :: m
       INTEGER, DIMENSION(1) :: imax
-      REAL(r8) :: v1
       REAL(r8), DIMENSION(mpert) :: ep,ev,et
       REAL(r8), DIMENSION(3*mpert-1) :: rwork
       COMPLEX(r8) :: phase,norm
@@ -176,6 +175,10 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wt,wpt,wvt
       COMPLEX(r8), DIMENSION(mpert,mpert) :: nmat,smat
       CHARACTER(24), DIMENSION(mpert) :: message
+      REAL(r8), DIMENSION(sq%mx+1) :: ln_q
+      REAL(r8), DIMENSION(msing) :: shr
+      TYPE(spline_type) :: shr_spl
+      REAL(r8) :: v1,respsi
 c-----------------------------------------------------------------------
 c     write formats.
 c-----------------------------------------------------------------------
@@ -295,11 +298,26 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,90)(isol,ep(isol),ev(isol),isol=1,mpert)
       WRITE(out_unit,80)
 c-----------------------------------------------------------------------
+c     magnetic shear s = psi_N*d(ln q)/d(psi_N) at the rational surfaces
+c     (written to the netcdf file for SLAYER).
+c-----------------------------------------------------------------------
+      CALL spline_alloc(shr_spl,SIZE(sq%xs(:))-1,1)
+      shr_spl%xs=sq%xs(:)
+      ln_q=LOG(sq%fs(:,4))
+      shr_spl%fs(:,1)=ln_q
+      CALL spline_fit(shr_spl,"extrap")
+      DO ising=1,msing
+         respsi=sing(ising)%psifac
+         CALL spline_eval(shr_spl,respsi,1)
+         shr(ising) = respsi * shr_spl%f1(1)
+      ENDDO
+      CALL spline_dealloc(shr_spl)
+c-----------------------------------------------------------------------
 c     optionally write netcdf file.
 c-----------------------------------------------------------------------
       IF(present(op_netcdf_out))THEN
          IF(op_netcdf_out) CALL stride_netcdf_out(wp,wv,wt,ep,ev,et,
-     $          delta_prime_mat,plasma1,vacuum1,total1)
+     $          delta_prime_mat,plasma1,vacuum1,total1,shr)
       ENDIF
 c-----------------------------------------------------------------------
 c     deallocate
