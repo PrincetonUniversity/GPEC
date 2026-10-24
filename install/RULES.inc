@@ -125,7 +125,7 @@ FCMULTI = $(FC) $(FFLAGS) -I../equil
 	$(FCMULTI) $(MODFLAG) ../multi -c $< -o $@
 
 # SLAYER
-FCSLAYER = $(FC) $(FFLAGS) $(OMPFLAG) -I$(MATHINC) -I$(NETCDFINC) -I../equil
+FCSLAYER = $(FC) $(FFLAGS) $(OMPFLAG) -I$(MATHINC) -I$(NETCDFINC) -I../equil -I../slayer -I../pentrc
 ../slayer/%.o: ../slayer/%.f
 	$(FCSLAYER) $(MODFLAG) ../slayer -c $< -o $@
 ../slayer/%.o: ../slayer/%.F
