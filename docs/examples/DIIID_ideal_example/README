@@ -3,7 +3,7 @@ GPEC DIII-D Ideal Example
 
 This example uses a baseline DIII-D-like H-mode. The equilibrium is an artificial one made with TokaMaker to have 0D parameters matching typical DIII-D H-mode values, and the kinetic profiles are self-consistent with the equilibrium.
 
-Note that the coil and pentrc input namelists use relative paths to the package's data files. If you would like to run the example in a different location, you must update those paths appropriately.
+Note that the coil input namelist uses a relative path to the package's data files. If you would like to run the example in a different location, you must update that path appropriately.
 
 Following a typical workflow we first ``cd`` to the example's directory, then run DCON::
 
@@ -53,4 +53,4 @@ Finally, we run PENTRC to compute the neoclassical toroidal viscosity (NTV) torq
   PENTRC START => ...
   PENTRC STOP => Normal termination.
 
-The full (``fgar``) and trapped-only (``tgar``) torque calculations agree reasonably well, consistent with the expectation that banana-orbit particles dominate the nonambipolar transport. The reduced large-aspect-ratio (``rlar``) result typically differs significantly from the general-aspect-ratio calculations for shaped, high-beta H-mode plasmas.
+The full (``fgar``) and trapped-only (``tgar``) torque calculations agree reasonably well, consistent with the expectation that banana-orbit particles dominate the nonambipolar transport. The reduced large-aspect-ratio (``rlar``) result (enabled with ``rlar_flag=t``; off in this example) typically differs significantly from the general-aspect-ratio calculations for shaped, high-beta H-mode plasmas.

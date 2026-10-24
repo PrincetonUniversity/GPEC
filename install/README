@@ -45,8 +45,8 @@ Personal copies of GPEC should be cloned from the `Github repository <https://gi
 The global makefile can be found in the install directory. This essentially enters and makes each individual subdirectory. Each subdirectory's makefile references the DEFAULTS.inc file, also in install.
 Compiled using this install makefile, the executables will then be available in their individual subdirectories as well as collected in the bin directory.
 
-Compiling should use intel compilers with the -qopenmp flag for parallel kinetic calculations in the gpec executable. An example make command might be,::
+The OpenMP flag for parallel kinetic calculations is set automatically for each compiler (OMPFLAG in DEFAULTS.inc). An example make command might be,::
 
-    make FFLAGS="-qopenmp" 2>&1 | tee make.log
+    make 2>&1 | tee make.log
 
 where the logging part is merely a useful suggestion. Appropriate compiler details for the major fusion clusters on which public installations are maintained is recorded in the $GPECHOME/install/DEFAULTS.inc file annotations.

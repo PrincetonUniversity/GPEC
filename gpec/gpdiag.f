@@ -1090,8 +1090,8 @@ c           Form J*xi_perp directly from xi^psi and xi^alpha=xi^s/chi1.
      $        mthsurf,curv2_mn)
 
          eulbparmns(istep,:)=eulbpar_mn ! p'xsp_mn+bxcdeltamn
-         lagbparmns(istep,:)=lagbpar_mn ! with parallel components
-         llagbparmns(istep,:)=llagbpar_mn ! without parallel components
+         lagbparmns(istep,:)=lagbpar_mn ! xi^zeta=0 gauge (pmodb lagb)
+         llagbparmns(istep,:)=llagbpar_mn ! xi_perp only
          divxmns(istep,:)=-divx_mn ! Bdivxprp
          curvmns(istep,:)=-curv_mn ! Bkxprp
          divx2mns(istep,:)=divx2_mn ! jb-weighting

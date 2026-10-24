@@ -50,7 +50,7 @@ Important make targets
 ----------------------
 
 * all (default): build all main executables and libraries
-* allf: same as all but Fortran-only modules
+* allf: currently builds the same modules as all
 * clean: remove built objects and module files
 * clear: remove example outputs in docs/examples
 * realclean: deep clean including dependencies built into deps
@@ -82,7 +82,7 @@ netCDF libraries:
 * NETCDF_FORTRAN_HOME: preferred when C and Fortran installs are split
 * NETCDFHOME or NETCDF_DIR: netCDF installation prefix
 * NETCDFINC: netCDF include path
-* NETCDF_C_HOME or NETCDF_C_DIR: netCDF-C location if separate
+* NETCDF_C_HOME: netCDF-C location if separate
 
 Dependency install location:
 
@@ -180,8 +180,8 @@ Then build with::
 X11 (xdraw)
 ^^^^^^^^^^^
 
-If xdraw fails to link on macOS, ensure XQuartz is installed and add include
-and library paths in xdraw/makefile, for example::
+If xdraw fails to link on macOS, ensure XQuartz is installed and set
+X11_HOME (read by install/DEFAULTS.inc), for example::
 
     brew install libx11
     export X11_HOME=/opt/homebrew

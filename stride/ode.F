@@ -1062,11 +1062,11 @@ c-----------------------------------------------------------------------
          REAL(r8), DIMENSION(:,:), ALLOCATABLE :: atol
 
          INTEGER :: nMat, nSp, i, j, k, jsing, ksing, s2, m2
-         INTEGER :: iChg, info, ipert0, dRow
-         REAL(r8) :: rcond, mnorm, ZLANGE
+         INTEGER :: iChg, info, ipert0, dRow, kl, ku
+         REAL(r8) :: rcond, mnorm, ZLANGB
          INTEGER, DIMENSION(:), ALLOCATABLE :: isp, jsp
          COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: asp, b, x
-         COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: M, MInv, TempMat
+         COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: MInv, TempMat
          INTEGER, DIMENSION(:), ALLOCATABLE :: ipiv, ipivTemp
          COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: uwork, cwork,
      $        cworkTemp
@@ -1093,6 +1093,9 @@ c-----------------------------------------------------------------------
      $        s2 * (m2-2) +     !each side of each sing
      $        (msing-1) * m2*m2*2 + !intervals sandwiched b/w sings
      $        s2  !driven big solution coefficients (2sides * msing)
+         !rows come in blocks of 2*m2 per singular surface, each ending
+         !with that surface's two big solution rows, so the matrix is
+         !banded with kl = ku = 3*mpert-1
 
          ALLOCATE(b(nMat),x(nMat),isp(nSp),jsp(nSp),asp(nSp))
          ALLOCATE(TempMat(m2,m2),ipivTemp(m2),rworkTemp(2*m2),
@@ -1124,7 +1127,7 @@ c-----------------------------------------------------------------------
             DO i = 1,m2
                DO j = 1,m2
                   k=k+1
-                  isp(k) = i + (2*m2-2) * (jsing-1)
+                  isp(k) = i + (2*m2) * (jsing-1)
                   jsp(k) = j + mpert + (2*m2) * (jsing-1)
                   asp(k) = s%uShootL(i,j)
                ENDDO
@@ -1136,7 +1139,7 @@ c-----------------------------------------------------------------------
             DO i = 1,m2
                IF (i/=ipert0 .AND. i/=ipert0+mpert) THEN
                   k=k+1
-                  isp(k) = i + iChg + m2 + (2*m2-2) * (jsing-1)
+                  isp(k) = i + iChg + m2 + (2*m2) * (jsing-1)
                   jsp(k) = i + mpert + (2*m2) * (jsing-1)
                   asp(k) = 1.0
 
@@ -1154,7 +1157,7 @@ c-----------------------------------------------------------------------
             DO i = 1,m2
                DO j = 1,m2
                   k=k+1
-                  isp(k) = i + (2*m2-2) * jsing
+                  isp(k) = i + (2*m2) * jsing
                   jsp(k) = j + mpert + m2 + (2*m2)*(jsing-1)
                   asp(k) = -s%uShootR(i,j)
                ENDDO
@@ -1166,7 +1169,7 @@ c-----------------------------------------------------------------------
          DO i = 1,m2
             DO j = 1,mpert
                k=k+1
-               isp(k) = i + (2*m2-2) * msing
+               isp(k) = i + (2*m2) * msing
                jsp(k) = j + mpert + (2*m2) * msing
                asp(k) = uEdge(i,j+mpert)
             ENDDO
@@ -1179,12 +1182,12 @@ c-----------------------------------------------------------------------
             ipert0 = s%sing_col
             !left side
             k=k+1
-            isp(k) = isp(k-1)+1
+            isp(k) = 2*m2*jsing-1
             jsp(k) = ipert0 + mpert + (2*m2)*(jsing-1)
             asp(k) = 1.0
             !right side
             k=k+1
-            isp(k) = isp(k-1)+1
+            isp(k) = 2*m2*jsing
             jsp(k) = ipert0 + mpert + m2 + (2*m2)*(jsing-1)
             asp(k) = 1.0
          ENDDO
@@ -1197,16 +1200,18 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     check condition number of BVP matrix.
 c-----------------------------------------------------------------------
-         ALLOCATE(M(nMat,nMat),MInv(nMat,nMat))
+         kl = MAXVAL(isp-jsp)
+         ku = MAXVAL(jsp-isp)
+         ALLOCATE(MInv(2*kl+ku+1,nMat))
          ALLOCATE(ipiv(nMat),uwork(nMat),cwork(2*nMat),rwork(2*nMat))
-         M=0.0
+         MInv=0.0
          DO k = 1,nSp
-            M(isp(k),jsp(k)) = asp(k)
+            MInv(kl+ku+1+isp(k)-jsp(k),jsp(k)) = asp(k)
          ENDDO
-         MInv = M
-         CALL ZGETRF(nMat,nMat,MInv,nMat,ipiv,info)
-         mnorm = ZLANGE('O',nMat,nMat,MInv,nMat,rwork)
-         CALL ZGECON('O',nMat,MInv,nMat,mnorm,rcond,cwork,rwork,info)
+         mnorm = ZLANGB('O',nMat,kl,ku,MInv(kl+1,1),2*kl+ku+1,rwork)
+         CALL ZGBTRF(nMat,nMat,kl,ku,MInv,2*kl+ku+1,ipiv,info)
+         CALL ZGBCON('O',nMat,kl,ku,MInv,2*kl+ku+1,ipiv,mnorm,rcond,
+     $        cwork,rwork,info)
          print *,"Delta' sparse matrix condition number = ",rcond
 c-----------------------------------------------------------------------
 c     solve BVP matrix without sparse matrix.
@@ -1217,15 +1222,16 @@ c-----------------------------------------------------------------------
                b = 0.0
                IF (i == 1) THEN
                   !Left side driving term
-                  b(nMat-s2+2*jsing-1) = 1.0
+                  b(2*m2*jsing-1) = 1.0
                   dRow = 2*jsing-1
                ELSE
                   !Right side driving term
-                  b(nMat-s2+2*jsing) = 1.0
+                  b(2*m2*jsing) = 1.0
                   dRow = 2*jsing
                ENDIF
                x = b
-               CALL ZGETRS('N',nMat,1,MInv,nMat,ipiv,x,nMat,info)
+               CALL ZGBTRS('N',nMat,kl,ku,1,MInv,2*kl+ku+1,ipiv,x,nMat,
+     $              info)
                IF (info /= 0) THEN
                   print *,"info was not zero! info=",info
                ENDIF
@@ -1242,10 +1248,14 @@ c-----------------------------------------------------------------------
                   delta_prime_mat(dRow,2*ksing) = x(k+ipert0+mpert)
                ENDDO
 c-----------------------------------------------------------------------
-c     error-check non-sparse matrix solution.
+c     error-check the solution with the sparse matrix.
 c-----------------------------------------------------------------------
                !Error-check big solution elements by backward solve.
-               b = ABS(MATMUL(M,x))
+               b = 0.0
+               DO k = 1,nSp
+                  b(isp(k)) = b(isp(k)) + asp(k)*x(jsp(k))
+               ENDDO
+               b = ABS(b)
                IF (ABS(1-SUM(ABS(b))) > big_soln_err_tol) THEN
                   print *,"Big sol'n error, surface #",jsing,"side",i
                   print *,"=",ABS(1-SUM(ABS(b)))

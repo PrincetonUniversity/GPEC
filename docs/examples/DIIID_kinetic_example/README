@@ -30,4 +30,4 @@ Finally, we run PENTRC for the full neoclassical torque calculation::
   PENTRC START => ...
   PENTRC STOP => Normal termination.
 
-The full general-aspect-ratio (``fgar``) and trapped-only (``tgar``) torque results can be compared to assess the trapped-particle dominance. The ``data_dir`` in ``pentrc.in`` points to the precomputed special function matrix used by the reduced large-aspect-ratio (``rlar``) method, which serves as a cross-check.
+The full general-aspect-ratio (``fgar``) and trapped-only (``tgar``) torque results can be compared to assess the trapped-particle dominance. The ``data_dir`` in ``pentrc.in`` points to the precomputed special function matrix used by the reduced large-aspect-ratio (``rlar``) method, which can be enabled with ``rlar_flag=t`` as a cross-check.

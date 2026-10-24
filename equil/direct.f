@@ -433,7 +433,7 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN), OPTIONAL :: y4tot
       REAL(r8), DIMENSION(0:,0:), INTENT(OUT), OPTIONAL :: ys
 
-      CHARACTER(64) :: message
+      CHARACTER(128) :: message
 
       INTEGER, PARAMETER :: neq=4,liw=30,lrw=22+neq*16
       INTEGER :: iopt,istate,itask,itol,jac,mf,ir,js
@@ -450,7 +450,7 @@ c-----------------------------------------------------------------------
  20   FORMAT(/2x,"is",5x,"eta",8x,"deta",8x,"s",9x,"rfac",8x,"r",10x,
      $     "z",9x,"psi",8x,"err"/)
  30   FORMAT(i4,1p,8e11.3)
- 40   FORMAT(a,i4,a,es10.3,a,i3)
+ 40   FORMAT(a,i0,a,es10.3,a,i0)
 c-----------------------------------------------------------------------
 c     find flux surface.
 c-----------------------------------------------------------------------
