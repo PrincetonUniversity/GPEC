@@ -3,7 +3,7 @@ GPEC DIII-D Ideal Example
 
 This example uses a baseline DIII-D-like H-mode. The equilibrium is an artificial one made with TokaMaker to have 0D parameters matching typical DIII-D H-mode values, and the kinetic profiles are self-consistent with the equilibrium.
 
-Note that the coil and pentrc input namelists use relative paths to the package's data files. If you would like to run the example in a different location, you must update those paths appropriately.
+Note that the coil input namelist uses a relative path to the package's data files. If you would like to run the example in a different location, you must update that path appropriately.
 
 Following a typical workflow we first ``cd`` to the example's directory, then run DCON::
 
@@ -23,6 +23,20 @@ A ``stride.in`` is also included, allowing STRIDE to be run as an alternative st
 
 .. note:: STRIDE does not write ``euler.bin`` (its ``bin_euler`` flag is a dummy variable), so DCON must be run when GPEC will be executed in subsequent steps.
 
+STRIDE also writes ``stride_output_n1.nc``, which holds the outer-region tearing stability matrix Delta' and the rational-surface data that SLAYER needs to compute resistive-layer tearing growth rates. With ``read_eq=t``, the included ``slayer.in`` reads that file together with the kinetic profiles in ``TkMkr_D3Dlike_Hmode.gpeckf``. It then matches each layer response to Delta' on the first three rational surfaces::
+
+  slayer
+
+  Calculating growth rate on m = 2 rational surface:
+   Delta_prime (r_s ref.):    5.94 ...
+   Delta_crit:    33.3
+     Dispersion roots found: 1, poles: 1
+     root 1: Q= -1.162293E+00 -4.163214E-02 omega[rad/s]= -1.059284E+04 gamma[1/s]= -3.794248E+02 polished=T
+
+Delta' is converted from STRIDE's normalized-flux reference length to the minor-radius reference that the layer quantities use before matching. With the default ``dc_type="rfitzp"`` critical Delta, the 2/1, 3/1 and 4/1 tearing modes are all damped here, because Delta_crit exceeds Delta' on each surface. Setting ``dc_type="none"`` drops this stabilization and leaves the 2/1 weakly unstable (gamma of about 80 /s). Each root is reported in its surface's ExB frame. The results, including every root and pole found in the scan, are written to ``slayer_output_n1.nc``.
+
+Setting ``coupling_flag=t`` instead solves the coupled multi-surface dispersion relation for the first ``msing_max`` surfaces. Each surface is then Doppler-shifted by its ExB rotation from the kinetic file, so the root is reported in the lab frame. The Doppler shifts spread the branches apart in Re(Q): with the shipped ``msing_max=3`` and ``scan_width=1.5`` the 2/1 branch falls outside the scan window (SLAYER prints a warning), so for the coupled run set ``msing_max=2`` or widen ``scan_width``.
+
 Satisfied with the DCON result, we run GPEC, which computes the ideal plasma response to the external 3D field from the coils defined in ``coil.in``::
 
   gpec
@@ -39,4 +53,4 @@ Finally, we run PENTRC to compute the neoclassical toroidal viscosity (NTV) torq
   PENTRC START => ...
   PENTRC STOP => Normal termination.
 
-The full (``fgar``) and trapped-only (``tgar``) torque calculations agree reasonably well, consistent with the expectation that banana-orbit particles dominate the nonambipolar transport. The reduced large-aspect-ratio (``rlar``) result typically differs significantly from the general-aspect-ratio calculations for shaped, high-beta H-mode plasmas.
+The full (``fgar``) and trapped-only (``tgar``) torque calculations agree reasonably well, consistent with the expectation that banana-orbit particles dominate the nonambipolar transport. The reduced large-aspect-ratio (``rlar``) result (enabled with ``rlar_flag=t``; off in this example) typically differs significantly from the general-aspect-ratio calculations for shaped, high-beta H-mode plasmas.

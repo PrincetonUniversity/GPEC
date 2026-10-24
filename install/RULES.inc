@@ -80,6 +80,10 @@ FCDCON = $(FC) $(FFLAGS) $(OMPFLAG) $(RECURSFLAG) $(LEGACYFLAG) -I$(MATHINC) -I$
 
 # RDCON
 FCRDCON = $(FC) $(FFLAGS) $(OMPFLAG) $(LEGACYFLAG) -I$(MATHINC) -I$(NETCDFINC) -I../equil -I../vacuum
+# glibc's mallopt, used by rdcon/gal_mmap.F; macOS has none
+ifeq ($(PLATFORM),Linux)
+FCRDCON += -DHAVE_MALLOPT
+endif
 ../rdcon/%.o: ../rdcon/%.f
 	$(FCRDCON) $(MODFLAG) ../rdcon -c $< -o $@
 ../rdcon/%.o: ../rdcon/%.F
@@ -121,7 +125,7 @@ FCMULTI = $(FC) $(FFLAGS) -I../equil
 	$(FCMULTI) $(MODFLAG) ../multi -c $< -o $@
 
 # SLAYER
-FCSLAYER = $(FC) $(FFLAGS) $(OMPFLAG) -I$(MATHINC) -I$(NETCDFINC) -I../equil
+FCSLAYER = $(FC) $(FFLAGS) $(OMPFLAG) -I$(MATHINC) -I$(NETCDFINC) -I../equil -I../slayer -I../pentrc
 ../slayer/%.o: ../slayer/%.f
 	$(FCSLAYER) $(MODFLAG) ../slayer -c $< -o $@
 ../slayer/%.o: ../slayer/%.F

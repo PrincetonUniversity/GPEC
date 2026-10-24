@@ -1427,6 +1427,11 @@ c-----------------------------------------------------------------------
       WRITE(*,*)"Starting Galerkin method"
       msol_old=msol
       msol=2*mpert
+c-----------------------------------------------------------------------
+c     let the element matrices freed in gal_assemble_mat go back to the
+c     system (see gal_mmap.F).
+c-----------------------------------------------------------------------
+      CALL gal_mmap_threshold
       CALL gal_alloc(gal,nx,nq,dx0,dx1,dx2,pfac)
       CALL gal_make_arrays(gal)
 c-----------------------------------------------------------------------

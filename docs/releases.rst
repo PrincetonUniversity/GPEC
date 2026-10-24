@@ -10,6 +10,129 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.6.0
+===========
+
+This is planned to be the last minor release of the Fortran GPEC 1.x series.
+New feature development continues in the Julia GPEC 2.x code; the 1.6.x line will receive bug-fix patch releases only.
+GPEC is now distributed under the MIT license.
+
+Read the Upgrade notes first: the build system, several binary interface files, and a few namelist and output names changed, and many numerical results change because long-standing bugs were fixed (see Fixes).
+
+Upgrade notes
+-------------
+- INSTALL - The build system was rewritten. Build only from ``install/`` with ``make`` (``make -j N`` is supported); the per-directory makefiles are gone. ``FC`` and ``CC`` must be set, git is required at build time, and missing netCDF/HDF5/OpenBLAS are built from bundled git submodules (``git submodule update --init``). ``DEPSINSTALLDIR`` installs them to a shared location; ``make realclean`` is required before switching compilers.
+- ALL - Rerun the full chain after upgrading. DCON ``euler.bin`` has a new record (``wv_farwall_flag``), and the resistive interface files ``delta.bin``, ``gal_solution.bin``, ``globalsol.bin`` and ``vmat.bin`` changed format, so RDCON, RMATCH and GPEC must be rerun together.
+- DCON, RDCON - ``vacuum.bin`` is no longer written by default (set ``bin_vac=t``). GPEC always recomputes the vacuum matrices and ignores ``ivacuumfile``. ``ahg2msc.out`` is no longer written; vacuum data are passed in memory (``out_ahg2msc`` in ``equil.in`` restores the files).
+- RDCON - ``coil%rpec_flag`` moved from ``&GAL_OUTPUT`` to ``&RDCON_CONTROL`` in ``rdcon.in``. Setting it in ``&GAL_OUTPUT`` still works but prints a deprecation warning.
+- RMATCH - ``ntor`` is no longer an input (n is read from ``delta.bin``); remove it from any ``rmatch.in`` that sets it. The default inner-layer solver is now ``inps_type="inps"`` with ``nx=512``, and the eigenvalue search uses the ``2*pi*n*Omega`` rotation convention of RPEC.
+- DCON, PENTRC, COIL, STRIDE - Thread counts default to ``OMP_NUM_THREADS`` (inputs default to 0). ``parallel_threads`` is renamed ``dcon_kin_threads`` and ``openmp_threads`` is renamed ``pentrc_threads``; the old names still work with a deprecation warning.
+- EQUIL - ``newq0 < 0`` (including the undocumented ``newq0=-1`` sign flip) now stops with an error. ``eq_type`` ``marklin_direct``, ``marklin_inverse`` and ``hansen_inverse`` were removed; ``chease2`` is renamed ``chease_ascii`` (the old name still works with a warning).
+- GPEC - Renamed outputs: netCDF ``w_isl_crit`` is now ``w_isl_v_crit``; cylindrical ``vcbr``, ``vcbz``, ``vcbp`` are now ``b_r_vacuum``, ``b_z_vacuum``, ``b_p_vacuum``. The ``gpec_singfld_n#.out`` ASCII columns changed (new threshold, island-width and pressure columns). ``I_overlap_norm`` and the DCON/RDCON ``W_v_eigenvalue`` are now 1-D real arrays.
+- RDCON - The netCDF output is ``rdcon_output_n#.nc`` (it no longer overwrites DCON's ``dcon_output_n#.nc``).
+- PENTRC - With ``pmodb_file``, PENTRC now reads the supplied ``Bdivxi_perp`` column. Regenerate ``gpec_pmodb_n#.out`` with GPEC 1.6 before using it.
+- DOCS - All DIII-D examples now use a public TokaMaker DIII-D-like H-mode equilibrium and kinetic profiles in place of the KEFIT 147131 files.
+
+Adds
+------
+- SLAYER - New slab-layer linear drift-MHD module (Park, PoP 2022) with a standalone ``slayer`` executable, ``input/slayer.in`` and an a10 example.
+- SLAYER - Tearing-mode growth rates at the STRIDE rational surfaces by matching the inner-layer and outer Delta' (optional critical Delta, ``dc_type``), per surface or coupled, with the E x B Doppler shift (``slayer_output_n#.nc``; see the DIII-D ideal example).
+- GPEC - SLAYER resonant-field penetration threshold at each rational surface (``singthresh_slayer_flag``; ``singthresh_callen_flag`` selects the Callen threshold and ``singthresh_flag`` enables both). New netCDF ``Phi_res_crit``.
+- GPEC - Prandtl number for the SLAYER threshold set by ``singthresh_slayer_inpr`` (default 5.0) or per rational surface by ``singthresh_slayer_inpr_prof``.
+- GPEC - Callen saturated and minimum island widths (``w_isl_sat``, ``w_isl_min``) and the Callen critical resonant field ``Phi_res_crit_callen``.
+- GPEC - Estimate of the pressure lost to Callen-saturated islands (``dP_res``, ``P_res`` and the modified pressure profile ``p_mod``).
+- GPEC - Bernstein/Chance decomposition of the eigenmode potential energy (``effective_field_flag``, ``standard_form_flag``, ``effective_field_terms_flag``, ``curl_check_flag``, ``recon_out``, ``recon_int``) with ``gpec_recon*`` outputs and a derivation note in ``docs/tex/recon``.
+- GPEC - Mutual inductance between the plasma surface and a conformal wall and its inverse (``M_w``, ``M_w_inv``); ``wv_farwall_flag`` in ``dcon.in`` keeps no-wall eigenmodes for GPEC while the wall inductance is computed; ``mutual_test_flag`` diagnostics.
+- GPEC - Resistive perturbed equilibria (RPEC) carry the analytic Galerkin derivative d(xi)/dpsi and the RMATCH field through to GPEC. Per-surface resistive sweet spots from the Lundquist number (``use_res_spot``, ``sing_resspot``, ``sing_interpspot``) and new outputs ``sing_spots``, ``Sfac``, ``tauA``, ``tauR``, ``Jbgradpsi_rmatch`` and ``b_pen``.
+- GPEC - Dominant-mode overlap outputs ``dominant_mode_overlap`` and ``dominant_mode_local_overlap``.
+- GPEC - Full set of DCON plasma attributes and local SLAYER inputs in the profile and control netCDF outputs.
+- COIL - Shift and tilt coils from ``coil.in`` (``coil_shift[xyz]``, ``coil_tilt[xyz]``, ``coil_[xyz]nom``, ``cnpert``), with optional netCDF output of the modified geometry (``coil_out``).
+- COIL - OpenMP-parallel Biot-Savart fields with a new ``coil_threads`` input; the maximum number of coils is raised from 50 to 500; MAST-U, JET ex-vessel and extra ITER coil sets.
+- RDCON - netCDF output ``rdcon_output_n#.nc`` (``netcdf_out``, default true) with the ``dcon.out`` content, the Delta, Delta', Delta_gw and Delta_coil matrices and the Galerkin cell layout.
+- RDCON - Optional modified Rutherford equation terms (``MRE_flag``, ``geom_flag``) with a radial Zeff profile (``Zeff``, ``psi_N_Zeff``).
+- RDCON - STRIDE-style truncation controls ``qlow``, ``qhigh`` and ``reform_eq_with_psilim``; ``gnstep`` sets the maximum LSODE steps for the Galerkin basis; ``interp_np_res`` refines output in resonant cells.
+- MATCH - ``sol_num`` selects which DCON eigenfunction MATCH reconstructs.
+- PENTRC, DCON - ``kinetic_format="rates-v1"`` reads a 9-column kinetic file that supplies logLambda, nu_i and nu_e directly (default ``"legacy"`` unchanged).
+- PENTRC - Separate energy-integration tolerances ``atol_x``, ``rtol_x`` (tighter by default, so runs take longer); Zeff and ``omega_p`` in the netCDF profile output.
+- EQUIL - ``profile_source="integrate"`` builds F and p from the g-file's FF' and p' (recommended only for single-precision g-files such as TokaMaker's); default ``"values"`` is unchanged.
+- EQUIL - ``ldp_i`` (TokaMaker i-file) reader accepts F < 0 and an optional ``[psi_axis, psi_lcfs]`` record.
+- EQUIL - ``enstep`` sets the maximum field-line integration steps in ``direct_run`` (default 16384, previously fixed at 2048).
+- EQUIL - LAR ``sigma_type='wesson'`` current profile; ``chease_ascii`` eq_type.
+- VACUUM - New Green's function evaluation (Chance 2007), more accurate at high n; ``use_legacy_greens_function`` restores the old one.
+- INSTALL - gfortran (with OpenMP), ifx and ARM macOS support; ``OPENBLASHOME``; ``make deps`` / ``make checkdeps``; build instructions for NERSC, SNU 3DST, PLARE and WSL.
+- CI - GitHub Actions builds with gfortran and ifort and runs Solov'ev ideal, kinetic, resistive and energy-decomposition examples on every pull request.
+- DOCS - Installation page, sign-conventions reference, resonant coupling, energy-decomposition and pmodb gauge output docs, and the ``docs/tex`` notes (moved from ``tex/``).
+
+Changes
+--------
+- ALL - GPEC is released under the MIT license (``install/LICENSE``), replacing the previous user agreement.
+- ALL - Floating-point kinds are standardized on ``REAL(r8)``; LSODE updated to Fortran 2018; duplicate utility, grid, spline and jacobi code consolidated; obsolete files removed.
+- ALL - Consistent ``!! WARNING`` terminal messages; GPEC reports CPU and wall time separately for OpenMP runs.
+- DCON - Stops with a clear error when ``nn = 0``.
+- GPEC - Singular-coupling overlap outputs have correct units (Tesla, or % for ``*_overlap_norm``) and consistent descriptions.
+- GPEC - ``singthresh_callen_flag`` forces ``vsingfld_flag`` when coils are present; ``gal_flag`` runs always use the resistive sweet spot.
+- RDCON - Free-boundary energies use the DCON vacuum-call pattern and a complex eigen-solve; ``euler.bin`` stores the complex eigenvalues.
+- RDCON - ``solver="cholesky"`` switches to LU with a warning when ``rpec_flag=t``.
+- RDCON, STRIDE - Modules renamed with ``rdcon_``/``stride_`` prefixes; STRIDE builds without OpenMP and uses ``OMP_SET_MAX_ACTIVE_LEVELS``.
+- STRIDE - Banded solve of the Delta' boundary-value problem (faster at high n).
+- RDCON - Lower peak memory in the LU Galerkin solve.
+- PENTRC - Exact-zero ``omega_E`` knots are replaced by 1e-9 rad/s with a warning.
+- PENTRC, STRIDE - LSODE failures in the PENTRC energy and radial integrations and ZVODE failures in STRIDE stop with a nonzero exit status.
+- EQUIL - Tabulated Zeff and kinetic profiles use monotone (pchip) fits.
+- DOCS - Template and example decks document the new inputs (including ``enstep`` in ``equil.in``), ``rmatch.in`` is fully commented, and the a10 example writes the PENTRC ASCII tables.
+
+Fixes
+------
+- PENTRC - ``fcgl`` recovers all of kappa.xi_perp from dB/B and div(xi_perp), not half.
+- PENTRC - Removed a spurious factor of the major radius from the general-aspect-ratio ``omega_D`` (``fgar``, ``tgar``, ``pgar``, ``*mm``); recompute results from these methods.
+- PENTRC - Removed spurious factors of ``sqrt(B0)`` from the ``clar`` ``omega_b`` and ``B0`` from its ``omega_D``.
+- PENTRC - Fixed OpenMP data races (energy contour flag, ``tpsi``, shared splines), so results no longer depend on the thread count.
+- PENTRC - Fixed an out-of-bounds ``bpts`` array and a kinetic-spline length mismatch in ``tpsi``.
+- PENTRC - ``rlar`` uses the evaluated ``fnml_f`` in the pitch integrand, so it no longer returns zero torque.
+- PENTRC, DCON - Large automatic arrays in the pitch and energy integrations are heap allocated, so OpenMP kinetic runs no longer overflow the worker-thread stacks.
+- PENTRC, DCON - The kinetic Euler-Lagrange matrices (``kin_flag``) conjugate the bounce-averaged W vectors, so they act on the actual perturbation instead of its up-down mirror image (up-down asymmetric equilibria only).
+- PENTRC - Collision frequencies use a monotone (pchip) fit with temperature and logLambda floors, so they stay positive near a cold edge; non-positive densities and negative temperatures stop with an error.
+- PENTRC - Parallel-velocity bounce-root splines use periodic end conditions.
+- PENTRC - The ``omega_D`` integrand is no longer padded with ``omega_b`` values near the trapped/passing boundary.
+- PENTRC - Fixed anti-damping with ``nutype="small"`` for negative ``omega_E``.
+- PENTRC - Radial torque-density export writes the last surface's own value.
+- DCON - Fixed the kinetic matrix ``kinfac`` for ``method > 0`` and race conditions in the kinetic matrix loop.
+- DCON - Plasmas with q0 >= qa are no longer truncated in the deep core.
+- DCON - Fixed out-of-bounds singular-surface access when the q range has no rational surface.
+- DCON, RDCON, STRIDE - With ``sas_flag``, ``dmlim`` no longer carries ``qlim`` past ``qhigh``.
+- DCON, RDCON, STRIDE - The free-boundary vacuum matrix and eigenvector norm are put in the plasma's Fourier frame, so delta-W no longer depends on the theta=0 origin.
+- DCON, RDCON - The singular reduction at a rational surface is kept when a norm reset falls just before it.
+- DCON - ``W_v_eigenvalue`` holds the correct real eigenvalues.
+- DCON, RDCON, STRIDE - Frobenius exponents at rational surfaces include the trace of the resonant block (no spurious imaginary parts on the Delta' diagonal); Mercier alpha is computed in double precision.
+- DCON, RDCON - Fixed Taylor-series slot typos in ``sing_mmat`` (F 6th order; DCON G 3rd order for ``sing_order >= 3``).
+- DCON, RDCON, STRIDE, GPEC - Fixed LAPACK and ZVODE argument types, sizes and work arrays (``W_xe_*`` used a stale matrix; ``s_P`` precision; uninitialized ``out_evals`` columns).
+- RDCON - Added missing zero initializations, safe deallocations and the correct ``restore_us`` condition in the Galerkin solver; ``vmat.bin`` is written correctly.
+- RDCON - Galerkin F is built from the same factored spline as the asymptotics.
+- RDCON - Galerkin vacuum matrix keeps its imaginary part; the LU solve is diagonally scaled; a failed Cholesky falls back to LU.
+- RDCON - Galerkin elements below a singular surface are sized with ``|n q1|`` instead of ``|q1|``.
+- RDCON - Fixed the ``delta_gw.out`` crash with 25 or more singular surfaces and the netCDF failure with ``rpec_flag=f``; ODE integration checks that it reaches psilim.
+- RDCON - The netCDF Galerkin cell grid is initialized when the Galerkin output flags are off.
+- RDCON, GPEC - Removed spurious shielding at the RPEC control surface; fixed the ``globalsol.bin`` point-count mismatch that blocked field penetration at rational surfaces.
+- RMATCH - Removed spurious "imap error" messages with the default ``inps_type="inps"``.
+- RMATCH - Fixed an out-of-bounds read in ``match_solution`` when ``msing`` is less than RDCON's surface count, an uninitialized ``delta`` and an undefined-behavior logical in ``inps_ua``.
+- GPEC - Control-surface normals ``R_n`` and ``z_n`` use the current geometry derivatives.
+- GPEC - ``xbnormal`` normalizes each surface with its own major radius.
+- GPEC - pmodb netCDF functions (``b_eul_fun``, ``b_lag_fun``, ``Bdivxi_perp_fun``, ``Bkappaxi_perp_fun``) have correct imaginary parts and include the theta=1 row.
+- GPEC - pmodb divergence output honours ``reg_flag=f``; the pmodb diagnostic projection uses the current Jacobian.
+- GPEC, PENTRC - pmodb ``Bdivxi_perp`` and ``Bkappaxi_perp`` are formed directly from xi_perp instead of subtracting a Fourier-truncated parallel displacement; PENTRC's ``pmodb_file`` reader uses them instead of ``b_lag``.
+- GPEC - Fixed a use-after-free of the local coupling vectors; exported singular vectors use the adjoint area weighting; ``C_l<tag>_x_out`` holds the local coupling matrix.
+- GPEC - ``q1`` at resonant surfaces is computed instead of set to 0; fixed out-of-bounds access with a single rational surface, a netCDF buffer error when ``coil_flag`` is set without coils, the ``gpout_xbnormal`` array length and long_name attributes written to the wrong files.
+- STRIDE - Fixed an OpenMP data race in ZLANGE, stack overflow at large ``mpert``, an out-of-bounds write and a double allocation.
+- STRIDE - The interval from the axis to the first rational surface is always split into at least 8 pieces.
+- VACUUM - Fixed an off-by-one between ``mthsurf`` and ``mthvac``, a divide by zero in ``defglo`` and out-of-bounds writes; observer-grid coordinates are double precision.
+- COIL - Fixed undefined spline memory and an out-of-range write in ``field.F``; zero-amplitude shifts no longer distort the coils.
+- EQUIL - Fixed spline "extrap" end derivatives on clustered grids and real-valued classic complex spline coefficients; ``spline_roots`` finds roots near cell endpoints.
+- EQUIL - Fixed uninitialized ``ro``/``zo`` for EFIT input, ``eq_type="dump"`` for direct equilibria, an out-of-bounds write for g-files without a q column, a crash re-splining inverse equilibria, and the CHEASE ASCII reader; the field-line integration failure message is printed in full.
+- EQUIL - Direct equilibria are now sampled exactly at the common straight-fieldline angles instead of interpolated from each surface's own field-line trace.
+- EQUIL - ``grid_type="original"`` honours ``psilow`` and ``psihigh``.
+- INSTALL - The embedded version string uses release tags only; bundled dependencies honour ``FC``/``CC`` and embed an rpath; xdraw compiles with strict C99/C11 compilers; added missing build dependencies.
+
+
 GPEC v1.5.7
 ===========
 

@@ -39,7 +39,7 @@ INC_PATHS = {
     "rmatch": ["equil"],
     "sum":    ["equil"],
     "multi":  ["equil"],
-    "slayer": ["equil"],
+    "slayer": ["equil", "pentrc"],
     "coil":   ["equil"],
     "gpec":   ["equil", "vacuum", "pentrc", "coil", "slayer"],
 }
