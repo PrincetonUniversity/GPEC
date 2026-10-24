@@ -3488,6 +3488,7 @@ c-----------------------------------------------------------------------
             eta=twopi*(theta(itheta)+rzphi%f(2))
             rs(istep,itheta)=ro+rfac*COS(eta)
             zs(istep,itheta)=zo+rfac*SIN(eta)
+            r(itheta)=rs(istep,itheta)
             jac=rzphi%f(4)
             jacs(itheta)=jac
             w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
