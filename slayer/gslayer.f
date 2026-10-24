@@ -249,7 +249,7 @@ c-----------------------------------------------------------------------
 c --- optionally write torque balance curve to ASCII file
       IF(ascii_flag)THEN
          OPEN(UNIT=out_unit,FILE="gpec_slayer_torque_balance_m"//
-     $        TRIM(l_sm)//"_n"//TRIM(l_sn)//".OUT",
+     $        TRIM(l_sm)//"_n"//TRIM(l_sn)//".out",
      $        STATUS="UNKNOWN")
          WRITE(out_unit,'(1x,5(a17))') "inQ","RE(delta)",
      $        "IM(delta)","jxb","bal"
