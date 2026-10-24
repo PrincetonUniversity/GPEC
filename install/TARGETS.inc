@@ -299,7 +299,7 @@ rmatch: v neededdeps $(RMATCH_OBJS) equil lsode
 
 # SLAYER
 ../slayer/version.inc:
-	@ver="`git describe --tags`"; \
+	@ver="`git describe --tags --match 'v[0-9]*'`"; \
 	if [ ! -f $@ ] || ! grep -F "'$$ver'" $@ >/dev/null 2>&1; then \
 		echo ">>> Updating version file"; \
 		echo "      CHARACTER(len=*), PARAMETER :: version ='$$ver'" | tee $@; \

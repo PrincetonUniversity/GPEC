@@ -55,7 +55,7 @@ c --- temperature / collisionality
       REAL(r8) :: tau              ! T_i / T_e
       REAL(r8) :: eta              ! Spitzer resistivity [Ohm*m]
       REAL(r8) :: visc             ! anomalous viscosity [m^2/s]
-      REAL(r8) :: lnLamb           ! Coulomb logarithm (updated at runtime)
+      REAL(r8) :: lnLamb = 17.0_r8 ! Coulomb log, set by params()
 c --- length scales
       REAL(r8) :: rho_s            ! ion Larmor radius at T_e [m]
       REAL(r8) :: d_i              ! ion skin depth [m]

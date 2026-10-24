@@ -637,6 +637,8 @@ c           overridden Q_e, Q_i.
      $       sl_in%qval_arr(k),' rational surface'
 
             D_norm = sl_in%D_norm_arr(k)
+            tau = sl_in%tau_arr(k)
+            P_tor = sl_in%P_tor_arr(k)
             ! First arg is Q_e (electron diamagnetic freq), not Q
             ! (ExB freq).  This is intentional per riccati_del_s API.
             dels_db=riccati_del_s(sl_in%Q_e_arr(k),

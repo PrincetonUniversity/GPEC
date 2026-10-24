@@ -87,6 +87,23 @@ c --- local variables: unused intermediates
       REAL(r8) :: K_val, Csq       ! kappa/eta and composite quantity
 
 c-----------------------------------------------------------------------
+c     stop on inputs that would give NaN or Inf below.
+c-----------------------------------------------------------------------
+      IF (.NOT. (n_e > 0.0_r8 .AND. t_e > 0.0_r8 .AND.
+     $     t_i > 0.0_r8)) THEN
+         WRITE(*,*) 'ERROR: params needs positive n_e, t_e and t_i,'
+         WRITE(*,*) '  got n_e =',n_e,' [m^-3], t_e =',t_e,
+     $        ' [eV], t_i =',t_i,' [eV]'
+         WRITE(*,*) '  at q =',qval,'. Check the kinetic profiles.'
+         STOP 'params: non-positive density or temperature'
+      END IF
+      IF (sval == 0.0_r8) THEN
+         WRITE(*,*) 'ERROR: params needs a nonzero magnetic shear,'
+         WRITE(*,*) '  got sval = 0 at q =',qval,'. The Alfven time'
+         WRITE(*,*) '  and the layer widths are undefined.'
+         STOP 'params: zero magnetic shear'
+      END IF
+c-----------------------------------------------------------------------
 c     Coulomb logarithm, basic plasma quantities, and Spitzer
 c     resistivity.
 c-----------------------------------------------------------------------
@@ -217,6 +234,13 @@ c       default    -- dc_tmp = 0
 c-----------------------------------------------------------------------
       IF (ABS(dr_val) > 0.0_r8) THEN
 
+          IF (.NOT. (chis(1) > 0.0_r8)) THEN
+             WRITE(*,*) 'ERROR: the critical Delta-prime needs'
+             WRITE(*,*) '  chi_perp > 0, got chi_perp =',chis(1),
+     $            ' [m^2/s] at q =',qval,'.'
+             WRITE(*,*) '  Set chi_p_prof in slayer.in.'
+             STOP 'params: chi_perp must be positive'
+          END IF
           vte = SQRT((2.0_r8*(t_e*chag)) / m_e)
           chi_par_smfp = (1.581_r8*tau_ee*(vte**2.0_r8))
      $                   / (1.0_r8 + 0.2535_r8*Zeff)
