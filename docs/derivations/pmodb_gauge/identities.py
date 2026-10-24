@@ -221,17 +221,23 @@ def columns(sp):
     dBcov = S.lower(dB)
     B2 = S.dot(S.lower(B), B)
     xs = S.xi_s(xi)
-    xv = S.lower(xi)                               # GPEC xvt, xvz (covariant)
-    xmt, xmz = J * xi[1], J * xi[2]                # GPEC xmt, xmz (J xi^i)
-    sigma = S.dot(xv, B) / B2
+    g = S.g
+    xmz = J * xi[2]                                # GPEC xmz (J xi^zeta)
+    sigma = S.dot(S.lower(xi), B) / B2
     xperp = [xi[i] - sigma * B[i] for i in range(3)]
+    # gpout_pmodb/gpdiag_pmodb cspl: J xi_perp from xi^psi and xi_s with the
+    # eqfun coefficients f2, f3 (equil/direct.f, covariant metric).
+    f2 = (g[0][1] + q * g[0][2]) / (J * B2)
+    f3 = (g[1][2] + q * g[2][2]) / (J * B2)
+    jxt = chi1 ** 2 * (-f2 * xi[0] + f3 * xs / chi1)
+    jxz = q * jxt - J * xs / chi1
     out = []
     out.append(("G3", "B.dB = chi1 (bvt + q bvz)/J  (eulb times |B|)",
                 S.at0(S.dot(dBcov, B) - chi1 * (dBcov[1] + q * dBcov[2]) / J)))
-    out.append(("G4.1", "J xi_perp^theta = xmt - (chi1/B)^2 (xvt + q xvz)/J",
-                S.at0(J * xperp[1] - (xmt - chi1 ** 2 / B2 * (xv[1] + q * xv[2]) / J))))
-    out.append(("G4.2", "J xi_perp^zeta = xmz - q (chi1/B)^2 (xvt + q xvz)/J",
-                S.at0(J * xperp[2] - (xmz - q * chi1 ** 2 / B2 * (xv[1] + q * xv[2]) / J))))
+    out.append(("G4.1", "J xi_perp^theta = chi1^2 (-f2 xsp + f3 xms/chi1)  (cspl 1)",
+                S.at0(J * xperp[1] - jxt)))
+    out.append(("G4.2", "J xi_perp^zeta = q J xi_perp^theta - J xms/chi1  (cspl 2)",
+                S.at0(J * xperp[2] - jxz)))
     # B . xi_perp = 0 as a statement about arbitrary vectors: the metric-jet
     # form is larger than necessary, so the
     # projection is proved on independent covariant B_i, contravariant B^i, xi^i.
@@ -241,10 +247,9 @@ def columns(sp):
     sig = sum(Bl[i] * xu[i] for i in range(3)) / sum(Bl[i] * Bu[i] for i in range(3))
     out.append(("G4.3", "B_i xi_perp^i = 0 for xi_perp^i = xi^i - (B_j xi^j / B_k B^k) B^i",
                 sum(Bl[i] * (xu[i] - sig * Bu[i]) for i in range(3))))
-    coef = xs / (chi1 * q) + xmz / (J * q) - chi1 ** 2 / (J ** 2 * B2) * (xv[1] + q * xv[2])
-    out.append(("G4.4", "xi_perp^theta = xms/(chi1 q) + xmz/(J q)"
-                " - (chi1/(J B))^2 (xvt + q xvz)  (curvfun, gpout.f)",
-                S.at0(xperp[1] - coef)))
+    out.append(("G4.4", "xsp d_psi B + (cspl 1/J) d_theta B = xi_perp.grad B  (curvfun)",
+                S.at0(xi[0] * S.d(Bm, 0) + jxt / J * S.d(Bm, 1)
+                      - sum(xperp[i] * S.d(Bm, i) for i in range(3)))))
     # Gauge of lagb: xi_g = xi_perp + lam B with xi_g^zeta = 0.
     lam = -xperp[2] / B[2]
     xg = [xperp[i] + lam * B[i] for i in range(3)]
@@ -260,8 +265,7 @@ def columns(sp):
     lagb = eul + Bm * (xi[0] * S.d(Bm, 0) + xs / (chi1 * q) * S.d(Bm, 1))
     lagb_g = eul + Bm * grad(xg)
     llagb = eul + Bm * grad(xperp)
-    llagb_code = lagb + Bm * S.d(Bm, 1) * (xmz / (J * q) - chi1 ** 2 / (J ** 2 * B2)
-                                          * (xv[1] + q * xv[2]))
+    llagb_code = eul + Bm * (xi[0] * S.d(Bm, 0) + jxt / J * S.d(Bm, 1))
     out.append(("G5.4", "lagb (gpout.f) = dB_L(xi_g), the xi^zeta = 0 gauge",
                 S.at0(lagb - lagb_g)))
     out.append(("G5.5", "lagb - dB_L(xi_perp) = -(xi_perp^zeta/q) d_theta B",
@@ -371,12 +375,12 @@ def cartesian_kappa(sp):
 
 
 def regularisation(sp):
-    """R1-R3: Park-regularised components in GPEC (reg_flag) on one harmonic.
+    """R2-R3: Park-regularised components in GPEC (reg_flag) on one harmonic.
 
     Diagonal model: one harmonic, J independent of theta.  R = s^2/(s^2 + reg^2),
     s = m - n q.  gpeq_sol uses xmp1 = R xsp1 in bmt/bmz and xms; gpeq_contra
-    builds xwt/xwz from xmp1 and multiplies by R again; gpout_pmodb uses
-    R xsp1 explicitly in divxprp.
+    builds xwt/xwz from xmp1.  The pmodb columns use xmp1 and xms
+    (gpout_pmodb), so R2-R3 are the only regularisation identities needed.
     """
     I, pi = sp.I, sp.pi
     m, n, q, chi1 = sp.symbols("m n q chi1")
@@ -385,18 +389,7 @@ def regularisation(sp):
     s = m - n * q
     xwt = -(J0 * R * X1 + J1 * X + 2 * pi * I * n / chi1 * J0 * Xs) / (2 * pi * I * s)
     xwz = -(q * J0 * R * X1 + q * J1 * X + 2 * pi * I * m / chi1 * J0 * Xs) / (2 * pi * I * s)
-    xmt, xmz = R * xwt, R * xwz
-    jdiv_effective = J0 * R * X1 + J1 * X + 2 * pi * I * m * xmt - 2 * pi * I * n * xmz
-    jdiv_actual = J0 * X1 + J1 * X + 2 * pi * I * m * xmt - 2 * pi * I * n * xmz
-    out = [("R1", "J D_effective(reg) = (1-R)(J R xsp1 + J' xsp)",
-            jdiv_effective - (1-R)*(J0*R*X1+J1*X)),
-           ("R1a", "J div xi_reconstructed = J(1-R**2)xsp1 + (1-R)J' xsp",
-            jdiv_actual-J0*(1-R**2)*X1-(1-R)*J1*X),
-           ("R4", "chi1(q xi_reconstructed^theta-xi_reconstructed^zeta)=R xms",
-            chi1*(q*xmt-xmz)/J0-R*Xs)]
-    Bt = sp.Symbol("Bt")
-    out.append(("R5", "llagb_code - (eulb+xi_rec_perp.grad B) = (1-R) xms Bt/(chi1 q)",
-                (Xs/(chi1*q)+xmz/(J0*q)-xmt/J0)*Bt-(1-R)*Xs*Bt/(chi1*q)))
+    out = []
     jdiv_unreg = (J0 * X1 + J1 * X + 2 * pi * I * m * xwt.subs(R, 1)
                   - 2 * pi * I * n * xwz.subs(R, 1))
     out.append(("R2", "J div xi (R = 1) = 0", jdiv_unreg))
@@ -415,6 +408,10 @@ def regularized_column_budget(sp):
 
     U is the derivative selected by gpeq_sol; V is the derivative used in
     gpout divergence. Delta=xi_s-chi1(q xi_rec^theta-xi_rec^zeta).
+    This is bookkeeping under the stated model relations (BDcode, BKcode),
+    not a proof that the code satisfies them.  In gpout_pmodb, V = U
+    (xmp1) and xi_perp is built from xi_s itself (G4.2), so Delta = 0 and
+    R8 gives the budget of the output columns.
     F denotes xi_rec_perp.((curl B)xB-mu0 grad p)/B, in Tesla.
     Metric/field-norm consistency and C1/C2 are assumed; finite truncation
     errors are not folded into the physical force residual.
@@ -439,6 +436,8 @@ def regularized_column_budget(sp):
     budget=-Z*Bt/q+2*g+curl_delta+B*(V-U)-F
     out.append(("R7", "lagb+Bdivxprp+Bkxprp = -xi_rec_perp^zeta Bt/q + 2 Delta Bt/(chi1 q) + curl_delta + B(V-U) - xi_rec_perp.F/B",
                 Lagcode+BDcode+BKcode-budget))
+    out.append(("R8", "with V = U and Delta = 0: lagb+Bdivxprp+Bkxprp = -xi_perp^zeta Bt/q - xi_perp.F/B",
+                (Lagcode+BDcode+BKcode).subs({V: U, Delta: 0, Dt: 0, Dz: 0})+Z*Bt/q+F))
     return out
 
 
@@ -460,7 +459,7 @@ def cgl(sp):
 
 
 def drive_gauge(sp):
-    """K3, K4: gauge (in)variance of the Logan (2013) Eq. 5 bounce drive.
+    """K3: gauge invariance of the Logan (2013) Eq. 5 bounce drive.
 
     Along a field line (arc length l, M = 1): v = sqrt(2(E - mu B)), integrand
     (1/v)[(2E - 3 mu B) dB/B + (2E - 2 mu B) div xi].  Under xi -> xi + lam B,
@@ -474,14 +473,10 @@ def drive_gauge(sp):
     dBdl, dlam = B.diff(l), lam.diff(l)
     change = ((2 * E - 3 * mu * B) * lam * dBdl + (2 * E - 2 * mu * B) * B * dlam) / v
     total = (v * B * lam).diff(l)
-    # pmodb_file path: dbob = lagb/B (gauge xi_g), divx = -(lagb + Bkxprp)/B.
-    change_pmodb = ((2 * E - 3 * mu * B) * lam * dBdl - (2 * E - 2 * mu * B) * lam * dBdl) / v
     # Multiplied by v > 0 (away from turning points): FortSym leaves the
     # unmultiplied sqrt quotient UNKNOWN.
     return [("K3", "v [drive change under xi -> xi + lam B - d/dl (v B lam)] = 0",
-             ((change - total) * v).subs(l, 0)),
-            ("K4", "pmodb_file-path drive change = -mu B lam dB/dl / v",
-             (change_pmodb + mu * B * lam * dBdl / v).subs(l, 0))]
+             ((change - total) * v).subs(l, 0))]
 
 
 def divergence_matrices(sp):
@@ -542,7 +537,7 @@ def gauge_coordinates(sp):
     determinant=(1+iota*ht)*(1+hp)-ht*iota*hp
     out.append(("Q4","det d(theta_H+iota h,phi_H+h)/d(theta_H,phi_H)=1+D h",
                 determinant-1-iota*ht-hp))
-    # Same physical scalar and relabeling, in the convention of rmp_torque E4.14.
+    # Same physical scalar and relabeling, composed through Hamada.
     bX,jX,u,v=sp.symbols("bX jX u v")
     dbB=bX+u*Bt; dbH=bX+v*Bt
     out.append(("Q5","Hamada->Boozer equals direct X->Boozer when w_HB=w_XB-w_XH",
@@ -617,9 +612,8 @@ def open_gaps(sp):
     """Identities FortSym does not decide; their content is covered elsewhere.
 
     G6 is the coordinate form of C1 + C2 (proved on Cartesian 1-jets) with
-    det g = J^2 imposed through g_33.  On ae635c80 the zero test still returns UNKNOWN for this large rational
-    residual; the removed variable cap is no longer the explanation; it is recorded, not
-    counted as proved.
+    det g = J^2 imposed through g_33.  Neither FortSym nor SymPy decides this
+    large rational residual; it is recorded, not counted as proved.
     """
     return force_balance_identity(sp)
 

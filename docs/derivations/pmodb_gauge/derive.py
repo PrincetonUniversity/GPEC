@@ -1,18 +1,21 @@
-"""Run the pmodb gauge identities through FortSym and record the verdicts.
+"""Run the pmodb gauge identities through a CAS and record the verdicts.
 
-Usage (FortSym checkout with a built C ABI library)::
+Usage::
 
-    PYTHONPATH=$FORTSYM/python python3 docs/derivations/pmodb_gauge/derive.py
+    python3 docs/derivations/pmodb_gauge/derive.py
 
-Writes ``fortsym_verdicts.json`` beside this file.  ``PROVED`` means FortSym's
-native zero decision returned true; ``UNKNOWN`` and ``NONZERO`` fail an
-identity and are the required outcome for a negative control.  No numerical
-probe is accepted as evidence.
+FortSym (a checkout with a built C ABI library on ``PYTHONPATH``) is used
+when it is importable; otherwise plain SymPy is used.  Writes
+``fortsym_verdicts.json`` beside this file, with the engine recorded.
+``PROVED`` means the zero test returned true; ``UNKNOWN`` and ``NONZERO``
+fail an identity and are the required outcome for a negative control.  No
+numerical probe is accepted as evidence.
 """
 
 from __future__ import annotations
 
 import json
+import signal
 import subprocess
 import sys
 import time
@@ -21,18 +24,43 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-import fortsym  # noqa: E402
-import fortsym.sympy as fs  # noqa: E402
+try:
+    import fortsym  # noqa: E402
+    import fortsym.sympy as fs  # noqa: E402
+except ImportError:
+    fortsym = None
+    import sympy as fs  # noqa: E402
 import identities  # noqa: E402
+
+TIMEOUT = 600   # seconds per SymPy zero test
+
+
+class _Timeout(Exception):
+    pass
+
+
+def _alarm(*_):
+    raise _Timeout
 
 
 def verdict(expr) -> str:
-    value = fs.sympify(expr).is_zero
+    if fortsym is not None:
+        value = fs.sympify(expr).is_zero
+    else:
+        signal.signal(signal.SIGALRM, _alarm)
+        signal.alarm(TIMEOUT)
+        try:
+            e = fs.expand(expr)
+            value = True if e == 0 else fs.simplify(fs.together(e)) == 0 or None
+        except _Timeout:
+            return "UNKNOWN"
+        finally:
+            signal.alarm(0)
     return {True: "PROVED", False: "NONZERO"}.get(value, "UNKNOWN")
 
 
 def counterexample(expr):
-    """Exact rational point at which FortSym decides the residual is non-zero."""
+    """Exact rational point at which the engine decides the residual is non-zero."""
     symbols = sorted(expr.free_symbols, key=str)
     for attempt in range(1, 6):
         point, value = {}, expr
@@ -46,6 +74,8 @@ def counterexample(expr):
 
 
 def revision() -> str:
+    if fortsym is None:
+        return "sympy " + fs.__version__
     root = Path(fortsym.__file__).resolve().parents[2]
     try:
         return subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"],
@@ -80,7 +110,9 @@ def main() -> int:
             failed.append(label)
         print(f"{label:6s} {v:8s} (negative control"
               f"{', witness ' + str(witness) if witness else ''}) {equation}", flush=True)
-    out = {"engine": "fortsym native zero test via C ABI (fortsym.sympy)",
+    engine = ("fortsym native zero test via C ABI (fortsym.sympy)" if fortsym
+              else "sympy expand/simplify zero test")
+    out = {"engine": engine,
            "fortsym_revision": revision(), "checks": records, "failed": failed}
     (HERE / "fortsym_verdicts.json").write_text(json.dumps(out, indent=2) + "\n")
     print("FAILED: " + " ".join(failed) if failed else "required identities proved; see explicit open-gap records")
