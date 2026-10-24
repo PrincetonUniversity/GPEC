@@ -73,6 +73,20 @@ c-----------------------------------------------------------------------
 
       CONTAINS
 
+c-----------------------------------------------------------------------
+c     Pack every poloidal point, including the periodic endpoint.
+c-----------------------------------------------------------------------
+      PURE FUNCTION gpout_function_channels(values,imag_sign)
+     $     RESULT(channels)
+      COMPLEX(r8), DIMENSION(:,:), INTENT(IN) :: values
+      REAL(r8), INTENT(IN) :: imag_sign
+      REAL(r8), DIMENSION(SIZE(values,1),SIZE(values,2),2) ::
+     $     channels
+
+      channels(:,:,1)=REAL(values,r8)
+      channels(:,:,2)=imag_sign*AIMAG(values)
+      END FUNCTION gpout_function_channels
+
       !-----------------------------------------------------------------
       function str(k,fmt)
       !-----------------------------------------------------------------
@@ -1422,7 +1436,7 @@ c-----------------------------------------------------------------------
       CALL iscdftb(mfac,mpert,xoutfun,mthsurf,xoutmn)
 
       DO itheta=0,mthsurf
-         CALL bicube_eval(rzphi,psilim,theta(itheta),0)
+         CALL bicube_eval(rzphi,psilim,theta(itheta),1)
          rfac=SQRT(rzphi%f(1))
          eta=twopi*(theta(itheta)+rzphi%f(2))
          r(itheta)=ro+rfac*COS(eta)
@@ -2941,7 +2955,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert) :: eulbpar_mn,lagbpar_mn,
      $     divxprp_mn,curv_mn
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xsp_fun,xms_fun,
-     $     bvt_fun,bvz_fun,xmz_fun,xvt_fun,xvz_fun,xmt_fun,xsp1_fun
+     $     bvt_fun,bvz_fun,xsp1_fun
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: eulbparmns,
      $     lagbparmns,divxprpmns,curvmns,
      $     xmp1mns,xspmns,xmsmns,xmtmns,xmzmns
@@ -2998,28 +3012,23 @@ c-----------------------------------------------------------------------
          CALL iscdftb(mfac,mpert,xms_fun,mthsurf,xms_mn)
          CALL iscdftb(mfac,mpert,bvt_fun,mthsurf,bvt_mn)
          CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
-         CALL iscdftb(mfac,mpert,xmt_fun,mthsurf,xmt_mn)
-         CALL iscdftb(mfac,mpert,xmz_fun,mthsurf,xmz_mn)
-         CALL iscdftb(mfac,mpert,xvt_fun,mthsurf,xvt_mn)
-         CALL iscdftb(mfac,mpert,xvz_fun,mthsurf,xvz_mn)
 
          CALL spline_eval(sq,psifac(istep),1)
 
-         singfac=mfac-nn*sq%f(4)
-         xsp1_mn=xsp1_mn*(singfac**2/(singfac**2+reg_spot**2))
-         CALL iscdftb(mfac,mpert,xsp1_fun,mthsurf,xsp1_mn)
+c        Use the radial derivative selected by reg_flag in gpeq_sol.
+         CALL iscdftb(mfac,mpert,xsp1_fun,mthsurf,xmp1_mn)
 
          DO itheta=0,mthsurf
             CALL bicube_eval(eqfun,psifac(istep),theta(itheta),0)
             CALL bicube_eval(rzphi,psifac(istep),theta(itheta),0)
             jac=rzphi%f(4)
 
-            cspl%fs(itheta,1)=xmt_fun(itheta)-
-     $           (chi1/eqfun%f(1))**2/jac*
-     $           (xvt_fun(itheta)+sq%f(4)*xvz_fun(itheta))
-            cspl%fs(itheta,2)=xmz_fun(itheta)-
-     $           sq%f(4)*(chi1/eqfun%f(1))**2/jac*
-     $           (xvt_fun(itheta)+sq%f(4)*xvz_fun(itheta))
+c           Form J*xi_perp directly from xi^psi and xi^alpha=xi^s/chi1.
+            cspl%fs(itheta,1)=chi1**2*
+     $           (-eqfun%f(2)*xsp_fun(itheta)+
+     $           eqfun%f(3)*xms_fun(itheta)/chi1)
+            cspl%fs(itheta,2)=sq%f(4)*cspl%fs(itheta,1)-
+     $           jac*xms_fun(itheta)/chi1
          ENDDO
 
          CALL cspline_fit(cspl,"periodic")
@@ -3052,10 +3061,7 @@ c           docs/pmodb_gauge.rst.
      $           divxprpfun(istep,itheta)
             curvfun(istep,itheta)=-xsp_fun(itheta)/eqfun%f(1)*sq%f1(2)-
      $           (xsp_fun(itheta)*eqfun%fx(1)+eqfun%fy(1)*
-     $           (xms_fun(itheta)/(chi1*sq%f(4))+
-     $           xmz_fun(itheta)/(jac*sq%f(4))-
-     $           (chi1/(jac*eqfun%f(1)))**2*
-     $           (xvt_fun(itheta)+sq%f(4)*xvz_fun(itheta))))
+     $           cspl%f(1)/jac)
             equilbfun(istep,itheta) = eqfun%f(1)
             dphi(itheta) = rzphi%f(3)
          ENDDO
@@ -3172,18 +3178,14 @@ c-----------------------------------------------------------------------
      $      -divxprpmout),AIMAG(-divxprpmout)/),(/mstep,lmpert,2/))) )
          CALL check( nf90_put_var(fncid,km_id,RESHAPE((/REAL(
      $      -curvmout),AIMAG(-curvmout)/),(/mstep,lmpert,2/))) )
-         CALL check( nf90_put_var(fncid,be_id,RESHAPE(
-     $      (/REAL(eulbparfout),-helicity*AIMAG(eulbparfout)/),
-     $      (/mstep,mthsurf,2/))) )
-         CALL check( nf90_put_var(fncid,bl_id,RESHAPE(
-     $      (/REAL(lagbparfout),-helicity*AIMAG(lagbparfout)/),
-     $      (/mstep,mthsurf,2/))) )
-         CALL check( nf90_put_var(fncid,x_id,RESHAPE(
-     $      (/REAL(-divxprpfout),-helicity*AIMAG(-divxprpfout)/),
-     $      (/mstep,mthsurf,2/))))
-         CALL check( nf90_put_var(fncid,k_id,RESHAPE(
-     $      (/REAL(-curvfout),-helicity*AIMAG(-curvfout)/),
-     $      (/mstep,mthsurf,2/))) )
+         CALL check( nf90_put_var(fncid,be_id,
+     $      gpout_function_channels(eulbparfout,-helicity)) )
+         CALL check( nf90_put_var(fncid,bl_id,
+     $      gpout_function_channels(lagbparfout,-helicity)) )
+         CALL check( nf90_put_var(fncid,x_id,
+     $      gpout_function_channels(-divxprpfout,-helicity)) )
+         CALL check( nf90_put_var(fncid,k_id,
+     $      gpout_function_channels(-curvfout,-helicity)) )
          CALL check( nf90_put_var(fncid,b_id,equilbfun) )
          CALL check( nf90_close(fncid) )
       ENDIF

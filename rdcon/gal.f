@@ -184,7 +184,7 @@ c-----------------------------------------------------------------------
      $     gal%mat(gal%ldab,gal%ndim),gal%ipiv(gal%ndim))
       gal%rhs=0
       gal%sol=0
-      gal%mat=0
+c     mat is zeroed in gal_assemble_mat as assembly reaches each column.
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -211,7 +211,8 @@ c-----------------------------------------------------------------------
          intvl => gal%intvl(ising)
          DO ix=1,gal%nx
             cell => intvl%cell(ix)
-            DEALLOCATE(cell%map,cell%mat)
+            DEALLOCATE(cell%map)
+            IF(ALLOCATED(cell%mat))DEALLOCATE(cell%mat)
             IF(ALLOCATED(cell%emat))DEALLOCATE(cell%emat)
             IF(ALLOCATED(cell%rhs))DEALLOCATE(cell%rhs)
          ENDDO
@@ -407,7 +408,7 @@ c-----------------------------------------------------------------------
          intvl%x(ixmax)=psihigh
       ELSE
          x1=sing(ising+1)%psifac
-         nq1=ABS(sing(ising+1)%q1)
+         nq1=ABS(nn*sing(ising+1)%q1)
          intvl%x(nx)=x1
          IF (gal_xmin_flag .AND. sing1_flag) THEN
             CALL sing1_xmin(ising+1,gal_eps_xmin,myxmin)
@@ -699,7 +700,7 @@ c-----------------------------------------------------------------------
 
       TYPE(gal_type), INTENT(INOUT) :: gal
 
-      INTEGER :: ising,ix,ip,ipert,i,jp,jpert,j,offset
+      INTEGER :: ising,ix,ip,ipert,i,jp,jpert,j,offset,jzero
       TYPE(interval_type), POINTER :: intvl
       TYPE(cell_type), POINTER :: cell
 c-----------------------------------------------------------------------
@@ -710,10 +711,18 @@ c-----------------------------------------------------------------------
       ELSEIF (solver == "cholesky") THEN
          offset=1
       ENDIF
+      jzero=0
       DO ising=0,msing
          intvl => gal%intvl(ising)
          DO ix=1,gal%nx
             cell => intvl%cell(ix)
+c-----------------------------------------------------------------------
+c     zero mat (allocated untouched) up to this cell's last column, so
+c     its memory grows as the element matrices are freed.
+c-----------------------------------------------------------------------
+            j=MAX(MAXVAL(cell%map),cell%emap)
+            gal%mat(:,jzero+1:j)=0
+            jzero=MAX(jzero,j)
             DO ip=0,np
                DO ipert=1,mpert
                   i=cell%map(ipert,ip)
@@ -762,6 +771,11 @@ c     finish loops over intervals and grid cells.
 c-----------------------------------------------------------------------
                ENDDO
             ENDDO
+c-----------------------------------------------------------------------
+c     LU never reassembles, so free the element matrix now (cholesky
+c     keeps it for its LU fallback).
+c-----------------------------------------------------------------------
+            IF (solver == "LU") DEALLOCATE(cell%mat)
             IF (cell%extra /= "none") THEN
                IF (cell%etype == "ext1".OR.cell%etype == "ext2") CYCLE
                j=cell%emap
@@ -769,6 +783,7 @@ c-----------------------------------------------------------------------
             ENDIF
          ENDDO
       ENDDO
+      gal%mat(:,jzero+1:)=0
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -1412,6 +1427,11 @@ c-----------------------------------------------------------------------
       WRITE(*,*)"Starting Galerkin method"
       msol_old=msol
       msol=2*mpert
+c-----------------------------------------------------------------------
+c     let the element matrices freed in gal_assemble_mat go back to the
+c     system (see gal_mmap.F).
+c-----------------------------------------------------------------------
+      CALL gal_mmap_threshold
       CALL gal_alloc(gal,nx,nq,dx0,dx1,dx2,pfac)
       CALL gal_make_arrays(gal)
 c-----------------------------------------------------------------------
@@ -1435,7 +1455,6 @@ c-----------------------------------------------------------------------
             gal%ldab=2*gal%kl+gal%ku+1
             DEALLOCATE(gal%mat)
             ALLOCATE(gal%mat(gal%ldab,gal%ndim))
-            gal%mat=0
             CALL gal_assemble_mat(gal)
          ELSE
             WRITE(*,*)"Calculating Galerkin matrix solution"
@@ -1779,19 +1798,25 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE gal_read_input
+      LOGICAL :: rpec_flag0
       NAMELIST/gal_input/nx,nq,dx0,dx1,dx2,pfac,diagnose_map,solver,
      $     diagnose_grid,diagnose_lsode,ndiagnose,diagnose_integrand,
      $     diagnose_mat,gal_tol,dx1dx2_flag,cutoff,prefac,dpsi_intvl,
      $     dpsi1_intvl,gal_xmin_flag,gal_eps_xmin,gnstep
       NAMELIST /gal_output/interp_np,interp_np_res,restore_uh,
      $     restore_us,restore_ul,bin_delmatch,out_galsol,bin_galsol,
-     $     b_flag,bin_coilsol
+     $     b_flag,bin_coilsol,coil
 c-----------------------------------------------------------------------
-c     read input.
+c     read input. coil now belongs in rdcon_control, but is also
+c     accepted here so v1.5 rdcon.in files still run.
 c-----------------------------------------------------------------------
       READ(UNIT=in_unit,NML=gal_input)
       REWIND(UNIT=in_unit)
+      rpec_flag0=coil%rpec_flag
       READ(UNIT=in_unit,NML=gal_output)
+      IF(coil%rpec_flag .NEQV. rpec_flag0)WRITE(*,*)
+     $     "WARNING: coil%rpec_flag in gal_output is deprecated;"//
+     $     " set it in rdcon_control instead."
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -2078,6 +2103,32 @@ c-----------------------------------------------------------------------
       COMPLEX(r8),DIMENSION(:,:,:), ALLOCATABLE :: sol,sol_cut,dsol
       TYPE(cell_type), POINTER :: cell
 c-----------------------------------------------------------------------
+c     cell grid for the netcdf output, whatever the output flags.
+c-----------------------------------------------------------------------
+      DO iintvl=0,msing
+         DO icell=1,gal%nx
+            cell=>gal%intvl(iintvl)%cell(icell)
+            j=iintvl*gal%nx+icell
+            cellinfos%etypes(j)=cell%etype
+            SELECT CASE(cell%etype)
+            CASE("res")
+               cellinfos%etypes_int(j)=1
+            CASE("ext")
+               cellinfos%etypes_int(j)=2
+            CASE("ext1")
+               cellinfos%etypes_int(j)=3
+            CASE("ext2")
+               cellinfos%etypes_int(j)=4
+            CASE DEFAULT
+               cellinfos%etypes_int(j)=0
+            END SELECT
+            cellinfos%icell(j)=icell
+            cellinfos%iintvl(j)=iintvl
+            cellinfos%x1(j)=cell%x(1)
+            cellinfos%x2(j)=cell%x(2)
+         ENDDO
+      ENDDO
+c-----------------------------------------------------------------------
 c     check flag
 c-----------------------------------------------------------------------
       IF (.NOT.(bin_delmatch.OR.out_galsol.OR.bin_galsol)) RETURN
@@ -2098,33 +2149,23 @@ c-----------------------------------------------------------------------
       DO iintvl=0,msing
          DO icell=1,gal%nx
             cell=>gal%intvl(iintvl)%cell(icell)
-            cellinfos%etypes(iintvl*gal%nx+icell)=cell%etype
             SELECT CASE(cell%etype)
             CASE("res")
                psi(ip:ip+interp_np_res-1)=cell%x(1)+
      $                                     (cell%x(2)-cell%x(1))*xvarres
-               cellinfos%etypes_int(iintvl*gal%nx+icell)=1
             CASE("ext")
                psi(ip:ip+interp_np_res-1)=cell%x(1)+
      $                                     (cell%x(2)-cell%x(1))*xvarres
-               cellinfos%etypes_int(iintvl*gal%nx+icell)=2
             CASE("ext1")
                psi(ip:ip+interp_np-1)=cell%x(1)+
      $                                        (cell%x(2)-cell%x(1))*xvar
-               cellinfos%etypes_int(iintvl*gal%nx+icell)=3
             CASE("ext2")
                psi(ip:ip+interp_np-1)=cell%x(1)+
      $                                        (cell%x(2)-cell%x(1))*xvar
-               cellinfos%etypes_int(iintvl*gal%nx+icell)=4
             CASE("none")
                psi(ip:ip+interp_np-1)=cell%x(1)+
      $                                        (cell%x(2)-cell%x(1))*xvar
-               cellinfos%etypes_int(iintvl*gal%nx+icell)=0
             END SELECT
-            cellinfos%icell(iintvl*gal%nx+icell)=icell
-            cellinfos%iintvl(iintvl*gal%nx+icell)=iintvl
-            cellinfos%x1(iintvl*gal%nx+icell)=cell%x(1)
-            cellinfos%x2(iintvl*gal%nx+icell)=cell%x(2)
             IF (cell%extra=="right".AND.cell%etype=="res")
      $         issing(ip)=.TRUE.
             IF (cell%etype=="res".OR.cell%etype=="ext") THEN

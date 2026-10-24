@@ -203,13 +203,15 @@ c-----------------------------------------------------------------------
       ELSE
          DO
             ising=ising+1
-            IF(ising > msing.OR.psilim<sing(MIN(ising,msing))%psifac)
-     $        EXIT
+            IF(ising > msing)EXIT
+            IF(psilim<sing(ising)%psifac)EXIT
             q=sing(ising)%q
             IF(mlow<=nn*q.AND.mhigh>=nn*q)EXIT
          ENDDO
-         IF(ising>msing.OR.psilim<sing(MIN(ising,msing))%psifac
-     $        .OR.singfac_min==0)THEN
+         IF(ising>msing.OR.singfac_min==0)THEN
+            psimax=psilim*(1-eps)
+            next="finish"
+         ELSEIF(psilim<sing(ising)%psifac)THEN
             psimax=psilim*(1-eps)
             next="finish"
          ELSE
@@ -261,13 +263,13 @@ c     compute conditions at next singular surface.
 c-----------------------------------------------------------------------
       q=sq%fs(0,4)
       IF(kin_flag)THEN
-         IF(kmsing > 0)THEN
+         IF(ising <= kmsing)THEN
             m1=NINT(nn*kinsing(ising)%q)
          ELSE
             m1=NINT(nn*qlim)+NINT(SIGN(one,nn*sq%fs1(mpsi,4)))
          ENDIF
       ELSE
-         IF(msing > 0)THEN
+         IF(ising <= msing)THEN
             m1=NINT(nn*sing(ising)%q)
          ELSE
             m1=NINT(nn*qlim)+NINT(SIGN(one,nn*sq%fs1(mpsi,4)))
@@ -371,11 +373,16 @@ c     compute conditions at next singular surface.
 c-----------------------------------------------------------------------
       DO
          ising=ising+1
-         IF(ising>msing.OR.psilim<sing(MIN(ising,msing))%psifac)EXIT
+         IF(ising>msing)EXIT
+         IF(psilim<sing(ising)%psifac)EXIT
          q=sing(ising)%q
          IF(mlow<=nn*q.AND.mhigh>=nn*q)EXIT
       ENDDO
-      IF(ising>msing.OR.psilim<sing(MIN(ising,msing))%psifac)THEN
+      IF(ising>msing)THEN
+         m1=NINT(nn*qlim)+NINT(SIGN(one,nn*sq%fs1(mpsi,4)))
+         psimax=psilim*(1-eps)
+         next="finish"
+      ELSEIF(psilim<sing(ising)%psifac)THEN
          m1=NINT(nn*qlim)+NINT(SIGN(one,nn*sq%fs1(mpsi,4)))
          psimax=psilim*(1-eps)
          next="finish"
@@ -528,14 +535,19 @@ c     find next ising.
 c-----------------------------------------------------------------------
       DO
          ising=ising+1
-         IF(ising>msing.OR.psilim<sing(MIN(ising,msing))%psifac) EXIT
+         IF(ising>msing)EXIT
+         IF(psilim<sing(ising)%psifac)EXIT
          q=sing(ising)%q
          IF(mlow<=nn*q.AND.mhigh>=nn*q)EXIT
       ENDDO
 c-----------------------------------------------------------------------
 c     compute conditions at next singular surface.
 c-----------------------------------------------------------------------
-      IF(ising>msing.OR.psilim<sing(MIN(ising,msing))%psifac)THEN
+      IF(ising>msing)THEN
+         psimax=psilim*(1-eps)
+         m1=NINT(nn*qlim)+NINT(SIGN(one,nn*sq%fs1(mpsi,4)))
+         next="finish"
+      ELSEIF(psilim<sing(ising)%psifac)THEN
          psimax=psilim*(1-eps)
          m1=NINT(nn*qlim)+NINT(SIGN(one,nn*sq%fs1(mpsi,4)))
          next="finish"
@@ -983,6 +995,8 @@ c-----------------------------------------------------------------------
       CHARACTER(64) :: message
       INTEGER, DIMENSION(1) :: jmax
       REAL(r8) :: uratio
+      LOGICAL :: fix_required
+      INTEGER :: isol
 c-----------------------------------------------------------------------
 c     compute norms of first solution vectors, abort if any are zero.
 c-----------------------------------------------------------------------
@@ -994,19 +1008,23 @@ c-----------------------------------------------------------------------
          CALL program_stop(message)
       ENDIF
 c-----------------------------------------------------------------------
-c     normalize unorm and perform Gaussian reduction if required.
+c     preserve singular reductions while resetting norm baselines.
 c-----------------------------------------------------------------------
+      fix_required=sing_flag
       IF(new)THEN
          new=.FALSE.
          unorm0(1:msol)=unorm(1:msol)
+c     keep the ordering of the reduction just done at this point.
+         IF(sing_flag)unorm(index(1:msol))=(/(msol-isol,isol=1,msol)/)
       ELSE
          unorm(1:msol)=unorm(1:msol)/unorm0(1:msol)
          uratio=MAXVAL(unorm(1:msol))/MINVAL(unorm(1:msol))
-         IF(uratio > ucrit .OR. sing_flag)THEN
-            CALL ode_fixup(sing_flag,.FALSE.)
-            IF(diagnose)CALL ode_test_fixup
-            new=.TRUE.
-         ENDIF
+         fix_required=fix_required .OR. uratio > ucrit
+      ENDIF
+      IF(fix_required)THEN
+         CALL ode_fixup(sing_flag,.FALSE.)
+         IF(diagnose)CALL ode_test_fixup
+         new=.TRUE.
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.

@@ -32,7 +32,7 @@
     inds=6.0             ! normalized ion sound radius
     intau=1.0            ! ion temperature divided by electron temperature
     Q0=4.0               ! unnecessary placeholder variable for inQ?
-    delta_n_p=0          ! delta offset used for jxb calculations. Default is (1e-2,1e-2).
+    delta_n_p=(0,0)      ! complex delta offset used for jxb calculations. Default is (1e-2,1e-2).
 /
 &SLAYER_CONTROL
     inum=400             ! resolution to find error field thresholds.
@@ -56,9 +56,9 @@
     bin_flag=t           ! writes results to binary files
     netcdf_flag=f        ! writes results to netcdf files
     stability_flag=f     ! calculate delta dependence on complex Q
-    bal_flag=t           ! calculate the resonant field penetration threshold from torque balance
 /
 &SLAYER_DIAGNOSE
     riccati_out=f        ! writes LSDOE Riccati integration to an ascii file
     params_check=t       ! prints the primary parameters to the terminal when they are calculated
+    bal_flag=t           ! calculate the resonant field penetration threshold from torque balance
 /

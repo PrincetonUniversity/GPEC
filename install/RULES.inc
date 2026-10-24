@@ -80,6 +80,10 @@ FCDCON = $(FC) $(FFLAGS) $(OMPFLAG) $(RECURSFLAG) $(LEGACYFLAG) -I$(MATHINC) -I$
 
 # RDCON
 FCRDCON = $(FC) $(FFLAGS) $(OMPFLAG) $(LEGACYFLAG) -I$(MATHINC) -I$(NETCDFINC) -I../equil -I../vacuum
+# glibc's mallopt, used by rdcon/gal_mmap.F; macOS has none
+ifeq ($(PLATFORM),Linux)
+FCRDCON += -DHAVE_MALLOPT
+endif
 ../rdcon/%.o: ../rdcon/%.f
 	$(FCRDCON) $(MODFLAG) ../rdcon -c $< -o $@
 ../rdcon/%.o: ../rdcon/%.F
