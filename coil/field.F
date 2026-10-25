@@ -7,7 +7,8 @@ c     code organization.
 c-----------------------------------------------------------------------
 c     0. field_mod.
 c     1. field_bs_psi.
-c     2. field_bs_rz.
+c     2. field_bs_rzphi.
+c     3. field_bs_segment.
 c-----------------------------------------------------------------------
 c     subprogram 0. field_mod.
 c     module declarations.
@@ -137,12 +138,9 @@ c-----------------------------------------------------------------------
          DO j=1,coil(i)%ncoil
             DO k=1,coil(i)%s
                DO iseg=1,nseg
-                  xa(j,k,iseg)=(coil(i)%x(j,k,iseg+1)+
-     $                 coil(i)%x(j,k,iseg))/2.0
-                  ya(j,k,iseg)=(coil(i)%y(j,k,iseg+1)+
-     $                 coil(i)%y(j,k,iseg))/2.0
-                  za(j,k,iseg)=(coil(i)%z(j,k,iseg+1)+
-     $                 coil(i)%z(j,k,iseg))/2.0
+                  xa(j,k,iseg)=coil(i)%x(j,k,iseg)
+                  ya(j,k,iseg)=coil(i)%y(j,k,iseg)
+                  za(j,k,iseg)=coil(i)%z(j,k,iseg)
 
                   dx(j,k,iseg)=coil(i)%x(j,k,iseg+1)-coil(i)%x(j,k,iseg)
                   dy(j,k,iseg)=coil(i)%y(j,k,iseg+1)-coil(i)%y(j,k,iseg)
@@ -202,13 +200,12 @@ c-----------------------------------------------------------------------
                         ry=yobs(itheta,izeta)-ya(j,k,iseg)
                         rz=zobs(itheta,izeta)-za(j,k,iseg)
 
-                        dl=SQRT(rx**2+ry**2+rz**2)
-                        dbx=dbx+coil(i)%cur(j)*coil(i)%nw*1e-7/
-     $                       dl**3*(dy(j,k,iseg)*rz-dz(j,k,iseg)*ry)
-                        dby=dby+coil(i)%cur(j)*coil(i)%nw*1e-7/
-     $                       dl**3*(dz(j,k,iseg)*rx-dx(j,k,iseg)*rz)
-                        dbz=dbz+coil(i)%cur(j)*coil(i)%nw*1e-7/
-     $                       dl**3*(dx(j,k,iseg)*ry-dy(j,k,iseg)*rx)
+                        dl=coil(i)%cur(j)*coil(i)%nw*1e-7*
+     $                       field_bs_segment(rx,ry,rz,dx(j,k,iseg),
+     $                       dy(j,k,iseg),dz(j,k,iseg),0.0_r8)
+                        dbx=dbx+dl*(dy(j,k,iseg)*rz-dz(j,k,iseg)*ry)
+                        dby=dby+dl*(dz(j,k,iseg)*rx-dx(j,k,iseg)*rz)
+                        dbz=dbz+dl*(dx(j,k,iseg)*ry-dy(j,k,iseg)*rx)
 
                      ENDDO
                   ENDDO
@@ -356,12 +353,9 @@ c-----------------------------------------------------------------------
          DO j=1,coil(i)%ncoil
             DO k=1,coil(i)%s
                DO iseg=1,nseg
-                  xa(j,k,iseg)=(coil(i)%x(j,k,iseg+1)+
-     $                 coil(i)%x(j,k,iseg))/2.0
-                  ya(j,k,iseg)=(coil(i)%y(j,k,iseg+1)+
-     $                 coil(i)%y(j,k,iseg))/2.0
-                  za(j,k,iseg)=(coil(i)%z(j,k,iseg+1)+
-     $                 coil(i)%z(j,k,iseg))/2.0
+                  xa(j,k,iseg)=coil(i)%x(j,k,iseg)
+                  ya(j,k,iseg)=coil(i)%y(j,k,iseg)
+                  za(j,k,iseg)=coil(i)%z(j,k,iseg)
 
                   dx(j,k,iseg)=coil(i)%x(j,k,iseg+1)-coil(i)%x(j,k,iseg)
                   dy(j,k,iseg)=coil(i)%y(j,k,iseg+1)-coil(i)%y(j,k,iseg)
@@ -399,14 +393,12 @@ c-----------------------------------------------------------------------
                            ry=yobs(ir,iz,ip)-ya(j,k,iseg)
                            rz=zobs(ir,iz,ip)-za(j,k,iseg)
 
-                           dl=MAXVAL((/SQRT(rx**2+ry**2+rz**2),dlmin/))
-
-                           dbx=dbx+coil(i)%cur(j)*coil(i)%nw*1e-7/
-     $                          dl**3*(dy(j,k,iseg)*rz-dz(j,k,iseg)*ry)
-                           dby=dby+coil(i)%cur(j)*coil(i)%nw*1e-7/
-     $                          dl**3*(dz(j,k,iseg)*rx-dx(j,k,iseg)*rz)
-                           dbz=dbz+coil(i)%cur(j)*coil(i)%nw*1e-7/
-     $                          dl**3*(dx(j,k,iseg)*ry-dy(j,k,iseg)*rx)
+                           dl=coil(i)%cur(j)*coil(i)%nw*1e-7*
+     $                          field_bs_segment(rx,ry,rz,dx(j,k,iseg),
+     $                          dy(j,k,iseg),dz(j,k,iseg),dlmin)
+                           dbx=dbx+dl*(dy(j,k,iseg)*rz-dz(j,k,iseg)*ry)
+                           dby=dby+dl*(dz(j,k,iseg)*rx-dx(j,k,iseg)*rz)
+                           dbz=dbz+dl*(dx(j,k,iseg)*ry-dy(j,k,iseg)*rx)
 
                         ENDDO
                      ENDDO
@@ -459,6 +451,43 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE field_bs_rzphi
+c-----------------------------------------------------------------------
+c     subprogram 3. field_bs_segment.
+c
+c     *DESCRIPTION:
+c        Exact Biot-Savart field of a straight filament segment
+c        (Hanson & Hirshman, Phys. Plasmas 9, 4410 (2002)).
+c        The field of a current cur along the segment from xs to
+c        xs+(dx,dy,dz) at the point xs+(rx,ry,rz) is
+c           mu0*cur/(4*pi)*field_bs_segment*((dx,dy,dz) x (rx,ry,rz)).
+c        Far from the segment the factor tends to 1/|r|**3 of the
+c        midpoint rule. A positive rmin regularizes the field like a
+c        wire of radius rmin, with |B| bounded by mu0*cur/(2*pi*rmin).
+c
+c     *ARGUMENTS:
+c         rx,ry,rz : real
+c            Observation point relative to the segment start.
+c         dx,dy,dz : real
+c            Segment vector from its start to its end.
+c         rmin : real
+c            Regularization radius, 0 for none.
+c-----------------------------------------------------------------------
+      PURE REAL(r8) FUNCTION field_bs_segment(rx,ry,rz,dx,dy,dz,rmin)
+
+      REAL(r8), INTENT(IN) :: rx,ry,rz,dx,dy,dz,rmin
+      REAL(r8) :: ri,rf,sl,eps
+
+      sl=SQRT(dx**2+dy**2+dz**2)
+      ri=SQRT(rx**2+ry**2+rz**2)
+      rf=SQRT((rx-dx)**2+(ry-dy)**2+(rz-dz)**2)
+      IF(rmin>0)THEN
+         ri=MAX(ri,rmin)
+         rf=MAX(rf,rmin)
+      ENDIF
+      eps=ri+rf-sl
+      IF(rmin>0)eps=MAX(eps,rmin**2*(ri+rf)/(2*ri*rf))
+      field_bs_segment=2*(ri+rf)/(ri*rf*eps*(ri+rf+sl))
+      END FUNCTION field_bs_segment
 
       END MODULE field_mod
 
