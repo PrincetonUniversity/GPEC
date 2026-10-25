@@ -5,10 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>PYPEC Source documentation &#8212; GPEC 1.5.6 documentation</title>
+    <title>PYPEC Source documentation &#8212; GPEC 1.6.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=49fa7461" />
-    <script src="_static/documentation_options.js?v=8f564690"></script>
+    <script src="_static/documentation_options.js?v=72d88caf"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -36,7 +36,7 @@
         <a class="navbar-brand" href="index.html">
           <!-- GPEC-->
         </a>
-        <!-- <span class="navbar-text navbar-version pull-left"><b>1.5</b></span> -->
+        <!-- <span class="navbar-text navbar-version pull-left"><b>1.6</b></span> -->
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -90,13 +90,7 @@
             <p class="logo"><a href="index.html">
               <img class="logo" src="_static/GPEC_logo.png" alt="Logo of GPEC"/>
             </a></p><ul>
-<li><a class="reference internal" href="#">PYPEC Source documentation</a><ul>
-<li><a class="reference internal" href="#regression-compare-for-comparing-restults"><code class="xref py py-mod docutils literal notranslate"><span class="pre">regression.compare</span></code> – For Comparing Restults</a><ul>
-<li><a class="reference internal" href="#interface">Interface</a></li>
-</ul>
-</li>
-</ul>
-</li>
+<li><a class="reference internal" href="#">PYPEC Source documentation</a></li>
 </ul>
 
 <div id="sourcelink">
@@ -114,64 +108,10 @@
       </div>
     <div class="body col-md-9 content" role="main">
       
-  <p id="source-documentation">The recommended post processing for GPEC is now to use the devoted <cite>OMFIT module &lt;https://omfit.io/modules/mod_GPEC.html&gt;</cite>.
+  <p id="source-documentation">The recommended post processing for GPEC is now to use the devoted <a class="reference external" href="https://omfit.io/modules/mod_GPEC.html">OMFIT module</a>.
 The deprecated code below has been ported there and improved, but is included here for reference.</p>
-<section id="module-regression">
-<span id="pypec-source-documentation"></span><h1>PYPEC Source documentation<a class="headerlink" href="#module-regression" title="Link to this heading">¶</a></h1>
-<section id="regression-compare-for-comparing-restults">
-<span id="module-regression.compare"></span><h2><a class="reference internal" href="#module-regression.compare" title="regression.compare"><code class="xref py py-mod docutils literal notranslate"><span class="pre">regression.compare</span></code></a> – For Comparing Restults<a class="headerlink" href="#regression-compare-for-comparing-restults" title="Link to this heading">¶</a></h2>
-<p>Python modules for regression testing and benchmarking GPEC
-code developments.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Author<span class="colon">:</span></dt>
-<dd class="field-odd"><p>N.C. Logan</p>
-</dd>
-<dt class="field-even">Email<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="mailto:nikolas&#46;logan&#37;&#52;&#48;columbia&#46;edu">nikolas<span>&#46;</span>logan<span>&#64;</span>columbia<span>&#46;</span>edu</a></p>
-</dd>
-</dl>
-<section id="interface">
-<h3>Interface<a class="headerlink" href="#interface" title="Link to this heading">¶</a></h3>
-<p>The compare submodules can be run as an executable from a linux terminal, and take one or more directory paths as arguments. Each check function will be called for the directories and the plots displayed. Be warned, this may create a large number of plots.</p>
-<p>For example,</p>
-<blockquote>
-<div><p>$ ./compare_dcons.py /p/gpec/GPEC-0.4/docs/examples/DIIID_example /p/gpec/GPEC-1.0/docs/examples/DIIID_ideal_example</p>
-</div></blockquote>
-<p>Individual checks can be called from an interactive python environment (see <code class="xref py py-mod docutils literal notranslate"><span class="pre">pypec</span></code>).</p>
-<p>For example,</p>
-<blockquote>
-<div><p>$ ipython –pylab</p>
-</div></blockquote>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">regression.compare</span><span class="w"> </span><span class="kn">import</span> <span class="n">compare_dcons</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">compare_dcons</span><span class="o">.</span><span class="n">check_energies</span><span class="p">(</span><span class="s1">&#39;/p/gpec/GPEC-0.4/docs/examples/DIIID_example&#39;</span><span class="p">,</span><span class="s1">&#39;/p/gpec/GPEC-1.0/docs/examples/DIIID_ideal_example&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<blockquote>
-<div><p>/p/gpec/GPEC-0.4/d…              /p/gpec/GPEC-1.0/d…</p>
-</div></blockquote>
-<table class="docutils align-default">
-<tbody>
-<tr class="row-odd"><td><p>total</p></td>
-<td><p>+7.3090e-01</p></td>
-<td><p>+9.0210e-01+7.0180e-05j</p></td>
-</tr>
-<tr class="row-even"><td><p>plasma</p></td>
-<td><p>-1.7540e+00</p></td>
-<td><p>-1.6000e+00</p></td>
-</tr>
-<tr class="row-odd"><td><p>vacuum</p></td>
-<td><p>+2.4850e+00</p></td>
-<td><p>+2.5020e+00</p></td>
-</tr>
-</tbody>
-</table>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pyplot</span><span class="o">.</span><span class="n">gcf</span><span class="p">()</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;examples/figures/example_compare_dcons.png&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<a class="reference internal image-reference" href="examples/figures/example_compare_dcons.png"><img alt="examples/figures/example_compare_dcons.png" src="examples/figures/example_compare_dcons.png" style="width: 600px;" />
-</a>
-</section>
-</section>
+<section id="pypec-source-documentation">
+<h1>PYPEC Source documentation<a class="headerlink" href="#pypec-source-documentation" title="Link to this heading">¶</a></h1>
 </section>
 
 
@@ -194,7 +134,7 @@ code developments.</p>
     </p>
     <p>
         &copy; Copyright 2007 The Trustees of Princeton University.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 8.2.3.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 8.1.3.<br/>
     </p>
   </div>
 </footer>

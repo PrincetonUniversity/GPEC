@@ -5,10 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>GPEC v1.5.5 &#8212; GPEC 1.5.6 documentation</title>
+    <title>GPEC v1.6.0 &#8212; GPEC 1.6.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=49fa7461" />
-    <script src="_static/documentation_options.js?v=8f564690"></script>
+    <script src="_static/documentation_options.js?v=72d88caf"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -36,7 +36,7 @@
         <a class="navbar-brand" href="index.html">
           <!-- GPEC-->
         </a>
-        <!-- <span class="navbar-text navbar-version pull-left"><b>1.5</b></span> -->
+        <!-- <span class="navbar-text navbar-version pull-left"><b>1.6</b></span> -->
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -90,116 +90,131 @@
             <p class="logo"><a href="index.html">
               <img class="logo" src="_static/GPEC_logo.png" alt="Logo of GPEC"/>
             </a></p><ul>
-<li><a class="reference internal" href="#">GPEC v1.5.5</a><ul>
+<li><a class="reference internal" href="#">GPEC v1.6.0</a><ul>
+<li><a class="reference internal" href="#upgrade-notes">Upgrade notes</a></li>
+<li><a class="reference internal" href="#adds">Adds</a></li>
+<li><a class="reference internal" href="#changes">Changes</a></li>
 <li><a class="reference internal" href="#fixes">Fixes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#gpec-v1-5-4">GPEC v1.5.4</a><ul>
+<li><a class="reference internal" href="#gpec-v1-5-7">GPEC v1.5.7</a><ul>
 <li><a class="reference internal" href="#id1">Fixes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#gpec-v1-5-3">GPEC v1.5.3</a><ul>
+<li><a class="reference internal" href="#gpec-v1-5-6">GPEC v1.5.6</a><ul>
 <li><a class="reference internal" href="#id2">Fixes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#gpec-v1-5-2">GPEC v1.5.2</a><ul>
+<li><a class="reference internal" href="#gpec-v1-5-5">GPEC v1.5.5</a><ul>
 <li><a class="reference internal" href="#id3">Fixes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#gpec-v1-5-1">GPEC v1.5.1</a><ul>
+<li><a class="reference internal" href="#gpec-v1-5-4">GPEC v1.5.4</a><ul>
 <li><a class="reference internal" href="#id4">Fixes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#gpec-v1-5-0">GPEC v1.5.0</a><ul>
-<li><a class="reference internal" href="#adds">Adds</a></li>
-<li><a class="reference internal" href="#changes">Changes</a></li>
+<li><a class="reference internal" href="#gpec-v1-5-3">GPEC v1.5.3</a><ul>
 <li><a class="reference internal" href="#id5">Fixes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#gpec-v1-4-4">GPEC v1.4.4</a><ul>
+<li><a class="reference internal" href="#gpec-v1-5-2">GPEC v1.5.2</a><ul>
 <li><a class="reference internal" href="#id6">Fixes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#gpec-v1-4-3">GPEC v1.4.3</a><ul>
+<li><a class="reference internal" href="#gpec-v1-5-1">GPEC v1.5.1</a><ul>
 <li><a class="reference internal" href="#id7">Fixes</a></li>
-<li><a class="reference internal" href="#id8">Changes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#gpec-v1-4-2">GPEC v1.4.2</a><ul>
-<li><a class="reference internal" href="#id9">Fixes</a></li>
-<li><a class="reference internal" href="#id10">Changes</a></li>
+<li><a class="reference internal" href="#gpec-v1-5-0">GPEC v1.5.0</a><ul>
+<li><a class="reference internal" href="#id8">Adds</a></li>
+<li><a class="reference internal" href="#id9">Changes</a></li>
+<li><a class="reference internal" href="#id10">Fixes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#gpec-v1-4-1">GPEC v1.4.1</a><ul>
+<li><a class="reference internal" href="#gpec-v1-4-4">GPEC v1.4.4</a><ul>
 <li><a class="reference internal" href="#id11">Fixes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#gpec-v1-4-0">GPEC v1.4.0</a><ul>
+<li><a class="reference internal" href="#gpec-v1-4-3">GPEC v1.4.3</a><ul>
 <li><a class="reference internal" href="#id12">Fixes</a></li>
 <li><a class="reference internal" href="#id13">Changes</a></li>
-<li><a class="reference internal" href="#id14">Adds</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#gpec-v1-3-8">GPEC v1.3.8</a><ul>
-<li><a class="reference internal" href="#id15">Fixes</a></li>
+<li><a class="reference internal" href="#gpec-v1-4-2">GPEC v1.4.2</a><ul>
+<li><a class="reference internal" href="#id14">Fixes</a></li>
+<li><a class="reference internal" href="#id15">Changes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#gpec-v1-3-7">GPEC v1.3.7</a><ul>
+<li><a class="reference internal" href="#gpec-v1-4-1">GPEC v1.4.1</a><ul>
 <li><a class="reference internal" href="#id16">Fixes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#gpec-v1-3-6">GPEC v1.3.6</a><ul>
+<li><a class="reference internal" href="#gpec-v1-4-0">GPEC v1.4.0</a><ul>
 <li><a class="reference internal" href="#id17">Fixes</a></li>
+<li><a class="reference internal" href="#id18">Changes</a></li>
+<li><a class="reference internal" href="#id19">Adds</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#gpec-v1-3-5">GPEC v1.3.5</a><ul>
-<li><a class="reference internal" href="#id18">Fixes</a></li>
+<li><a class="reference internal" href="#gpec-v1-3-8">GPEC v1.3.8</a><ul>
+<li><a class="reference internal" href="#id20">Fixes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#gpec-v1-3-4">GPEC v1.3.4</a><ul>
-<li><a class="reference internal" href="#id19">Fixes</a></li>
-<li><a class="reference internal" href="#id20">Adds</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#gpec-v1-3-3">GPEC v1.3.3</a><ul>
+<li><a class="reference internal" href="#gpec-v1-3-7">GPEC v1.3.7</a><ul>
 <li><a class="reference internal" href="#id21">Fixes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#gpec-v1-3-2">GPEC v1.3.2</a><ul>
-<li><a class="reference internal" href="#id22">Adds</a></li>
-<li><a class="reference internal" href="#id23">Changes</a></li>
+<li><a class="reference internal" href="#gpec-v1-3-6">GPEC v1.3.6</a><ul>
+<li><a class="reference internal" href="#id22">Fixes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#gpec-v1-3-5">GPEC v1.3.5</a><ul>
+<li><a class="reference internal" href="#id23">Fixes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#gpec-v1-3-4">GPEC v1.3.4</a><ul>
 <li><a class="reference internal" href="#id24">Fixes</a></li>
+<li><a class="reference internal" href="#id25">Adds</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#gpec-v1-3-3">GPEC v1.3.3</a><ul>
+<li><a class="reference internal" href="#id26">Fixes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#gpec-v1-3-2">GPEC v1.3.2</a><ul>
+<li><a class="reference internal" href="#id27">Adds</a></li>
+<li><a class="reference internal" href="#id28">Changes</a></li>
+<li><a class="reference internal" href="#id29">Fixes</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v1-3-1">GPEC v1.3.1</a><ul>
-<li><a class="reference internal" href="#id25">Fixes</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#gpec-v1-3-0">GPEC v1.3.0</a><ul>
-<li><a class="reference internal" href="#id26">Adds</a></li>
-<li><a class="reference internal" href="#id27">Changes</a></li>
-<li><a class="reference internal" href="#id28">Fixes</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#gpec-v1-2-3">GPEC v1.2.3</a><ul>
-<li><a class="reference internal" href="#id29">Changes</a></li>
 <li><a class="reference internal" href="#id30">Fixes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#gpec-v1-2-2">GPEC v1.2.2</a><ul>
+<li><a class="reference internal" href="#gpec-v1-3-0">GPEC v1.3.0</a><ul>
 <li><a class="reference internal" href="#id31">Adds</a></li>
 <li><a class="reference internal" href="#id32">Changes</a></li>
 <li><a class="reference internal" href="#id33">Fixes</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#gpec-v1-2-3">GPEC v1.2.3</a><ul>
+<li><a class="reference internal" href="#id34">Changes</a></li>
+<li><a class="reference internal" href="#id35">Fixes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#gpec-v1-2-2">GPEC v1.2.2</a><ul>
+<li><a class="reference internal" href="#id36">Adds</a></li>
+<li><a class="reference internal" href="#id37">Changes</a></li>
+<li><a class="reference internal" href="#id38">Fixes</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#gpec-v1-2-1">GPEC v1.2.1</a><ul>
-<li><a class="reference internal" href="#id34">Fixes</a></li>
+<li><a class="reference internal" href="#id39">Fixes</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v1-2-0">GPEC v1.2.0</a><ul>
-<li><a class="reference internal" href="#id35">Adds</a></li>
-<li><a class="reference internal" href="#id36">Changes</a></li>
-<li><a class="reference internal" href="#id37">Fixes</a></li>
+<li><a class="reference internal" href="#id40">Adds</a></li>
+<li><a class="reference internal" href="#id41">Changes</a></li>
+<li><a class="reference internal" href="#id42">Fixes</a></li>
 <li><a class="reference internal" href="#removes">Removes</a></li>
 </ul>
 </li>
@@ -208,87 +223,87 @@
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v1-1-6">GPEC v1.1.6</a><ul>
-<li><a class="reference internal" href="#id38">Fixes</a></li>
+<li><a class="reference internal" href="#id43">Fixes</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v1-1-5">GPEC v1.1.5</a><ul>
-<li><a class="reference internal" href="#id39">Adds</a></li>
-<li><a class="reference internal" href="#id40">Fixes</a></li>
+<li><a class="reference internal" href="#id44">Adds</a></li>
+<li><a class="reference internal" href="#id45">Fixes</a></li>
 <li><a class="reference internal" href="#documentation">Documentation</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v1-1-4">GPEC v1.1.4</a><ul>
-<li><a class="reference internal" href="#id41">Fixes</a></li>
+<li><a class="reference internal" href="#id46">Fixes</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v1-1-3">GPEC v1.1.3</a><ul>
-<li><a class="reference internal" href="#id42">Fixes</a></li>
+<li><a class="reference internal" href="#id47">Fixes</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v1-1-2">GPEC v1.1.2</a><ul>
-<li><a class="reference internal" href="#id43">Fixes</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#gpec-v1-1-1">GPEC v1.1.1</a><ul>
-<li><a class="reference internal" href="#id44">Fixes</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#gpec-v1-1-0">GPEC v1.1.0</a><ul>
-<li><a class="reference internal" href="#id45">Adds</a></li>
-<li><a class="reference internal" href="#id46">Fixes</a></li>
-<li><a class="reference internal" href="#id47">Documentation</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#gpec-v1-0-6">GPEC v1.0.6</a><ul>
 <li><a class="reference internal" href="#id48">Fixes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#gpec-v1-0-5">GPEC v1.0.5</a><ul>
+<li><a class="reference internal" href="#gpec-v1-1-1">GPEC v1.1.1</a><ul>
 <li><a class="reference internal" href="#id49">Fixes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#gpec-v1-1-0">GPEC v1.1.0</a><ul>
+<li><a class="reference internal" href="#id50">Adds</a></li>
+<li><a class="reference internal" href="#id51">Fixes</a></li>
+<li><a class="reference internal" href="#id52">Documentation</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#gpec-v1-0-6">GPEC v1.0.6</a><ul>
+<li><a class="reference internal" href="#id53">Fixes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#gpec-v1-0-5">GPEC v1.0.5</a><ul>
+<li><a class="reference internal" href="#id54">Fixes</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v1-0-4">GPEC v1.0.4</a></li>
 <li><a class="reference internal" href="#gpec-v1-0-3">GPEC v1.0.3</a></li>
 <li><a class="reference internal" href="#gpec-v1-0-2">GPEC v1.0.2</a><ul>
-<li><a class="reference internal" href="#id50">Adds</a></li>
-<li><a class="reference internal" href="#id51">Fixes</a></li>
+<li><a class="reference internal" href="#id55">Adds</a></li>
+<li><a class="reference internal" href="#id56">Fixes</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v1-0-1">GPEC v1.0.1</a></li>
 <li><a class="reference internal" href="#gpec-v1-0-0">GPEC v1.0.0</a><ul>
-<li><a class="reference internal" href="#id52">Adds</a></li>
-<li><a class="reference internal" href="#id53">Documentation</a></li>
+<li><a class="reference internal" href="#id57">Adds</a></li>
+<li><a class="reference internal" href="#id58">Documentation</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v0-4-0">GPEC v0.4.0</a><ul>
-<li><a class="reference internal" href="#id54">Fixes</a></li>
-<li><a class="reference internal" href="#id55">Features</a></li>
-<li><a class="reference internal" href="#id56">Documentation</a></li>
+<li><a class="reference internal" href="#id59">Fixes</a></li>
+<li><a class="reference internal" href="#id60">Features</a></li>
+<li><a class="reference internal" href="#id61">Documentation</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v0-3-5">GPEC v0.3.5</a><ul>
-<li><a class="reference internal" href="#id57">Fixes</a></li>
+<li><a class="reference internal" href="#id62">Fixes</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v0-3-4">GPEC v0.3.4</a><ul>
-<li><a class="reference internal" href="#id58">Fixes</a></li>
-<li><a class="reference internal" href="#id59">Features</a></li>
+<li><a class="reference internal" href="#id63">Fixes</a></li>
+<li><a class="reference internal" href="#id64">Features</a></li>
 <li><a class="reference internal" href="#speed-and-stability">Speed and Stability</a></li>
-<li><a class="reference internal" href="#id60">Documentation</a></li>
+<li><a class="reference internal" href="#id65">Documentation</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v0-3-3">GPEC v0.3.3</a></li>
 <li><a class="reference internal" href="#gpec-v0-3-2">GPEC v0.3.2</a></li>
 <li><a class="reference internal" href="#gpec-v0-3-1">GPEC v0.3.1</a><ul>
-<li><a class="reference internal" href="#id61">Fixes</a></li>
-<li><a class="reference internal" href="#id62">Features</a></li>
+<li><a class="reference internal" href="#id66">Fixes</a></li>
+<li><a class="reference internal" href="#id67">Features</a></li>
 <li><a class="reference internal" href="#performance">Performance</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v0-3-0">GPEC v0.3.0</a><ul>
-<li><a class="reference internal" href="#id63">Fixes</a></li>
-<li><a class="reference internal" href="#id64">Features</a></li>
-<li><a class="reference internal" href="#id65">Performance</a></li>
+<li><a class="reference internal" href="#id68">Fixes</a></li>
+<li><a class="reference internal" href="#id69">Features</a></li>
+<li><a class="reference internal" href="#id70">Performance</a></li>
 </ul>
 </li>
 </ul>
@@ -316,10 +331,158 @@
 </ul>
 <p>Note, backwards compatibility is defined as the ability to return to a previous run and re-run any previously successful executable. This does not guarantee all output file formats are exactly maintained.</p>
 <p>The <a class="reference external" href="https://github.com/PrincetonUniversity/GPEC/releases">github release notes</a> are reproduced below.</p>
-<section id="gpec-v1-5-5">
-<h1>GPEC v1.5.5<a class="headerlink" href="#gpec-v1-5-5" title="Link to this heading">¶</a></h1>
+<section id="gpec-v1-6-0">
+<h1>GPEC v1.6.0<a class="headerlink" href="#gpec-v1-6-0" title="Link to this heading">¶</a></h1>
+<p>This is planned to be the last minor release of the Fortran GPEC 1.x series.
+New feature development continues in the Julia GPEC 2.x code; the 1.6.x line will receive bug-fix patch releases only.
+GPEC is now distributed under the MIT license.</p>
+<p>Read the Upgrade notes first: the build system, several binary interface files, and a few namelist and output names changed, and many numerical results change because long-standing bugs were fixed (see Fixes).</p>
+<section id="upgrade-notes">
+<h2>Upgrade notes<a class="headerlink" href="#upgrade-notes" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>INSTALL - The build system was rewritten. Build only from <code class="docutils literal notranslate"><span class="pre">install/</span></code> with <code class="docutils literal notranslate"><span class="pre">make</span></code> (<code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">-j</span> <span class="pre">N</span></code> is supported); the per-directory makefiles are gone. <code class="docutils literal notranslate"><span class="pre">FC</span></code> and <code class="docutils literal notranslate"><span class="pre">CC</span></code> must be set, git is required at build time, and missing netCDF/HDF5/OpenBLAS are built from bundled git submodules (<code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">submodule</span> <span class="pre">update</span> <span class="pre">--init</span></code>). <code class="docutils literal notranslate"><span class="pre">DEPSINSTALLDIR</span></code> installs them to a shared location; <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">realclean</span></code> is required before switching compilers.</p></li>
+<li><p>ALL - Rerun the full chain after upgrading. DCON <code class="docutils literal notranslate"><span class="pre">euler.bin</span></code> has a new record (<code class="docutils literal notranslate"><span class="pre">wv_farwall_flag</span></code>), and the resistive interface files <code class="docutils literal notranslate"><span class="pre">delta.bin</span></code>, <code class="docutils literal notranslate"><span class="pre">gal_solution.bin</span></code>, <code class="docutils literal notranslate"><span class="pre">globalsol.bin</span></code> and <code class="docutils literal notranslate"><span class="pre">vmat.bin</span></code> changed format, so RDCON, RMATCH and GPEC must be rerun together.</p></li>
+<li><p>DCON, RDCON - <code class="docutils literal notranslate"><span class="pre">vacuum.bin</span></code> is no longer written by default (set <code class="docutils literal notranslate"><span class="pre">bin_vac=t</span></code>). GPEC always recomputes the vacuum matrices and ignores <code class="docutils literal notranslate"><span class="pre">ivacuumfile</span></code>. <code class="docutils literal notranslate"><span class="pre">ahg2msc.out</span></code> is no longer written; vacuum data are passed in memory (<code class="docutils literal notranslate"><span class="pre">out_ahg2msc</span></code> in <code class="docutils literal notranslate"><span class="pre">equil.in</span></code> restores the files).</p></li>
+<li><p>RDCON - <code class="docutils literal notranslate"><span class="pre">coil%rpec_flag</span></code> moved from <code class="docutils literal notranslate"><span class="pre">&amp;GAL_OUTPUT</span></code> to <code class="docutils literal notranslate"><span class="pre">&amp;RDCON_CONTROL</span></code> in <code class="docutils literal notranslate"><span class="pre">rdcon.in</span></code>. Setting it in <code class="docutils literal notranslate"><span class="pre">&amp;GAL_OUTPUT</span></code> still works but prints a deprecation warning.</p></li>
+<li><p>RMATCH - <code class="docutils literal notranslate"><span class="pre">ntor</span></code> is no longer an input (n is read from <code class="docutils literal notranslate"><span class="pre">delta.bin</span></code>); remove it from any <code class="docutils literal notranslate"><span class="pre">rmatch.in</span></code> that sets it. The default inner-layer solver is now <code class="docutils literal notranslate"><span class="pre">inps_type=&quot;inps&quot;</span></code> with <code class="docutils literal notranslate"><span class="pre">nx=512</span></code>, and the eigenvalue search uses the <code class="docutils literal notranslate"><span class="pre">2*pi*n*Omega</span></code> rotation convention of RPEC.</p></li>
+<li><p>DCON, PENTRC, COIL, STRIDE - Thread counts default to <code class="docutils literal notranslate"><span class="pre">OMP_NUM_THREADS</span></code> (inputs default to 0). <code class="docutils literal notranslate"><span class="pre">parallel_threads</span></code> is renamed <code class="docutils literal notranslate"><span class="pre">dcon_kin_threads</span></code> and <code class="docutils literal notranslate"><span class="pre">openmp_threads</span></code> is renamed <code class="docutils literal notranslate"><span class="pre">pentrc_threads</span></code>; the old names still work with a deprecation warning.</p></li>
+<li><p>EQUIL - <code class="docutils literal notranslate"><span class="pre">newq0</span> <span class="pre">&lt;</span> <span class="pre">0</span></code> (including the undocumented <code class="docutils literal notranslate"><span class="pre">newq0=-1</span></code> sign flip) now stops with an error. <code class="docutils literal notranslate"><span class="pre">eq_type</span></code> <code class="docutils literal notranslate"><span class="pre">marklin_direct</span></code>, <code class="docutils literal notranslate"><span class="pre">marklin_inverse</span></code> and <code class="docutils literal notranslate"><span class="pre">hansen_inverse</span></code> were removed; <code class="docutils literal notranslate"><span class="pre">chease2</span></code> is renamed <code class="docutils literal notranslate"><span class="pre">chease_ascii</span></code> (the old name still works with a warning).</p></li>
+<li><p>GPEC - Renamed outputs: netCDF <code class="docutils literal notranslate"><span class="pre">w_isl_crit</span></code> is now <code class="docutils literal notranslate"><span class="pre">w_isl_v_crit</span></code>; cylindrical <code class="docutils literal notranslate"><span class="pre">vcbr</span></code>, <code class="docutils literal notranslate"><span class="pre">vcbz</span></code>, <code class="docutils literal notranslate"><span class="pre">vcbp</span></code> are now <code class="docutils literal notranslate"><span class="pre">b_r_vacuum</span></code>, <code class="docutils literal notranslate"><span class="pre">b_z_vacuum</span></code>, <code class="docutils literal notranslate"><span class="pre">b_p_vacuum</span></code>. The <code class="docutils literal notranslate"><span class="pre">gpec_singfld_n#.out</span></code> ASCII columns changed (new threshold, island-width and pressure columns). <code class="docutils literal notranslate"><span class="pre">I_overlap_norm</span></code> and the DCON/RDCON <code class="docutils literal notranslate"><span class="pre">W_v_eigenvalue</span></code> are now 1-D real arrays.</p></li>
+<li><p>RDCON - The netCDF output is <code class="docutils literal notranslate"><span class="pre">rdcon_output_n#.nc</span></code> (it no longer overwrites DCON’s <code class="docutils literal notranslate"><span class="pre">dcon_output_n#.nc</span></code>).</p></li>
+<li><p>PENTRC - With <code class="docutils literal notranslate"><span class="pre">pmodb_file</span></code>, PENTRC now reads the supplied <code class="docutils literal notranslate"><span class="pre">Bdivxi_perp</span></code> column. Regenerate <code class="docutils literal notranslate"><span class="pre">gpec_pmodb_n#.out</span></code> with GPEC 1.6 before using it.</p></li>
+<li><p>DOCS - All DIII-D examples now use a public TokaMaker DIII-D-like H-mode equilibrium and kinetic profiles in place of the KEFIT 147131 files.</p></li>
+</ul>
+</section>
+<section id="adds">
+<h2>Adds<a class="headerlink" href="#adds" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>SLAYER - New slab-layer linear drift-MHD module (Park, PoP 2022) with a standalone <code class="docutils literal notranslate"><span class="pre">slayer</span></code> executable, <code class="docutils literal notranslate"><span class="pre">input/slayer.in</span></code> and an a10 example.</p></li>
+<li><p>SLAYER - Tearing-mode growth rates at the STRIDE rational surfaces by matching the inner-layer and outer Delta’ (optional critical Delta, <code class="docutils literal notranslate"><span class="pre">dc_type</span></code>), per surface or coupled, with the E x B Doppler shift (<code class="docutils literal notranslate"><span class="pre">slayer_output_n#.nc</span></code>; see the DIII-D ideal example).</p></li>
+<li><p>GPEC - SLAYER resonant-field penetration threshold at each rational surface (<code class="docutils literal notranslate"><span class="pre">singthresh_slayer_flag</span></code>; <code class="docutils literal notranslate"><span class="pre">singthresh_callen_flag</span></code> selects the Callen threshold and <code class="docutils literal notranslate"><span class="pre">singthresh_flag</span></code> enables both). New netCDF <code class="docutils literal notranslate"><span class="pre">Phi_res_crit</span></code>.</p></li>
+<li><p>GPEC - Prandtl number for the SLAYER threshold set by <code class="docutils literal notranslate"><span class="pre">singthresh_slayer_inpr</span></code> (default 5.0) or per rational surface by <code class="docutils literal notranslate"><span class="pre">singthresh_slayer_inpr_prof</span></code>.</p></li>
+<li><p>GPEC - Callen saturated and minimum island widths (<code class="docutils literal notranslate"><span class="pre">w_isl_sat</span></code>, <code class="docutils literal notranslate"><span class="pre">w_isl_min</span></code>) and the Callen critical resonant field <code class="docutils literal notranslate"><span class="pre">Phi_res_crit_callen</span></code>.</p></li>
+<li><p>GPEC - Estimate of the pressure lost to Callen-saturated islands (<code class="docutils literal notranslate"><span class="pre">dP_res</span></code>, <code class="docutils literal notranslate"><span class="pre">P_res</span></code> and the modified pressure profile <code class="docutils literal notranslate"><span class="pre">p_mod</span></code>).</p></li>
+<li><p>GPEC - Bernstein/Chance decomposition of the eigenmode potential energy (<code class="docutils literal notranslate"><span class="pre">effective_field_flag</span></code>, <code class="docutils literal notranslate"><span class="pre">standard_form_flag</span></code>, <code class="docutils literal notranslate"><span class="pre">effective_field_terms_flag</span></code>, <code class="docutils literal notranslate"><span class="pre">curl_check_flag</span></code>, <code class="docutils literal notranslate"><span class="pre">recon_out</span></code>, <code class="docutils literal notranslate"><span class="pre">recon_int</span></code>) with <code class="docutils literal notranslate"><span class="pre">gpec_recon*</span></code> outputs and a derivation note in <code class="docutils literal notranslate"><span class="pre">docs/tex/recon</span></code>.</p></li>
+<li><p>GPEC - Mutual inductance between the plasma surface and a conformal wall and its inverse (<code class="docutils literal notranslate"><span class="pre">M_w</span></code>, <code class="docutils literal notranslate"><span class="pre">M_w_inv</span></code>); <code class="docutils literal notranslate"><span class="pre">wv_farwall_flag</span></code> in <code class="docutils literal notranslate"><span class="pre">dcon.in</span></code> keeps no-wall eigenmodes for GPEC while the wall inductance is computed; <code class="docutils literal notranslate"><span class="pre">mutual_test_flag</span></code> diagnostics.</p></li>
+<li><p>GPEC - Resistive perturbed equilibria (RPEC) carry the analytic Galerkin derivative d(xi)/dpsi and the RMATCH field through to GPEC. Per-surface resistive sweet spots from the Lundquist number (<code class="docutils literal notranslate"><span class="pre">use_res_spot</span></code>, <code class="docutils literal notranslate"><span class="pre">sing_resspot</span></code>, <code class="docutils literal notranslate"><span class="pre">sing_interpspot</span></code>) and new outputs <code class="docutils literal notranslate"><span class="pre">sing_spots</span></code>, <code class="docutils literal notranslate"><span class="pre">Sfac</span></code>, <code class="docutils literal notranslate"><span class="pre">tauA</span></code>, <code class="docutils literal notranslate"><span class="pre">tauR</span></code>, <code class="docutils literal notranslate"><span class="pre">Jbgradpsi_rmatch</span></code> and <code class="docutils literal notranslate"><span class="pre">b_pen</span></code>.</p></li>
+<li><p>GPEC - Dominant-mode overlap outputs <code class="docutils literal notranslate"><span class="pre">dominant_mode_overlap</span></code> and <code class="docutils literal notranslate"><span class="pre">dominant_mode_local_overlap</span></code>.</p></li>
+<li><p>GPEC - Full set of DCON plasma attributes and local SLAYER inputs in the profile and control netCDF outputs.</p></li>
+<li><p>COIL - Shift and tilt coils from <code class="docutils literal notranslate"><span class="pre">coil.in</span></code> (<code class="docutils literal notranslate"><span class="pre">coil_shift[xyz]</span></code>, <code class="docutils literal notranslate"><span class="pre">coil_tilt[xyz]</span></code>, <code class="docutils literal notranslate"><span class="pre">coil_[xyz]nom</span></code>, <code class="docutils literal notranslate"><span class="pre">cnpert</span></code>), with optional netCDF output of the modified geometry (<code class="docutils literal notranslate"><span class="pre">coil_out</span></code>).</p></li>
+<li><p>COIL - OpenMP-parallel Biot-Savart fields with a new <code class="docutils literal notranslate"><span class="pre">coil_threads</span></code> input; the maximum number of coils is raised from 50 to 500; MAST-U, JET ex-vessel and extra ITER coil sets.</p></li>
+<li><p>RDCON - netCDF output <code class="docutils literal notranslate"><span class="pre">rdcon_output_n#.nc</span></code> (<code class="docutils literal notranslate"><span class="pre">netcdf_out</span></code>, default true) with the <code class="docutils literal notranslate"><span class="pre">dcon.out</span></code> content, the Delta, Delta’, Delta_gw and Delta_coil matrices and the Galerkin cell layout.</p></li>
+<li><p>RDCON - Optional modified Rutherford equation terms (<code class="docutils literal notranslate"><span class="pre">MRE_flag</span></code>, <code class="docutils literal notranslate"><span class="pre">geom_flag</span></code>) with a radial Zeff profile (<code class="docutils literal notranslate"><span class="pre">Zeff</span></code>, <code class="docutils literal notranslate"><span class="pre">psi_N_Zeff</span></code>).</p></li>
+<li><p>RDCON - STRIDE-style truncation controls <code class="docutils literal notranslate"><span class="pre">qlow</span></code>, <code class="docutils literal notranslate"><span class="pre">qhigh</span></code> and <code class="docutils literal notranslate"><span class="pre">reform_eq_with_psilim</span></code>; <code class="docutils literal notranslate"><span class="pre">gnstep</span></code> sets the maximum LSODE steps for the Galerkin basis; <code class="docutils literal notranslate"><span class="pre">interp_np_res</span></code> refines output in resonant cells.</p></li>
+<li><p>MATCH - <code class="docutils literal notranslate"><span class="pre">sol_num</span></code> selects which DCON eigenfunction MATCH reconstructs.</p></li>
+<li><p>PENTRC, DCON - <code class="docutils literal notranslate"><span class="pre">kinetic_format=&quot;rates-v1&quot;</span></code> reads a 9-column kinetic file that supplies logLambda, nu_i and nu_e directly (default <code class="docutils literal notranslate"><span class="pre">&quot;legacy&quot;</span></code> unchanged).</p></li>
+<li><p>PENTRC - Separate energy-integration tolerances <code class="docutils literal notranslate"><span class="pre">atol_x</span></code>, <code class="docutils literal notranslate"><span class="pre">rtol_x</span></code> (tighter by default, so runs take longer); Zeff and <code class="docutils literal notranslate"><span class="pre">omega_p</span></code> in the netCDF profile output.</p></li>
+<li><p>EQUIL - <code class="docutils literal notranslate"><span class="pre">profile_source=&quot;integrate&quot;</span></code> builds F and p from the g-file’s FF’ and p’ (recommended only for single-precision g-files such as TokaMaker’s); default <code class="docutils literal notranslate"><span class="pre">&quot;values&quot;</span></code> is unchanged.</p></li>
+<li><p>EQUIL - <code class="docutils literal notranslate"><span class="pre">ldp_i</span></code> (TokaMaker i-file) reader accepts F &lt; 0 and an optional <code class="docutils literal notranslate"><span class="pre">[psi_axis,</span> <span class="pre">psi_lcfs]</span></code> record.</p></li>
+<li><p>EQUIL - <code class="docutils literal notranslate"><span class="pre">enstep</span></code> sets the maximum field-line integration steps in <code class="docutils literal notranslate"><span class="pre">direct_run</span></code> (default 16384, previously fixed at 2048).</p></li>
+<li><p>EQUIL - LAR <code class="docutils literal notranslate"><span class="pre">sigma_type='wesson'</span></code> current profile; <code class="docutils literal notranslate"><span class="pre">chease_ascii</span></code> eq_type.</p></li>
+<li><p>VACUUM - New Green’s function evaluation (Chance 2007), more accurate at high n; <code class="docutils literal notranslate"><span class="pre">use_legacy_greens_function</span></code> restores the old one.</p></li>
+<li><p>INSTALL - gfortran (with OpenMP), ifx and ARM macOS support; <code class="docutils literal notranslate"><span class="pre">OPENBLASHOME</span></code>; <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">deps</span></code> / <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">checkdeps</span></code>; build instructions for NERSC, SNU 3DST, PLARE and WSL.</p></li>
+<li><p>CI - GitHub Actions builds with gfortran and ifort and runs Solov’ev ideal, kinetic, resistive and energy-decomposition examples on every pull request.</p></li>
+<li><p>DOCS - Installation page, sign-conventions reference, resonant coupling, energy-decomposition and pmodb gauge output docs, and the <code class="docutils literal notranslate"><span class="pre">docs/tex</span></code> notes (moved from <code class="docutils literal notranslate"><span class="pre">tex/</span></code>).</p></li>
+</ul>
+</section>
+<section id="changes">
+<h2>Changes<a class="headerlink" href="#changes" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>ALL - GPEC is released under the MIT license (<code class="docutils literal notranslate"><span class="pre">install/LICENSE</span></code>), replacing the previous user agreement.</p></li>
+<li><p>ALL - Floating-point kinds are standardized on <code class="docutils literal notranslate"><span class="pre">REAL(r8)</span></code>; LSODE updated to Fortran 2018; duplicate utility, grid, spline and jacobi code consolidated; obsolete files removed.</p></li>
+<li><p>ALL - Consistent <code class="docutils literal notranslate"><span class="pre">!!</span> <span class="pre">WARNING</span></code> terminal messages; GPEC reports CPU and wall time separately for OpenMP runs.</p></li>
+<li><p>DCON - Stops with a clear error when <code class="docutils literal notranslate"><span class="pre">nn</span> <span class="pre">=</span> <span class="pre">0</span></code>.</p></li>
+<li><p>GPEC - Singular-coupling overlap outputs have correct units (Tesla, or % for <code class="docutils literal notranslate"><span class="pre">*_overlap_norm</span></code>) and consistent descriptions.</p></li>
+<li><p>GPEC - <code class="docutils literal notranslate"><span class="pre">singthresh_callen_flag</span></code> forces <code class="docutils literal notranslate"><span class="pre">vsingfld_flag</span></code> when coils are present; <code class="docutils literal notranslate"><span class="pre">gal_flag</span></code> runs always use the resistive sweet spot.</p></li>
+<li><p>RDCON - Free-boundary energies use the DCON vacuum-call pattern and a complex eigen-solve; <code class="docutils literal notranslate"><span class="pre">euler.bin</span></code> stores the complex eigenvalues.</p></li>
+<li><p>RDCON - <code class="docutils literal notranslate"><span class="pre">solver=&quot;cholesky&quot;</span></code> switches to LU with a warning when <code class="docutils literal notranslate"><span class="pre">rpec_flag=t</span></code>.</p></li>
+<li><p>RDCON, STRIDE - Modules renamed with <code class="docutils literal notranslate"><span class="pre">rdcon_</span></code>/<code class="docutils literal notranslate"><span class="pre">stride_</span></code> prefixes; STRIDE builds without OpenMP and uses <code class="docutils literal notranslate"><span class="pre">OMP_SET_MAX_ACTIVE_LEVELS</span></code>.</p></li>
+<li><p>STRIDE - Banded solve of the Delta’ boundary-value problem (faster at high n).</p></li>
+<li><p>RDCON - Lower peak memory in the LU Galerkin solve.</p></li>
+<li><p>PENTRC - Exact-zero <code class="docutils literal notranslate"><span class="pre">omega_E</span></code> knots are replaced by 1e-9 rad/s with a warning.</p></li>
+<li><p>PENTRC, STRIDE - LSODE failures in the PENTRC energy and radial integrations and ZVODE failures in STRIDE stop with a nonzero exit status.</p></li>
+<li><p>EQUIL - Tabulated Zeff and kinetic profiles use monotone (pchip) fits.</p></li>
+<li><p>DOCS - Template and example decks document the new inputs (including <code class="docutils literal notranslate"><span class="pre">enstep</span></code> in <code class="docutils literal notranslate"><span class="pre">equil.in</span></code>), <code class="docutils literal notranslate"><span class="pre">rmatch.in</span></code> is fully commented, and the a10 example writes the PENTRC ASCII tables.</p></li>
+</ul>
+</section>
 <section id="fixes">
 <h2>Fixes<a class="headerlink" href="#fixes" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>PENTRC - <code class="docutils literal notranslate"><span class="pre">fcgl</span></code> recovers all of kappa.xi_perp from dB/B and div(xi_perp), not half.</p></li>
+<li><p>PENTRC - Removed a spurious factor of the major radius from the general-aspect-ratio <code class="docutils literal notranslate"><span class="pre">omega_D</span></code> (<code class="docutils literal notranslate"><span class="pre">fgar</span></code>, <code class="docutils literal notranslate"><span class="pre">tgar</span></code>, <code class="docutils literal notranslate"><span class="pre">pgar</span></code>, <code class="docutils literal notranslate"><span class="pre">*mm</span></code>); recompute results from these methods.</p></li>
+<li><p>PENTRC - Removed spurious factors of <code class="docutils literal notranslate"><span class="pre">sqrt(B0)</span></code> from the <code class="docutils literal notranslate"><span class="pre">clar</span></code> <code class="docutils literal notranslate"><span class="pre">omega_b</span></code> and <code class="docutils literal notranslate"><span class="pre">B0</span></code> from its <code class="docutils literal notranslate"><span class="pre">omega_D</span></code>.</p></li>
+<li><p>PENTRC - Fixed OpenMP data races (energy contour flag, <code class="docutils literal notranslate"><span class="pre">tpsi</span></code>, shared splines), so results no longer depend on the thread count.</p></li>
+<li><p>PENTRC - Fixed an out-of-bounds <code class="docutils literal notranslate"><span class="pre">bpts</span></code> array and a kinetic-spline length mismatch in <code class="docutils literal notranslate"><span class="pre">tpsi</span></code>.</p></li>
+<li><p>PENTRC - <code class="docutils literal notranslate"><span class="pre">rlar</span></code> uses the evaluated <code class="docutils literal notranslate"><span class="pre">fnml_f</span></code> in the pitch integrand, so it no longer returns zero torque.</p></li>
+<li><p>PENTRC, DCON - Large automatic arrays in the pitch and energy integrations are heap allocated, so OpenMP kinetic runs no longer overflow the worker-thread stacks.</p></li>
+<li><p>PENTRC, DCON - The kinetic Euler-Lagrange matrices (<code class="docutils literal notranslate"><span class="pre">kin_flag</span></code>) conjugate the bounce-averaged W vectors, so they act on the actual perturbation instead of its up-down mirror image (up-down asymmetric equilibria only).</p></li>
+<li><p>PENTRC - Collision frequencies use a monotone (pchip) fit with temperature and logLambda floors, so they stay positive near a cold edge; non-positive densities and negative temperatures stop with an error.</p></li>
+<li><p>PENTRC - Parallel-velocity bounce-root splines use periodic end conditions.</p></li>
+<li><p>PENTRC - The <code class="docutils literal notranslate"><span class="pre">omega_D</span></code> integrand is no longer padded with <code class="docutils literal notranslate"><span class="pre">omega_b</span></code> values near the trapped/passing boundary.</p></li>
+<li><p>PENTRC - Fixed anti-damping with <code class="docutils literal notranslate"><span class="pre">nutype=&quot;small&quot;</span></code> for negative <code class="docutils literal notranslate"><span class="pre">omega_E</span></code>.</p></li>
+<li><p>PENTRC - Radial torque-density export writes the last surface’s own value.</p></li>
+<li><p>DCON - Fixed the kinetic matrix <code class="docutils literal notranslate"><span class="pre">kinfac</span></code> for <code class="docutils literal notranslate"><span class="pre">method</span> <span class="pre">&gt;</span> <span class="pre">0</span></code> and race conditions in the kinetic matrix loop.</p></li>
+<li><p>DCON - Plasmas with q0 &gt;= qa are no longer truncated in the deep core.</p></li>
+<li><p>DCON - Fixed out-of-bounds singular-surface access when the q range has no rational surface.</p></li>
+<li><p>DCON, RDCON, STRIDE - With <code class="docutils literal notranslate"><span class="pre">sas_flag</span></code>, <code class="docutils literal notranslate"><span class="pre">dmlim</span></code> no longer carries <code class="docutils literal notranslate"><span class="pre">qlim</span></code> past <code class="docutils literal notranslate"><span class="pre">qhigh</span></code>.</p></li>
+<li><p>DCON, RDCON, STRIDE - The free-boundary vacuum matrix and eigenvector norm are put in the plasma’s Fourier frame, so delta-W no longer depends on the theta=0 origin.</p></li>
+<li><p>DCON, RDCON - The singular reduction at a rational surface is kept when a norm reset falls just before it.</p></li>
+<li><p>DCON - <code class="docutils literal notranslate"><span class="pre">W_v_eigenvalue</span></code> holds the correct real eigenvalues.</p></li>
+<li><p>DCON, RDCON, STRIDE - Frobenius exponents at rational surfaces include the trace of the resonant block (no spurious imaginary parts on the Delta’ diagonal); Mercier alpha is computed in double precision.</p></li>
+<li><p>DCON, RDCON - Fixed Taylor-series slot typos in <code class="docutils literal notranslate"><span class="pre">sing_mmat</span></code> (F 6th order; DCON G 3rd order for <code class="docutils literal notranslate"><span class="pre">sing_order</span> <span class="pre">&gt;=</span> <span class="pre">3</span></code>).</p></li>
+<li><p>DCON, RDCON, STRIDE, GPEC - Fixed LAPACK and ZVODE argument types, sizes and work arrays (<code class="docutils literal notranslate"><span class="pre">W_xe_*</span></code> used a stale matrix; <code class="docutils literal notranslate"><span class="pre">s_P</span></code> precision; uninitialized <code class="docutils literal notranslate"><span class="pre">out_evals</span></code> columns).</p></li>
+<li><p>RDCON - Added missing zero initializations, safe deallocations and the correct <code class="docutils literal notranslate"><span class="pre">restore_us</span></code> condition in the Galerkin solver; <code class="docutils literal notranslate"><span class="pre">vmat.bin</span></code> is written correctly.</p></li>
+<li><p>RDCON - Galerkin F is built from the same factored spline as the asymptotics.</p></li>
+<li><p>RDCON - Galerkin vacuum matrix keeps its imaginary part; the LU solve is diagonally scaled; a failed Cholesky falls back to LU.</p></li>
+<li><p>RDCON - Galerkin elements below a singular surface are sized with <code class="docutils literal notranslate"><span class="pre">|n</span> <span class="pre">q1|</span></code> instead of <code class="docutils literal notranslate"><span class="pre">|q1|</span></code>.</p></li>
+<li><p>RDCON - Fixed the <code class="docutils literal notranslate"><span class="pre">delta_gw.out</span></code> crash with 25 or more singular surfaces and the netCDF failure with <code class="docutils literal notranslate"><span class="pre">rpec_flag=f</span></code>; ODE integration checks that it reaches psilim.</p></li>
+<li><p>RDCON - The netCDF Galerkin cell grid is initialized when the Galerkin output flags are off.</p></li>
+<li><p>RDCON, GPEC - Removed spurious shielding at the RPEC control surface; fixed the <code class="docutils literal notranslate"><span class="pre">globalsol.bin</span></code> point-count mismatch that blocked field penetration at rational surfaces.</p></li>
+<li><p>RMATCH - Removed spurious “imap error” messages with the default <code class="docutils literal notranslate"><span class="pre">inps_type=&quot;inps&quot;</span></code>.</p></li>
+<li><p>RMATCH - Fixed an out-of-bounds read in <code class="docutils literal notranslate"><span class="pre">match_solution</span></code> when <code class="docutils literal notranslate"><span class="pre">msing</span></code> is less than RDCON’s surface count, an uninitialized <code class="docutils literal notranslate"><span class="pre">delta</span></code> and an undefined-behavior logical in <code class="docutils literal notranslate"><span class="pre">inps_ua</span></code>.</p></li>
+<li><p>GPEC - Control-surface normals <code class="docutils literal notranslate"><span class="pre">R_n</span></code> and <code class="docutils literal notranslate"><span class="pre">z_n</span></code> use the current geometry derivatives.</p></li>
+<li><p>GPEC - <code class="docutils literal notranslate"><span class="pre">xbnormal</span></code> normalizes each surface with its own major radius.</p></li>
+<li><p>GPEC - pmodb netCDF functions (<code class="docutils literal notranslate"><span class="pre">b_eul_fun</span></code>, <code class="docutils literal notranslate"><span class="pre">b_lag_fun</span></code>, <code class="docutils literal notranslate"><span class="pre">Bdivxi_perp_fun</span></code>, <code class="docutils literal notranslate"><span class="pre">Bkappaxi_perp_fun</span></code>) have correct imaginary parts and include the theta=1 row.</p></li>
+<li><p>GPEC - pmodb divergence output honours <code class="docutils literal notranslate"><span class="pre">reg_flag=f</span></code>; the pmodb diagnostic projection uses the current Jacobian.</p></li>
+<li><p>GPEC, PENTRC - pmodb <code class="docutils literal notranslate"><span class="pre">Bdivxi_perp</span></code> and <code class="docutils literal notranslate"><span class="pre">Bkappaxi_perp</span></code> are formed directly from xi_perp instead of subtracting a Fourier-truncated parallel displacement; PENTRC’s <code class="docutils literal notranslate"><span class="pre">pmodb_file</span></code> reader uses them instead of <code class="docutils literal notranslate"><span class="pre">b_lag</span></code>.</p></li>
+<li><p>GPEC - Fixed a use-after-free of the local coupling vectors; exported singular vectors use the adjoint area weighting; <code class="docutils literal notranslate"><span class="pre">C_l&lt;tag&gt;_x_out</span></code> holds the local coupling matrix.</p></li>
+<li><p>GPEC - <code class="docutils literal notranslate"><span class="pre">q1</span></code> at resonant surfaces is computed instead of set to 0; fixed out-of-bounds access with a single rational surface, a netCDF buffer error when <code class="docutils literal notranslate"><span class="pre">coil_flag</span></code> is set without coils, the <code class="docutils literal notranslate"><span class="pre">gpout_xbnormal</span></code> array length and long_name attributes written to the wrong files.</p></li>
+<li><p>STRIDE - Fixed an OpenMP data race in ZLANGE, stack overflow at large <code class="docutils literal notranslate"><span class="pre">mpert</span></code>, an out-of-bounds write and a double allocation.</p></li>
+<li><p>STRIDE - The interval from the axis to the first rational surface is always split into at least 8 pieces.</p></li>
+<li><p>VACUUM - Fixed an off-by-one between <code class="docutils literal notranslate"><span class="pre">mthsurf</span></code> and <code class="docutils literal notranslate"><span class="pre">mthvac</span></code>, a divide by zero in <code class="docutils literal notranslate"><span class="pre">defglo</span></code> and out-of-bounds writes; observer-grid coordinates are double precision.</p></li>
+<li><p>COIL - Fixed undefined spline memory and an out-of-range write in <code class="docutils literal notranslate"><span class="pre">field.F</span></code>; zero-amplitude shifts no longer distort the coils.</p></li>
+<li><p>EQUIL - Fixed spline “extrap” end derivatives on clustered grids and real-valued classic complex spline coefficients; <code class="docutils literal notranslate"><span class="pre">spline_roots</span></code> finds roots near cell endpoints.</p></li>
+<li><p>EQUIL - Fixed uninitialized <code class="docutils literal notranslate"><span class="pre">ro</span></code>/<code class="docutils literal notranslate"><span class="pre">zo</span></code> for EFIT input, <code class="docutils literal notranslate"><span class="pre">eq_type=&quot;dump&quot;</span></code> for direct equilibria, an out-of-bounds write for g-files without a q column, a crash re-splining inverse equilibria, and the CHEASE ASCII reader; the field-line integration failure message is printed in full.</p></li>
+<li><p>EQUIL - Direct equilibria are now sampled exactly at the common straight-fieldline angles instead of interpolated from each surface’s own field-line trace.</p></li>
+<li><p>EQUIL - <code class="docutils literal notranslate"><span class="pre">grid_type=&quot;original&quot;</span></code> honours <code class="docutils literal notranslate"><span class="pre">psilow</span></code> and <code class="docutils literal notranslate"><span class="pre">psihigh</span></code>.</p></li>
+<li><p>INSTALL - The embedded version string uses release tags only; bundled dependencies honour <code class="docutils literal notranslate"><span class="pre">FC</span></code>/<code class="docutils literal notranslate"><span class="pre">CC</span></code> and embed an rpath; xdraw compiles with strict C99/C11 compilers; added missing build dependencies.</p></li>
+</ul>
+</section>
+</section>
+<section id="gpec-v1-5-7">
+<h1>GPEC v1.5.7<a class="headerlink" href="#gpec-v1-5-7" title="Link to this heading">¶</a></h1>
+<section id="id1">
+<h2>Fixes<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>ALL - BUMP - Update version to 1.5.7 and document changes in release notes</p></li>
+<li><p>INSTALL - Remove harvest submodule reference from git tree</p></li>
+<li><p>ALL - REMOVE - Remove all harvest dependencies and capabilities</p></li>
+</ul>
+</section>
+</section>
+<section id="gpec-v1-5-6">
+<h1>GPEC v1.5.6<a class="headerlink" href="#gpec-v1-5-6" title="Link to this heading">¶</a></h1>
+<section id="id2">
+<h2>Fixes<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>EQUIL - Fixes bug in the reading of the f profile from chease2 equilibrium files</p></li>
+</ul>
+</section>
+</section>
+<section id="gpec-v1-5-5">
+<h1>GPEC v1.5.5<a class="headerlink" href="#gpec-v1-5-5" title="Link to this heading">¶</a></h1>
+<section id="id3">
+<h2>Fixes<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>DCON - Fixes bug in the calculation of the kinetic torque matrix when using either the electron terms or method==1.</p></li>
 </ul>
@@ -327,8 +490,8 @@
 </section>
 <section id="gpec-v1-5-4">
 <h1>GPEC v1.5.4<a class="headerlink" href="#gpec-v1-5-4" title="Link to this heading">¶</a></h1>
-<section id="id1">
-<h2>Fixes<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<section id="id4">
+<h2>Fixes<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>STRIDE - Fixes reformation of splines with psilow, psilim from truncation logic in STRIDE</p></li>
 </ul>
@@ -336,8 +499,8 @@
 </section>
 <section id="gpec-v1-5-3">
 <h1>GPEC v1.5.3<a class="headerlink" href="#gpec-v1-5-3" title="Link to this heading">¶</a></h1>
-<section id="id2">
-<h2>Fixes<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<section id="id5">
+<h2>Fixes<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>INSTALL - Respects user’s env when choosing NETCDFINC</p></li>
 </ul>
@@ -345,8 +508,8 @@
 </section>
 <section id="gpec-v1-5-2">
 <h1>GPEC v1.5.2<a class="headerlink" href="#gpec-v1-5-2" title="Link to this heading">¶</a></h1>
-<section id="id3">
-<h2>Fixes<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<section id="id6">
+<h2>Fixes<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>GPEC - Fixes bug in flux-field conversion of P_xe</p></li>
 <li><p>GPEC - Fixes orientation of L, Lambda, P, rho, W_e, W_xe, R_xe, P_xe matrices in netcdf outputs</p></li>
@@ -356,8 +519,8 @@
 </section>
 <section id="gpec-v1-5-1">
 <h1>GPEC v1.5.1<a class="headerlink" href="#gpec-v1-5-1" title="Link to this heading">¶</a></h1>
-<section id="id4">
-<h2>Fixes<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<section id="id7">
+<h2>Fixes<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>GPEC - Fixes bug in jacfac diagnostic, now benchmarked with MEPHIT</p></li>
 <li><p>GPEC - Fixes bug in terminal output of q during vsingfld</p></li>
@@ -366,8 +529,8 @@
 </section>
 <section id="gpec-v1-5-0">
 <h1>GPEC v1.5.0<a class="headerlink" href="#gpec-v1-5-0" title="Link to this heading">¶</a></h1>
-<section id="adds">
-<h2>Adds<a class="headerlink" href="#adds" title="Link to this heading">¶</a></h2>
+<section id="id8">
+<h2>Adds<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>GPEC - Outputs new J. Callen threshold (w_isl_crit) for edge island penetration, controlled by the singtresh_flag. This requires PENTRC kinetic file inputs.</p></li>
 <li><p>GPEC - Outputs new coil to resonant field coupling matrix</p></li>
@@ -380,8 +543,8 @@
 <li><p>RMATCH - Adds TRANSP interface module</p></li>
 </ul>
 </section>
-<section id="changes">
-<h2>Changes<a class="headerlink" href="#changes" title="Link to this heading">¶</a></h2>
+<section id="id9">
+<h2>Changes<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>VACUUM - Implicit uses of integer variables made explicit along with initialization of variables at zero (towards static compilation)</p></li>
 <li><p>GPEC - Improves terminal output with table-like formatting and a change from reported averages to vector magnitudes</p></li>
@@ -391,8 +554,8 @@
 <li><p>PYPEC - Makes necessary changes to switch to python3 and updates portal partitions</p></li>
 </ul>
 </section>
-<section id="id5">
-<h2>Fixes<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<section id="id10">
+<h2>Fixes<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>EQUIL - Adds proper zmid displacement to z grid from g-files (previously, z of equilibria were off by this value - effectively moving the magnetic axis to z=0 in all cases)</p></li>
 <li><p>DCON - Forces euler.bin outputs at critical steps on either side of singular surfaces, enabling safe use of euler_stride with GPEC</p></li>
@@ -410,8 +573,8 @@
 </section>
 <section id="gpec-v1-4-4">
 <h1>GPEC v1.4.4<a class="headerlink" href="#gpec-v1-4-4" title="Link to this heading">¶</a></h1>
-<section id="id6">
-<h2>Fixes<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<section id="id11">
+<h2>Fixes<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>DCON - Fixes output of plasma energy eigenvectors in netcdf</p></li>
 </ul>
@@ -419,15 +582,15 @@
 </section>
 <section id="gpec-v1-4-3">
 <h1>GPEC v1.4.3<a class="headerlink" href="#gpec-v1-4-3" title="Link to this heading">¶</a></h1>
-<section id="id7">
-<h2>Fixes<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h2>
+<section id="id12">
+<h2>Fixes<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>VACUUM - Respects the namelist a and lspark when determining whether to write a wall geometry file output</p></li>
 <li><p>DCON - Properly spaces the vacuum matrices used when finding the peak dW with psiedge &lt; psilim</p></li>
 </ul>
 </section>
-<section id="id8">
-<h2>Changes<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
+<section id="id13">
+<h2>Changes<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>DCON - dW_edge in the netcdf output now includes the imaginary component of the least stable eigenvalue</p></li>
 </ul>
@@ -435,14 +598,14 @@
 </section>
 <section id="gpec-v1-4-2">
 <h1>GPEC v1.4.2<a class="headerlink" href="#gpec-v1-4-2" title="Link to this heading">¶</a></h1>
-<section id="id9">
-<h2>Fixes<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h2>
+<section id="id14">
+<h2>Fixes<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>PENTRC - Respects the namelist verbose setting throughout the program</p></li>
 </ul>
 </section>
-<section id="id10">
-<h2>Changes<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h2>
+<section id="id15">
+<h2>Changes<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>COIL - Updates ASDEX Upgrade coil geometry to have more accurate, rounded cornering</p></li>
 </ul>
@@ -450,8 +613,8 @@
 </section>
 <section id="gpec-v1-4-1">
 <h1>GPEC v1.4.1<a class="headerlink" href="#gpec-v1-4-1" title="Link to this heading">¶</a></h1>
-<section id="id11">
-<h2>Fixes<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h2>
+<section id="id16">
+<h2>Fixes<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>GPEC - Corrects helicity for brzphi calculations in machine angle</p></li>
 <li><p>PENTRC - Fixes reading of xclebsch displacements from other codes that use psi as the outer loop</p></li>
@@ -460,8 +623,8 @@
 </section>
 <section id="gpec-v1-4-0">
 <h1>GPEC v1.4.0<a class="headerlink" href="#gpec-v1-4-0" title="Link to this heading">¶</a></h1>
-<section id="id12">
-<h2>Fixes<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h2>
+<section id="id17">
+<h2>Fixes<a class="headerlink" href="#id17" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>INSTALL - Support added for compiling on MacOS as well as with gfortran on linux</p></li>
 <li><p>VACUUM - Makes ishape 41 use on manual wall robust to a&gt;10 infinite wall tests</p></li>
@@ -469,14 +632,14 @@
 <li><p>GPEC - Removes (incorrect) units from normalized minor radius netcdf output</p></li>
 </ul>
 </section>
-<section id="id13">
-<h2>Changes<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h2>
+<section id="id18">
+<h2>Changes<a class="headerlink" href="#id18" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>DCON - Improves parallel assembly of kinetic matrices using collapsed psi and ell loops and dynamic scheduling. This enables efficient use of large parallel_threads.</p></li>
 </ul>
 </section>
-<section id="id14">
-<h2>Adds<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h2>
+<section id="id19">
+<h2>Adds<a class="headerlink" href="#id19" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>EQUIL - Adds new pow1 and pow2 grid_type options. These grids are linear in core psi_n and approach zero spacing at psihigh linearly/quadratically (packed in the edge).</p></li>
 <li><p>DCON - Adds new psiedge variable to dcon_control. When this is below psihigh, DCON records dW(psi) between psiedge and psihigh and re-runs the integration with truncation adjusted to max(dW).</p></li>
@@ -486,8 +649,8 @@
 </section>
 <section id="gpec-v1-3-8">
 <h1>GPEC v1.3.8<a class="headerlink" href="#gpec-v1-3-8" title="Link to this heading">¶</a></h1>
-<section id="id15">
-<h2>Fixes<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h2>
+<section id="id20">
+<h2>Fixes<a class="headerlink" href="#id20" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>GPEC - Fixes bug that caused GPEC netcdf to crash when there are no rational surfaces (common when running DCON with kin_flag)</p></li>
 <li><p>DCON - Defaults the reform_eq_with_psilim flag to false for better consistency with earlier versions</p></li>
@@ -496,8 +659,8 @@
 </section>
 <section id="gpec-v1-3-7">
 <h1>GPEC v1.3.7<a class="headerlink" href="#gpec-v1-3-7" title="Link to this heading">¶</a></h1>
-<section id="id16">
-<h2>Fixes<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h2>
+<section id="id21">
+<h2>Fixes<a class="headerlink" href="#id21" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>PENTRC - Corrects sqdivxi_perp_SA output, which was being overwritten with sqdBoB_L_SA</p></li>
 </ul>
@@ -505,8 +668,8 @@
 </section>
 <section id="gpec-v1-3-6">
 <h1>GPEC v1.3.6<a class="headerlink" href="#gpec-v1-3-6" title="Link to this heading">¶</a></h1>
-<section id="id17">
-<h2>Fixes<a class="headerlink" href="#id17" title="Link to this heading">¶</a></h2>
+<section id="id22">
+<h2>Fixes<a class="headerlink" href="#id22" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>DCON - Fixes openmp reduction of kinetic matrices when kin_flag=t</p></li>
 </ul>
@@ -514,8 +677,8 @@
 </section>
 <section id="gpec-v1-3-5">
 <h1>GPEC v1.3.5<a class="headerlink" href="#gpec-v1-3-5" title="Link to this heading">¶</a></h1>
-<section id="id18">
-<h2>Fixes<a class="headerlink" href="#id18" title="Link to this heading">¶</a></h2>
+<section id="id23">
+<h2>Fixes<a class="headerlink" href="#id23" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>INSTALL - Minor makefile robustness improvements</p></li>
 </ul>
@@ -523,14 +686,14 @@
 </section>
 <section id="gpec-v1-3-4">
 <h1>GPEC v1.3.4<a class="headerlink" href="#gpec-v1-3-4" title="Link to this heading">¶</a></h1>
-<section id="id19">
-<h2>Fixes<a class="headerlink" href="#id19" title="Link to this heading">¶</a></h2>
+<section id="id24">
+<h2>Fixes<a class="headerlink" href="#id24" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>STRIDE - Fixes faulty writing of 2Nx2N Delta matrix into a NxN Delta_prime in netcdf</p></li>
 </ul>
 </section>
-<section id="id20">
-<h2>Adds<a class="headerlink" href="#id20" title="Link to this heading">¶</a></h2>
+<section id="id25">
+<h2>Adds<a class="headerlink" href="#id25" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>STRIDE - Writes full 2Nx2N Delta matrix as well as NxN A’, B’, Gamma’, &amp; Delta’ sub-matrices to netcdf</p></li>
 </ul>
@@ -538,8 +701,8 @@
 </section>
 <section id="gpec-v1-3-3">
 <h1>GPEC v1.3.3<a class="headerlink" href="#gpec-v1-3-3" title="Link to this heading">¶</a></h1>
-<section id="id21">
-<h2>Fixes<a class="headerlink" href="#id21" title="Link to this heading">¶</a></h2>
+<section id="id26">
+<h2>Fixes<a class="headerlink" href="#id26" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>DCON - Re-enables inverse equilibria, which raised errors in the more rigorous bicube checking introduced in 1.3.2</p></li>
 </ul>
@@ -547,8 +710,8 @@
 </section>
 <section id="gpec-v1-3-2">
 <h1>GPEC v1.3.2<a class="headerlink" href="#gpec-v1-3-2" title="Link to this heading">¶</a></h1>
-<section id="id22">
-<h2>Adds<a class="headerlink" href="#id22" title="Link to this heading">¶</a></h2>
+<section id="id27">
+<h2>Adds<a class="headerlink" href="#id27" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>INSTALL - Generalizes makefiles for better portability (intel/pgi/gfortran)</p></li>
 <li><p>INSTALL - Enables parallel or serial compilation (controlled by OMPFLAG)</p></li>
@@ -560,16 +723,16 @@
 <li><p>PENTRC - Parallelizes pentrc bounce harmonic integrations</p></li>
 </ul>
 </section>
-<section id="id23">
-<h2>Changes<a class="headerlink" href="#id23" title="Link to this heading">¶</a></h2>
+<section id="id28">
+<h2>Changes<a class="headerlink" href="#id28" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>INSTALL - Updates instructions for new AUG cluster</p></li>
 <li><p>GPEC - Moves overlap outputs to control netcdf, consistent with correct dimensions (mode, not psi_rational)</p></li>
 <li><p>GPEC - Renames netcdf dimensions *_rat to *_rational for clarity</p></li>
 </ul>
 </section>
-<section id="id24">
-<h2>Fixes<a class="headerlink" href="#id24" title="Link to this heading">¶</a></h2>
+<section id="id29">
+<h2>Fixes<a class="headerlink" href="#id29" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>DCON - Makes dcon robust to peak_flag when truncation is already very near the seperatrix</p></li>
 <li><p>GPEC - Fixes calculation of vacuum fields when using mode_flag</p></li>
@@ -582,8 +745,8 @@
 </section>
 <section id="gpec-v1-3-1">
 <h1>GPEC v1.3.1<a class="headerlink" href="#gpec-v1-3-1" title="Link to this heading">¶</a></h1>
-<section id="id25">
-<h2>Fixes<a class="headerlink" href="#id25" title="Link to this heading">¶</a></h2>
+<section id="id30">
+<h2>Fixes<a class="headerlink" href="#id30" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>INSTALL - Fixes a makefile error</p></li>
 </ul>
@@ -591,8 +754,8 @@
 </section>
 <section id="gpec-v1-3-0">
 <h1>GPEC v1.3.0<a class="headerlink" href="#gpec-v1-3-0" title="Link to this heading">¶</a></h1>
-<section id="id26">
-<h2>Adds<a class="headerlink" href="#id26" title="Link to this heading">¶</a></h2>
+<section id="id31">
+<h2>Adds<a class="headerlink" href="#id31" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>STRIDE - Adds the State Transition Rapid Integration with DCON (Asymptotic) Expansions code
 * Citations included in docs (website)
@@ -601,15 +764,15 @@
 * This provides a useful for consistent, physics based truncation choice that can be more robust to small EFIT changes</p></li>
 </ul>
 </section>
-<section id="id27">
-<h2>Changes<a class="headerlink" href="#id27" title="Link to this heading">¶</a></h2>
+<section id="id32">
+<h2>Changes<a class="headerlink" href="#id32" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>DOCS - Improves online documentation</p></li>
 <li><p>INSTALL - Updates flags for intel 2018 and adds instructions for IPP Max-Planck Garching</p></li>
 </ul>
 </section>
-<section id="id28">
-<h2>Fixes<a class="headerlink" href="#id28" title="Link to this heading">¶</a></h2>
+<section id="id33">
+<h2>Fixes<a class="headerlink" href="#id33" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>DCON - Fixes a formatting error in sing_find.out</p></li>
 <li><p>DOCS - Fixes rmatch eta and massdens inputs for DIIID_resisitive_example</p></li>
@@ -619,14 +782,14 @@
 </section>
 <section id="gpec-v1-2-3">
 <h1>GPEC v1.2.3<a class="headerlink" href="#gpec-v1-2-3" title="Link to this heading">¶</a></h1>
-<section id="id29">
-<h2>Changes<a class="headerlink" href="#id29" title="Link to this heading">¶</a></h2>
+<section id="id34">
+<h2>Changes<a class="headerlink" href="#id34" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>DOCS - Modernizes online documentation</p></li>
 </ul>
 </section>
-<section id="id30">
-<h2>Fixes<a class="headerlink" href="#id30" title="Link to this heading">¶</a></h2>
+<section id="id35">
+<h2>Fixes<a class="headerlink" href="#id35" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>GPEC - Fixes incorrect w_isl unit labeling in netcdf and makes it the full width for consistency with w_isl_v</p></li>
 </ul>
@@ -634,14 +797,14 @@
 </section>
 <section id="gpec-v1-2-2">
 <h1>GPEC v1.2.2<a class="headerlink" href="#gpec-v1-2-2" title="Link to this heading">¶</a></h1>
-<section id="id31">
-<h2>Adds<a class="headerlink" href="#id31" title="Link to this heading">¶</a></h2>
+<section id="id36">
+<h2>Adds<a class="headerlink" href="#id36" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>GPEC - Adds new coils for DIII-D, COMPASS, ASDEX Upgrade, and NSTX-U</p></li>
 </ul>
 </section>
-<section id="id32">
-<h2>Changes<a class="headerlink" href="#id32" title="Link to this heading">¶</a></h2>
+<section id="id37">
+<h2>Changes<a class="headerlink" href="#id37" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>DOCS - Updates documentation of authors, public installations, and compilation at each institution</p></li>
 <li><p>DCON - Makes formatting of surface quantities table in dcon.out consistent between DCON and RDCON</p></li>
@@ -649,8 +812,8 @@
 <li><p>GPEC - Singular coupling routines are skipped entirely (avoiding possible issues) if no rationals exist in the domain</p></li>
 </ul>
 </section>
-<section id="id33">
-<h2>Fixes<a class="headerlink" href="#id33" title="Link to this heading">¶</a></h2>
+<section id="id38">
+<h2>Fixes<a class="headerlink" href="#id38" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>GPEC - Fixes a ss_flag bug so the penetrated vacuum field is calculated on the correct surfaces</p></li>
 </ul>
@@ -658,8 +821,8 @@
 </section>
 <section id="gpec-v1-2-1">
 <h1>GPEC v1.2.1<a class="headerlink" href="#gpec-v1-2-1" title="Link to this heading">¶</a></h1>
-<section id="id34">
-<h2>Fixes<a class="headerlink" href="#id34" title="Link to this heading">¶</a></h2>
+<section id="id39">
+<h2>Fixes<a class="headerlink" href="#id39" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>DOCS - Fixes a mismatch in the jacobian’s between GPEC and PENTRC (the torques profiles now match)</p></li>
 </ul>
@@ -667,8 +830,8 @@
 </section>
 <section id="gpec-v1-2-0">
 <h1>GPEC v1.2.0<a class="headerlink" href="#gpec-v1-2-0" title="Link to this heading">¶</a></h1>
-<section id="id35">
-<h2>Adds<a class="headerlink" href="#id35" title="Link to this heading">¶</a></h2>
+<section id="id40">
+<h2>Adds<a class="headerlink" href="#id40" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>RDCON &amp; RMATCH - Adds resistive DCON packages
 * Calculates inner layer model and performs matching with ideal outer layer
@@ -687,8 +850,8 @@
 * Previous tri-diagonal spline solutions can be recovered by setting use_classic_splines to false</p></li>
 </ul>
 </section>
-<section id="id36">
-<h2>Changes<a class="headerlink" href="#id36" title="Link to this heading">¶</a></h2>
+<section id="id41">
+<h2>Changes<a class="headerlink" href="#id41" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>DCON - Improves clarity of singular surface search messages</p></li>
 <li><p>GPEC - Improves clarity and consistency of singular coupling outputs
@@ -698,8 +861,8 @@
 <li><p>PYPEC - Improves automatic selection of partitions and threads in job submission and adds rdcon to exe options</p></li>
 </ul>
 </section>
-<section id="id37">
-<h2>Fixes<a class="headerlink" href="#id37" title="Link to this heading">¶</a></h2>
+<section id="id42">
+<h2>Fixes<a class="headerlink" href="#id42" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>DCON - Fixes only the the plasma energy matrix written to dcon.out to include full matrix (previously only 2 columns)</p></li>
 <li><p>GPEC - Improves clarity and consistency of singular coupling outputs
@@ -733,8 +896,8 @@
 <section id="gpec-v1-1-6">
 <h1>GPEC v1.1.6<a class="headerlink" href="#gpec-v1-1-6" title="Link to this heading">¶</a></h1>
 <p>This release corrects a bug that may have made previous GPEC electron NTV have the incorrect sign.</p>
-<section id="id38">
-<h2>Fixes<a class="headerlink" href="#id38" title="Link to this heading">¶</a></h2>
+<section id="id43">
+<h2>Fixes<a class="headerlink" href="#id43" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>PENTRC - Corrected the sign of the charge (diamagnetic frequencies, etc) for electron calculations.</p></li>
 </ul>
@@ -743,16 +906,16 @@
 <section id="gpec-v1-1-5">
 <h1>GPEC v1.1.5<a class="headerlink" href="#gpec-v1-1-5" title="Link to this heading">¶</a></h1>
 <p>This version includes a minor but important change to make the ideal GPEC eigenfunctions almost identical to those from DCON in IPEC. A power extraction essential for numerical stability when forming the fundamental H and G matrices in the kinetic solutions has been removed from the ideal calculations for consistency with the previous calculations in the ideal case.</p>
-<section id="id39">
-<h2>Adds<a class="headerlink" href="#id39" title="Link to this heading">¶</a></h2>
+<section id="id44">
+<h2>Adds<a class="headerlink" href="#id44" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>COIL - New coils are available for JET, NSTX, and COMPASS. The number of coils usable in a run increased.</p></li>
 <li><p>GPEC - The q, rho, and volume profiles are included in the netcdf output if any profile output is requested.</p></li>
 <li><p>GPEC - The local coupling matrix between opsi1 and opsi2 and corresponding svd vectors are available. <strong>needs netcdf output??</strong></p></li>
 </ul>
 </section>
-<section id="id40">
-<h2>Fixes<a class="headerlink" href="#id40" title="Link to this heading">¶</a></h2>
+<section id="id45">
+<h2>Fixes<a class="headerlink" href="#id45" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>DCON - Fundamental matrices only use power extraction technique when kin_flag is true.</p></li>
 <li><p>PENTRC - Progressbars are now called at the end of do loops for more precise reporting.</p></li>
@@ -770,8 +933,8 @@
 </section>
 <section id="gpec-v1-1-4">
 <h1>GPEC v1.1.4<a class="headerlink" href="#gpec-v1-1-4" title="Link to this heading">¶</a></h1>
-<section id="id41">
-<h2>Fixes<a class="headerlink" href="#id41" title="Link to this heading">¶</a></h2>
+<section id="id46">
+<h2>Fixes<a class="headerlink" href="#id46" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>COIL - Fixed faulty 1.1.3 implementation of increasing the east coil windings.</p></li>
 </ul>
@@ -779,8 +942,8 @@
 </section>
 <section id="gpec-v1-1-3">
 <h1>GPEC v1.1.3<a class="headerlink" href="#gpec-v1-1-3" title="Link to this heading">¶</a></h1>
-<section id="id42">
-<h2>Fixes<a class="headerlink" href="#id42" title="Link to this heading">¶</a></h2>
+<section id="id47">
+<h2>Fixes<a class="headerlink" href="#id47" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>COIL - Increased the number of windings for the up and down EAST coil arrays</p></li>
 </ul>
@@ -788,8 +951,8 @@
 </section>
 <section id="gpec-v1-1-2">
 <h1>GPEC v1.1.2<a class="headerlink" href="#gpec-v1-1-2" title="Link to this heading">¶</a></h1>
-<section id="id43">
-<h2>Fixes<a class="headerlink" href="#id43" title="Link to this heading">¶</a></h2>
+<section id="id48">
+<h2>Fixes<a class="headerlink" href="#id48" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>PENTRC - Now successfully writes kinetic profiles on the equilibrium grid to netcdf files</p></li>
 </ul>
@@ -797,8 +960,8 @@
 </section>
 <section id="gpec-v1-1-1">
 <h1>GPEC v1.1.1<a class="headerlink" href="#gpec-v1-1-1" title="Link to this heading">¶</a></h1>
-<section id="id44">
-<h2>Fixes<a class="headerlink" href="#id44" title="Link to this heading">¶</a></h2>
+<section id="id49">
+<h2>Fixes<a class="headerlink" href="#id49" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>PYPEC - A bug was fixed in the python processing tools’ optimize_torque function</p></li>
 </ul>
@@ -807,8 +970,8 @@
 <section id="gpec-v1-1-0">
 <h1>GPEC v1.1.0<a class="headerlink" href="#gpec-v1-1-0" title="Link to this heading">¶</a></h1>
 <p>This release includes a new DCON netcdf output file and SLURM job submission interface in PYPEC for compatibility with the new portal and iris computing standards. Details are below.</p>
-<section id="id45">
-<h2>Adds<a class="headerlink" href="#id45" title="Link to this heading">¶</a></h2>
+<section id="id50">
+<h2>Adds<a class="headerlink" href="#id50" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>DCON - A clean, efficient netcdf file replicates the information in the complicated dcon.out ascii.</p></li>
 <li><p>DCON - The new namelist variable, out_fund, toggles fundamental matrix output (ABCDEH in imats.out fs.bin, ks.bin and gs.bin).</p></li>
@@ -824,8 +987,8 @@
 <li><p>REGRESSION - Tools for comparing versions are available.</p></li>
 </ul>
 </section>
-<section id="id46">
-<h2>Fixes<a class="headerlink" href="#id46" title="Link to this heading">¶</a></h2>
+<section id="id51">
+<h2>Fixes<a class="headerlink" href="#id51" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>DCON, GPEC, PENTRC - Timers were fixed to correctly handle multi-day runs.</p></li>
 <li><p>DCON - Ascii formatting is updated for complex eigenvalue energies.</p></li>
@@ -833,8 +996,8 @@
 <li><p>GPEC - Appropriate ascii closing was added.</p></li>
 </ul>
 </section>
-<section id="id47">
-<h2>Documentation<a class="headerlink" href="#id47" title="Link to this heading">¶</a></h2>
+<section id="id52">
+<h2>Documentation<a class="headerlink" href="#id52" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>DOCS - Documentation includes compare module.</p></li>
 <li><p>INPUT - Annotations and settings of default input namelists include minor changes.</p></li>
@@ -844,8 +1007,8 @@
 <section id="gpec-v1-0-6">
 <h1>GPEC v1.0.6<a class="headerlink" href="#gpec-v1-0-6" title="Link to this heading">¶</a></h1>
 <p>This patch features fixes to a number of deeply embedded indexing and memory allocation bugs. This is necessary for compiler robustness. The regression examples show essentially no change in the results to machine precision on portal.</p>
-<section id="id48">
-<h2>Fixes<a class="headerlink" href="#id48" title="Link to this heading">¶</a></h2>
+<section id="id53">
+<h2>Fixes<a class="headerlink" href="#id53" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>VACUUM &amp; LSODE - This patch fixes the misallocation of memory for input arrays in a number of old subroutines.</p></li>
 <li><p>EQUIL - This patch fixes the misallocation of memory for temporary arrays in Fourier spline fitting.</p></li>
@@ -855,8 +1018,8 @@
 </section>
 <section id="gpec-v1-0-5">
 <h1>GPEC v1.0.5<a class="headerlink" href="#gpec-v1-0-5" title="Link to this heading">¶</a></h1>
-<section id="id49">
-<h2>Fixes<a class="headerlink" href="#id49" title="Link to this heading">¶</a></h2>
+<section id="id54">
+<h2>Fixes<a class="headerlink" href="#id54" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>Fixed normalization of filter_flag energy normalized field decomposition.</p></li>
 </ul>
@@ -875,14 +1038,14 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 <section id="gpec-v1-0-2">
 <h1>GPEC v1.0.2<a class="headerlink" href="#gpec-v1-0-2" title="Link to this heading">¶</a></h1>
 <p>This patch features one bug fix and one addition to the netcdf output.</p>
-<section id="id50">
-<h2>Adds<a class="headerlink" href="#id50" title="Link to this heading">¶</a></h2>
+<section id="id55">
+<h2>Adds<a class="headerlink" href="#id55" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>A transform matrix J_surf_2 has been added to the control netcdf. This matrix applies a dimensionless half-area weighting.</p></li>
 </ul>
 </section>
-<section id="id51">
-<h2>Fixes<a class="headerlink" href="#id51" title="Link to this heading">¶</a></h2>
+<section id="id56">
+<h2>Fixes<a class="headerlink" href="#id56" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>The netcdf output Phi_xe has been changed from “energy-normalized flux” with units Wb/m to “energy-normalized field” with units of Tesla. The related *_xe matrices have been similarly normalized. No physics is changed, only the scalar area normalization.</p></li>
 </ul>
@@ -897,8 +1060,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 <p>This major release marks the true transition from individual ideal perturbed equilibrium calculations to a fully generalized perturbed equilibrium package.</p>
 <p>The Perturbed Equilibrium Nonambipolar TRansport Code (PENTRC) is used to calculate the neoclassical drift kinetic pressure matrixes required to minimize the hybrid kinetic-MHD perturbed energy and find a set of force balance states. The computational structure of the ideal DCON code is largely maintained in finding these states, although generalizations and modifications have been made to account for new mathematical properties. Foremost among these are 1) the absence of hermitian properties and 2) the integrable nature of singularities near the rational surfaces. Generalization of the linear algebra and new decomposition / recomposition of the matrices required by these changes are now used for both the ideal and kinetic calculations.</p>
 <p>The Ideal Perturbed Equilibrium Code (IPEC) has officially been deprecated and is now the package namesake: the Generalized Perturbed Equilibrium Code (GPEC). The foundational computational changes are much less than in the above case however, with only a few minor generalizations of hermitian linear algebra assumptions.</p>
-<section id="id52">
-<h2>Adds<a class="headerlink" href="#id52" title="Link to this heading">¶</a></h2>
+<section id="id57">
+<h2>Adds<a class="headerlink" href="#id57" title="Link to this heading">¶</a></h2>
 <blockquote>
 <div><ul>
 <li><p>DCON inclusion of kinetic terms is now determined by the kin_flag input.</p>
@@ -920,8 +1083,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 </ul>
 </div></blockquote>
 </section>
-<section id="id53">
-<h2>Documentation<a class="headerlink" href="#id53" title="Link to this heading">¶</a></h2>
+<section id="id58">
+<h2>Documentation<a class="headerlink" href="#id58" title="Link to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>Example runs have been split into ideal and kinetic examples to show the kinetic effects</p></li>
@@ -933,15 +1096,15 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 <section id="gpec-v0-4-0">
 <h1>GPEC v0.4.0<a class="headerlink" href="#gpec-v0-4-0" title="Link to this heading">¶</a></h1>
 <p>This release includes a number of minor I/O changes and convenient default input features as well as a few minor bug fixes.</p>
-<section id="id54">
-<h2>Fixes<a class="headerlink" href="#id54" title="Link to this heading">¶</a></h2>
+<section id="id59">
+<h2>Fixes<a class="headerlink" href="#id59" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>MATCH updated interface for changes DCON file formats</p></li>
 <li><p>IPEC fixed alignment of columns in xclebsch_fun output</p></li>
 </ul>
 </section>
-<section id="id55">
-<h2>Features<a class="headerlink" href="#id55" title="Link to this heading">¶</a></h2>
+<section id="id60">
+<h2>Features<a class="headerlink" href="#id60" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>DCON, IPEC, PENTRC all accept the additional Jacobian type ‘park’</p>
 <ul>
@@ -962,8 +1125,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 </li>
 </ul>
 </section>
-<section id="id56">
-<h2>Documentation<a class="headerlink" href="#id56" title="Link to this heading">¶</a></h2>
+<section id="id61">
+<h2>Documentation<a class="headerlink" href="#id61" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>Example namelists updated to use native coordinates throughout for increased speed and clarity</p></li>
 </ul>
@@ -972,8 +1135,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 <section id="gpec-v0-3-5">
 <h1>GPEC v0.3.5<a class="headerlink" href="#gpec-v0-3-5" title="Link to this heading">¶</a></h1>
 <p>This release includes critical bug fixes for the nonambipolar transport calculations in PENTRC.</p>
-<section id="id57">
-<h2>Fixes<a class="headerlink" href="#id57" title="Link to this heading">¶</a></h2>
+<section id="id62">
+<h2>Fixes<a class="headerlink" href="#id62" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>PENTRC a correction factor of 1/2 has been applied to the fcgl, *gar, and *mm methods to correctly represent quadratic terms using complex analysis</p></li>
 <li><p>PENTRC xclebsch is now correctly transformed back to DCON working coordinates when output on more m than the DCON mpert.</p></li>
@@ -983,8 +1146,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 <section id="gpec-v0-3-4">
 <h1>GPEC v0.3.4<a class="headerlink" href="#gpec-v0-3-4" title="Link to this heading">¶</a></h1>
 <p>This release includes a number of critical bug fixes found and fixed in a general review of the ideal MHD package in preparation of the move to kinetic MHD version 0.4.0 under development. It also includes a few (re-)standardizations of features.</p>
-<section id="id58">
-<h2>Fixes<a class="headerlink" href="#id58" title="Link to this heading">¶</a></h2>
+<section id="id63">
+<h2>Fixes<a class="headerlink" href="#id63" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>PENTRC +/- omega_b included for passing and not trapped particles, removing unphysical symmetry in ell of trapped particle torques</p>
 <ul>
@@ -1009,8 +1172,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 <li><p>IPEC ipeq_fcoordsout and ipeq_bcoordsout always perform transformation on larger of the working/output m grids (not expected to be an issue for previous versions)</p></li>
 </ul>
 </section>
-<section id="id59">
-<h2>Features<a class="headerlink" href="#id59" title="Link to this heading">¶</a></h2>
+<section id="id64">
+<h2>Features<a class="headerlink" href="#id64" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>IPEC output coordinate m range is now determined by a new IPEC_OUTPUT variable mlim_out</p></li>
 <li><p>IPEC the control surface theta-space function values are now always calculated and output</p></li>
@@ -1034,8 +1197,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 <li><p>INSTALL and all individual makefiles have updated from the develop branch, reorganizing the linking order and allowing diverse machine/compiler options.</p></li>
 </ul>
 </section>
-<section id="id60">
-<h2>Documentation<a class="headerlink" href="#id60" title="Link to this heading">¶</a></h2>
+<section id="id65">
+<h2>Documentation<a class="headerlink" href="#id65" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>Updated input and example namelists and their annotation</p></li>
 </ul>
@@ -1065,8 +1228,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 </section>
 <section id="gpec-v0-3-1">
 <h1>GPEC v0.3.1<a class="headerlink" href="#gpec-v0-3-1" title="Link to this heading">¶</a></h1>
-<section id="id61">
-<h2>Fixes<a class="headerlink" href="#id61" title="Link to this heading">¶</a></h2>
+<section id="id66">
+<h2>Fixes<a class="headerlink" href="#id66" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>IPEC fixed mistaken use of Hermitian lapack subroutines for permeability matrix</p></li>
 <li><p>PYPEC synthetics properly closes synthetic surfaces that cover the full poloidal angle (vessel wall, etc.)</p></li>
@@ -1074,8 +1237,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 <li><p>PYPEC updated to reflect move from xray to xarray</p></li>
 </ul>
 </section>
-<section id="id62">
-<h2>Features<a class="headerlink" href="#id62" title="Link to this heading">¶</a></h2>
+<section id="id67">
+<h2>Features<a class="headerlink" href="#id67" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>IPEC netcdf additions, including control surface matrices, profile quantities, shot/time/machine, and more</p></li>
 <li><p>IPEC netcdf names conform to netcdf conventions</p></li>
@@ -1102,8 +1265,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 </section>
 <section id="gpec-v0-3-0">
 <h1>GPEC v0.3.0<a class="headerlink" href="#gpec-v0-3-0" title="Link to this heading">¶</a></h1>
-<section id="id63">
-<h2>Fixes<a class="headerlink" href="#id63" title="Link to this heading">¶</a></h2>
+<section id="id68">
+<h2>Fixes<a class="headerlink" href="#id68" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>DCON qhigh is enforced independent of sas_flag</p></li>
 <li><p>IPEC longstanding bug that caused crashes when brzphi was requested without eqbrzphi is fixed</p></li>
@@ -1114,8 +1277,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 </li>
 </ul>
 </section>
-<section id="id64">
-<h2>Features<a class="headerlink" href="#id64" title="Link to this heading">¶</a></h2>
+<section id="id69">
+<h2>Features<a class="headerlink" href="#id69" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>COIL now includes 4x48 RFX-mod coils</p></li>
 <li><p>IPEC netCDF output is now available for major output flags (more will be transitioned soon)</p>
@@ -1128,8 +1291,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 <li><p>IPEC reduced terminal printing - no longer is every eigenmode printed to the terminal</p></li>
 </ul>
 </section>
-<section id="id65">
-<h2>Performance<a class="headerlink" href="#id65" title="Link to this heading">¶</a></h2>
+<section id="id70">
+<h2>Performance<a class="headerlink" href="#id70" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>IPEC speed was increased by saving coordinate transformation information on a surface when performing multiple transformations on one surface</p></li>
 <li><p>IPEC brzphi speed was increase by 1-2 orders of magnitude by calculating (r,z,phi) quantities on the requested grid points instead of across surfaces</p></li>
@@ -1159,7 +1322,7 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
     </p>
     <p>
         &copy; Copyright 2007 The Trustees of Princeton University.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 8.2.3.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 8.1.3.<br/>
     </p>
   </div>
 </footer>

@@ -5,10 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Coordinates &#8212; GPEC 1.5.6 documentation</title>
+    <title>Coordinates &#8212; GPEC 1.6.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=49fa7461" />
-    <script src="_static/documentation_options.js?v=8f564690"></script>
+    <script src="_static/documentation_options.js?v=72d88caf"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -37,7 +37,7 @@
         <a class="navbar-brand" href="index.html">
           <!-- GPEC-->
         </a>
-        <!-- <span class="navbar-text navbar-version pull-left"><b>1.5</b></span> -->
+        <!-- <span class="navbar-text navbar-version pull-left"><b>1.6</b></span> -->
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -95,12 +95,14 @@
 <li><a class="reference internal" href="#translating-to-machine-space">Translating to Machine Space</a></li>
 <li><a class="reference internal" href="#interfacing-with-surfmn">Interfacing with SURFMN</a></li>
 <li><a class="reference internal" href="#interfacing-with-vacuum">Interfacing with VACUUM</a></li>
+<li><a class="reference internal" href="#resonant-coupling-and-dominant-mode-overlap">Resonant Coupling and Dominant Mode Overlap</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#inputs">Inputs</a><ul>
 <li><a class="reference internal" href="#the-equil-namelist">The EQUIL Namelist</a></li>
 <li><a class="reference internal" href="#the-dcon-namelist">The DCON Namelist</a></li>
 <li><a class="reference internal" href="#the-gpec-namelist">The GPEC Namelist</a></li>
+<li><a class="reference internal" href="#the-match-namelist">The MATCH Namelist</a></li>
 <li><a class="reference internal" href="#the-pentrc-namelist">The PENTRC Namelist</a></li>
 </ul>
 </li>
@@ -113,6 +115,7 @@
 </li>
 <li><a class="reference internal" href="#output-files">Output Files</a><ul>
 <li><a class="reference internal" href="#ascii-file-outputs">ASCII File Outputs</a></li>
+<li><a class="reference internal" href="#energy-decomposition-outputs">Energy Decomposition Outputs</a></li>
 <li><a class="reference internal" href="#binary-file-outputs">Binary File Outputs</a></li>
 </ul>
 </li>
@@ -157,6 +160,12 @@
 <li><p>GPEC effectively uses CCW <span class="math notranslate nohighlight">\(\phi\)</span> for left-handed (LH) configurations, but CW <span class="math notranslate nohighlight">\(\phi\)</span> for right-handed (RH) configurations.</p></li>
 <li><p>GPEC always uses upward outboard <span class="math notranslate nohighlight">\(\theta\)</span>.</p></li>
 </ol>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>For a comprehensive reference of all sign conventions (including
+rotation velocity, safety factor, mode number resonance, and code
+interfacing rules), see <a class="reference internal" href="sign_conventions.html"><span class="doc">Sign Conventions Reference</span></a>.</p>
+</div>
 <p>The result of this is that the pitch-aligned field will always be positive m. This convention makes in-house analysis nice and easy. For example, one can <em>always</em> plot the m=2 perturbed normal displacement profile and see the resonant surface behavior at q=2. The m=-2 normal displacement will always be nonresonant. This is shown in the figure below from the package DIII-D example, which is a LH plasma.</p>
 <a class="reference internal image-reference" href="_images/example_xno_kinkprofile.png"><img alt="_images/example_xno_kinkprofile.png" class="align-center" src="_images/example_xno_kinkprofile.png" style="width: 400px;" />
 </a>
@@ -181,31 +190,41 @@
 <h2>Interfacing with VACUUM<a class="headerlink" href="#interfacing-with-vacuum" title="Link to this heading">¶</a></h2>
 <p>Vacuum is the code used in DCON to calculate the vacuum energy matrices, which combine with the plasma energy matrix to describe the full system eigenmodes. The VACUUM code uses CCW <span class="math notranslate nohighlight">\(\phi\)</span> and downward outboard <span class="math notranslate nohighlight">\(\theta\)</span>. We thus use the complex conjugate of RH configurations to interface GPEC and VACUUM.</p>
 </section>
+<section id="resonant-coupling-and-dominant-mode-overlap">
+<span id="coupling-overlap"></span><h2>Resonant Coupling and Dominant Mode Overlap<a class="headerlink" href="#resonant-coupling-and-dominant-mode-overlap" title="Link to this heading">¶</a></h2>
+<p>Coupling matrices (singcoup_flag) relate area-weighted resonant quantities to the root-area-weighted vacuum field, making their SVD coordinate invariant (Park 2008, Pharr 2026):</p>
+<div class="math notranslate nohighlight">
+\[\bar{b}^r_i = C_{im} \tilde{b}^x_m, \qquad
+\tilde{b}^x_m = \frac{1}{\sqrt{A^x}} \oint d\theta\, d\phi \, \delta\mathbf{B}^x\cdot\hat{n} \, \sqrt{\mathcal{J}|\nabla\psi|} \, e^{i(n\phi - m\theta)}.\]</div>
+<p>Singular values carry the units of each C; right-singular vectors <span class="math notranslate nohighlight">\(\mathbf{v}_j\)</span> are unitless.</p>
+</section>
 </section>
 <section id="inputs">
 <span id="id1"></span><h1>Inputs<a class="headerlink" href="#inputs" title="Link to this heading">¶</a></h1>
-<p>Fully annotated namelist input files can be found in the $GPECHOME/input directory and any of the examples in $GPECHOME/docs/examples directories of any <cite>public installation &lt;installation&gt;</cite>.</p>
+<p>Fully annotated namelist input files can be found in the $GPECHOME/input directory and any of the examples in $GPECHOME/docs/examples directories of any <a class="reference internal" href="installation.html#installation"><span class="std std-ref">public installation</span></a>.</p>
 <p>The major input files requiring user interaction are as follows.</p>
 <section id="the-equil-namelist">
 <h2>The EQUIL Namelist<a class="headerlink" href="#the-equil-namelist" title="Link to this heading">¶</a></h2>
 <p>This namelist specifies the equilibrium inputs and how equilibrium quantities are splined for use in the various executables.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>&amp;EQUIL_CONTROL
-    eq_type=&quot;efit&quot;       ! Type of the input 2D equilibrium file. Accepts efit, chease, fluxgrid, transp, jsolver, lar, sol, etc.
-    eq_filename=&quot;mypath&quot; ! Path to input file (geqdsk, etc.) Must specified (no default).
+    eq_type="efit"       ! Type of the input 2D equilibrium file. Accepts efit, chease, fluxgrid, transp, jsolver, lar, sol, etc.
+    eq_filename="mypath" ! Path to input file (geqdsk, etc.) Must specified (no default).
 
-    jac_type=&quot;hamada&quot;    ! Working coordinate system for all DCON and GPEC calculations. Overrides individual powers. Accepts hamada, pest, boozer, equal_arc
+    jac_type="hamada"    ! Working coordinate system for all DCON and GPEC calculations. Overrides individual powers. Accepts hamada, pest, boozer, equal_arc, park, other
     power_bp=0           ! del.B ~ B_p**power_bp * B**power_b / R**power_r
     power_b=0            ! del.B ~ B_p**power_bp * B**power_b / R**power_r
     power_r=0            ! del.B ~ B_p**power_bp * B**power_b / R**power_r
 
-    grid_type=&quot;ldp&quot;      ! Radial grid packing of equilibrium quantities. Accepts rho, ldp, pow1, pow2, or original. ldp packs points near the core and edge. pow* packs near the edge.
+    grid_type="ldp"      ! Radial grid packing of equilibrium quantities. Accepts rho, ldp, pow1, pow2, or original. ldp packs points near the core and edge. pow* packs near the edge. original uses the input file's surfaces between psilow and psihigh, and is too coarse at the edge for uniform-psi g-files.
     psilow=1e-2          ! Minimum value of psi, normalized from 0 to 1
-    psihigh=0.994        ! Maximum value of psi, normalized from 0 to 1
-    mpsi=128              ! Number of radial grid intervals for equilibrium quantities
+    psihigh=0.994        ! Maximum value of psi, normalized from 0 to 1 (ldp_i with psi bounds: capped at the last file surface)
+    mpsi=128             ! Number of radial grid intervals for equilibrium quantities
     mtheta=256           ! Number of equally spaced poloidal grid intervals for all splines
     newq0=0              ! Grad-Shafranov solution invariant adjustment of the q profile to give the specified value of q at the axis. Default 0 uses input file value.
     etol = 1e-7          ! Tolerance for direct equilibrium reconstruction of flux surfaces/coordinates
+    enstep=16384         ! Maximum number of LSODE steps allowed per field-line integral in the direct equilibrium reconstruction
     use_classic_splines = f ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
+    profile_source="values" ! efit, and ldp_i files with FF', p' records. "values" (default): spline the tabulated f, p. "integrate": integrate FF', p' inward from the boundary and keep them as knot derivatives; for g-files with single-precision values; can shift pedestal surfaces
 
     input_only=f         ! Generate information about the input and then quit with no further calculation
     use_galgrid=t        ! Use the same grid as galerkin method when regrid=.True.
@@ -219,6 +238,7 @@
     out_2d=f             ! Ascii output of processed 2D data
     bin_2d=f             ! Binary output of processed 2D data
     dump_flag=f          ! Binary dump of basic equilibrium data and 2D rzphi spline
+    out_ahg2msc=f        ! Output deprecated ahg2msc.out files. This is used to communicate with vacuum, but is now done through memory.
 /
 </pre></div>
 </div>
@@ -229,7 +249,7 @@
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>&amp;DCON_CONTROL
     bal_flag=f           ! Ideal MHD ballooning criterion for short wavelengths
     mat_flag=t           ! Construct coefficient matrices for diagnostic purposes
-    ode_flag=t           ! Integrate ODE&#39;s for determining stability of internal long-wavelength mode (must be true for GPEC)
+    ode_flag=t           ! Integrate ODE's for determining stability of internal long-wavelength mode (must be true for GPEC)
     vac_flag=t           ! Compute plasma, vacuum, and total energies for free-boundary modes
     mer_flag=t           ! Evaluate the Mercier criterian
 
@@ -238,13 +258,13 @@
     psiedge=0.988        ! If less then psilim, calculates dW(psi) between psiedge and psilim, then runs with truncation at max(dW)
     qlow=1.02            ! Integration initiated at q determined by minimum of qlow and q0 from equil
     qhigh=20.2           ! Integration terminated at q limit determined by minimum of qhigh and qa from equil
-    sing_start=0         ! Start integration at the sing_start&#39;th rational from the axis (psilow)
+    sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
     reform_eq_with_psilim=f ! Reforms equilibrium splines between psilow and psilim determined by psihigh/sas_flag/qhigh/peak_flag
 
     nn=1                 ! Toroidal mode number
     delta_mlow=8         ! Expands lower bound of Fourier harmonics
     delta_mhigh=8        ! Expands upper bound of  Fourier harmonics
-    delta_mband=0        ! Integration keeps only this wide a band of solutions along the diagonal in m,m&#39;
+    delta_mband=0        ! Integration keeps only this wide a band of solutions along the diagonal in m,m'
     mthvac=512           ! Number of points used in splines over poloidal angle at plasma-vacuum interface. Overrides vac.in mth.
     thmax0=1             ! Linear multiplier on the automatic choice of theta integration bounds for high-n ideal ballooning stability computation (strictly, -inf to -inf)
 
@@ -276,17 +296,15 @@
 &amp;DCON_OUTPUT
     out_fund=f           ! Output fundamental matrices A,B,C,D,E,H
 
-    out_ahg2msc=f        ! Output deprecated ahg2msc.out files. This is used to communicate with vacuum, but is now done through memory.
-
     crit_break=t         ! Color of the crit curve changes when crossing a singular surface
 
     ahb_flag=f           ! Output normal magnetic field eigenvalues and eigenfunctons at plasma-vacuum interface (must be false for GPEC)
     msol_ahb=1           ! Number of eigenfunctions output by ahb_flag=t ?
-    mthsurf0=1           ! Linear multiplier on number of boundary points used to display surface eigenfunctions for ahgb_flag=t
+    mthsurf0=1           ! Linear multiplier on number of boundary points used to display surface eigenfunctions for ahb_flag=t
 
     bin_euler=t          ! Output M psi-by-M euler-lagrange solutions to binary file euler.bin
     bin_vac=f            ! Output deprecated binary vacuum.bin containing vacuum energy matrices
-    euler_stride=1       ! Output only every euler_stride&#39;th psi step to binary file
+    euler_stride=1       ! Output only every euler_stride'th psi step to binary file
 
     out_bal1=f           ! Ascii output for bal_flag poloidal functions
     bin_bal1=f           ! Binary output for bal_flag poloidal functions
@@ -343,6 +361,9 @@
 &amp;GPEC_CONTROL
    resp_index=0             ! Integer 0-4, determining method of inductance matrix formation. 0 uses energy identity, and is recommended. Use 1 when using resistive DCON.
    sing_spot=5e-4           ! Minimum distance to singular surface in (m-nq) space
+   sing_resspot=1.0         ! If use_res_spot=t, use inverse cube root of lundquist number scaled by sing_resspot in psi space as spot size
+   use_res_spot=f           ! Use resistive singular layer width instead of fixed sing_spot
+   sing_interpspot=1.0      ! Scaling of the interpolation width, in units of spot size, for smoothed outputs of singular surface quantities
    sing_npsi=100            ! Number of points between rational surfaces used for b-normal splines across sin_spot
    reg_flag=f               ! Regularize the solution near resonant surfaces
    reg_spot=5e-2            ! Regularize by (m-nq)^2/((m-nq)^2+reg_spot^2)
@@ -362,6 +383,8 @@
    singfld_flag=f           ! Output of resonant surface quantities (flux,current,etc.)
    vsingfld_flag=f          ! Output of vacuum resonant surface quantities
    singthresh_flag=f        ! Calculate SLAYRE and CALLEN's resonant field penetration threshold (requires kinetic profiles from pentrc.in)
+   singthresh_slayer_inpr=5.0 ! Scalar Prandtl number (viscosity) used by SLAYER for all rational surfaces
+   singthresh_slayer_inpr_prof=-1.0 ! Per-rational-surface Prandtl number profile, comma-separated and ordered by ascending q, up to 20 entries (e.g. singthresh_slayer_inpr_prof=3.0,5.0,8.0,12.0 for the q=2,3,4,5 surfaces). Any entry &lt;= 0 falls back to the scalar singthresh_slayer_inpr
 
    pmodb_flag=f             ! Outputs delta-B_Lagrangian
    xbnormal_flag=t          ! Outputs normal displacement and field in plasma
@@ -389,9 +412,16 @@
    max_linesout=0           ! Maximum length of ascii data tables enforced by increasing radial step size (iff .gt. 0).
    bin_flag=f               ! Write binary outputs for use with xdraw
    bin_2d_flag=f            ! Write 2D binary outputs for use with xdraw
-   out_ahg2msc=f            ! Output deprecated ahg2msc.out files. This is used to communicate with vacuum, but is now done through memory.
 
    verbose=t                ! Print run log to terminal
+
+   effective_field_flag=f   ! Calculate each contribution of destabilizing term and effective perturbed field [Bernstein, Handbook of Plasma Physics, 1983].
+   standard_form_flag=f     ! Calculate the first-form plasma energy terms of Eq. (3.1) in docs/tex/recon/main.tex with the gamma|div xi|^2 term omitted.
+   effective_field_terms_flag=f ! Bernstein |C|^2 decomposition: |C|^2 = |Q|^2 + 2Re(V*.Q) + |V|^2, reported as A, B, Cpar, Iperp with the identity check epf = A+B+Cpar+Iperp.
+   curl_check_flag=f        ! Under effective_field_flag, verify (curl C).grad(psi)=0 and write gpec_recon_cveri_sol*.out.
+   recon_out=t              ! Under effective_field_flag/standard_form_flag/effective_field_terms_flag, write recon diagnostic files and gpec.log entries. If false, keep terminal summary only.
+   recon_int=&quot;spline&quot;       ! Radial quadrature of all three routes on the psifac grid: &quot;spline&quot; (default) or &quot;trapezoid&quot;. The integrated psi range is printed beside the DCON psilow-psilim range.
+                            ! effective_field_flag, standard_form_flag and effective_field_terms_flag require mode_flag=t (choose mode) with coil_flag, data_flag, harmonic_flag and reg_flag all f; GPEC stops at input otherwise.
 /
 &amp;GPEC_DIAGNOSE
    timeit=f                 ! Print timer splits for major subroutines
@@ -400,12 +430,43 @@
 /
 </pre>
 </section>
+<section id="the-match-namelist">
+<h2>The MATCH Namelist<a class="headerlink" href="#the-match-namelist" title="Link to this heading">¶</a></h2>
+<p>This namelist controls the MATCH code, including which DCON eigenfunction (sol_num) it reconstructs.</p>
+<pre class="literal-block">&amp;match_input
+        filename=&quot;euler.bin&quot;
+        full=f
+
+        ideal_flag=t
+        contour_flag=t
+
+        sol_num=1               !DCON eigenfunction index for MATCH (1 = most unstable); sol_num=n&gt;1 writes solutions&lt;n&gt;.bin
+
+        res_flag=f
+        ff0=1e6
+        ff1=1e6
+
+        scan_flag=f
+        big=1
+        small=1e-6
+        ns=100
+
+        z_level_type=&quot;midplane&quot;
+        phi_level=85
+
+        root_flag=f
+        root=(1e-2,0)
+
+/
+</pre>
+</section>
 <section id="the-pentrc-namelist">
 <h2>The PENTRC Namelist<a class="headerlink" href="#the-pentrc-namelist" title="Link to this heading">¶</a></h2>
-<p>This namelist sets the inputs, controls the behavior, and determines the outputs of the GPEC code.</p>
+<p>This namelist sets the inputs, controls the behavior, and determines the outputs of the PENTRC code.</p>
 <pre class="literal-block">&amp;PENT_INPUT
     idconfile  = &quot;euler.bin&quot;            ! Eigenfunctions output by DCON run
     kinetic_file = &quot;kinetic.txt&quot;        ! Ascii profiles. columns: psi_n, ni(m^-3), ne(m^-3), ti(eV), te(eV), omega_EXB(rad/s)
+    kinetic_format = &quot;legacy&quot;           ! &quot;rates-v1&quot; adds columns logLambda, nu_i(s^-1), nu_e(s^-1) that replace the internal collision model
     data_dir = &quot;&quot;                       ! Location of pre-formed fnml matrix used in rlar and clar methods. &quot;default&quot; uses $GPECHOME/pentrc.
     peq_file = &quot;&quot;                       ! Ascii displacement. columns: psi_n, m, real(xi^psi), imag(xi^psi), real(xi^alpha), imag(xi^alpha). Default uses &quot;gpec_xclebsch_n#.out&quot;
 
@@ -430,8 +491,10 @@
 
     force_xialpha = .false.             ! Calculates tangential displacement from radial displacement and toroidal force balance (overwrites peq_file values)
 
-    atol_xlmda = 1e-9                   ! Absolute tolerance in energy and pitch integration
-    rtol_xlmda = 1e-5                   ! Relative tolerance in energy and pitch integration
+    atol_xlmda = 1e-9                   ! Absolute tolerance in pitch integration (energy tolerance derived from this unless atol_x is set)
+    rtol_xlmda = 1e-5                   ! Relative tolerance in pitch integration (energy tolerance derived from this unless rtol_x is set)
+    atol_x = -1                         ! Absolute tolerance in energy integration. Negative (default) derives 1e-2*atol_xlmda so the nested quadrature converges
+    rtol_x = -1                         ! Relative tolerance in energy integration. Negative (default) derives 1e-2*rtol_xlmda so the nested quadrature converges
     atol_psi = 1e-4                     ! Absolute tolerance in psi_n integration
     rtol_psi = 1e-4                     ! Relative tolerance in psi_n integration
     ntheta = 128                        ! Poloidal angle grid for bounce integration
@@ -505,53 +568,53 @@
 </section>
 <section id="output-files">
 <h2>Output Files<a class="headerlink" href="#output-files" title="Link to this heading">¶</a></h2>
-<p>The GPEC outputs are entirely specified by flags (bool types t or f) set in the GPEC_output section of GPEC.in. All outputs are ASCII files, and can be grouped into two major categories.</p>
+<p>The GPEC outputs are entirely specified by flags (bool types t or f) set in the gpec_output section of gpec.in. Outputs are written as ASCII tables (ascii_flag), xdraw binary files (bin_flag, bin_2d_flag) and netcdf files (netcdf_flag), and can be grouped into the categories below.</p>
 <section id="ascii-file-outputs">
 <h3>ASCII File Outputs<a class="headerlink" href="#ascii-file-outputs" title="Link to this heading">¶</a></h3>
-<p>A number of the flag options in GPEC.in instruct GPEC to output ASCII file data. Some of these outputs are always available. Some, however, require a input error field instead of a hard coded harmonic_flag call. Both groups are listed in detail here.</p>
+<p>A number of the flag options in gpec.in instruct GPEC to output ASCII file data. Some of these outputs are always available. Some, however, require an external 3D field input (data_flag, coil_flag, harmonic_flag) or a single eigenmode (mode_flag). Both groups are listed in detail here.</p>
 <p>Outputs Always Available</p>
-<p>These GPEC outputs can always be obtained from a equil.bin file output from DCON.</p>
-<p>GPEC_response_n#.out</p>
+<p>These GPEC outputs can always be obtained from a euler.bin file output from DCON.</p>
+<p>gpec_response_n#.out</p>
 <blockquote>
 <div><p><strong>Flag</strong> resp_flag</p>
 <p><strong>Info</strong> Energy for DCON eigenmodes and stability indices. Eigenvalues and eigenvectors for vacuum and plasma inductance (virtual casing currents to fields), plasma permeability (external fields to total fields), and plasma reluctance.</p>
 </div></blockquote>
-<p>GPEC_singcoup_matrix_n#.out</p>
+<p>gpec_singcoup_matrix_n#.out</p>
 <blockquote>
 <div><p><strong>Flag</strong> singcoup_flag</p>
 <p><strong>Info</strong> The coupling matrix to resonant fields, coupling matrix to singular currents, and to island half-widths is given for each rational surface within the plasma (q=2, 3, etc) for each surface the real and imaginary coupling constants are given for each poloidal mode number on the control surface.</p>
 </div></blockquote>
-<p>GPEC_singcoup_svd_n#.out</p>
+<p>gpec_singcoup_svd_n#.out</p>
 <blockquote>
 <div><p><strong>Flag</strong> singcoup_flag</p>
-<p><strong>Info</strong> The SVD singular values (s) and eigen vectors for each coupling matrix in GPEC_singcoup_matrix_n#.out. Large s corresponds to large amplification, with the largest (most important mode) listed at the top. The results should be dotted with the unweighted normal field spectrum to give physical meaning.</p>
+<p><strong>Info</strong> The SVD singular values (s) and eigen vectors for each coupling matrix in gpec_singcoup_matrix_n#.out. Large s corresponds to large amplification, with the largest (most important mode) listed at the top. The results should be dotted with the unweighted normal field spectrum to give physical meaning.</p>
 </div></blockquote>
 <p>Outputs Available When Error Field is Provided</p>
-<p>These outputs are only available when an external error field file is provided as an input to GPEC. This means GPEC.in must have the data_flag turned on and a infile specified.</p>
-<p>GPEC_control_n#.out</p>
+<p>These outputs are only available when an external 3D field is provided as an input to GPEC. This means gpec.in must have data_flag (with an infile specified), coil_flag, harmonic_flag, or mode_flag turned on.</p>
+<p>gpec_control_n#.out</p>
 <blockquote>
-<div><p><strong>Flag</strong></p>
+<div><p><strong>Flag</strong> none (always written with ascii_flag)</p>
 <p><strong>Info</strong> The Plasma response for an external perturbation on the control surface. This includes the vacuum energy, surface energy, plasma energy, real and imaginary vacuum input mathbf{B}_{in} and total field on plasma boundarymathbf{B}_{out}as a function of poloidal mode number.</p>
 </div></blockquote>
-<p>GPEC_singfld_n#.out</p>
+<p>gpec_singfld_n#.out</p>
 <blockquote>
 <div><p><strong>Flag</strong> singfld_flag</p>
 <p><strong>Info</strong> The Psi_{N}, total resonant mathbf{B} (real and imaginary), singular current (real and imaginary), island half width in units of normalized flux and Chirikov parameter at rational surface inside the plasma.</p>
 <p><strong>Flag</strong> singcoup_flag</p>
-<p><strong>Info</strong> Additional section showing the overlap field and overlap percentage for each eigenmode in the singcoup_svd output.</p>
+<p><strong>Info</strong> Additional section showing the overlap field (Tesla) and overlap percentage for each eigenmode in the singcoup_svd output. See <a class="reference internal" href="#coupling-overlap"><span class="std std-ref">Resonant Coupling and Dominant Mode Overlap</span></a> for definitions.</p>
 </div></blockquote>
-<p>GPEC_pmod_n#.out</p>
+<p>gpec_pmodb_n#.out</p>
 <blockquote>
 <div><p><strong>Flag</strong> pmodb_flag</p>
-<p><strong>Info</strong> Eulerian and Lagrangian left|mathbf{B}right|(real and imaginary) for each poloidal mode number at each value of Psi_{N} output. This output is necessary for NTV post processing.</p>
+<p><strong>Info</strong> Perturbed field strength (real and imaginary, Tesla) for each poloidal mode number at each value of Psi_{N} output: the Eulerian delta B (eulb), the Lagrangian delta B of the displacement with zero xi^zeta in the working (jac_type) coordinates (lagb), Bnablacdotxi_perp (Bdivxprp) and the force-balance form of Bkappacdotxi_perp (Bkxprp). lagb is not the xi_perp-only Lagrangian delta B; that is -(Bdivxprp+Bkxprp) up to the equilibrium force-balance residual. See <a class="reference internal" href="pmodb_gauge.html"><span class="doc">Perturbed field strength (pmodb) and gauge</span></a> before using these columns for NTV post processing.</p>
 </div></blockquote>
-<p>GPEC_xbnormal_n#.out</p>
+<p>gpec_xbnormal_n#.out</p>
 <blockquote>
 <div><p><strong>Flag</strong> xbnormal_flag</p>
-<p><strong>Info</strong> The normal components of the displacement, magnetic field without the plasma response, and magnetic field with the plasma response included for each poloidal mode number at each value of Psi_{N} output.??</p>
+<p><strong>Info</strong> The normal displacement (xno), the normal perturbed magnetic field (bno), and the Jacobian-weighted contravariant psi component of the perturbed field Jmathbf{B}cdotnablapsi (bwp) for each poloidal mode number at each value of Psi_{N} output.</p>
 </div></blockquote>
-<p>GPEC_*rzphi_n#.out</p>
-<p>A number of output files have a similar structure. Here the * in the file name is replaced by the appropriate leading letters of the corresponding flag. For example the xrzphi_flag for n=1 creates a GPEC_xrzphi_n1.out file. some common properties of these files are:</p>
+<p>gpec_*rzphi_n#.out</p>
+<p>A number of output files have a similar structure. Here the * in the file name is replaced by the appropriate leading letters of the corresponding flag. For example the xrzphi_flag for n=1 creates a gpec_xrzphi_n1.out file. some common properties of these files are:</p>
 <ul>
 <li><p>real and imaginary components: Output files contain two dimensional data on an left(r,zright) grid for a single toroidal harmonic. To translate into three dimensions, perform the transformationBleft(r,z,phiright)=B_{real}left(r,zright)cosleft(nphiright)+B_{imag}left(r,zright)sinleft(nphiright)</p></li>
 <li><p>l parameter: 1 designates points inside plasma, 0 points in vacuum, -1 points near/on surface (singularity)</p>
@@ -564,15 +627,41 @@
 <p><strong>Info</strong> The displacement on the left(r,z,phiright) grid.</p>
 <p><strong>Flag</strong> vbrzphi_flag</p>
 <p><strong>Info</strong> The false perturbed magnetic field in the vacuum region on the left(r,z,phiright) grid calculated using the GPEC boundary surface current composed of both the vacuum component and the plasma response.</p>
-<p><strong>Flag</strong> vpbrzphi_flag</p>
+<p><strong>Flag</strong> pbrzphi_flag (writes gpec_vpbrzphi_n#.out)</p>
 <p><strong>Info</strong> The true perturbed magnetic field in the vacuum region on the left(r,z,phiright) grid due to the plasma response alone calculated from the plasma response surface condition.</p>
 <p><strong>Flag</strong> vvbrzphi_flag</p>
 <p><strong>Info</strong> The false perturbed magnetic field in the vacuum region on the left(r,z,phiright) grid calculated using the GPEC boundary surface current from the external fields alone.</p>
-<p><strong>Flag</strong> ssbrzphi_flag</p>
-<p><strong>Info</strong> The false perturbed magnetic field in the vacuum region on the left(r,z,phiright) grid calculated using the GPEC boundary surface current from the external fields alone.</p>
+<p><strong>Flag</strong> vsbrzphi_flag (with ss_flag(i) selecting surfaces; requires singfld_flag)</p>
+<p><strong>Info</strong> The vacuum field on the left(r,z,phiright) grid due to the currents on the selected resonant surfaces.</p>
 </div></blockquote>
 </li>
 </ul>
+</section>
+<section id="energy-decomposition-outputs">
+<h3>Energy Decomposition Outputs<a class="headerlink" href="#energy-decomposition-outputs" title="Link to this heading">¶</a></h3>
+<p>These outputs reconstruct the ideal plasma energy <span class="math notranslate nohighlight">\(\delta W_p\)</span> of a single DCON eigenmode on every flux surface and break it into physically distinct terms. They require a pure DCON eigenmode: set mode_flag=t, choose mode (1 is the least stable eigenmode), and keep reg_flag=f and coil_flag=data_flag=harmonic_flag=f. GPEC stops at input if any of the three decomposition flags is set otherwise. The derivations, integrands and the meaning of every printed quantity are documented in <a class="reference download internal" download="" href="_downloads/a6dd326d24861d714d3aa9a15adb9203/main.tex"><code class="xref download docutils literal notranslate"><span class="pre">docs/tex/recon/main.tex</span></code></a> (build with pdflatex and bibtex).</p>
+<p>Each route prints a summary to the terminal that ends with its <span class="math notranslate nohighlight">\(\delta W_p\)</span> total, the same total in DCON normalization (dW_p(recon-normalize) and its analogues), the DCON eigenvalue ep(mode) it should reproduce, and the <span class="math notranslate nohighlight">\(\psi\)</span> range it integrated over beside the DCON range psilow to psilim. In the files below &lt;mode&gt; is the selected mode. recon_out=f keeps only the terminal summary, and recon_int (“spline”, the default, or “trapezoid”) selects the radial quadrature.</p>
+<p>The three routes converge differently with the number of poloidal harmonics. The standard form (standard_form_flag) reproduces the DCON eigenvalue at any truncation, because it evaluates the same Galerkin energy DCON minimizes. The two effective-field forms rely on identities that hold only for the untruncated fields, so they need extra harmonics: in the Soloviev regression example they miss ep(1) by about 20% with the default band and agree to 0.4% with delta_mlow=delta_mhigh=8. The curl check and the identity residual measure this truncation; a PASS on the curl check does not by itself confirm the energy.</p>
+<p>gpec_recon_*_sol&lt;mode&gt;.out</p>
+<blockquote>
+<div><p><strong>Flag</strong> effective_field_flag</p>
+<p><strong>Info</strong> Bernstein effective-field form <span class="math notranslate nohighlight">\(2\delta W_p = \int |\mathbf{C}|^2/\mu_0 - \int K \xi_n^2\)</span>. integration: radial integrands and running totals. terms: per-(psi,theta) densities of the C and K terms. k, k_sigma_check, shear_fun, curvature: the K kernel and its shear, parallel-current and curvature parts on the (psi,theta,R,Z) grid. cwfun/cwmn, cvfun/cvmn, cv2fun/cv2mn: contravariant and covariant components of C in real and mode space. qvmn: covariant components of the bare perturbed field Q. A summary block is appended to gpec.log.</p>
+</div></blockquote>
+<p>gpec_recon_cveri_sol&lt;mode&gt;.out</p>
+<blockquote>
+<div><p><strong>Flag</strong> curl_check_flag (with effective_field_flag)</p>
+<p><strong>Info</strong> Pointwise residual of <span class="math notranslate nohighlight">\((\nabla\times\mathbf{C})\cdot\nabla\psi = 0\)</span> on the (psi,theta,R,Z) grid. The terminal and gpec.log report PASS or WARN for the maximum residual relative to the size of the two cancelling terms <span class="math notranslate nohighlight">\((|\partial_\theta C_\zeta|+|\partial_\zeta C_\theta|)/|J|\)</span>, together with the absolute maximum and rms.</p>
+</div></blockquote>
+<p>gpec_recon2_terms_sol&lt;mode&gt;.out, gpec_recon2_integration_sol&lt;mode&gt;.out</p>
+<blockquote>
+<div><p><strong>Flag</strong> standard_form_flag</p>
+<p><strong>Info</strong> Standard (first) form of the energy with the <span class="math notranslate nohighlight">\(\gamma|\nabla\cdot\xi|^2\)</span> term omitted: <span class="math notranslate nohighlight">\(|Q|^2/\mu_0\)</span>, <span class="math notranslate nohighlight">\(\mathbf{j}\cdot(\mathbf{Q}\times\xi^*)\)</span>, and <span class="math notranslate nohighlight">\((\nabla\cdot\xi)^*(\xi\cdot\nabla p)\)</span> densities per surface (terms) and their radial integrals (integration).</p>
+</div></blockquote>
+<p>gpec_recon3_terms_sol&lt;mode&gt;.out, gpec_recon3_integration_sol&lt;mode&gt;.out</p>
+<blockquote>
+<div><p><strong>Flag</strong> effective_field_terms_flag</p>
+<p><strong>Info</strong> Split of <span class="math notranslate nohighlight">\(|\mathbf{C}|^2 = |\mathbf{Q}|^2 + 2\mathrm{Re}(\mathbf{V}^*\cdot\mathbf{Q}) + |\mathbf{V}|^2\)</span> into A, B, Cpar and Iperp, with the identity check epf = A + B + Cpar + Iperp, per surface (terms) and integrated (integration).</p>
+</div></blockquote>
 </section>
 <section id="binary-file-outputs">
 <h3>Binary File Outputs<a class="headerlink" href="#binary-file-outputs" title="Link to this heading">¶</a></h3>
@@ -594,8 +683,13 @@
 </div></blockquote>
 <p>bnormal_spectrum.bin</p>
 <blockquote>
-<div><p><strong>Flag</strong> bin_flag</p>
+<div><p><strong>Flag</strong> bin_2d_flag</p>
 <p><strong>Info</strong> Surfmn type contours of the normal perturbed magnetic fields as a function of poloidal harmonic number and Psi_{N}.</p>
+</div></blockquote>
+<p>solutions.bin, solutions&lt;n&gt;.bin</p>
+<blockquote>
+<div><p><strong>Flag</strong> sol_num (match.in, MATCH)</p>
+<p><strong>Info</strong> Ideal Euler-Lagrange solution built from DCON eigenfunction sol_num (1 is the most unstable). sol_num=1 writes solutions.bin; sol_num=n&gt;1 writes solutions&lt;n&gt;.bin so several eigenfunctions can be kept side by side.</p>
 </div></blockquote>
 </section>
 </section>
@@ -621,7 +715,7 @@
     </p>
     <p>
         &copy; Copyright 2007 The Trustees of Princeton University.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 8.2.3.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 8.1.3.<br/>
     </p>
   </div>
 </footer>

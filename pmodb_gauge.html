@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Perturbed field strength (pmodb) and gauge &#8212; GPEC 1.6.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=49fa7461" />
+    <script src="_static/documentation_options.js?v=72d88caf"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="_static/js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript" src="_static/js/jquery-fix.js"></script>
+<script type="text/javascript" src="_static/bootstrap-3.4.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html">
+          <!-- GPEC-->
+        </a>
+        <!-- <span class="navbar-text navbar-version pull-left"><b>1.6</b></span> -->
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="references.html">Cite</a></li>
+                <li><a href="installation.html">Installation</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="outputs.html">I/O</a></li>
+                <li><a href="releases.html">Release History</a></li>
+                <li><a href="dcon_readme.html">DCON</a></li>
+                <li><a href="developers.html">Develop</a></li>
+                <li><a href="source_documentation.html">Python Post Processing</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Jump to <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+           <!-- 
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+           -->
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/GPEC_logo.png" alt="Logo of GPEC"/>
+            </a></p><ul>
+<li><a class="reference internal" href="#">Perturbed field strength (pmodb) and gauge</a><ul>
+<li><a class="reference internal" href="#coordinates-and-displacement">Coordinates and displacement</a></li>
+<li><a class="reference internal" href="#the-pmodb-columns">The pmodb columns</a></li>
+<li><a class="reference internal" href="#relations-between-the-columns">Relations between the columns</a></li>
+<li><a class="reference internal" href="#regularisation">Regularisation</a></li>
+<li><a class="reference internal" href="#what-consumers-need">What consumers need</a></li>
+<li><a class="reference internal" href="#target-gauges-in-gpec-units">Target gauges in GPEC units</a></li>
+<li><a class="reference internal" href="#history">History</a></li>
+<li><a class="reference internal" href="#source-map-and-literature">Source map and literature</a></li>
+</ul>
+</li>
+</ul>
+
+<div id="sourcelink">
+  <a href="_sources/pmodb_gauge.rst.txt"
+     rel="nofollow">Source</a>
+</div>
+<form action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+        </div>
+      </div>
+    <div class="body col-md-9 content" role="main">
+      
+  <section id="perturbed-field-strength-pmodb-and-gauge">
+<span id="pmodb-gauge"></span><h1>Perturbed field strength (pmodb) and gauge<a class="headerlink" href="#perturbed-field-strength-pmodb-and-gauge" title="Link to this heading">¶</a></h1>
+<p>This page states what the columns of <code class="docutils literal notranslate"><span class="pre">gpec_pmodb_n#.out</span></code> are, how they are
+related, and which of them a field-strength consumer needs.</p>
+<nav class="contents local" id="on-this-page">
+<p class="topic-title">On this page</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#coordinates-and-displacement" id="id1">Coordinates and displacement</a></p></li>
+<li><p><a class="reference internal" href="#the-pmodb-columns" id="id2">The pmodb columns</a></p></li>
+<li><p><a class="reference internal" href="#relations-between-the-columns" id="id3">Relations between the columns</a></p></li>
+<li><p><a class="reference internal" href="#regularisation" id="id4">Regularisation</a></p></li>
+<li><p><a class="reference internal" href="#what-consumers-need" id="id5">What consumers need</a></p></li>
+<li><p><a class="reference internal" href="#target-gauges-in-gpec-units" id="id6">Target gauges in GPEC units</a></p></li>
+<li><p><a class="reference internal" href="#history" id="id7">History</a></p></li>
+<li><p><a class="reference internal" href="#source-map-and-literature" id="id8">Source map and literature</a></p></li>
+</ul>
+</nav>
+<section id="coordinates-and-displacement">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">Coordinates and displacement</a><a class="headerlink" href="#coordinates-and-displacement" title="Link to this heading">¶</a></h2>
+<p>Assume smooth nested surfaces with B&gt;0 and nonzero J, chi1 and q.
+Fourier inversions below additionally exclude nonzero resonant sources.</p>
+<p>GPEC works in the DCON chart <span class="math notranslate nohighlight">\((\psi,\theta,\zeta)\)</span> with angles in turns,
+any straight-field-line Jacobian <span class="math notranslate nohighlight">\(\mathcal{J}(\psi,\theta)\)</span> selected by
+<code class="docutils literal notranslate"><span class="pre">jac_type</span></code>, <span class="math notranslate nohighlight">\(\mathcal{J}B^\theta=\chi_1\)</span>,
+<span class="math notranslate nohighlight">\(\mathcal{J}B^\zeta=\chi_1 q\)</span> and Fourier factor
+<span class="math notranslate nohighlight">\(\exp[2\pi i(m\theta-n\zeta)]\)</span>.  The Euler-Lagrange solution supplies
+<span class="math notranslate nohighlight">\(\xi^\psi\)</span>, its radial derivative and the surface displacement
+(Glasser 2016, Eqs. 9 and 18)</p>
+<div class="math notranslate nohighlight">
+\[\xi_s = (\boldsymbol\xi\times\mathbf B)_\psi = \chi_1(q\xi^\theta-\xi^\zeta),\]</div>
+<p>the in-surface displacement across <span class="math notranslate nohighlight">\(\mathbf B\)</span> (<code class="docutils literal notranslate"><span class="pre">xms</span></code>;
+<code class="docutils literal notranslate"><span class="pre">gpec_xclebsch</span></code> writes <span class="math notranslate nohighlight">\(\xi^\alpha=\xi_s/\chi_1\)</span>).  A field-aligned
+displacement changes neither <span class="math notranslate nohighlight">\(\xi^\psi\)</span> nor <span class="math notranslate nohighlight">\(\xi_s\)</span>, so
+<span class="math notranslate nohighlight">\((\xi^\psi,\xi_s)\)</span> determine <span class="math notranslate nohighlight">\(\boldsymbol\xi_\perp\)</span> completely.
+The parallel part used elsewhere in GPEC is fixed in <code class="docutils literal notranslate"><span class="pre">gpeq_contra</span></code> by
+<span class="math notranslate nohighlight">\(\nabla\cdot\boldsymbol\xi=0\)</span>, which gives <code class="docutils literal notranslate"><span class="pre">xmt</span></code>
+<span class="math notranslate nohighlight">\(=\mathcal J\xi^\theta\)</span> and <code class="docutils literal notranslate"><span class="pre">xmz</span></code> <span class="math notranslate nohighlight">\(=\mathcal J\xi^\zeta\)</span>.
+The pmodb columns do not use <code class="docutils literal notranslate"><span class="pre">xmt</span></code> or <code class="docutils literal notranslate"><span class="pre">xmz</span></code>.</p>
+<p>For every <code class="docutils literal notranslate"><span class="pre">jac_type</span></code> the Jacobian-weighted perturbed field of
+<code class="docutils literal notranslate"><span class="pre">gpeq_sol</span></code> is <span class="math notranslate nohighlight">\(\mathcal J\,\nabla\times(\boldsymbol\xi\times\mathbf B)\)</span>.</p>
+</section>
+<section id="the-pmodb-columns">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">The pmodb columns</a><a class="headerlink" href="#the-pmodb-columns" title="Link to this heading">¶</a></h2>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">eulb</span></code></dt><dd><p><span class="math notranslate nohighlight">\(\delta B_E=\hat{\mathbf b}\cdot\delta\mathbf B\)</span>, the Eulerian
+field strength.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">lagb</span></code></dt><dd><p><span class="math notranslate nohighlight">\(\delta B_E+\xi^\psi\partial_\psi B+\xi_s/(\chi_1 q)\,\partial_\theta B\)</span>.
+This is the Lagrangian field strength of the displacement
+<span class="math notranslate nohighlight">\(\boldsymbol\xi_g=\boldsymbol\xi_\perp+\lambda\mathbf B\)</span> with
+<span class="math notranslate nohighlight">\(\xi_g^\zeta=0\)</span> in the <em>working</em> chart (<code class="docutils literal notranslate"><span class="pre">jac_type</span></code>).
+It is neither the <span class="math notranslate nohighlight">\(\boldsymbol\xi_\perp\)</span>-only value nor Park et
+al. (2009) Eq. 7 with the divergence-free <span class="math notranslate nohighlight">\(\boldsymbol\xi\)</span> that
+GPEC constructs (that value is <code class="docutils literal notranslate"><span class="pre">lagb</span></code>
+<span class="math notranslate nohighlight">\(+\,\xi^\zeta/q\,\partial_\theta B\)</span>).  <code class="docutils literal notranslate"><span class="pre">jac_out</span></code> only
+relabels the harmonics; it does not change this gauge.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Bdivxprp</span></code></dt><dd><p><span class="math notranslate nohighlight">\(B\,\nabla\cdot\boldsymbol\xi_\perp\)</span>.  <code class="docutils literal notranslate"><span class="pre">gpout_pmodb</span></code> forms
+<span class="math notranslate nohighlight">\(\mathcal J\boldsymbol\xi_\perp\)</span> directly from <span class="math notranslate nohighlight">\(\xi^\psi\)</span> and
+<span class="math notranslate nohighlight">\(\xi_s\)</span>,</p>
+<div class="math notranslate nohighlight">
+\[\mathcal J\xi_\perp^\theta=\chi_1^2\left(-f_2\,\xi^\psi+f_3\,\xi_s/\chi_1\right),
+\qquad
+\mathcal J\xi_\perp^\zeta=q\,\mathcal J\xi_\perp^\theta-\mathcal J\xi_s/\chi_1,\]</div>
+<p>with the equilibrium coefficients
+<span class="math notranslate nohighlight">\(f_2=(g_{\psi\theta}+qg_{\psi\zeta})/(\mathcal JB^2)\)</span> and
+<span class="math notranslate nohighlight">\(f_3=(g_{\theta\zeta}+qg_{\zeta\zeta})/(\mathcal JB^2)\)</span> (<code class="docutils literal notranslate"><span class="pre">eqfun</span></code>
+columns 2 and 3, covariant metric).  The same projection gives the
+<code class="docutils literal notranslate"><span class="pre">xmat</span></code>-<code class="docutils literal notranslate"><span class="pre">zmat</span></code> matrices of <code class="docutils literal notranslate"><span class="pre">idcon_build</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Bkxprp</span></code></dt><dd><p><span class="math notranslate nohighlight">\(\boldsymbol\xi_\perp\cdot\nabla B+\mu_0p'\xi^\psi/B\)</span>.  This is
+<span class="math notranslate nohighlight">\(B\boldsymbol\kappa\cdot\boldsymbol\xi_\perp\)</span> only through
+equilibrium force balance: exactly,
+<span class="math notranslate nohighlight">\(B\boldsymbol\kappa\cdot\boldsymbol\xi_\perp=\boldsymbol\xi_\perp\cdot\nabla B
++\boldsymbol\xi_\perp\cdot[(\nabla\times\mathbf B)\times\mathbf B]/B\)</span>.
+The PENTRC matrices <code class="docutils literal notranslate"><span class="pre">smat</span></code>, <code class="docutils literal notranslate"><span class="pre">tmat</span></code> (<code class="docutils literal notranslate"><span class="pre">idcon_build</span></code>) form the
+same quantity times <span class="math notranslate nohighlight">\(\mathcal J B^2\)</span> from <span class="math notranslate nohighlight">\(\xi^\psi\)</span> and
+<span class="math notranslate nohighlight">\(\xi^\alpha\)</span>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">llagb</span></code> (<code class="docutils literal notranslate"><span class="pre">gpec_diagnostics_pmodb</span></code>, <code class="docutils literal notranslate"><span class="pre">pmodbmn_flag</span></code>)</dt><dd><p><span class="math notranslate nohighlight">\(\delta B_L(\boldsymbol\xi_\perp)=\delta B_E+\boldsymbol\xi_\perp\cdot\nabla B\)</span>
+<code class="docutils literal notranslate"><span class="pre">lllagb</span></code> is <span class="math notranslate nohighlight">\(-(\)</span><code class="docutils literal notranslate"><span class="pre">Bdivxprp</span></code><span class="math notranslate nohighlight">\(+\)</span><code class="docutils literal notranslate"><span class="pre">Bkxprp</span></code><span class="math notranslate nohighlight">\()\)</span>,
+and <code class="docutils literal notranslate"><span class="pre">Bkxprp</span></code> <span class="math notranslate nohighlight">\(=\)</span> <code class="docutils literal notranslate"><span class="pre">llagb</span></code> <span class="math notranslate nohighlight">\(-\)</span> <code class="docutils literal notranslate"><span class="pre">eulb</span></code> <span class="math notranslate nohighlight">\(+\mu_0p'\xi^\psi/B\)</span>.</p>
+</dd>
+</dl>
+</section>
+<section id="relations-between-the-columns">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Relations between the columns</a><a class="headerlink" href="#relations-between-the-columns" title="Link to this heading">¶</a></h2>
+<p>Gauge of <code class="docutils literal notranslate"><span class="pre">lagb</span></code>:</p>
+<div class="math notranslate nohighlight">
+\[\mathrm{lagb}=\delta B_L(\boldsymbol\xi_\perp)-\frac{\xi_\perp^\zeta}{q}\partial_\theta B,
+\qquad
+\xi_\perp^\zeta=-\frac{B_\theta\xi_s/\chi_1+qB_\psi\xi^\psi}{B_\theta+qB_\zeta}.\]</div>
+<p>Kinematic identity (any <span class="math notranslate nohighlight">\(\boldsymbol\xi_\perp\)</span>, no force balance)
+and its pmodb form:</p>
+<div class="math notranslate nohighlight">
+\[\delta B_L(\boldsymbol\xi_\perp)=-B(\nabla\cdot\boldsymbol\xi_\perp
++\boldsymbol\kappa\cdot\boldsymbol\xi_\perp)
+=-(\mathrm{Bdivxprp}+\mathrm{Bkxprp})-\boldsymbol\xi_\perp\cdot\mathbf F/B,
+\qquad \mathbf F=(\nabla\times\mathbf B)\times\mathbf B-\mu_0\nabla p.\]</div>
+<p>Hence</p>
+<div class="math notranslate nohighlight">
+\[\mathrm{lagb}+\mathrm{Bdivxprp}+\mathrm{Bkxprp}
+=-\frac{\xi_\perp^\zeta}{q}\partial_\theta B-\frac{\boldsymbol\xi_\perp\cdot\mathbf F}{B}.\]</div>
+<p><code class="docutils literal notranslate"><span class="pre">lagb</span></code> <span class="math notranslate nohighlight">\(=-(\)</span><code class="docutils literal notranslate"><span class="pre">Bdivxprp</span></code><span class="math notranslate nohighlight">\(+\)</span><code class="docutils literal notranslate"><span class="pre">Bkxprp</span></code><span class="math notranslate nohighlight">\()\)</span> is
+therefore not an identity.  The first term is a gauge term of first order in
+the perturbation; its size depends on <span class="math notranslate nohighlight">\(B_\theta/(qB_\zeta)\)</span>,
+<span class="math notranslate nohighlight">\(B_\psi\)</span>, <span class="math notranslate nohighlight">\(\partial_\theta B\)</span> and the displacement spectrum.
+The second term vanishes for an exact equilibrium.  In the output, finite
+Fourier truncation and spline error add to both.</p>
+</section>
+<section id="regularisation">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">Regularisation</a><a class="headerlink" href="#regularisation" title="Link to this heading">¶</a></h2>
+<p>With <code class="docutils literal notranslate"><span class="pre">reg_flag</span></code> (Park et al. 2009 Eq. 10), <code class="docutils literal notranslate"><span class="pre">gpeq_sol</span></code> replaces the
+radial derivative by <span class="math notranslate nohighlight">\(R\,\partial_\psi\xi^\psi\)</span>,
+<span class="math notranslate nohighlight">\(R=s^2/(s^2+\sigma^2)\)</span>, <span class="math notranslate nohighlight">\(s=m-nq\)</span>, in the field and in <code class="docutils literal notranslate"><span class="pre">xms</span></code>.
+The regularised field is then not divergence free:</p>
+<div class="math notranslate nohighlight">
+\[\mathcal J\nabla\cdot\delta\mathbf B=2\pi i\chi_1 s(1-R)\,\partial_\psi\xi^\psi.\]</div>
+<p><code class="docutils literal notranslate"><span class="pre">Bdivxprp</span></code> uses the same derivative <code class="docutils literal notranslate"><span class="pre">xmp1</span></code> as the field, and
+<span class="math notranslate nohighlight">\(\boldsymbol\xi_\perp\)</span> is built from the same <code class="docutils literal notranslate"><span class="pre">xms</span></code>, so the
+regularisation cancels between the columns and the relation above holds
+unchanged with the regularised quantities.
+Near rational surfaces the regularised field and displacement do not form
+an exact ideal-induction pair.  This is a limitation of the smoothing
+policy, not evidence of resistive physics.  With <code class="docutils literal notranslate"><span class="pre">reg_flag=f</span></code> the
+columns are unregularised and singular at rational surfaces.</p>
+</section>
+<section id="what-consumers-need">
+<h2><a class="toc-backref" href="#id5" role="doc-backlink">What consumers need</a><a class="headerlink" href="#what-consumers-need" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>PENTRC</dt><dd><p>The drive of Logan et al. (2013) Eqs. 4-5 needs <span class="math notranslate nohighlight">\(\delta B\)</span> and
+<span class="math notranslate nohighlight">\(\nabla\cdot\boldsymbol\xi\)</span> of the <em>same</em> displacement; the
+combination is then invariant under
+<span class="math notranslate nohighlight">\(\boldsymbol\xi\to\boldsymbol\xi+\lambda\mathbf B\)</span> up to a total
+derivative along the field line.  Both PENTRC input paths use the
+<span class="math notranslate nohighlight">\(\boldsymbol\xi_\perp\)</span> pair
+<span class="math notranslate nohighlight">\(\delta B/B=-(\nabla\cdot\boldsymbol\xi_\perp+\boldsymbol\kappa\cdot\boldsymbol\xi_\perp)\)</span>
+and <span class="math notranslate nohighlight">\(\nabla\cdot\boldsymbol\xi_\perp\)</span>: the default path
+(<code class="docutils literal notranslate"><span class="pre">peq_file</span></code> = <code class="docutils literal notranslate"><span class="pre">gpec_xclebsch</span></code>, <code class="docutils literal notranslate"><span class="pre">set_peq</span></code>) from the <code class="docutils literal notranslate"><span class="pre">smat</span></code>-<code class="docutils literal notranslate"><span class="pre">zmat</span></code>
+matrices, and the <code class="docutils literal notranslate"><span class="pre">pmodb_file</span></code> path (<code class="docutils literal notranslate"><span class="pre">read_pmodb</span></code>) from
+<span class="math notranslate nohighlight">\(-(\mathrm{Bdivxprp}+\mathrm{Bkxprp})\)</span> and <code class="docutils literal notranslate"><span class="pre">Bdivxprp</span></code>.  The
+<code class="docutils literal notranslate"><span class="pre">lagb</span></code> column is not read.  Regenerate <code class="docutils literal notranslate"><span class="pre">pmodb_file</span></code> inputs with GPEC
+1.6 or later.</p>
+</dd>
+<dt>Bounce-averaged codes in perturbed Boozer or Hamada coordinates (NEO-RT, NEO-2, Shaing-type)</dt><dd><p>need <span class="math notranslate nohighlight">\(\delta B\)</span> in the perturbed straight-field-line coordinates.
+That follows from <span class="math notranslate nohighlight">\(\delta B_L(\boldsymbol\xi_\perp)\)</span> (<code class="docutils literal notranslate"><span class="pre">llagb</span></code>, or
+<span class="math notranslate nohighlight">\(-(\mathrm{Bdivxprp}+\mathrm{Bkxprp})\)</span> away from rational surfaces)
+and <span class="math notranslate nohighlight">\(\nabla\cdot\boldsymbol\xi_\perp\)</span> by a magnetic differential
+equation for the parallel gauge (next section).  <code class="docutils literal notranslate"><span class="pre">lagb</span></code> must not be
+used as <span class="math notranslate nohighlight">\(\delta B_L(\boldsymbol\xi_\perp)\)</span>.</p>
+</dd>
+</dl>
+</section>
+<section id="target-gauges-in-gpec-units">
+<h2><a class="toc-backref" href="#id6" role="doc-backlink">Target gauges in GPEC units</a><a class="headerlink" href="#target-gauges-in-gpec-units" title="Link to this heading">¶</a></h2>
+<p>Let <span class="math notranslate nohighlight">\(D=\partial_\theta+q\partial_\zeta\)</span>, so
+<span class="math notranslate nohighlight">\(\mathbf B\cdot\nabla=(\chi_1/\mathcal J)D\)</span>.
+For a matching equilibrium chart <span class="math notranslate nohighlight">\(\mathcal J B^a=H(\psi)\)</span>,
+<span class="math notranslate nohighlight">\(a=2\)</span> is Boozer and <span class="math notranslate nohighlight">\(a=0\)</span> is Hamada. A displacement with
+<span class="math notranslate nohighlight">\(b_X=\delta B_L(\boldsymbol\xi_X)\)</span> and
+<span class="math notranslate nohighlight">\(d_X=\nabla\cdot\boldsymbol\xi_X\)</span> has target-gauge source</p>
+<div class="math notranslate nohighlight">
+\[T_a=d_X+a b_X/B,\qquad
+\boldsymbol\xi_{target}=\boldsymbol\xi_X+\lambda\mathbf B,\qquad
+T_a(\boldsymbol\xi_{target})=T_a(\boldsymbol\xi_X)
+   +\frac{\mathbf B\cdot\nabla(\lambda B^a)}{B^a}.\]</div>
+<p>For nonaxisymmetric modes the target flux-function perturbation is zero.
+With <span class="math notranslate nohighlight">\(w=\chi_1\lambda/\mathcal J\)</span>, this gives</p>
+<div class="math notranslate nohighlight">
+\[Dw=-T_a,\qquad w_m=\frac{i T_{a,m}}{2\pi(m-nq)},\qquad
+b_{target}=b_X+w\partial_\theta B.\]</div>
+<p>The source is formed in real space before Fourier transformation. A
+nonzero source at <span class="math notranslate nohighlight">\(m=nq\)</span> has no periodic solution. A resonant zero
+source leaves an arbitrary homogeneous shift, set to zero here.
+The factor <span class="math notranslate nohighlight">\(2\pi\)</span> is from angles in turns and cancels the same
+factor in <span class="math notranslate nohighlight">\(\partial_\theta B\)</span>. Relabeling equilibrium harmonics
+with <code class="docutils literal notranslate"><span class="pre">jac_out</span></code> alone does not solve this equation.</p>
+<p>For a PEST chart <span class="math notranslate nohighlight">\(\mathcal J/R^2\)</span> is a flux function; its
+linear perturbation is <span class="math notranslate nohighlight">\(\nabla\cdot\boldsymbol\xi-2\xi_R/R\)</span>.
+PEST output is not automatically either target gauge. Transform the
+equilibrium chart first, then solve the target equation.</p>
+</section>
+<section id="history">
+<h2><a class="toc-backref" href="#id7" role="doc-backlink">History</a><a class="headerlink" href="#history" title="Link to this heading">¶</a></h2>
+<p>Before GPEC 1.6.0, <code class="docutils literal notranslate"><span class="pre">Bdivxprp</span></code> and <code class="docutils literal notranslate"><span class="pre">Bkxprp</span></code> subtracted a
+Fourier-truncated parallel displacement, <code class="docutils literal notranslate"><span class="pre">gpout_pmodb</span></code> regularised the
+divergence even with <code class="docutils literal notranslate"><span class="pre">reg_flag=f</span></code>, <code class="docutils literal notranslate"><span class="pre">gpdiag_pmodb</span></code> used a stale Jacobian,
+PENTRC’s <code class="docutils literal notranslate"><span class="pre">read_pmodb</span></code> paired <code class="docutils literal notranslate"><span class="pre">lagb</span></code> with an inconsistent divergence, and
+both PENTRC CGL paths halved the curvature term.  These were fixed in
+1.6.0 (#340-#343).</p>
+</section>
+<section id="source-map-and-literature">
+<h2><a class="toc-backref" href="#id8" role="doc-backlink">Source map and literature</a><a class="headerlink" href="#source-map-and-literature" title="Link to this heading">¶</a></h2>
+<p>Code: <code class="docutils literal notranslate"><span class="pre">gpeq_sol</span></code> and <code class="docutils literal notranslate"><span class="pre">gpeq_contra</span></code> (<code class="docutils literal notranslate"><span class="pre">gpec/gpeq.f</span></code>, regularisation and
+the divergence-free closure), <code class="docutils literal notranslate"><span class="pre">gpout_pmodb</span></code> (<code class="docutils literal notranslate"><span class="pre">gpec/gpout.f</span></code>, the pmodb
+columns), <code class="docutils literal notranslate"><span class="pre">gpdiag_pmodb</span></code> (<code class="docutils literal notranslate"><span class="pre">gpec/gpdiag.f</span></code>, <code class="docutils literal notranslate"><span class="pre">llagb</span></code> and <code class="docutils literal notranslate"><span class="pre">lllagb</span></code>),
+<code class="docutils literal notranslate"><span class="pre">idcon_build</span></code> (<code class="docutils literal notranslate"><span class="pre">gpec/idcon.f</span></code>, <code class="docutils literal notranslate"><span class="pre">smat</span></code>-<code class="docutils literal notranslate"><span class="pre">zmat</span></code>), <code class="docutils literal notranslate"><span class="pre">read_pmodb</span></code> and
+<code class="docutils literal notranslate"><span class="pre">set_peq</span></code> (<code class="docutils literal notranslate"><span class="pre">pentrc/inputs.f90</span></code>), and <code class="docutils literal notranslate"><span class="pre">direct_run</span></code> (<code class="docutils literal notranslate"><span class="pre">equil/direct.f</span></code>,
+<code class="docutils literal notranslate"><span class="pre">eqfun</span></code>).</p>
+<p>The physical definitions were checked against Park 2009, PoP 16 056115,
+Eqs. 7 and 10; Park 2011, PoP 18 110702, Eqs. 4, 10 and 11;
+Park and Logan 2017, PoP 24 032505, Eq. 13 and p. 6; Logan and Park 2013,
+PoP 20 122507, Eqs. 4 and 5; and Boozer and Nuehrenberg 2006,
+PoP 13 102501, Eqs. 42 and 43. The latter’s Delta includes twice the
+curvature; its Eq. 43 is Eulerian and is not the perpendicular Lagrangian
+scalar.</p>
+</section>
+</section>
+
+
+    </div>
+    
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+<div id="sourcelink">
+  <a href="_sources/pmodb_gauge.rst.txt"
+     rel="nofollow">Source</a>
+</div>
+      
+    </p>
+    <p>
+        &copy; Copyright 2007 The Trustees of Princeton University.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 8.1.3.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

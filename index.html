@@ -5,10 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>LICENSE &#8212; GPEC 1.5.6 documentation</title>
+    <title>LICENSE &#8212; GPEC 1.6.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=49fa7461" />
-    <script src="_static/documentation_options.js?v=8f564690"></script>
+    <script src="_static/documentation_options.js?v=72d88caf"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -36,7 +36,7 @@
         <a class="navbar-brand" href="#">
           <!-- GPEC-->
         </a>
-        <!-- <span class="navbar-text navbar-version pull-left"><b>1.5</b></span> -->
+        <!-- <span class="navbar-text navbar-version pull-left"><b>1.6</b></span> -->
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -123,7 +123,7 @@
 <p>The Generalized Perturbed Equilibrium Code (GPEC) package is available for use under the terms of the standard MIT license.</p>
 </section>
 <section id="installations">
-<span id="installation"></span><h1>Installations<a class="headerlink" href="#installations" title="Link to this heading">¶</a></h1>
+<span id="id1"></span><h1>Installations<a class="headerlink" href="#installations" title="Link to this heading">¶</a></h1>
 <section id="public">
 <h2>Public<a class="headerlink" href="#public" title="Link to this heading">¶</a></h2>
 <p>Public installations are available at PPPL (portal.pppl.gov), GA (iris.gat.com), and NFRI (ukstar). Public installations are regularly cloned and kept up to date with the <a class="reference internal" href="releases.html#releases"><span class="std std-ref">official releases</span></a>.</p>
@@ -154,8 +154,8 @@ On the Princeton portal.pppl.gov computers, users must first execute <code class
 <p>Personal copies of GPEC should be cloned from the <a class="reference external" href="https://github.com/PrincetonUniversity/GPEC">Github repository</a>, as the make process uses git commands assuming the installation is a git repository. The repository is publicly available. For questions or contributions, contact <a class="reference external" href="mailto:nikolas&#46;logan&#37;&#52;&#48;columbia&#46;edu">nikolas<span>&#46;</span>logan<span>&#64;</span>columbia<span>&#46;</span>edu</a> or <a class="reference external" href="mailto:jkpark&#37;&#52;&#48;snu&#46;ac&#46;kr">jkpark<span>&#64;</span>snu<span>&#46;</span>ac<span>&#46;</span>kr</a>.</p>
 <p>The global makefile can be found in the install directory. This essentially enters and makes each individual subdirectory. Each subdirectory’s makefile references the DEFAULTS.inc file, also in install.
 Compiled using this install makefile, the executables will then be available in their individual subdirectories as well as collected in the bin directory.</p>
-<p>Compiling should use intel compilers with the -qopenmp flag for parallel kinetic calculations in the gpec executable. An example make command might be,:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">FFLAGS</span><span class="o">=</span><span class="s2">&quot;-qopenmp&quot;</span> <span class="mi">2</span><span class="o">&gt;&amp;</span><span class="mi">1</span> <span class="o">|</span> <span class="n">tee</span> <span class="n">make</span><span class="o">.</span><span class="n">log</span>
+<p>The OpenMP flag for parallel kinetic calculations is set automatically for each compiler (OMPFLAG in DEFAULTS.inc). An example make command might be,:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="mi">2</span><span class="o">&gt;&amp;</span><span class="mi">1</span> <span class="o">|</span> <span class="n">tee</span> <span class="n">make</span><span class="o">.</span><span class="n">log</span>
 </pre></div>
 </div>
 <p>where the logging part is merely a useful suggestion. Appropriate compiler details for the major fusion clusters on which public installations are maintained is recorded in the $GPECHOME/install/DEFAULTS.inc file annotations.</p>
@@ -219,6 +219,8 @@ Compiled using this install makefile, the executables will then be available in 
 <p>Example console commands and output are given below.</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="examples.html#diiid-ideal-example"><span class="std std-ref">DIII-D Ideal Example</span></a></p></li>
+<li><p><a class="reference internal" href="examples.html#diiid-kinetic-example"><span class="std std-ref">DIII-D Kinetic Example</span></a></p></li>
+<li><p><a class="reference internal" href="examples.html#diiid-resistive-example"><span class="std std-ref">DIII-D Resistive Example</span></a></p></li>
 </ul>
 </section>
 </section>
@@ -243,7 +245,7 @@ Compiled using this install makefile, the executables will then be available in 
     </p>
     <p>
         &copy; Copyright 2007 The Trustees of Princeton University.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 8.2.3.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 8.1.3.<br/>
     </p>
   </div>
 </footer>

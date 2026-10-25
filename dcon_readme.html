@@ -5,10 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>DCON README &#8212; GPEC 1.5.6 documentation</title>
+    <title>DCON README &#8212; GPEC 1.6.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=49fa7461" />
-    <script src="_static/documentation_options.js?v=8f564690"></script>
+    <script src="_static/documentation_options.js?v=72d88caf"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -36,7 +36,7 @@
         <a class="navbar-brand" href="index.html">
           <!-- GPEC-->
         </a>
-        <!-- <span class="navbar-text navbar-version pull-left"><b>1.5</b></span> -->
+        <!-- <span class="navbar-text navbar-version pull-left"><b>1.6</b></span> -->
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -501,13 +501,19 @@ rho=sqrt(psi), a generalized radius.  The second, grid_type=”ldp”, uses
 a method suggested by L. Don Pearlstein (LDP), which packs the grid in
 the neighborhood of the axis and the edge.  I have a slight preference
 for “ldp”, but they both work well.  A third type, “original”, uses the
-same radial grid used in the input data.  (Sorry, there’s no “extra
-crispy” option.)  The poloidal grid is uniformly distributed in the
-straight-fieldline coordinate theta.  Throughout the code, cubic spline
-and Fourier representations are used to minimize the effects of grid
-discreteness.</p>
-<p>The input parameter psilow is used only for grid_type=”ldp”.  A good
-value is 1e-4.  For the most part, results are insensitive to this
+radial grid of the input data between psilow and psihigh: psilow, then
+the input surfaces strictly between them, then psihigh; mpsi is set by
+the number of these points.  Its accuracy is only as good as the input
+file’s resolution near the edge.  An EFIT g-file’s grid is uniform in
+psi, which is too coarse at the edge for DCON and STRIDE: with
+“original”, the DIIID_ideal_example reports an unstable n=1 mode that
+“ldp” finds stable.  Prefer “ldp” unless the input grid is packed toward
+the edge.  (Sorry, there’s no “extra crispy” option.)  The poloidal grid
+is uniformly distributed in the straight-fieldline coordinate theta.
+Throughout the code, cubic spline and Fourier representations are used
+to minimize the effects of grid discreteness.</p>
+<p>The input parameter psilow is used by every grid type except “rho”.  A
+good value is 1e-4.  For the most part, results are insensitive to this
 value, but substantially smaller values cause the code to run longer,
 and substantially larger values may cause accuracy problems.</p>
 <p>The input parameter psihigh determines how close to the edge the ODE’s
@@ -825,7 +831,7 @@ $ dcon
  betat =  2.843E-02, betan =  2.579E+00, betap1 =  1.033E+00
  nn =   1, mlow =  -8, mhigh =  13, mpert =  22, mband =  21
  Computing F, G, and K Matrices
- Starting integration of ODE&#39;s
+ Starting integration of ODE's
  psi = 1.000E-04, q =  1.087
  psi = 5.845E-01, q =  2.000
  psi = 8.024E-01, q =  3.000
@@ -1093,7 +1099,7 @@ metric.tex      Expressions for the metric tensor</p>
     </p>
     <p>
         &copy; Copyright 2007 The Trustees of Princeton University.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 8.2.3.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 8.1.3.<br/>
     </p>
   </div>
 </footer>

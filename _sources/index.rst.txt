@@ -67,3 +67,5 @@ The GPEC repository contains a number of examples intended to provide both consi
 Example console commands and output are given below.
 
 - :ref:`DIII-D Ideal Example <DIIID_ideal_example>`
+- :ref:`DIII-D Kinetic Example <DIIID_kinetic_example>`
+- :ref:`DIII-D Resistive Example <DIIID_resistive_example>`

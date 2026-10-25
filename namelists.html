@@ -5,10 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>The EQUIL Namelist &#8212; GPEC 1.5.6 documentation</title>
+    <title>The EQUIL Namelist &#8212; GPEC 1.6.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=49fa7461" />
-    <script src="_static/documentation_options.js?v=8f564690"></script>
+    <script src="_static/documentation_options.js?v=72d88caf"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -36,7 +36,7 @@
         <a class="navbar-brand" href="index.html">
           <!-- GPEC-->
         </a>
-        <!-- <span class="navbar-text navbar-version pull-left"><b>1.5</b></span> -->
+        <!-- <span class="navbar-text navbar-version pull-left"><b>1.6</b></span> -->
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -93,6 +93,7 @@
 <li><a class="reference internal" href="#">The EQUIL Namelist</a></li>
 <li><a class="reference internal" href="#the-dcon-namelist">The DCON Namelist</a></li>
 <li><a class="reference internal" href="#the-gpec-namelist">The GPEC Namelist</a></li>
+<li><a class="reference internal" href="#the-match-namelist">The MATCH Namelist</a></li>
 <li><a class="reference internal" href="#the-pentrc-namelist">The PENTRC Namelist</a></li>
 </ul>
 
@@ -111,28 +112,30 @@
       </div>
     <div class="body col-md-9 content" role="main">
       
-  <p>Fully annotated namelist input files can be found in the $GPECHOME/input directory and any of the examples in $GPECHOME/docs/examples directories of any <cite>public installation &lt;installation&gt;</cite>.</p>
+  <p>Fully annotated namelist input files can be found in the $GPECHOME/input directory and any of the examples in $GPECHOME/docs/examples directories of any <a class="reference internal" href="installation.html#installation"><span class="std std-ref">public installation</span></a>.</p>
 <p>The major input files requiring user interaction are as follows.</p>
 <section id="the-equil-namelist">
 <h1>The EQUIL Namelist<a class="headerlink" href="#the-equil-namelist" title="Link to this heading">¶</a></h1>
 <p>This namelist specifies the equilibrium inputs and how equilibrium quantities are splined for use in the various executables.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>&amp;EQUIL_CONTROL
-    eq_type=&quot;efit&quot;       ! Type of the input 2D equilibrium file. Accepts efit, chease, fluxgrid, transp, jsolver, lar, sol, etc.
-    eq_filename=&quot;mypath&quot; ! Path to input file (geqdsk, etc.) Must specified (no default).
+    eq_type="efit"       ! Type of the input 2D equilibrium file. Accepts efit, chease, fluxgrid, transp, jsolver, lar, sol, etc.
+    eq_filename="mypath" ! Path to input file (geqdsk, etc.) Must specified (no default).
 
-    jac_type=&quot;hamada&quot;    ! Working coordinate system for all DCON and GPEC calculations. Overrides individual powers. Accepts hamada, pest, boozer, equal_arc
+    jac_type="hamada"    ! Working coordinate system for all DCON and GPEC calculations. Overrides individual powers. Accepts hamada, pest, boozer, equal_arc, park, other
     power_bp=0           ! del.B ~ B_p**power_bp * B**power_b / R**power_r
     power_b=0            ! del.B ~ B_p**power_bp * B**power_b / R**power_r
     power_r=0            ! del.B ~ B_p**power_bp * B**power_b / R**power_r
 
-    grid_type=&quot;ldp&quot;      ! Radial grid packing of equilibrium quantities. Accepts rho, ldp, pow1, pow2, or original. ldp packs points near the core and edge. pow* packs near the edge.
+    grid_type="ldp"      ! Radial grid packing of equilibrium quantities. Accepts rho, ldp, pow1, pow2, or original. ldp packs points near the core and edge. pow* packs near the edge. original uses the input file's surfaces between psilow and psihigh, and is too coarse at the edge for uniform-psi g-files.
     psilow=1e-2          ! Minimum value of psi, normalized from 0 to 1
-    psihigh=0.994        ! Maximum value of psi, normalized from 0 to 1
-    mpsi=128              ! Number of radial grid intervals for equilibrium quantities
+    psihigh=0.994        ! Maximum value of psi, normalized from 0 to 1 (ldp_i with psi bounds: capped at the last file surface)
+    mpsi=128             ! Number of radial grid intervals for equilibrium quantities
     mtheta=256           ! Number of equally spaced poloidal grid intervals for all splines
     newq0=0              ! Grad-Shafranov solution invariant adjustment of the q profile to give the specified value of q at the axis. Default 0 uses input file value.
     etol = 1e-7          ! Tolerance for direct equilibrium reconstruction of flux surfaces/coordinates
+    enstep=16384         ! Maximum number of LSODE steps allowed per field-line integral in the direct equilibrium reconstruction
     use_classic_splines = f ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
+    profile_source="values" ! efit, and ldp_i files with FF', p' records. "values" (default): spline the tabulated f, p. "integrate": integrate FF', p' inward from the boundary and keep them as knot derivatives; for g-files with single-precision values; can shift pedestal surfaces
 
     input_only=f         ! Generate information about the input and then quit with no further calculation
     use_galgrid=t        ! Use the same grid as galerkin method when regrid=.True.
@@ -146,6 +149,7 @@
     out_2d=f             ! Ascii output of processed 2D data
     bin_2d=f             ! Binary output of processed 2D data
     dump_flag=f          ! Binary dump of basic equilibrium data and 2D rzphi spline
+    out_ahg2msc=f        ! Output deprecated ahg2msc.out files. This is used to communicate with vacuum, but is now done through memory.
 /
 </pre></div>
 </div>
@@ -156,7 +160,7 @@
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>&amp;DCON_CONTROL
     bal_flag=f           ! Ideal MHD ballooning criterion for short wavelengths
     mat_flag=t           ! Construct coefficient matrices for diagnostic purposes
-    ode_flag=t           ! Integrate ODE&#39;s for determining stability of internal long-wavelength mode (must be true for GPEC)
+    ode_flag=t           ! Integrate ODE's for determining stability of internal long-wavelength mode (must be true for GPEC)
     vac_flag=t           ! Compute plasma, vacuum, and total energies for free-boundary modes
     mer_flag=t           ! Evaluate the Mercier criterian
 
@@ -165,13 +169,13 @@
     psiedge=0.988        ! If less then psilim, calculates dW(psi) between psiedge and psilim, then runs with truncation at max(dW)
     qlow=1.02            ! Integration initiated at q determined by minimum of qlow and q0 from equil
     qhigh=20.2           ! Integration terminated at q limit determined by minimum of qhigh and qa from equil
-    sing_start=0         ! Start integration at the sing_start&#39;th rational from the axis (psilow)
+    sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
     reform_eq_with_psilim=f ! Reforms equilibrium splines between psilow and psilim determined by psihigh/sas_flag/qhigh/peak_flag
 
     nn=1                 ! Toroidal mode number
     delta_mlow=8         ! Expands lower bound of Fourier harmonics
     delta_mhigh=8        ! Expands upper bound of  Fourier harmonics
-    delta_mband=0        ! Integration keeps only this wide a band of solutions along the diagonal in m,m&#39;
+    delta_mband=0        ! Integration keeps only this wide a band of solutions along the diagonal in m,m'
     mthvac=512           ! Number of points used in splines over poloidal angle at plasma-vacuum interface. Overrides vac.in mth.
     thmax0=1             ! Linear multiplier on the automatic choice of theta integration bounds for high-n ideal ballooning stability computation (strictly, -inf to -inf)
 
@@ -203,17 +207,15 @@
 &amp;DCON_OUTPUT
     out_fund=f           ! Output fundamental matrices A,B,C,D,E,H
 
-    out_ahg2msc=f        ! Output deprecated ahg2msc.out files. This is used to communicate with vacuum, but is now done through memory.
-
     crit_break=t         ! Color of the crit curve changes when crossing a singular surface
 
     ahb_flag=f           ! Output normal magnetic field eigenvalues and eigenfunctons at plasma-vacuum interface (must be false for GPEC)
     msol_ahb=1           ! Number of eigenfunctions output by ahb_flag=t ?
-    mthsurf0=1           ! Linear multiplier on number of boundary points used to display surface eigenfunctions for ahgb_flag=t
+    mthsurf0=1           ! Linear multiplier on number of boundary points used to display surface eigenfunctions for ahb_flag=t
 
     bin_euler=t          ! Output M psi-by-M euler-lagrange solutions to binary file euler.bin
     bin_vac=f            ! Output deprecated binary vacuum.bin containing vacuum energy matrices
-    euler_stride=1       ! Output only every euler_stride&#39;th psi step to binary file
+    euler_stride=1       ! Output only every euler_stride'th psi step to binary file
 
     out_bal1=f           ! Ascii output for bal_flag poloidal functions
     bin_bal1=f           ! Binary output for bal_flag poloidal functions
@@ -270,6 +272,9 @@
 &amp;GPEC_CONTROL
    resp_index=0             ! Integer 0-4, determining method of inductance matrix formation. 0 uses energy identity, and is recommended. Use 1 when using resistive DCON.
    sing_spot=5e-4           ! Minimum distance to singular surface in (m-nq) space
+   sing_resspot=1.0         ! If use_res_spot=t, use inverse cube root of lundquist number scaled by sing_resspot in psi space as spot size
+   use_res_spot=f           ! Use resistive singular layer width instead of fixed sing_spot
+   sing_interpspot=1.0      ! Scaling of the interpolation width, in units of spot size, for smoothed outputs of singular surface quantities
    sing_npsi=100            ! Number of points between rational surfaces used for b-normal splines across sin_spot
    reg_flag=f               ! Regularize the solution near resonant surfaces
    reg_spot=5e-2            ! Regularize by (m-nq)^2/((m-nq)^2+reg_spot^2)
@@ -289,6 +294,8 @@
    singfld_flag=f           ! Output of resonant surface quantities (flux,current,etc.)
    vsingfld_flag=f          ! Output of vacuum resonant surface quantities
    singthresh_flag=f        ! Calculate SLAYRE and CALLEN's resonant field penetration threshold (requires kinetic profiles from pentrc.in)
+   singthresh_slayer_inpr=5.0 ! Scalar Prandtl number (viscosity) used by SLAYER for all rational surfaces
+   singthresh_slayer_inpr_prof=-1.0 ! Per-rational-surface Prandtl number profile, comma-separated and ordered by ascending q, up to 20 entries (e.g. singthresh_slayer_inpr_prof=3.0,5.0,8.0,12.0 for the q=2,3,4,5 surfaces). Any entry &lt;= 0 falls back to the scalar singthresh_slayer_inpr
 
    pmodb_flag=f             ! Outputs delta-B_Lagrangian
    xbnormal_flag=t          ! Outputs normal displacement and field in plasma
@@ -316,9 +323,16 @@
    max_linesout=0           ! Maximum length of ascii data tables enforced by increasing radial step size (iff .gt. 0).
    bin_flag=f               ! Write binary outputs for use with xdraw
    bin_2d_flag=f            ! Write 2D binary outputs for use with xdraw
-   out_ahg2msc=f            ! Output deprecated ahg2msc.out files. This is used to communicate with vacuum, but is now done through memory.
 
    verbose=t                ! Print run log to terminal
+
+   effective_field_flag=f   ! Calculate each contribution of destabilizing term and effective perturbed field [Bernstein, Handbook of Plasma Physics, 1983].
+   standard_form_flag=f     ! Calculate the first-form plasma energy terms of Eq. (3.1) in docs/tex/recon/main.tex with the gamma|div xi|^2 term omitted.
+   effective_field_terms_flag=f ! Bernstein |C|^2 decomposition: |C|^2 = |Q|^2 + 2Re(V*.Q) + |V|^2, reported as A, B, Cpar, Iperp with the identity check epf = A+B+Cpar+Iperp.
+   curl_check_flag=f        ! Under effective_field_flag, verify (curl C).grad(psi)=0 and write gpec_recon_cveri_sol*.out.
+   recon_out=t              ! Under effective_field_flag/standard_form_flag/effective_field_terms_flag, write recon diagnostic files and gpec.log entries. If false, keep terminal summary only.
+   recon_int=&quot;spline&quot;       ! Radial quadrature of all three routes on the psifac grid: &quot;spline&quot; (default) or &quot;trapezoid&quot;. The integrated psi range is printed beside the DCON psilow-psilim range.
+                            ! effective_field_flag, standard_form_flag and effective_field_terms_flag require mode_flag=t (choose mode) with coil_flag, data_flag, harmonic_flag and reg_flag all f; GPEC stops at input otherwise.
 /
 &amp;GPEC_DIAGNOSE
    timeit=f                 ! Print timer splits for major subroutines
@@ -327,12 +341,43 @@
 /
 </pre>
 </section>
+<section id="the-match-namelist">
+<h1>The MATCH Namelist<a class="headerlink" href="#the-match-namelist" title="Link to this heading">¶</a></h1>
+<p>This namelist controls the MATCH code, including which DCON eigenfunction (sol_num) it reconstructs.</p>
+<pre class="literal-block">&amp;match_input
+        filename=&quot;euler.bin&quot;
+        full=f
+
+        ideal_flag=t
+        contour_flag=t
+
+        sol_num=1               !DCON eigenfunction index for MATCH (1 = most unstable); sol_num=n&gt;1 writes solutions&lt;n&gt;.bin
+
+        res_flag=f
+        ff0=1e6
+        ff1=1e6
+
+        scan_flag=f
+        big=1
+        small=1e-6
+        ns=100
+
+        z_level_type=&quot;midplane&quot;
+        phi_level=85
+
+        root_flag=f
+        root=(1e-2,0)
+
+/
+</pre>
+</section>
 <section id="the-pentrc-namelist">
 <h1>The PENTRC Namelist<a class="headerlink" href="#the-pentrc-namelist" title="Link to this heading">¶</a></h1>
-<p>This namelist sets the inputs, controls the behavior, and determines the outputs of the GPEC code.</p>
+<p>This namelist sets the inputs, controls the behavior, and determines the outputs of the PENTRC code.</p>
 <pre class="literal-block">&amp;PENT_INPUT
     idconfile  = &quot;euler.bin&quot;            ! Eigenfunctions output by DCON run
     kinetic_file = &quot;kinetic.txt&quot;        ! Ascii profiles. columns: psi_n, ni(m^-3), ne(m^-3), ti(eV), te(eV), omega_EXB(rad/s)
+    kinetic_format = &quot;legacy&quot;           ! &quot;rates-v1&quot; adds columns logLambda, nu_i(s^-1), nu_e(s^-1) that replace the internal collision model
     data_dir = &quot;&quot;                       ! Location of pre-formed fnml matrix used in rlar and clar methods. &quot;default&quot; uses $GPECHOME/pentrc.
     peq_file = &quot;&quot;                       ! Ascii displacement. columns: psi_n, m, real(xi^psi), imag(xi^psi), real(xi^alpha), imag(xi^alpha). Default uses &quot;gpec_xclebsch_n#.out&quot;
 
@@ -357,8 +402,10 @@
 
     force_xialpha = .false.             ! Calculates tangential displacement from radial displacement and toroidal force balance (overwrites peq_file values)
 
-    atol_xlmda = 1e-9                   ! Absolute tolerance in energy and pitch integration
-    rtol_xlmda = 1e-5                   ! Relative tolerance in energy and pitch integration
+    atol_xlmda = 1e-9                   ! Absolute tolerance in pitch integration (energy tolerance derived from this unless atol_x is set)
+    rtol_xlmda = 1e-5                   ! Relative tolerance in pitch integration (energy tolerance derived from this unless rtol_x is set)
+    atol_x = -1                         ! Absolute tolerance in energy integration. Negative (default) derives 1e-2*atol_xlmda so the nested quadrature converges
+    rtol_x = -1                         ! Relative tolerance in energy integration. Negative (default) derives 1e-2*rtol_xlmda so the nested quadrature converges
     atol_psi = 1e-4                     ! Absolute tolerance in psi_n integration
     rtol_psi = 1e-4                     ! Relative tolerance in psi_n integration
     ntheta = 128                        ! Poloidal angle grid for bounce integration
@@ -431,7 +478,7 @@
     </p>
     <p>
         &copy; Copyright 2007 The Trustees of Princeton University.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 8.2.3.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 8.1.3.<br/>
     </p>
   </div>
 </footer>

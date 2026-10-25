@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Sign Conventions Reference &#8212; GPEC 1.6.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=49fa7461" />
+    <script src="_static/documentation_options.js?v=72d88caf"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="_static/js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript" src="_static/js/jquery-fix.js"></script>
+<script type="text/javascript" src="_static/bootstrap-3.4.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html">
+          <!-- GPEC-->
+        </a>
+        <!-- <span class="navbar-text navbar-version pull-left"><b>1.6</b></span> -->
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="references.html">Cite</a></li>
+                <li><a href="installation.html">Installation</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="outputs.html">I/O</a></li>
+                <li><a href="releases.html">Release History</a></li>
+                <li><a href="dcon_readme.html">DCON</a></li>
+                <li><a href="developers.html">Develop</a></li>
+                <li><a href="source_documentation.html">Python Post Processing</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Jump to <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+           <!-- 
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+           -->
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/GPEC_logo.png" alt="Logo of GPEC"/>
+            </a></p><ul>
+<li><a class="reference internal" href="#">Sign Conventions Reference</a><ul>
+<li><a class="reference internal" href="#coordinate-system">Coordinate System</a><ul>
+<li><a class="reference internal" href="#poloidal-flux-psi">Poloidal Flux <span class="math notranslate nohighlight">\(\psi\)</span></a></li>
+<li><a class="reference internal" href="#poloidal-angle-theta">Poloidal Angle <span class="math notranslate nohighlight">\(\theta\)</span></a></li>
+<li><a class="reference internal" href="#toroidal-coordinate-zeta-and-phi">Toroidal Coordinate <span class="math notranslate nohighlight">\(\zeta\)</span> and <span class="math notranslate nohighlight">\(\phi\)</span></a></li>
+<li><a class="reference internal" href="#working-coordinate-options">Working Coordinate Options</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#helicity-and-handedness">Helicity and Handedness</a></li>
+<li><a class="reference internal" href="#f-r-b-phi"><span class="math notranslate nohighlight">\(F = R B_\phi\)</span></a></li>
+<li><a class="reference internal" href="#safety-factor-q">Safety Factor <span class="math notranslate nohighlight">\(q\)</span></a></li>
+<li><a class="reference internal" href="#mode-numbers-m-and-n">Mode Numbers <span class="math notranslate nohighlight">\(m\)</span> and <span class="math notranslate nohighlight">\(n\)</span></a><ul>
+<li><a class="reference internal" href="#toroidal-mode-number-n">Toroidal Mode Number <span class="math notranslate nohighlight">\(n\)</span></a></li>
+<li><a class="reference internal" href="#poloidal-mode-range">Poloidal Mode Range</a></li>
+<li><a class="reference internal" href="#why-positive-m-is-always-resonant">Why Positive <span class="math notranslate nohighlight">\(m\)</span> Is Always Resonant</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#spectrum-output-sign-conventions">Spectrum Output Sign Conventions</a><ul>
+<li><a class="reference internal" href="#real-space-output">Real-Space Output</a></li>
+<li><a class="reference internal" href="#interfacing-with-surfmn">Interfacing with SURFMN</a></li>
+<li><a class="reference internal" href="#interfacing-with-vacuum">Interfacing with VACUUM</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#rotation-velocity-conventions-pentrc">Rotation Velocity Conventions (PENTRC)</a><ul>
+<li><a class="reference internal" href="#omega-e-e-x-b-rotation"><span class="math notranslate nohighlight">\(\omega_E\)</span> (E x B Rotation)</a></li>
+<li><a class="reference internal" href="#diamagnetic-frequencies">Diamagnetic Frequencies</a></li>
+<li><a class="reference internal" href="#total-toroidal-rotation">Total Toroidal Rotation</a></li>
+<li><a class="reference internal" href="#rotation-scaling-parameters">Rotation Scaling Parameters</a></li>
+<li><a class="reference internal" href="#energy-integral-resonance">Energy Integral Resonance</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#cocos-compatibility">COCOS Compatibility</a></li>
+<li><a class="reference internal" href="#quick-reference">Quick Reference</a></li>
+<li><a class="reference internal" href="#source-code-references">Source Code References</a></li>
+</ul>
+</li>
+</ul>
+
+<div id="sourcelink">
+  <a href="_sources/sign_conventions.rst.txt"
+     rel="nofollow">Source</a>
+</div>
+<form action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+        </div>
+      </div>
+    <div class="body col-md-9 content" role="main">
+      
+  <section id="sign-conventions-reference">
+<span id="sign-conventions"></span><h1>Sign Conventions Reference<a class="headerlink" href="#sign-conventions-reference" title="Link to this heading">¶</a></h1>
+<p>This page is a comprehensive reference for the sign conventions used
+throughout GPEC. Understanding these conventions is essential for
+interpreting outputs, interfacing with other codes, and correctly
+setting up kinetic calculations.</p>
+<nav class="contents local" id="on-this-page">
+<p class="topic-title">On this page</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#coordinate-system" id="id1">Coordinate System</a></p>
+<ul>
+<li><p><a class="reference internal" href="#poloidal-flux-psi" id="id2">Poloidal Flux <span class="math notranslate nohighlight">\(\psi\)</span></a></p></li>
+<li><p><a class="reference internal" href="#poloidal-angle-theta" id="id3">Poloidal Angle <span class="math notranslate nohighlight">\(\theta\)</span></a></p></li>
+<li><p><a class="reference internal" href="#toroidal-coordinate-zeta-and-phi" id="id4">Toroidal Coordinate <span class="math notranslate nohighlight">\(\zeta\)</span> and <span class="math notranslate nohighlight">\(\phi\)</span></a></p></li>
+<li><p><a class="reference internal" href="#working-coordinate-options" id="id5">Working Coordinate Options</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#helicity-and-handedness" id="id6">Helicity and Handedness</a></p></li>
+<li><p><a class="reference internal" href="#f-r-b-phi" id="id7"><span class="math notranslate nohighlight">\(F = R B_\phi\)</span></a></p></li>
+<li><p><a class="reference internal" href="#safety-factor-q" id="id8">Safety Factor <span class="math notranslate nohighlight">\(q\)</span></a></p></li>
+<li><p><a class="reference internal" href="#mode-numbers-m-and-n" id="id9">Mode Numbers <span class="math notranslate nohighlight">\(m\)</span> and <span class="math notranslate nohighlight">\(n\)</span></a></p>
+<ul>
+<li><p><a class="reference internal" href="#toroidal-mode-number-n" id="id10">Toroidal Mode Number <span class="math notranslate nohighlight">\(n\)</span></a></p></li>
+<li><p><a class="reference internal" href="#poloidal-mode-range" id="id11">Poloidal Mode Range</a></p></li>
+<li><p><a class="reference internal" href="#why-positive-m-is-always-resonant" id="id12">Why Positive <span class="math notranslate nohighlight">\(m\)</span> Is Always Resonant</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#spectrum-output-sign-conventions" id="id13">Spectrum Output Sign Conventions</a></p>
+<ul>
+<li><p><a class="reference internal" href="#real-space-output" id="id14">Real-Space Output</a></p></li>
+<li><p><a class="reference internal" href="#interfacing-with-surfmn" id="id15">Interfacing with SURFMN</a></p></li>
+<li><p><a class="reference internal" href="#interfacing-with-vacuum" id="id16">Interfacing with VACUUM</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#rotation-velocity-conventions-pentrc" id="id17">Rotation Velocity Conventions (PENTRC)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#omega-e-e-x-b-rotation" id="id18"><span class="math notranslate nohighlight">\(\omega_E\)</span> (E x B Rotation)</a></p></li>
+<li><p><a class="reference internal" href="#diamagnetic-frequencies" id="id19">Diamagnetic Frequencies</a></p></li>
+<li><p><a class="reference internal" href="#total-toroidal-rotation" id="id20">Total Toroidal Rotation</a></p></li>
+<li><p><a class="reference internal" href="#rotation-scaling-parameters" id="id21">Rotation Scaling Parameters</a></p></li>
+<li><p><a class="reference internal" href="#energy-integral-resonance" id="id22">Energy Integral Resonance</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#cocos-compatibility" id="id23">COCOS Compatibility</a></p></li>
+<li><p><a class="reference internal" href="#quick-reference" id="id24">Quick Reference</a></p></li>
+<li><p><a class="reference internal" href="#source-code-references" id="id25">Source Code References</a></p></li>
+</ul>
+</nav>
+<section id="coordinate-system">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">Coordinate System</a><a class="headerlink" href="#coordinate-system" title="Link to this heading">¶</a></h2>
+<p>DCON defines its native magnetic chart <span class="math notranslate nohighlight">\((\psi, \theta, \zeta)\)</span> and
+Fourier decomposition <span class="math notranslate nohighlight">\(\exp[2\pi i(m\theta-n\zeta)]\)</span> independently of
+the physical machine embedding.  Do not infer physical handedness from this
+abstract chart alone: GPEC maps its native toroidal coordinate to the
+counter-clockwise machine angle using <code class="docutils literal notranslate"><span class="pre">helicity</span></code>, as described below.</p>
+<section id="poloidal-flux-psi">
+<h3><a class="toc-backref" href="#id2" role="doc-backlink">Poloidal Flux <span class="math notranslate nohighlight">\(\psi\)</span></a><a class="headerlink" href="#poloidal-flux-psi" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Normalized from 0 (magnetic axis) to 1 (plasma boundary).</p></li>
+<li><p><span class="math notranslate nohighlight">\(\psi_0 = \psi_{\mathrm{bry}} - \psi_{\mathrm{axis}}\)</span> is forced positive
+on read (<code class="docutils literal notranslate"><span class="pre">read_eq_efit</span></code> in <code class="docutils literal notranslate"><span class="pre">equil/read_eq.f</span></code>). If the EQDSK has
+<span class="math notranslate nohighlight">\(\psi_{\mathrm{bry}} &lt; \psi_{\mathrm{axis}}\)</span>, both <span class="math notranslate nohighlight">\(\psi_0\)</span> and
+the 2D flux array are sign-flipped.</p></li>
+<li><p>Occasionally <span class="math notranslate nohighlight">\(\rho = \sqrt{\psi}\)</span> is used as a radius-like variable.</p></li>
+</ul>
+</section>
+<section id="poloidal-angle-theta">
+<h3><a class="toc-backref" href="#id3" role="doc-backlink">Poloidal Angle <span class="math notranslate nohighlight">\(\theta\)</span></a><a class="headerlink" href="#poloidal-angle-theta" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>“Upward outboard” convention, always. <span class="math notranslate nohighlight">\(\theta\)</span> increases by 1 (not
+<span class="math notranslate nohighlight">\(2\pi\)</span>) going once around the poloidal direction.</p></li>
+<li><p>This is fixed regardless of helicity or working coordinate choice.</p></li>
+</ul>
+</section>
+<section id="toroidal-coordinate-zeta-and-phi">
+<h3><a class="toc-backref" href="#id4" role="doc-backlink">Toroidal Coordinate <span class="math notranslate nohighlight">\(\zeta\)</span> and <span class="math notranslate nohighlight">\(\phi\)</span></a><a class="headerlink" href="#toroidal-coordinate-zeta-and-phi" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>The ignorable toroidal coordinate is <span class="math notranslate nohighlight">\(\zeta = \phi/(2\pi) + \nu(\psi,\theta)\)</span>,
+where <span class="math notranslate nohighlight">\(\nu\)</span> is a single-valued function that depends on the working
+coordinate system. PEST coordinates have <span class="math notranslate nohighlight">\(\nu = 0\)</span>.</p></li>
+<li><p><span class="math notranslate nohighlight">\(\phi\)</span> is effectively <strong>CCW</strong> (counter-clockwise from above) for
+left-handed (LH) configurations, but <strong>CW</strong> (clockwise) for right-handed
+(RH) configurations.</p></li>
+<li><p>In the laboratory convention where <span class="math notranslate nohighlight">\(\phi_{\rm CCW}\)</span> increases
+counter-clockwise viewed from above, the implemented machine embedding is
+<span class="math notranslate nohighlight">\(\phi_{\rm CCW}=-h(2\pi\zeta+\delta\phi)\)</span>, with
+<span class="math notranslate nohighlight">\(h=\mathrm{helicity}\)</span> (<code class="docutils literal notranslate"><span class="pre">coil/field.F</span></code>).</p></li>
+</ul>
+</section>
+<section id="working-coordinate-options">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">Working Coordinate Options</a><a class="headerlink" href="#working-coordinate-options" title="Link to this heading">¶</a></h3>
+<p>Controlled by <code class="docutils literal notranslate"><span class="pre">jac_type</span></code> in <code class="docutils literal notranslate"><span class="pre">equil.in</span></code>. The Jacobian is set by
+<span class="math notranslate nohighlight">\(\mathbf{B}\cdot\nabla\theta \propto 1/J \propto B_p^{p_{bp}} \, B^{p_b} \, R^{-p_r}\)</span>:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Name</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">power_bp</span></code></p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">power_b</span></code></p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">power_r</span></code></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Hamada (default)</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>PEST</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-even"><td><p>Boozer</p></td>
+<td><p>0</p></td>
+<td><p>2</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>Equal-arc</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-even"><td><p>Park</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>Other (powers set explicitly in <code class="docutils literal notranslate"><span class="pre">equil.in</span></code>)</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>See also the coordinate discussion in <a class="reference internal" href="outputs.html"><span class="doc">Coordinates</span></a>.</p>
+</section>
+</section>
+<section id="helicity-and-handedness">
+<h2><a class="toc-backref" href="#id6" role="doc-backlink">Helicity and Handedness</a><a class="headerlink" href="#helicity-and-handedness" title="Link to this heading">¶</a></h2>
+<p>Helicity is computed in the <code class="docutils literal notranslate"><span class="pre">gpec_main</span></code> program (<code class="docutils literal notranslate"><span class="pre">gpec/gpec.f</span></code>):</p>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="n">ipd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0</span>
+<span class="n">btd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0</span>
+<span class="k">IF</span><span class="p">(</span><span class="n">ip_direction</span><span class="o">==</span><span class="s2">"negative"</span><span class="p">)</span><span class="w"> </span><span class="n">ipd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="mf">1.0</span>
+<span class="k">IF</span><span class="p">(</span><span class="n">bt_direction</span><span class="o">==</span><span class="s2">"negative"</span><span class="p">)</span><span class="w"> </span><span class="n">btd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="mf">1.0</span>
+<span class="n">helicity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ipd</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">btd</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ip_direction</span></code> and <code class="docutils literal notranslate"><span class="pre">bt_direction</span></code> are set in <code class="docutils literal notranslate"><span class="pre">coil.in</span></code>.
+“positive” means CCW viewed from above; “negative” means CW.</p></li>
+<li><p><strong>helicity = +1</strong>: right-handed (RH), <span class="math notranslate nohighlight">\(B_t\)</span> and <span class="math notranslate nohighlight">\(I_p\)</span> in the
+same direction.</p></li>
+<li><p><strong>helicity = -1</strong>: left-handed (LH), <span class="math notranslate nohighlight">\(B_t\)</span> and <span class="math notranslate nohighlight">\(I_p\)</span> opposed.</p></li>
+<li><p>The helicity value is stored in the <code class="docutils literal notranslate"><span class="pre">gpec_control_output</span></code> netcdf file.</p></li>
+</ul>
+</section>
+<section id="f-r-b-phi">
+<h2><a class="toc-backref" href="#id7" role="doc-backlink"><span class="math notranslate nohighlight">\(F = R B_\phi\)</span></a><a class="headerlink" href="#f-r-b-phi" title="Link to this heading">¶</a></h2>
+<p>The poloidal-current function <span class="math notranslate nohighlight">\(F = R B_\phi\)</span> from the Grad-Shafranov
+equation is <strong>forced positive</strong> via <code class="docutils literal notranslate"><span class="pre">ABS()</span></code> (<code class="docutils literal notranslate"><span class="pre">read_eq_efit</span></code> in
+<code class="docutils literal notranslate"><span class="pre">equil/read_eq.f</span></code>):</p>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="n">sq_in</span><span class="p">%</span><span class="n">fs</span><span class="p">(:,</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">ABS</span><span class="p">(</span><span class="n">sq_in</span><span class="p">%</span><span class="n">fs</span><span class="p">(:,</span><span class="mi">1</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>The code always works with <span class="math notranslate nohighlight">\(|F|\)</span>. Any information about the sign of
+<span class="math notranslate nohighlight">\(B_t\)</span> must come from the <code class="docutils literal notranslate"><span class="pre">bt_direction</span></code> setting in <code class="docutils literal notranslate"><span class="pre">coil.in</span></code>.</p>
+</section>
+<section id="safety-factor-q">
+<h2><a class="toc-backref" href="#id8" role="doc-backlink">Safety Factor <span class="math notranslate nohighlight">\(q\)</span></a><a class="headerlink" href="#safety-factor-q" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Defined as <span class="math notranslate nohighlight">\(q = (\mathbf{B} \cdot \nabla\zeta) / (\mathbf{B} \cdot \nabla\theta)\)</span>.</p></li>
+<li><p><strong>Recomputed, not read.</strong> For direct equilibria (EFIT g-files), the q
+profile in the file is read but never used. <code class="docutils literal notranslate"><span class="pre">direct_run</span></code> in
+<code class="docutils literal notranslate"><span class="pre">equil/direct.f</span></code> rebuilds q on each flux surface from a field-line
+integration.</p></li>
+<li><p><strong>Always positive for g-file input.</strong> The integration uses the
+sign-normalized <span class="math notranslate nohighlight">\(\psi\)</span> map and <span class="math notranslate nohighlight">\(|F|\)</span>, so q comes out positive
+for any combination of signs in the g-file. Reversing all signed
+quantities in a g-file (<span class="math notranslate nohighlight">\(\psi\)</span>, <code class="docutils literal notranslate"><span class="pre">simag</span></code>, <code class="docutils literal notranslate"><span class="pre">sibry</span></code>, <code class="docutils literal notranslate"><span class="pre">cpasma</span></code>,
+q) reproduces the original DCON results bit for bit.</p></li>
+<li><p><strong>Inverse equilibria recompute q too.</strong> The main inverse path
+(<code class="docutils literal notranslate"><span class="pre">inverse_run</span></code> in <code class="docutils literal notranslate"><span class="pre">equil/inverse.f</span></code>, used by the CHEASE, JSOLVER,
+TRANSP, and analytic formats) rebuilds q on each surface by a flux-surface
+integration, exactly as the direct path does; the input file’s q profile
+is read into <code class="docutils literal notranslate"><span class="pre">sq_in</span></code> but not used, and the recomputed q is positive. The
+one exception is the <code class="docutils literal notranslate"><span class="pre">chease4</span></code> format (<code class="docutils literal notranslate"><span class="pre">inverse_chease4_run</span></code>), which
+takes q directly from the input file.</p></li>
+</ul>
+</section>
+<section id="mode-numbers-m-and-n">
+<h2><a class="toc-backref" href="#id9" role="doc-backlink">Mode Numbers <span class="math notranslate nohighlight">\(m\)</span> and <span class="math notranslate nohighlight">\(n\)</span></a><a class="headerlink" href="#mode-numbers-m-and-n" title="Link to this heading">¶</a></h2>
+<section id="toroidal-mode-number-n">
+<h3><a class="toc-backref" href="#id10" role="doc-backlink">Toroidal Mode Number <span class="math notranslate nohighlight">\(n\)</span></a><a class="headerlink" href="#toroidal-mode-number-n" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Set as a <strong>positive integer</strong> <code class="docutils literal notranslate"><span class="pre">nn</span></code> in <code class="docutils literal notranslate"><span class="pre">dcon.in</span></code>. GPEC runs one toroidal
+harmonic at a time; results for multiple <span class="math notranslate nohighlight">\(n\)</span> can be superposed.</p></li>
+</ul>
+</section>
+<section id="poloidal-mode-range">
+<h3><a class="toc-backref" href="#id11" role="doc-backlink">Poloidal Mode Range</a><a class="headerlink" href="#poloidal-mode-range" title="Link to this heading">¶</a></h3>
+<p>The poloidal mode spectrum spans <code class="docutils literal notranslate"><span class="pre">mlow</span></code> to <code class="docutils literal notranslate"><span class="pre">mhigh</span></code>, computed in the
+<code class="docutils literal notranslate"><span class="pre">dcon</span></code> program (<code class="docutils literal notranslate"><span class="pre">dcon/dcon.F</span></code>):</p>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="n">mlow</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="nb">MIN</span><span class="p">(</span><span class="n">nn</span><span class="o">*</span><span class="n">qmin</span><span class="p">,</span><span class="w"> </span><span class="n">zero</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">4</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">delta_mlow</span>
+<span class="n">mhigh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nn</span><span class="o">*</span><span class="n">qmax</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">delta_mhigh</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">delta_mlow</span></code> and <code class="docutils literal notranslate"><span class="pre">delta_mhigh</span></code> (set in <code class="docutils literal notranslate"><span class="pre">dcon.in</span></code>) widen the range
+beyond the resonant modes.</p>
+</section>
+<section id="why-positive-m-is-always-resonant">
+<h3><a class="toc-backref" href="#id12" role="doc-backlink">Why Positive <span class="math notranslate nohighlight">\(m\)</span> Is Always Resonant</a><a class="headerlink" href="#why-positive-m-is-always-resonant" title="Link to this heading">¶</a></h3>
+<p>Resonant surfaces are found by <code class="docutils literal notranslate"><span class="pre">sing_find</span></code> in <code class="docutils literal notranslate"><span class="pre">dcon/sing.f</span></code>.
+It performs a binary search for flux surfaces where <span class="math notranslate nohighlight">\(m = n \cdot q\)</span>.
+Since <span class="math notranslate nohighlight">\(n &gt; 0\)</span> (by convention) and <span class="math notranslate nohighlight">\(q &gt; 0\)</span> (the recomputed q is
+always positive, see the safety factor section above):</p>
+<div class="math notranslate nohighlight">
+\[m_{\mathrm{res}} = \mathrm{NINT}(n \cdot q) &gt; 0\]</div>
+<p><strong>Resonant modes always have positive</strong> <span class="math notranslate nohighlight">\(m\)</span>. Negative-<span class="math notranslate nohighlight">\(m\)</span> modes
+are always non-resonant. This is by design: one can always plot the
+<span class="math notranslate nohighlight">\(m = 2\)</span> displacement profile and see resonant behavior at <span class="math notranslate nohighlight">\(q = 2\)</span>,
+while <span class="math notranslate nohighlight">\(m = -2\)</span> is always non-resonant.</p>
+</section>
+</section>
+<section id="spectrum-output-sign-conventions">
+<h2><a class="toc-backref" href="#id13" role="doc-backlink">Spectrum Output Sign Conventions</a><a class="headerlink" href="#spectrum-output-sign-conventions" title="Link to this heading">¶</a></h2>
+<section id="real-space-output">
+<h3><a class="toc-backref" href="#id14" role="doc-backlink">Real-Space Output</a><a class="headerlink" href="#real-space-output" title="Link to this heading">¶</a></h3>
+<p>For the real-space representation decomposed in <span class="math notranslate nohighlight">\(\exp(-in\phi)\)</span> with
+CCW <span class="math notranslate nohighlight">\(\phi\)</span>, GPEC takes the complex conjugate for RH configurations.
+This is implemented throughout <code class="docutils literal notranslate"><span class="pre">gpec/gpout.f</span></code> as:</p>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="o">-</span><span class="n">helicity</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nb">AIMAG</span><span class="p">(</span><span class="n">quantity</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For the full Fourier representation <span class="math notranslate nohighlight">\(\exp(im\theta - in\phi)\)</span>, the
+conjugate operation also flips up and down (not just the toroidal direction).</p>
+</section>
+<section id="interfacing-with-surfmn">
+<h3><a class="toc-backref" href="#id15" role="doc-backlink">Interfacing with SURFMN</a><a class="headerlink" href="#interfacing-with-surfmn" title="Link to this heading">¶</a></h3>
+<p>SURFMN expands in <span class="math notranslate nohighlight">\(\exp(-im\theta - in\phi)\)</span> and always uses CCW
+<span class="math notranslate nohighlight">\(\phi\)</span>. To convert:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">m_surfmn</span> <span class="o">=</span> <span class="n">helicity</span> <span class="o">*</span> <span class="n">m_gpec</span>
+<span class="n">b_surfmn</span> <span class="o">=</span> <span class="n">real</span><span class="p">(</span><span class="n">b_m</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">helicity</span> <span class="o">*</span> <span class="n">imag</span><span class="p">(</span><span class="n">b_m</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For LH configurations: only the sign of <span class="math notranslate nohighlight">\(m\)</span> is flipped. For RH: <span class="math notranslate nohighlight">\(m\)</span>
+is unchanged but the complex conjugate is taken.</p>
+</section>
+<section id="interfacing-with-vacuum">
+<h3><a class="toc-backref" href="#id16" role="doc-backlink">Interfacing with VACUUM</a><a class="headerlink" href="#interfacing-with-vacuum" title="Link to this heading">¶</a></h3>
+<p>The VACUUM code uses CCW <span class="math notranslate nohighlight">\(\phi\)</span> and downward outboard <span class="math notranslate nohighlight">\(\theta\)</span>.
+GPEC uses the complex conjugate of RH configurations when interfacing with
+VACUUM.</p>
+</section>
+</section>
+<section id="rotation-velocity-conventions-pentrc">
+<h2><a class="toc-backref" href="#id17" role="doc-backlink">Rotation Velocity Conventions (PENTRC)</a><a class="headerlink" href="#rotation-velocity-conventions-pentrc" title="Link to this heading">¶</a></h2>
+<section id="omega-e-e-x-b-rotation">
+<h3><a class="toc-backref" href="#id18" role="doc-backlink"><span class="math notranslate nohighlight">\(\omega_E\)</span> (E x B Rotation)</a><a class="headerlink" href="#omega-e-e-x-b-rotation" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Column 6 of the PENTRC kinetic profile file: <span class="math notranslate nohighlight">\(\omega_E\)</span> in rad/s.</p></li>
+<li><p>Read by the <code class="docutils literal notranslate"><span class="pre">read_kin</span></code> subroutine in <code class="docutils literal notranslate"><span class="pre">pentrc/inputs.f90</span></code>.</p></li>
+<li><p><strong>Sign convention</strong>: positive <span class="math notranslate nohighlight">\(\omega_E\)</span> means rotation in the
+direction of the toroidal coordinate <span class="math notranslate nohighlight">\(\zeta\)</span>.</p></li>
+<li><p>In the CCW laboratory frame, positive native <span class="math notranslate nohighlight">\(\omega_E\)</span> has sign
+<span class="math notranslate nohighlight">\(-h\)</span>.  Relative to plasma current its sign is
+<span class="math notranslate nohighlight">\((-h)/s_I=-s_B\)</span>, where <span class="math notranslate nohighlight">\(s_I=\mathtt{ipd}\)</span> and
+<span class="math notranslate nohighlight">\(s_B=\mathtt{btd}\)</span>.  It is therefore co-current exactly when
+<code class="docutils literal notranslate"><span class="pre">bt_direction=&quot;negative&quot;</span></code> (clockwise), not according to helicity alone.
+For <code class="docutils literal notranslate"><span class="pre">(ip_direction,bt_direction)=(positive,positive)</span></code>, positive native
+<span class="math notranslate nohighlight">\(\omega_E\)</span> is clockwise and counter-current.</p></li>
+</ul>
+</section>
+<section id="diamagnetic-frequencies">
+<h3><a class="toc-backref" href="#id19" role="doc-backlink">Diamagnetic Frequencies</a><a class="headerlink" href="#diamagnetic-frequencies" title="Link to this heading">¶</a></h3>
+<p>Computed in <code class="docutils literal notranslate"><span class="pre">read_kin</span></code> (<code class="docutils literal notranslate"><span class="pre">pentrc/inputs.f90</span></code>) and <code class="docutils literal notranslate"><span class="pre">tpsi</span></code>
+(<code class="docutils literal notranslate"><span class="pre">pentrc/torque.F90</span></code>):</p>
+<div class="math notranslate nohighlight">
+\[\omega_{*n} = -\frac{2\pi \, T_i}{e \, Z_i \, \chi_1 \, n_i} \frac{dn_i}{d\psi_n}\]</div>
+<div class="math notranslate nohighlight">
+\[\omega_{*T} = -\frac{2\pi}{e \, Z_i \, \chi_1} \frac{dT_i}{d\psi_n}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\chi_1 = 2\pi \psi_0\)</span> with <span class="math notranslate nohighlight">\(\psi_0\)</span> the boundary poloidal flux.
+The negative signs mean that a positive (outward-increasing) density or
+temperature gradient yields a negative diamagnetic frequency.</p>
+</section>
+<section id="total-toroidal-rotation">
+<h3><a class="toc-backref" href="#id20" role="doc-backlink">Total Toroidal Rotation</a><a class="headerlink" href="#total-toroidal-rotation" title="Link to this heading">¶</a></h3>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="n">wphi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">welec</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">wdian</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">wdiat</span><span class="w">    </span><span class="c">! tpsi in pentrc/torque.F90</span>
+</pre></div>
+</div>
+<p>The total toroidal rotation frequency is the sum of the E x B, density
+diamagnetic, and temperature diamagnetic contributions.</p>
+</section>
+<section id="rotation-scaling-parameters">
+<h3><a class="toc-backref" href="#id21" role="doc-backlink">Rotation Scaling Parameters</a><a class="headerlink" href="#rotation-scaling-parameters" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">pentrc.in</span></code> provides two knobs:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">wefac</span></code>: direct multiplier on the <span class="math notranslate nohighlight">\(\omega_E\)</span> profile.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">wpfac</span></code>: scales the total rotation <span class="math notranslate nohighlight">\(\omega_\phi = \omega_E + \omega_{*n} + \omega_{*T}\)</span>
+by indirectly adjusting <span class="math notranslate nohighlight">\(\omega_E\)</span>.</p></li>
+</ul>
+<p>At the current revision, <code class="docutils literal notranslate"><span class="pre">read_kin</span></code> replaces every exactly zero
+<span class="math notranslate nohighlight">\(\omega_E\)</span> knot by <span class="math notranslate nohighlight">\(10^{-9}\,\mathrm{rad/s}\)</span> before applying
+<code class="docutils literal notranslate"><span class="pre">wpfac</span></code>.  Consequently <code class="docutils literal notranslate"><span class="pre">wefac=0,wpfac=1</span></code> is not an exact zero control.
+This behavior is tracked in <a class="reference external" href="https://github.com/PrincetonUniversity/GPEC/issues/275">issue 275</a>.</p>
+</section>
+<section id="energy-integral-resonance">
+<h3><a class="toc-backref" href="#id22" role="doc-backlink">Energy Integral Resonance</a><a class="headerlink" href="#energy-integral-resonance" title="Link to this heading">¶</a></h3>
+<p>In the PENTRC energy integral (<code class="docutils literal notranslate"><span class="pre">xintgrnd</span></code> in <code class="docutils literal notranslate"><span class="pre">pentrc/energy.f90</span></code>), the
+resonance denominator involves:</p>
+<div class="math notranslate nohighlight">
+\[n \omega_E + \ell_{\mathrm{eff}} \omega_b \sqrt{x} + n \omega_D x\]</div>
+<p>where <span class="math notranslate nohighlight">\(\omega_b\)</span> is the bounce frequency divided by <span class="math notranslate nohighlight">\(x\)</span>,
+<span class="math notranslate nohighlight">\(\omega_D\)</span> is the magnetic precession frequency,
+<span class="math notranslate nohighlight">\(\ell_{\mathrm{eff}} = \ell + \sigma n q\)</span> is the effective bounce harmonic,
+and <span class="math notranslate nohighlight">\(x = E/T\)</span> is the normalized energy. The sign of <span class="math notranslate nohighlight">\(\omega_E\)</span>
+determines the direction of resonance in velocity space.</p>
+</section>
+</section>
+<section id="cocos-compatibility">
+<h2><a class="toc-backref" href="#id23" role="doc-backlink">COCOS Compatibility</a><a class="headerlink" href="#cocos-compatibility" title="Link to this heading">¶</a></h2>
+<p>GPEC does <strong>not</strong> use or reference the COCOS (Coordinate Convention Standard)
+system. The conventions described in this document are GPEC-native and predate
+COCOS. Users interfacing with COCOS-aware codes must manually translate between
+conventions.</p>
+<p>For g-file input the sign part of the COCOS choice cannot matter:
+<code class="docutils literal notranslate"><span class="pre">read_eq_efit</span></code> sign-normalizes the <span class="math notranslate nohighlight">\(\psi\)</span> map, forces
+<span class="math notranslate nohighlight">\(F &gt; 0\)</span>, and discards the file’s q profile, so g-files that differ
+only in sign conventions produce identical results. Field and current
+directions enter solely through <code class="docutils literal notranslate"><span class="pre">ip_direction</span></code> and <code class="docutils literal notranslate"><span class="pre">bt_direction</span></code> in
+<code class="docutils literal notranslate"><span class="pre">coil.in</span></code>. The main inverse path likewise recomputes q rather than
+inheriting it from the input file. What does matter is the flux
+normalization: GPEC assumes the
+g-eqdsk standard of poloidal flux per radian (Wb/rad). A file carrying the
+full flux (the COCOS 11-18 family) yields a wrong q magnitude. Reports
+that g-files must be supplied in one specific COCOS trace to this unit
+requirement, since the sign choices are normalized away on read.</p>
+</section>
+<section id="quick-reference">
+<h2><a class="toc-backref" href="#id24" role="doc-backlink">Quick Reference</a><a class="headerlink" href="#quick-reference" title="Link to this heading">¶</a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 50.0%" />
+<col style="width: 20.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Quantity</p></th>
+<th class="head"><p>Convention</p></th>
+<th class="head"><p>Forced?</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\psi\)</span> (poloidal flux)</p></td>
+<td><p>Normalized 0 (axis) to 1 (edge)</p></td>
+<td><p>Yes, positive</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\theta\)</span> (poloidal angle)</p></td>
+<td><p>Upward outboard</p></td>
+<td><p>Fixed</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\phi\)</span> (toroidal angle)</p></td>
+<td><p>CCW for LH, CW for RH</p></td>
+<td><p>By helicity</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(F = R B_\phi\)</span></p></td>
+<td><p>Always positive</p></td>
+<td><p>Yes, ABS()</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(q\)</span> (safety factor)</p></td>
+<td><p>Recomputed by field-line integration</p></td>
+<td><p>Always positive</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(n\)</span> (toroidal mode)</p></td>
+<td><p>Always positive</p></td>
+<td><p>By convention</p></td>
+</tr>
+<tr class="row-even"><td><p>Resonant <span class="math notranslate nohighlight">\(m\)</span></p></td>
+<td><p>Always positive (since <span class="math notranslate nohighlight">\(n &gt; 0\)</span>, <span class="math notranslate nohighlight">\(q &gt; 0\)</span>)</p></td>
+<td><p>By construction</p></td>
+</tr>
+<tr class="row-odd"><td><p>helicity</p></td>
+<td><p>+1 RH, -1 LH</p></td>
+<td><p>Computed</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\omega_E\)</span></p></td>
+<td><p>Positive = direction of <span class="math notranslate nohighlight">\(\zeta\)</span></p></td>
+<td><p>No</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="source-code-references">
+<h2><a class="toc-backref" href="#id25" role="doc-backlink">Source Code References</a><a class="headerlink" href="#source-code-references" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Poloidal flux sign</strong>: <code class="docutils literal notranslate"><span class="pre">read_eq_efit</span></code> in <code class="docutils literal notranslate"><span class="pre">equil/read_eq.f</span></code></p></li>
+<li><p><strong>F = R*Bt forced positive</strong>: <code class="docutils literal notranslate"><span class="pre">read_eq_efit</span></code> in <code class="docutils literal notranslate"><span class="pre">equil/read_eq.f</span></code></p></li>
+<li><p><strong>q definition</strong>: <code class="docutils literal notranslate"><span class="pre">dcon/README</span></code></p></li>
+<li><p><strong>q from field-line integration</strong>: <code class="docutils literal notranslate"><span class="pre">direct_run</span></code> in <code class="docutils literal notranslate"><span class="pre">equil/direct.f</span></code></p></li>
+<li><p><strong>q recomputed (inverse path)</strong>: <code class="docutils literal notranslate"><span class="pre">inverse_run</span></code> in <code class="docutils literal notranslate"><span class="pre">equil/inverse.f</span></code></p></li>
+<li><p><strong>Helicity computation</strong>: <code class="docutils literal notranslate"><span class="pre">gpec_main</span></code> program in <code class="docutils literal notranslate"><span class="pre">gpec/gpec.f</span></code></p></li>
+<li><p><strong>ip/bt direction</strong>: <code class="docutils literal notranslate"><span class="pre">input/coil.in</span></code></p></li>
+<li><p><strong>Poloidal mode range</strong>: <code class="docutils literal notranslate"><span class="pre">dcon</span></code> program in <code class="docutils literal notranslate"><span class="pre">dcon/dcon.F</span></code></p></li>
+<li><p><strong>Resonant surface finder</strong>: <code class="docutils literal notranslate"><span class="pre">sing_find</span></code> in <code class="docutils literal notranslate"><span class="pre">dcon/sing.f</span></code></p></li>
+<li><p><strong>Output sign flips</strong>: <code class="docutils literal notranslate"><span class="pre">gpec/gpout.f</span></code> (many locations, search <code class="docutils literal notranslate"><span class="pre">helicity</span></code>)</p></li>
+<li><p><strong>omega_E input</strong>: <code class="docutils literal notranslate"><span class="pre">read_kin</span></code> in <code class="docutils literal notranslate"><span class="pre">pentrc/inputs.f90</span></code></p></li>
+<li><p><strong>native-to-machine toroidal map</strong>: <code class="docutils literal notranslate"><span class="pre">field_bs_psi</span></code> in <code class="docutils literal notranslate"><span class="pre">coil/field.F</span></code></p></li>
+<li><p><strong>Diamagnetic frequencies</strong>: <code class="docutils literal notranslate"><span class="pre">tpsi</span></code> in <code class="docutils literal notranslate"><span class="pre">pentrc/torque.F90</span></code></p></li>
+<li><p><strong>Energy integral</strong>: <code class="docutils literal notranslate"><span class="pre">xintgrnd</span></code> in <code class="docutils literal notranslate"><span class="pre">pentrc/energy.f90</span></code></p></li>
+<li><p><strong>SURFMN interface</strong>: <code class="docutils literal notranslate"><span class="pre">docs/outputs.rst</span></code></p></li>
+</ul>
+</section>
+</section>
+
+
+    </div>
+    
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+<div id="sourcelink">
+  <a href="_sources/sign_conventions.rst.txt"
+     rel="nofollow">Source</a>
+</div>
+      
+    </p>
+    <p>
+        &copy; Copyright 2007 The Trustees of Princeton University.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 8.1.3.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>
