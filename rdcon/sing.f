@@ -176,6 +176,8 @@ c-----------------------------------------------------------------------
       INTEGER :: it,itmax=50
       INTEGER, DIMENSION(1) :: jpsi
       REAL(r8) :: dpsi,q,q1,eps=1e-10
+      INTEGER :: ipsi
+      REAL(r8) :: qend
 c-----------------------------------------------------------------------
 c     compute psilim and qlim.
 c-----------------------------------------------------------------------
@@ -195,11 +197,12 @@ c-----------------------------------------------------------------------
             dmlim=dmlim+1
          ENDDO
 c-----------------------------------------------------------------------
-c     compute qlim.
+c     compute qlim from the edge q (qmax can lie inside, e.g. at the axis).
 c-----------------------------------------------------------------------
-         qlim=(INT(nn*qlim)+dmlim)/nn
+         qend=MIN(sq%fs(mpsi,4),qhigh)
+         qlim=(INT(nn*qend)+dmlim)/nn
          DO
-            IF(qlim <= MIN(qmax,qhigh))EXIT
+            IF(qlim <= qend)EXIT
             qlim=qlim-1._r8/nn
          ENDDO
       ENDIF
@@ -207,7 +210,11 @@ c-----------------------------------------------------------------------
 c     use newton iteration to find psilim.
 c-----------------------------------------------------------------------
       IF(qlim<qmax)THEN
-         jpsi=MINLOC(ABS(sq%fs(:,4)-qlim))
+c        start from the outermost grid interval holding qlim.
+         DO ipsi=mpsi-1,1,-1
+            IF((sq%fs(ipsi,4)-qlim)*(sq%fs(ipsi+1,4)-qlim) <= 0)EXIT
+         ENDDO
+         jpsi=MINLOC(ABS(sq%fs(:,4)-qlim),MASK=sq%xs >= sq%xs(ipsi))
          IF (jpsi(1)>= mpsi) jpsi(1)=mpsi-1
          psilim=sq%xs(jpsi(1))
          it=0
