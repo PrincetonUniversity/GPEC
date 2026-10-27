@@ -14,7 +14,7 @@ variable names
 5	ArcSinh DI
 6	ArcSinh DR
 7	ArcSinh H
-8	ArcSinh ca1
+8	ArcSinh ballooning Delta-prime
 
 ix	iy	title
 1	2	"f = R BT
@@ -22,4 +22,4 @@ ix	iy	title
 1	4	"Safety Factor
 1	5	"Mercier Criterion, DI > 0 => Unstable
 1	6	"GGJ Resistive Criterion, DR > 0 => Unstable
-1	8	"High-n Ballooning, CA1 < 0 => Unstable
+1	8	"High-n Ballooning Delta-prime
