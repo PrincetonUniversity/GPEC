@@ -15,7 +15,7 @@ contains
     type(spline_type) :: volume_spline
 
     volume = 0.0_r8
-    if (bal_flag .and. bal_alpha_flag) then
+    if (bal_flag) then
       call spline_alloc(volume_spline,mpsi,1)
       volume_spline%xs = sq%xs
       volume_spline%fs(:,1) = sq%fs(:,3)
@@ -38,8 +38,7 @@ contains
         locstab%fs(ipsi,4) = delta_prime
       end if
       call spline_dealloc(bf)
-      if (bal_flag .and. bal_alpha_flag) &
-        call bal_alpha_first_boundary(volume(ipsi))
+      if (bal_flag) call bal_alpha_first_boundary(volume(ipsi))
     end do
   end subroutine bal_scan
 
@@ -386,24 +385,25 @@ contains
 
   subroutine bal_alpha_first_boundary(volume)
     real(r8), intent(in) :: volume
-    integer :: iscan
+    integer, parameter :: n_scan=24
     real(r8), parameter :: pole_cap=3.0_r8
+    real(r8), parameter :: max_alpha_scale=8.0_r8
+    real(r8), parameter :: alpha_scale_tol=1.0e-3_r8
+    integer :: iscan
     real(r8) :: alpha_ref, scale, scale_prev, step
     real(r8) :: d, d_prev, d_anchor, lo, hi, mid, dm, sign_lo
     logical :: have_anchor
 
     if (sq%xs(ipsi) < 0.1_r8 .or. &
         sq%xs(ipsi) > min(0.99_r8,sq%xs(mpsi))) return
-    if (bal_alpha_nscan < 1 .or. bal_alpha_max_scale <= 0.0_r8) return
-
     alpha_ref = -2.0_r8*sq%fs1(ipsi,2)*sq%fs(ipsi,3) / &
       psio**2*sqrt(volume/(twopi*max(ro,epsilon(1.0_r8))))
-    step = bal_alpha_max_scale/real(bal_alpha_nscan,r8)
+    step = max_alpha_scale/real(n_scan,r8)
     have_anchor = .false.
     d_prev = ieee_value(0.0_r8,ieee_quiet_nan)
     scale_prev = 0.0_r8
 
-    do iscan = 0, bal_alpha_nscan
+    do iscan = 0, n_scan
       scale = step*real(iscan,r8)
       call bal_delta_at_scale(scale,d)
       if (.not. have_anchor) then
@@ -417,7 +417,7 @@ contains
         lo = scale_prev
         hi = scale
         sign_lo = sign(1.0_r8,d_prev)
-        do while (abs(hi-lo) > bal_alpha_tol)
+        do while (abs(hi-lo) > alpha_scale_tol)
           mid = 0.5_r8*(lo+hi)
           call bal_delta_at_scale(mid,dm)
           if (ieee_is_finite(dm) .and. &

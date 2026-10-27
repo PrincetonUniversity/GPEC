@@ -38,8 +38,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), ALLOCATABLE :: psitmp
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: xtmp
 
-      NAMELIST/dcon_control/bal_flag,mer_flag,bal_alpha_flag,
-     $     bal_alpha_max_scale,bal_alpha_nscan,bal_alpha_tol,
+      NAMELIST/dcon_control/bal_flag,mer_flag,
      $     mat_flag,ode_flag,vac_flag,res_flag,fft_flag,node_flag,
      $     mthvac,sing_start,nn,
      $     delta_mlow,delta_mhigh,delta_mband,thmax0,nstep,ksing,

@@ -1,9 +1,5 @@
 &stride_control
     bal_flag=t           ! Ideal MHD ballooning criterion for short wavelengths
-    bal_alpha_flag=f     ! Scan pressure-gradient scale for the first ballooning alpha boundary
-    bal_alpha_max_scale=8.0 ! Maximum alpha/alpha_exp scale in the boundary scan
-    bal_alpha_nscan=24   ! Number of coarse alpha-scale intervals before bisection
-    bal_alpha_tol=1e-3   ! Alpha-scale bisection tolerance
     mat_flag=t           ! Construct coefficient matrices for diagnostic purposes
     ode_flag=t           ! Integrate ODE's for determining stability of internal long-wavelength mode (must be true for GPEC)
     vac_flag=t           ! Compute plasma, vacuum, and total energies for free-boundary modes

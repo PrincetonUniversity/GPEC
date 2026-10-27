@@ -226,8 +226,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: mx0
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: vx0
 
-      NAMELIST/rdcon_control/bal_flag,bal_alpha_flag,
-     $     bal_alpha_max_scale,bal_alpha_nscan,bal_alpha_tol,
+      NAMELIST/rdcon_control/bal_flag,
      $     mat_flag,ode_flag,vac_flag,res_flag,fft_flag,node_flag,
      $     mthvac,sing_start,nn,
      $     delta_mlow,delta_mhigh,delta_mband,thmax0,nstep,ksing,
