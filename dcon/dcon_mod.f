@@ -59,10 +59,10 @@ c-----------------------------------------------------------------------
       LOGICAL :: netcdf_out=.TRUE.
 
       LOGICAL :: bal_flag=.FALSE.
+      LOGICAL :: mer_flag=.FALSE.
       LOGICAL :: mat_flag=.FALSE.
       LOGICAL :: ode_flag=.FALSE.
       LOGICAL :: vac_flag=.FALSE.
-      LOGICAL :: mer_flag=.FALSE.
 
       LOGICAL :: crit_break=.TRUE.
       LOGICAL :: node_flag=.FALSE.

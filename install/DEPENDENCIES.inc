@@ -108,13 +108,12 @@
 
 # DCON
 ../dcon/bal.o: ../dcon/dcon_mod.o
-../dcon/dcon.o: ../dcon/bal.o ../dcon/free.o ../dcon/mercier.o ../dcon/ode.o ../dcon/resist.o ../equil/equil.o ../equil/equil_out.o ../pentrc/pentrc_interface.o
+../dcon/dcon.o: ../dcon/bal.o ../dcon/free.o ../dcon/ode.o ../dcon/resist.o ../equil/equil.o ../equil/equil_out.o ../pentrc/pentrc_interface.o
 ../dcon/dcon_mod.o: ../equil/equil.o ../equil/equil_out.o ../equil/global.o ../equil/spline.o ../pentrc/pentrc_interface.o
 ../dcon/dcon_netcdf.o: ../dcon/dcon_mod.o ../dcon/sing.o ../equil/local.o
 ../dcon/debug.o: ../equil/local.o
 ../dcon/fourfit.o: ../dcon/dcon_mod.o ../equil/fspline.o ../equil/global.o ../pentrc/dcon_interface.o ../pentrc/energy.o ../pentrc/inputs.o ../pentrc/pentrc_interface.o ../pentrc/pitch.o ../pentrc/torque.o ../pentrc/utilities.o
 ../dcon/free.o: ../dcon/dcon_netcdf.o ../dcon/fourfit.o ../dcon/ode_output.o ../dcon/sing.o ../equil/global.o ../vacuum/vacuum_ma.o
-../dcon/mercier.o: ../dcon/dcon_mod.o
 ../dcon/ode.o: ../dcon/debug.o ../dcon/fourfit.o ../dcon/free.o ../dcon/ode_output.o
 ../dcon/ode_output.o: ../dcon/dcon_mod.o ../dcon/sing.o
 ../dcon/resist.o: ../dcon/dcon_mod.o
@@ -122,14 +121,14 @@
 
 # RDCON
 ../rdcon/bal.o: ../rdcon/dcon_mod.o
-../rdcon/dcon.o: ../equil/equil.o ../equil/equil_out.o ../rdcon/bal.o ../rdcon/free.o ../rdcon/gal.o ../rdcon/lib_interface.o ../rdcon/mercier.o ../rdcon/ode.o ../rdcon/resist.o
+../rdcon/dcon.o: ../equil/equil.o ../equil/equil_out.o ../rdcon/bal.o ../rdcon/free.o ../rdcon/gal.o ../rdcon/lib_interface.o ../rdcon/mre.o ../rdcon/ode.o ../rdcon/resist.o
 ../rdcon/dcon_mod.o: ../equil/equil.o ../equil/equil_out.o ../equil/global.o ../equil/spline.o ../rdcon/version.inc
 ../rdcon/debug.o: ../equil/local.o
 ../rdcon/fourfit.o: ../equil/fspline.o ../equil/global.o ../rdcon/dcon_mod.o ../rdcon/toolbox.o
 ../rdcon/free.o: ../rdcon/ode.o ../rdcon/rdcon_netcdf.o ../vacuum/vacuum_ma.o
 ../rdcon/gal.o: ../equil/jacobi.o ../rdcon/free.o ../rdcon/sing.o
 ../rdcon/lib_interface.o: ../equil/global.o ../equil/inverse.o ../equil/local.o ../equil/utils.o
-../rdcon/mercier.o: ../rdcon/dcon_mod.o
+../rdcon/mre.o: ../rdcon/dcon_mod.o
 ../rdcon/ode.o: ../rdcon/debug.o ../rdcon/ode_output.o
 ../rdcon/ode_output.o: ../rdcon/dcon_mod.o ../rdcon/sing.o
 ../rdcon/rdcon_netcdf.o: ../equil/local.o ../rdcon/dcon_mod.o
@@ -144,11 +143,10 @@
 ../stride/debug.o: ../equil/local.o
 ../stride/fourfit.o: ../equil/fspline.o ../equil/global.o ../stride/dcon_mod.o
 ../stride/free.o: ../stride/ode.o ../stride/stride_netcdf.o ../vacuum/vacuum_ma.o
-../stride/mercier.o: ../stride/dcon_mod.o
 ../stride/ode.o: ../stride/debug.o ../stride/riccati.o ../stride/sing.o ../stride/zvode1.o
 ../stride/riccati.o: ../stride/sing.o ../stride/zvode1.o
 ../stride/sing.o: ../stride/fourfit.o
-../stride/stride.o: ../equil/equil.o ../equil/equil_out.o ../stride/bal.o ../stride/free.o ../stride/mercier.o ../stride/ode.o
+../stride/stride.o: ../equil/equil.o ../equil/equil_out.o ../stride/bal.o ../stride/free.o ../stride/ode.o
 ../stride/stride_netcdf.o: ../stride/dcon_mod.o
 
 # Match

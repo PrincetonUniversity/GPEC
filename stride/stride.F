@@ -18,7 +18,6 @@ c-----------------------------------------------------------------------
       USE equil_mod
       USE equil_out_mod
       USE stride_bal_mod
-      USE stride_mercier_mod
       USE stride_ode_mod
       USE stride_free_mod
       USE omp_lib
@@ -39,8 +38,9 @@ c-----------------------------------------------------------------------
 
       INTEGER :: ithread, mainlevelThreads
 
-      NAMELIST/stride_control/bal_flag,mat_flag,ode_flag,vac_flag,
-     $     mer_flag,fft_flag,node_flag,mthvac,sing_start,nn,
+      NAMELIST/stride_control/bal_flag,mer_flag,
+     $     mat_flag,ode_flag,vac_flag,fft_flag,node_flag,mthvac,
+     $     sing_start,nn,
      $     delta_mlow,delta_mhigh,delta_mband,thmax0,nstep,ksing,
      $     tol_nr,tol_r,crossover,ucrit,singfac_min,singfac_max,
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,
@@ -63,7 +63,7 @@ c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
  10   FORMAT(/'ipsi',2x,'psifac',6x,'f',7x,'mu0 p',5x,'dvdpsi',
-     $     6x,'q',10x,'di',9x,'dr',8x,'ca1'/)
+     $     6x,'q',10x,'di',9x,'dr',6x,'bal_dp'/)
  20   FORMAT(i3,1p,5e10.3,3e11.3)
  30   FORMAT(/3x,"mlow",1x,"mhigh",1x,"mpert",1x,"mband",3x,"nn",2x,
      $     "lim_fl",2x,"dmlim",7x,"qlim",6x,"psilim"//5i6,l6,1p,3e11.3/)
@@ -172,17 +172,14 @@ c-----------------------------------------------------------------------
 c     prepare local stability criteria.
 c-----------------------------------------------------------------------
       CALL SYSTEM_CLOCK(COUNT=sTime)
-      CALL spline_alloc(locstab,mpsi,5)
+      CALL spline_alloc(locstab,mpsi,6)
       locstab%xs=sq%xs
       locstab%fs=0
       locstab%name="locstb"
-      locstab%title=(/"  di  ","  dr  ","  h   "," ca1  "," ca2  "/)
-      IF (mer_flag) THEN
-         WRITE(*,*)"Evaluating Mercier criterion"
-         CALL mercier_scan
-      ENDIF
-      IF(bal_flag)THEN
-         WRITE(*,*)"Evaluating ballooning criterion"
+      locstab%title=(/"  di  ","  dr  ","  h   ","bal_dp","alpcrt",
+     $     " alpha"/)
+      IF(bal_flag .OR. mer_flag)THEN
+         WRITE(*,*)"Evaluating local ballooning stability"
          CALL bal_scan
       ENDIF
       CALL spline_fit(locstab,spline_str)
