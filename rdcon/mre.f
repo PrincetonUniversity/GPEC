@@ -1,36 +1,36 @@
 c-----------------------------------------------------------------------
-c     file mercier.f.
-c     computes mercier criterion and related quantities.
+c     file mre.f.
+c     computes modified Rutherford equation diagnostic quantities.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. rdcon_mercier_mod.
-c     1. mercier_scan.
+c     0. rdcon_mre_mod.
+c     1. mre_scan.
 c-----------------------------------------------------------------------
-c     subprogram 0. rdcon_mercier_mod.
+c     subprogram 0. rdcon_mre_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE rdcon_mercier_mod
+      MODULE rdcon_mre_mod
       USE rdcon_mod
       IMPLICIT NONE
 
       CONTAINS
 c-----------------------------------------------------------------------
-c     subprogram 1. mercier_scan.
-c     evaluates mercier criterion and related quantities.
+c     subprogram 1. mre_scan.
+c     evaluates modified Rutherford equation diagnostic quantities.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE mercier_scan
+      SUBROUTINE mre_scan
 
       INTEGER :: ipsi,itheta
-      REAL(r8) :: bsq,chi1,di,dpsisq,eta,h,jac,p1,psifac,q,q1,r,z,
-     $     rfac,term,theta,twopif,v1,v2,v21,v22,v23,v33,
+      REAL(r8) :: bsq,chi1,dpsisq,eta,jac,p1,psifac,q,q1,r,z,
+     $     rfac,theta,twopif,v1,v21,v22,v23,v33,
      $     bt,f1,Dnc,Dnc_prefac,Wc_prefac,eps_loc,Jpara,ftr,M,
      $     Hbs_prefac,mufrac,taua_prefac,taur_prefac,
      $     rmean_loc,amean_loc,deltatop_loc,deltabot_loc,delta_loc,
@@ -60,7 +60,6 @@ c-----------------------------------------------------------------------
          f1=sq%fs1(ipsi,1)/twopi ! df/dpsi,
          p1=sq%fs1(ipsi,2)
          v1=sq%fs(ipsi,3)     ! d(volume inside flux surface)/d(psi)
-         v2=sq%fs1(ipsi,3)
          q=sq%fs(ipsi,4)
          q1=sq%fs1(ipsi,4)
          chi1=twopi*psio      ! d(poloidal flux)/dpsi, chi=poloidal flux
@@ -150,16 +149,6 @@ c-----------------------------------------------------------------------
          CALL spline_fit(ff,"periodic")
          CALL spline_int(ff)
          avg => ff%fsi(mtheta,:)
-c-----------------------------------------------------------------------
-c     evaluate mercier criterion and related quantities.
-c-----------------------------------------------------------------------
-         term=twopif*p1*v1/(q1*chi1**3)*avg(2)
-         di=-.25+term*(1-term)+p1*(v1/(q1*chi1**2))**2*avg(1)
-     $        *(p1*(avg(3)+(twopif/chi1)**2*avg(4))-v2/v1)
-         h=twopif*p1*v1/(q1*chi1**3)*(avg(2)-avg(1)/avg(5))
-         locstab%fs(ipsi,1)=di*locstab%xs(ipsi)
-         locstab%fs(ipsi,2)=(di+(h-0.5)**2)*locstab%xs(ipsi)
-         locstab%fs(ipsi,3)=h
 c-----------------------------------------------------------------------
 c     MRE term calculations
 c-----------------------------------------------------------------------
@@ -289,5 +278,5 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE mercier_scan
-      END MODULE rdcon_mercier_mod
+      END SUBROUTINE mre_scan
+      END MODULE rdcon_mre_mod

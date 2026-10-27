@@ -18,7 +18,6 @@ c-----------------------------------------------------------------------
       USE equil_mod
       USE equil_out_mod
       USE bal_mod
-      USE mercier_mod
       USE ode_mod
       USE free_mod
       USE resist_mod
@@ -39,8 +38,10 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), ALLOCATABLE :: psitmp
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: xtmp
 
-      NAMELIST/dcon_control/bal_flag,mat_flag,ode_flag,vac_flag,
-     $     mer_flag,res_flag,fft_flag,node_flag,mthvac,sing_start,nn,
+      NAMELIST/dcon_control/bal_flag,mer_flag,bal_alpha_flag,
+     $     bal_alpha_max_scale,bal_alpha_nscan,bal_alpha_tol,
+     $     mat_flag,ode_flag,vac_flag,res_flag,fft_flag,node_flag,
+     $     mthvac,sing_start,nn,
      $     delta_mlow,delta_mhigh,delta_mband,thmax0,nstep,ksing,
      $     tol_nr,tol_r,crossover,ucrit,singfac_min,singfac_max,
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,sort_type,
@@ -60,7 +61,7 @@ c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
  10   FORMAT(/'ipsi',2x,'psifac',6x,'f',7x,'mu0 p',5x,'dvdpsi',
-     $     6x,'q',10x,'di',9x,'dr',8x,'ca1'/)
+     $     6x,'q',10x,'di',9x,'dr',6x,'bal_dp'/)
  20   FORMAT(i4,1p,8e11.3)
  30   FORMAT(/3x,"mlow",1x,"mhigh",1x,"mpert",1x,"mband",3x,"nn",2x,
      $     "lim_fl",2x,"dmlim",7x,"qlim",6x,"psilim"//5i6,l6,1p,3e11.3/)
@@ -135,13 +136,9 @@ c-----------------------------------------------------------------------
       locstab%xs=sq%xs
       locstab%fs=0
       locstab%name="locstb"
-      locstab%title=(/"  di  ","  dr  ","  h   "," ca1  "," ca2  "/)
-      IF (mer_flag) THEN
-         WRITE(*,*)"Evaluating Mercier criterion"
-         CALL mercier_scan
-      ENDIF
-      IF(bal_flag)THEN
-         IF(verbose) WRITE(*,*)"Evaluating ballooning criterion"
+      locstab%title=(/"  di  ","  dr  ","  h   ","bal_dp","alpcrt"/)
+      IF(bal_flag .OR. mer_flag)THEN
+         IF(verbose) WRITE(*,*)"Evaluating local ballooning stability"
          CALL bal_scan
       ENDIF
       CALL spline_fit(locstab,"extrap")

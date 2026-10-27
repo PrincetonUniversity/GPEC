@@ -59,10 +59,11 @@ c-----------------------------------------------------------------------
       LOGICAL :: bin_sol=.FALSE.
 
       LOGICAL :: bal_flag=.FALSE.
+      LOGICAL :: mer_flag=.FALSE.
+      LOGICAL :: bal_alpha_flag=.FALSE.
       LOGICAL :: mat_flag=.FALSE.
       LOGICAL :: ode_flag=.FALSE.
       LOGICAL :: vac_flag=.FALSE.
-      LOGICAL :: mer_flag=.FALSE.
 
       LOGICAL :: crit_break=.TRUE.
       LOGICAL :: node_flag=.FALSE.
@@ -73,9 +74,10 @@ c-----------------------------------------------------------------------
       INTEGER :: mlow,mhigh,mpert,mband,nn,nstep=HUGE(0),bin_sol_min,
      $     bin_sol_max,euler_stride=1,mthvac=480,ksing=-1,delta_mlow=0,
      $     delta_mhigh=0,delta_mband=0,out_sol_min,out_sol_max,
-     $     sing_start=0
+     $     sing_start=0,bal_alpha_nscan=24
       REAL(r8) :: thmax0=1,ucrit=1e4,tol_r=1e-5,tol_nr=1e-5,
-     $     crossover=1e-2,mthsurf0=1
+     $     crossover=1e-2,mthsurf0=1,
+     $     bal_alpha_max_scale=8.0_r8,bal_alpha_tol=1.0e-3_r8
 
       TYPE(spline_type) :: locstab
 

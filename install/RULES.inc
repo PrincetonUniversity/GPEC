@@ -77,6 +77,8 @@ FCDCON = $(FC) $(FFLAGS) $(OMPFLAG) $(RECURSFLAG) $(LEGACYFLAG) -I$(MATHINC) -I$
 	$(FCDCON) $(MODFLAG) ../dcon -c $< -o $@
 ../dcon/%.o: ../dcon/%.F
 	$(FCDCON) $(MODFLAG) ../dcon -c $< -o $@
+../dcon/%.o: ../dcon/%.f90
+	$(FCDCON) $(MODFLAG) ../dcon -c $< -o $@
 
 # RDCON
 FCRDCON = $(FC) $(FFLAGS) $(OMPFLAG) $(LEGACYFLAG) -I$(MATHINC) -I$(NETCDFINC) -I../equil -I../vacuum
@@ -88,12 +90,16 @@ endif
 	$(FCRDCON) $(MODFLAG) ../rdcon -c $< -o $@
 ../rdcon/%.o: ../rdcon/%.F
 	$(FCRDCON) $(MODFLAG) ../rdcon -c $< -o $@
+../rdcon/%.o: ../rdcon/%.f90
+	$(FCRDCON) $(MODFLAG) ../rdcon -c $< -o $@
 
 # STRIDE
 FCSTRIDE = $(FC) $(FFLAGS) $(OMPFLAG) $(RECURSFLAG) $(LEGACYFLAG) -I$(MATHINC) -I$(NETCDFINC) -I../equil -I../vacuum
 ../stride/%.o: ../stride/%.f
 	$(FCSTRIDE) $(MODFLAG) ../stride -c $< -o $@
 ../stride/%.o: ../stride/%.F
+	$(FCSTRIDE) $(MODFLAG) ../stride -c $< -o $@
+../stride/%.o: ../stride/%.f90
 	$(FCSTRIDE) $(MODFLAG) ../stride -c $< -o $@
 
 # MATCH
