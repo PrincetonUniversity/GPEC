@@ -172,11 +172,12 @@ c-----------------------------------------------------------------------
 c     prepare local stability criteria.
 c-----------------------------------------------------------------------
       CALL SYSTEM_CLOCK(COUNT=sTime)
-      CALL spline_alloc(locstab,mpsi,5)
+      CALL spline_alloc(locstab,mpsi,6)
       locstab%xs=sq%xs
       locstab%fs=0
       locstab%name="locstb"
-      locstab%title=(/"  di  ","  dr  ","  h   ","bal_dp","alpcrt"/)
+      locstab%title=(/"  di  ","  dr  ","  h   ","bal_dp","alpcrt",
+     $     " alpha"/)
       IF(bal_flag .OR. mer_flag)THEN
          WRITE(*,*)"Evaluating local ballooning stability"
          CALL bal_scan

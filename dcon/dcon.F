@@ -131,11 +131,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     prepare local stability criteria.
 c-----------------------------------------------------------------------
-      CALL spline_alloc(locstab,mpsi,5)
+      CALL spline_alloc(locstab,mpsi,6)
       locstab%xs=sq%xs
       locstab%fs=0
       locstab%name="locstb"
-      locstab%title=(/"  di  ","  dr  ","  h   ","bal_dp","alpcrt"/)
+      locstab%title=(/"  di  ","  dr  ","  h   ","bal_dp","alpcrt",
+     $     " alpha"/)
       IF(bal_flag .OR. mer_flag)THEN
          IF(verbose) WRITE(*,*)"Evaluating local ballooning stability"
          CALL bal_scan
@@ -160,7 +161,9 @@ c-----------------------------------------------------------------------
      $        REAL(asinh(locstab%fs(ipsi,1)/sq%xs(ipsi)),4),
      $        REAL(asinh(locstab%fs(ipsi,2)/sq%xs(ipsi)),4),
      $        REAL(asinh(locstab%fs(ipsi,3)),4),
-     $        REAL(asinh(locstab%fs(ipsi,4)),4)
+     $        REAL(asinh(locstab%fs(ipsi,4)),4),
+     $        REAL(locstab%fs(ipsi,6),4),
+     $        REAL(locstab%fs(ipsi,5),4)
       ENDDO
       WRITE(out_unit,10)
       WRITE(bin_unit)

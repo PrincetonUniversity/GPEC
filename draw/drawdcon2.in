@@ -20,6 +20,8 @@ variable names
 6	ArcSinh DR
 7	ArcSinh H
 8	ArcSinh ballooning Delta-prime
+9	alpha
+10	alpha critical
 
 ix	iy	title
 1	2	"f = R BT
@@ -28,3 +30,4 @@ ix	iy	title
 1	5	"Mercier Criterion, DI > 0 => Unstable
 1	6	"GGJ Resistive Criterion, DR > 0 => Unstable
 1	8	"High-n Ballooning Delta-prime > 0 => Unstable
+1	9	10	"Infinite-n Ballooning: alpha > alpha critical => Unstable

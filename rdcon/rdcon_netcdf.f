@@ -59,7 +59,7 @@ c-----------------------------------------------------------------------
       INTEGER :: i, ncid,
      $    i_dim, m_dim, mo_dim, p_dim, i_id, m_id, mo_id, p_id,
      $    f_id, q_id, dv_id, mu_id, di_id, dr_id, h_id, bal_dp_id,
-     $    bal_alpha_id,
+     $    bal_alpha_id, bal_alpha_ref_id,
      $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id, wt0_id,
      $    l_dim, l_id, coil_dim, coil_id, dpc_id, dc_id,
      $    lp_dim, lp_id, r_dim, r_id, rp_dim, rp_id, pr_id, qr_id,
@@ -239,6 +239,8 @@ c-----------------------------------------------------------------------
      $     nf90_double,p_dim,bal_dp_id))
       CALL check(nf90_def_var(ncid,"alpha_critical",nf90_double,
      $     p_dim,bal_alpha_id))
+      CALL check(nf90_def_var(ncid,"alpha",nf90_double,
+     $     p_dim,bal_alpha_ref_id))
       IF(MRE_flag)THEN
          CALL check( nf90_def_var(ncid,
      $     "Hbs_prefac", nf90_double, p_dim, hbs_id))
@@ -423,6 +425,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,h_id,  locstab%fs(:,3)))
       CALL check(nf90_put_var(ncid,bal_dp_id,locstab%fs(:,4)))
       CALL check(nf90_put_var(ncid,bal_alpha_id,locstab%fs(:,5)))
+      CALL check(nf90_put_var(ncid,bal_alpha_ref_id,locstab%fs(:,6)))
 
       IF(MRE_flag)THEN
          CALL check( nf90_put_var(ncid,hbs_id, mreterms%fs(:,1)))
