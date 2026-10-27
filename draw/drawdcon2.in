@@ -27,4 +27,4 @@ ix	iy	title
 1	4	"Safety Factor
 1	5	"Mercier Criterion, DI > 0 => Unstable
 1	6	"GGJ Resistive Criterion, DR > 0 => Unstable
-1	8	"High-n Ballooning Delta-prime
+1	8	"High-n Ballooning Delta-prime > 0 => Unstable
