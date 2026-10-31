@@ -64,6 +64,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: asymp_at_sing
       LOGICAL :: integrate_riccati
       LOGICAL :: calc_delta_prime
+      LOGICAL :: calc_nzero = .FALSE.
       LOGICAL :: kill_big_soln_for_ideal_dW
       LOGICAL :: calc_dp_with_vac
 
@@ -118,7 +119,7 @@ c-----------------------------------------------------------------------
          !To invert non-Id fundamental matrices
          INTEGER, DIMENSION(2*mpert) :: ipiv
          COMPLEX(r8), DIMENSION(2*mpert,2*mpert) :: uFMInv
-         !Principal solution (xi=0 at the interval's start)
+         !Previous step of the principal solution (ode_focal_step)
          INTEGER :: nnegSave
          COMPLEX(r8), DIMENSION(2*mpert,mpert) :: uHatSave
          COMPLEX(r8), DIMENSION(2*mpert) :: uwork
@@ -224,7 +225,7 @@ c-----------------------------------------------------------------------
 !.......................................................................
 !$OMP& SHARED(nIntervals,psiPoints,psiInters,psiDirs,sing,axisPsi,
 !$OMP& tol_nr,neq,lzw,lrw,liw,uFM_all,sTime0,cr,nn,
-!$OMP& asymp_at_sing,calc_delta_prime,integrate_riccati,
+!$OMP& asymp_at_sing,calc_delta_prime,calc_nzero,integrate_riccati,
 !$OMP& riccati_match_hamiltonian_evals,projectionFac,
 !$OMP& uFM_sing_inv,uFM_sing_init,sing_order,outerPsi,psio,scalc,mlow,
 !$OMP& fmats,gmats,kmats,mpert,mband,identityMat,grid_packing,sq,
@@ -452,7 +453,7 @@ c-----------------------------------------------------------------------
 c     count the zero crossings of the interval's principal solution
 c     (asymptotic starts: counted in ode_zero_crossings instead).
 c-----------------------------------------------------------------------
-                     IF (asymp_at_sing .AND. ising == 0)
+                     IF (calc_nzero .AND. ising == 0)
      $                    CALL ode_focal_step(uFM(:,mpert+1:2*mpert),
      $                    uHatSave,nnegSave,psiDirs(iInterval),
      $                    nFocal(iInterval))
@@ -1534,7 +1535,7 @@ c     dir*X_s^H P12^{-1} X_e (Morse index split, F > 0), with P the
 c     interval's propagator from its start s to its end e. Next to a
 c     singular surface (asymptotic start, P ill-conditioned) Y itself is
 c     integrated. Singular surfaces are crossed as RDCON's
-c     ode_ideal_cross. Needs asymp_at_sing. Sets nzero.
+c     ode_ideal_cross. Called when calc_nzero. Sets nzero.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
@@ -1732,8 +1733,8 @@ c-----------------------------------------------------------------------
       END FUNCTION ode_nneg
 c-----------------------------------------------------------------------
 c     subprogram 17. ode_crit.
-c     the smallest eigenvalue of the inverse plasma response matrix
-c     X U^-1 (the sign of RDCON's crit, ode_output_get_crit).
+c     the smallest-magnitude eigenvalue of the inverse plasma response
+c     matrix X U^-1 (the sign of RDCON's crit, ode_output_get_crit).
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
