@@ -16,7 +16,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE stride_netcdf_mod
       USE stride_dcon_mod
-      USE stride_ode_mod, ONLY : nzero,asymp_at_sing,integrate_riccati
+      USE stride_ode_mod, ONLY : nzero,calc_nzero
       USE netcdf
       IMPLICIT NONE
 
@@ -159,8 +159,8 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_att(ncid,nf90_global,"time",INT(shottime)) )
       CALL check( nf90_put_att(ncid,nf90_global,"n", nn))
       CALL check( nf90_put_att(ncid,nf90_global,"version", version))
-      IF(ode_flag .AND. asymp_at_sing .AND. .NOT. integrate_riccati)
-     $  CALL check( nf90_put_att(ncid,nf90_global,'nzero', nzero))
+      IF(ode_flag .AND. calc_nzero)
+     $  CALL check( nf90_put_att(ncid,nf90_global,"nzero",nzero))
       IF(vac_flag .AND. .NOT.
      $     (ksing > 0 .AND. ksing <= msing+1 .AND. bin_sol))THEN
         CALL check( nf90_put_att(ncid,nf90_global,"plasma1",pl1))
