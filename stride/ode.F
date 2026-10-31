@@ -21,7 +21,8 @@ c     12. ode_itime.
 c     13. ode_etime.
 c     14. ode_zero_crossings.
 c     15. ode_focal_step.
-c     16. ode_crit.
+c     16. ode_nneg.
+c     17. ode_crit.
 c-----------------------------------------------------------------------
 c     subprogram 0. ode_mod.
 c     module declarations.
@@ -119,7 +120,7 @@ c-----------------------------------------------------------------------
          COMPLEX(r8), DIMENSION(2*mpert,2*mpert) :: uFMInv
          !Principal solution (xi=0 at the interval's start)
          INTEGER :: nnegSave
-         COMPLEX(r8), DIMENSION(2*mpert,mpert) :: uHat, uHatSave
+         COMPLEX(r8), DIMENSION(2*mpert,mpert) :: uHatSave
          COMPLEX(r8), DIMENSION(2*mpert) :: uwork
          COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: identityMat
 
@@ -234,7 +235,7 @@ c-----------------------------------------------------------------------
 !$OMP& istate,rtol,atol0,atol,maxatol,rpar,ipar,iparC,iwork,rwork,zwork)
 !.......................................................................
 !$OMP& PRIVATE(iInterval,i,t0,t1,sTime,fTime,ipert0,ua,ising,
-!$OMP& ipiv,uFMInv,info,uwork,duFM,uHat,uHatSave,nnegSave)
+!$OMP& ipiv,uFMInv,info,uwork,duFM,uHatSave,nnegSave)
 !......FROM zvode1.f....................................................
 !$OMP& COPYIN(/ZVOD011/,/ZVOD021/,DBL_ZVODE11,DBL_ZVODE21,
 !$OMP& INT_ZVODE11,INT_ZVODE21)
@@ -448,17 +449,13 @@ c-----------------------------------------------------------------------
                      IF(istate < 0) CALL program_stop
      $                 ('STRIDE STOP: ZVODE1 integration failure.')
 c-----------------------------------------------------------------------
-c     count the zero crossings of the interval's principal solution.
+c     count the zero crossings of the interval's principal solution
+c     (asymptotic starts: counted in ode_zero_crossings instead).
 c-----------------------------------------------------------------------
-                     IF (asymp_at_sing) THEN
-                        IF (ising /= 0) THEN
-                           uHat = MATMUL(uFM,uFMInv(:,mpert+1:2*mpert))
-                        ELSE
-                           uHat = uFM(:,mpert+1:2*mpert)
-                        ENDIF
-                        CALL ode_focal_step(uHat,uHatSave,nnegSave,
-     $                       psiDirs(iInterval),nFocal(iInterval))
-                     ENDIF
+                     IF (asymp_at_sing .AND. ising == 0)
+     $                    CALL ode_focal_step(uFM(:,mpert+1:2*mpert),
+     $                    uHatSave,nnegSave,psiDirs(iInterval),
+     $                    nFocal(iInterval))
                   ENDDO
                   IF ( grid_packing == "naive" ) THEN
                      CALL SYSTEM_CLOCK(COUNT=fTime)
@@ -1534,26 +1531,36 @@ c     fixed-boundary (Newcomb) test: zero crossings of the axis solution
 c     Y. In each interval they are those of its principal solution
 c     (nFocal, from ode_run) plus the negative eigenvalues of
 c     dir*X_s^H P12^{-1} X_e (Morse index split, F > 0), with P the
-c     interval's propagator from its start s to its end e. Singular
-c     surfaces are crossed as RDCON's ode_ideal_cross. Needs
-c     asymp_at_sing (the small solutions). Sets nzero.
+c     interval's propagator from its start s to its end e. Next to a
+c     singular surface (asymptotic start, P ill-conditioned) Y itself is
+c     integrated. Singular surfaces are crossed as RDCON's
+c     ode_ideal_cross. Needs asymp_at_sing. Sets nzero.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE ode_zero_crossings
-         INTEGER :: iInterval,isol,ipert0,jsing,info,k(1)
+         INTEGER :: iInterval,isol,ipert0,jsing,info,istate,nneg,k(1)
          INTEGER, DIMENSION(2*mpert) :: ipiv
-         REAL(r8) :: ynorm
+         INTEGER, DIMENSION(30) :: iwork
+         INTEGER, DIMENSION(1) :: ipar
+         REAL(r8) :: ynorm,t
+         REAL(r8), DIMENSION(1) :: rtol
          REAL(r8), DIMENSION(mpert) :: evals
          REAL(r8), DIMENSION(3*mpert-2) :: rwork
+         REAL(r8), DIMENSION(2*mpert,mpert) :: atol
+         REAL(r8), DIMENSION(:), ALLOCATABLE :: zrwork
+         COMPLEX(r8), DIMENSION(1) :: rpar
          COMPLEX(r8), DIMENSION(2*mpert-1) :: work
+         COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: zwork
          COMPLEX(r8), DIMENSION(mpert,mpert) :: p12,h
          COMPLEX(r8), DIMENSION(2*mpert,mpert) :: y,ys,ye
-         COMPLEX(r8), DIMENSION(2*mpert,2*mpert) :: p,uT
+         COMPLEX(r8), DIMENSION(2*mpert,2*mpert) :: uT
 c-----------------------------------------------------------------------
 c     initialize: q=0 at the axis (as uAxis).
 c-----------------------------------------------------------------------
+         ALLOCATE(zrwork(20+2*mpert*mpert),zwork(30*mpert*mpert))
+         rtol = tol_nr
          y = 0
          DO isol = 1,mpert
             y(isol+mpert,isol) = 1
@@ -1564,7 +1571,8 @@ c-----------------------------------------------------------------------
             IF (psiInters(iInterval,1) == 2) THEN
 c-----------------------------------------------------------------------
 c     cross the singular surface: keep the resonant xi in one column,
-c     step over the layer, then put the small solution in that column.
+c     step over the layer, zero the resonant components, then put the
+c     small solution in that column.
 c-----------------------------------------------------------------------
                ipert0 = scalc(jsing)%sing_col
                k = MAXLOC(ABS(y(ipert0,:)))
@@ -1573,57 +1581,77 @@ c-----------------------------------------------------------------------
      $                 y(:,k(1))*y(ipert0,isol)/y(ipert0,k(1))
                ENDDO
                y = MATMUL(uFM_all(:,:,iInterval),y)
+               y(ipert0,:) = 0
+               y(ipert0+mpert,:) = 0
                y(:,k(1)) = uFM_sing_init(:,ipert0+mpert,jsing,2)
                CYCLE
-            ENDIF
+            ELSEIF (jsing /= 0) THEN
 c-----------------------------------------------------------------------
-c     propagator, state to state (asymptotic start at a sing surface).
+c     next to a singular surface: integrate Y over the interval and
+c     count its crossings at every step (ode_focal_step).
 c-----------------------------------------------------------------------
-            p = uFM_all(:,:,iInterval)
-            IF (jsing /= 0) THEN
-               IF (psiInters(iInterval,1) == 1) THEN
-                  p = MATMUL(p,uFM_sing_inv(:,:,jsing,2))
-               ELSE
-                  p = MATMUL(p,uFM_sing_inv(:,:,jsing,1))
-               ENDIF
-            ENDIF
+               t = psiPoints(iInterval,1)
+               ys = y
+               nneg = ode_nneg(y)
+               istate = 1
+               iwork = 0
+               zrwork = 0
+               zrwork(1) = psiPoints(iInterval,2)
+               zrwork(5) = axisPsi*1e-3
+               DO WHILE(t < psiPoints(iInterval,2))
+                  DO isol = 1,mpert
+                     atol(:,isol) = MAXVAL(ABS(y(:,isol)))*rtol(1)
+                  ENDDO
+                  CALL ZVODE1(sing_derFM,2*mpert*mpert,y,t,
+     $                 psiPoints(iInterval,2),2,rtol,atol,5,istate,1,
+     $                 zwork,SIZE(zwork),zrwork,SIZE(zrwork),iwork,30,
+     $                 ode_nojac,10,rpar,ipar)
+                  IF(istate < 0) CALL program_stop
+     $              ('STRIDE STOP: ode_zero_crossings ZVODE1 failure.')
+                  CALL ode_focal_step(y,ys,nneg,1,nzero)
+               ENDDO
+            ELSE
 c-----------------------------------------------------------------------
 c     Y at the integration's start and end (y is at the left edge).
 c-----------------------------------------------------------------------
-            IF (psiDirs(iInterval) == 1) THEN
-               ys = y
-               ye = MATMUL(p,ys)
-            ELSE
-               ye = y
-               ys = y
-               uT = p
-               CALL zgesv(2*mpert,mpert,uT,2*mpert,ipiv,ys,2*mpert,info)
-            ENDIF
+               IF (psiDirs(iInterval) == 1) THEN
+                  ys = y
+                  ye = MATMUL(uFM_all(:,:,iInterval),ys)
+               ELSE
+                  ye = y
+                  ys = y
+                  uT = uFM_all(:,:,iInterval)
+                  CALL zgesv(2*mpert,mpert,uT,2*mpert,ipiv,ys,2*mpert,
+     $                 info)
+               ENDIF
 c-----------------------------------------------------------------------
 c     add the crossings of Y beyond those of the principal solution
 c     (columns normalized: their scales span many orders near the axis).
 c-----------------------------------------------------------------------
-            DO isol = 1,mpert
-               ynorm = SQRT(SUM(ABS(ys(:,isol))**2))
-               ys(:,isol) = ys(:,isol)/ynorm
-               ye(:,isol) = ye(:,isol)/ynorm
-            ENDDO
-            p12 = p(1:mpert,mpert+1:2*mpert)
-            h = ye(1:mpert,:)
-            CALL zgesv(mpert,mpert,p12,mpert,ipiv,h,mpert,info)
-            h = MATMUL(CONJG(TRANSPOSE(ys(1:mpert,:))),h)
-            h = psiDirs(iInterval)*(h+CONJG(TRANSPOSE(h)))/2
-            CALL zheev('N','U',mpert,h,mpert,evals,work,2*mpert-1,rwork,
-     $           info)
-            nzero = nzero+nFocal(iInterval)+COUNT(evals < 0)
+               DO isol = 1,mpert
+                  ynorm = SQRT(SUM(ABS(ys(:,isol))**2))
+                  ys(:,isol) = ys(:,isol)/ynorm
+                  ye(:,isol) = ye(:,isol)/ynorm
+               ENDDO
+               p12 = uFM_all(1:mpert,mpert+1:2*mpert,iInterval)
+               h = ye(1:mpert,:)
+               CALL zgesv(mpert,mpert,p12,mpert,ipiv,h,mpert,info)
+               h = MATMUL(CONJG(TRANSPOSE(ys(1:mpert,:))),h)
+               h = psiDirs(iInterval)*(h+CONJG(TRANSPOSE(h)))/2
+               CALL zheev('N','U',mpert,h,mpert,evals,work,2*mpert-1,
+     $              rwork,info)
+               nzero = nzero+nFocal(iInterval)+COUNT(evals < 0)
+               y = MERGE(ye,ys,psiDirs(iInterval) == 1)
+            ENDIF
 c-----------------------------------------------------------------------
-c     move y to the right edge and renormalize (counts do not change).
+c     renormalize y, now at the right edge (the counts do not change).
 c-----------------------------------------------------------------------
             uT = 0
-            uT(:,mpert+1:2*mpert) = MERGE(ye,ys,psiDirs(iInterval) == 1)
+            uT(:,mpert+1:2*mpert) = y
             CALL ode_fixup(uT)
             y = uT(:,mpert+1:2*mpert)
          ENDDO
+         DEALLOCATE(zrwork,zwork)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -1631,11 +1659,11 @@ c-----------------------------------------------------------------------
       END SUBROUTINE ode_zero_crossings
 c-----------------------------------------------------------------------
 c     subprogram 15. ode_focal_step.
-c     one ODE step of an interval's principal solution uHat (uHatSave
-c     and nnegSave: the previous step). A zero crossing moves an
-c     eigenvalue of X U^-1 through 0 (upward in psi, F > 0): the number
-c     of negative eigenvalues (of the congruent U^H X, by LDL^H) changes
-c     and crit changes sign. Adds the crossings to nfoc.
+c     one ODE step of a solution uHat (uHatSave and nnegSave: the
+c     previous step). A zero crossing moves an eigenvalue of X U^-1
+c     through 0 (upward in psi, F > 0): the number of its negative
+c     eigenvalues (ode_nneg) changes and crit changes sign. Adds the
+c     crossings to nfoc.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
@@ -1647,31 +1675,12 @@ c-----------------------------------------------------------------------
          INTEGER, INTENT(INOUT) :: nnegSave,nfoc
          INTEGER, INTENT(IN) :: dir
 
-         INTEGER :: info,k,nneg
-         INTEGER, DIMENSION(mpert) :: ipiv
+         INTEGER :: nneg
          REAL(r8) :: crit,critSave
-         COMPLEX(r8), DIMENSION(64*mpert) :: work
-         COMPLEX(r8), DIMENSION(mpert,mpert) :: h
-c-----------------------------------------------------------------------
-c     inertia of U^H X; a 2x2 pivot block has one negative eigenvalue.
-c-----------------------------------------------------------------------
-         h = MATMUL(CONJG(TRANSPOSE(uHat(mpert+1:2*mpert,:))),
-     $        uHat(1:mpert,:))
-         CALL zhetrf('U',mpert,h,mpert,ipiv,work,64*mpert,info)
-         nneg = 0
-         k = 1
-         DO WHILE (k <= mpert)
-            IF (ipiv(k) > 0) THEN
-               IF (REAL(h(k,k)) < 0) nneg = nneg+1
-               k = k+1
-            ELSE
-               nneg = nneg+1
-               k = k+2
-            ENDIF
-         ENDDO
 c-----------------------------------------------------------------------
 c     count a crossing only where crit changes sign too.
 c-----------------------------------------------------------------------
+         nneg = ode_nneg(uHat)
          IF (nneg /= nnegSave) THEN
             CALL ode_crit(uHatSave,critSave)
             CALL ode_crit(uHat,crit)
@@ -1686,7 +1695,43 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ode_focal_step
 c-----------------------------------------------------------------------
-c     subprogram 16. ode_crit.
+c     subprogram 16. ode_nneg.
+c     the number of negative eigenvalues of U^H X (LDL^H; a 2x2 pivot
+c     block has one), the same as of X U^-1 (congruent).
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      FUNCTION ode_nneg(y)
+         COMPLEX(r8), DIMENSION(2*mpert,mpert), INTENT(IN) :: y
+         INTEGER :: ode_nneg
+
+         INTEGER :: info,k
+         INTEGER, DIMENSION(mpert) :: ipiv
+         COMPLEX(r8), DIMENSION(64*mpert) :: work
+         COMPLEX(r8), DIMENSION(mpert,mpert) :: h
+c-----------------------------------------------------------------------
+c     factor and count.
+c-----------------------------------------------------------------------
+         h = MATMUL(CONJG(TRANSPOSE(y(mpert+1:2*mpert,:))),y(1:mpert,:))
+         CALL zhetrf('U',mpert,h,mpert,ipiv,work,64*mpert,info)
+         ode_nneg = 0
+         k = 1
+         DO WHILE (k <= mpert)
+            IF (ipiv(k) > 0) THEN
+               IF (REAL(h(k,k)) < 0) ode_nneg = ode_nneg+1
+               k = k+1
+            ELSE
+               ode_nneg = ode_nneg+1
+               k = k+2
+            ENDIF
+         ENDDO
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      END FUNCTION ode_nneg
+c-----------------------------------------------------------------------
+c     subprogram 17. ode_crit.
 c     the smallest eigenvalue of the inverse plasma response matrix
 c     X U^-1 (the sign of RDCON's crit, ode_output_get_crit).
 c-----------------------------------------------------------------------
