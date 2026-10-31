@@ -304,6 +304,7 @@ c-----------------------------------------------------------------------
                ELSE
                   CALL ode_propagate_LR
                   CALL ode_calc_modes_for_wp
+                  IF (asymp_at_sing) CALL ode_zero_crossings
                   CALL free_calc_wp
                   IF (calc_delta_prime .AND..NOT. calc_dp_with_vac) THEN
                      CALL ode_set_delta_prime_edge
@@ -426,7 +427,7 @@ c-----------------------------------------------------------------------
          ENDIF
       ENDIF
       IF(ode_flag)THEN
-         DEALLOCATE(u,uFM_all,uFM_sing_inv,uFM_sing_init,
+         DEALLOCATE(u,uFM_all,uFM_sing_inv,uFM_sing_init,nFocal,
      $        psiInters,psiDirs,psiPoints,scalc)
          IF (calc_delta_prime) THEN
             DEALLOCATE(delta_prime_mat)
