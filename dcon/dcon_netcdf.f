@@ -58,7 +58,8 @@ c-----------------------------------------------------------------------
 
       INTEGER :: i, ncid,
      $    i_dim, m_dim, mo_dim, p_dim, ep_dim, i_id, m_id, mo_id, p_id,
-     $    f_id, q_id, dv_id, mu_id, di_id, dr_id, ca_id,
+     $    f_id, q_id, dv_id, mu_id, di_id, dr_id, bal_dp_id,
+     $    bal_alpha_id, bal_alpha_ref_id,
      $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id, wt0_id,
      $    pd_dim, pd_id, df_id, ep_id, ew_id, eq_id
       REAL(r4) :: cpusec, wallsec
@@ -171,7 +172,12 @@ c-----------------------------------------------------------------------
      $       "Safety Factor") )
       CALL check( nf90_def_var(ncid, "di", nf90_double, p_dim, di_id) )
       CALL check( nf90_def_var(ncid, "dr", nf90_double, p_dim, dr_id) )
-      CALL check( nf90_def_var(ncid, "ca1", nf90_double, p_dim, ca_id))
+      CALL check(nf90_def_var(ncid,"ballooning_Delta_prime",
+     $     nf90_double,p_dim,bal_dp_id))
+      CALL check(nf90_def_var(ncid,"alpha_critical",nf90_double,
+     $     p_dim,bal_alpha_id))
+      CALL check(nf90_def_var(ncid,"alpha",nf90_double,
+     $     p_dim,bal_alpha_ref_id))
       CALL check( nf90_def_var(ncid, "W_p_eigenvector", nf90_double,
      $    (/m_dim, mo_dim, i_dim/), wp_id) )
       CALL check( nf90_def_var(ncid, "W_p_eigenvalue", nf90_double,
@@ -235,7 +241,9 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,q_id, sq%fs(:,4)))
       CALL check( nf90_put_var(ncid,di_id, locstab%fs(:,1)/sq%xs(:)))
       CALL check( nf90_put_var(ncid,dr_id, locstab%fs(:,2)/sq%xs(:)))
-      CALL check( nf90_put_var(ncid,ca_id, locstab%fs(:,4)))
+      CALL check(nf90_put_var(ncid,bal_dp_id,locstab%fs(:,4)))
+      CALL check(nf90_put_var(ncid,bal_alpha_id,locstab%fs(:,5)))
+      CALL check(nf90_put_var(ncid,bal_alpha_ref_id,locstab%fs(:,6)))
       IF(size_edge > 0)THEN
          CALL check( nf90_put_var(ncid,ew_id, RESHAPE((/REAL(dw_edge),
      $             AIMAG(dw_edge)/),(/size_edge,2/))) )
