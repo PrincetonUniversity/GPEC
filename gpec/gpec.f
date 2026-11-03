@@ -68,6 +68,7 @@ c-----------------------------------------------------------------------
      $     jac_out,power_bout,power_rout,power_bpout,power_rcout,
      $     tmag_out,mlim_out,eqbrzphi_flag,brzphi_flag,xrzphi_flag,
      $     vbrzphi_flag,vvbrzphi_flag,divzero_flag,dw_flag,opsi1,opsi2,
+     $     reg_div_flag,
      $     bin_flag,bin_2d_flag,fun_flag,flux_flag,bwp_pest_flag,
      $     vsbrzphi_flag,ss_flag,arzphifun_flag,xbrzphifun_flag,
      $     vsingfld_flag,vbnormal_flag,eigm_flag,xbtangent_flag,
@@ -177,6 +178,7 @@ c-----------------------------------------------------------------------
       ENDDO
       arzphifun_flag=.FALSE.
       xbrzphifun_flag=.FALSE.
+      reg_div_flag=.FALSE.
       bwp_pest_flag=.TRUE.
       dw_flag = .FALSE.
 
