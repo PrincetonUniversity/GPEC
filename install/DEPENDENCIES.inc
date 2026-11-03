@@ -149,7 +149,7 @@
 ../stride/riccati.o: ../stride/sing.o ../stride/zvode1.o
 ../stride/sing.o: ../stride/fourfit.o
 ../stride/stride.o: ../equil/equil.o ../equil/equil_out.o ../stride/bal.o ../stride/free.o ../stride/mercier.o ../stride/ode.o
-../stride/stride_netcdf.o: ../stride/dcon_mod.o
+../stride/stride_netcdf.o: ../stride/dcon_mod.o ../stride/ode.o
 
 # Match
 ../match/debug.o: ../equil/local.o
