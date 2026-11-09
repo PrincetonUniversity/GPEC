@@ -5860,7 +5860,7 @@ c-----------------------------------------------------------------------
      $      "Contravariant Clebsch angle displacement") )
          ids = (/xp_id,dp_id,xa_id/)
          DO i=1,3
-            CALL check( nf90_put_att(fncid,ids(i),"units","m") )
+            CALL check( nf90_put_att(fncid,ids(i),"units","unitless") )
             CALL check( nf90_put_att(fncid,ids(i),"jacobian",jac_out) )
          ENDDO
          CALL check( nf90_enddef(fncid) )
