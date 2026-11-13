@@ -10,6 +10,15 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.6.1
+===========
+
+Fixes
+-----
+- GPEC - The Clebsch displacements ``xigradpsi``, ``xigradpsi_dpsi`` and ``xigradalpha`` in the netCDF output are labeled unitless instead of m.
+- GPEC - ``Jbgradpsi_rmatch`` is now filled when ``jac_out`` differs from ``jac_type`` or ``tmag_out=0``; it previously held uninitialized values in those runs.
+
+
 GPEC v1.6.0
 ===========
 
