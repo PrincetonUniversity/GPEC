@@ -12,6 +12,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       LOGICAL :: power_flag,fft_flag,edge_flag,pbrzphi_flag,
      $     eqbrzphi_flag,brzphi_flag,xrzphi_flag,divzero_flag,
+     $     reg_div_flag,
      $     vbrzphi_flag,vvbrzphi_flag,div_flag,surface_flag,
      $     data_flag,harmonic_flag,mode_flag,resp_flag,
      $     bin_flag,bin_2d_flag,fixed_boundary_flag,reg_flag,

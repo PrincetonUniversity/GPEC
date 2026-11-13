@@ -76,6 +76,7 @@
    ss_flag(3)=f             ! Outputs the field on regular (r,z) grid due to the 3rd singular surface current, etc.
    xbrzphifun_flag=f        ! Outputs r,z, and perturbation vectors on psi,theta grid
    arzphifun_flag=f         ! Outputs r,z, and vector potential on psi,theta grid
+   reg_div_flag=f           ! With reg_flag=t: divergence-consistent regularization of the psi,theta grid field outputs (damps only the (n,m) projection of the tangential field; b_normal and xi unchanged)
 
    nr = 128                 ! Number of radial grid points in rzphi outputs
    nz = 128                 ! Number of vertical grid points in rzphi outputs

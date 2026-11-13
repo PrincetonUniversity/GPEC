@@ -5357,6 +5357,9 @@ c-----------------------------------------------------------------------
      $     xwt_fun,bwt_fun,xvz_fun,bvz_fun
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: xrr_fun,brr_fun,
      $     xrz_fun,brz_fun,xrp_fun,brp_fun
+      REAL(r8) :: qr
+      REAL(r8), DIMENSION(mpert) :: freg_mn
+      COMPLEX(r8), DIMENSION(mpert) :: tproj_mn
 c-----------------------------------------------------------------------
 c     allocation puts memory in heap, avoiding stack overfill
 c-----------------------------------------------------------------------
@@ -5369,6 +5372,8 @@ c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
       IF(timeit) CALL gpec_timer(2)
       IF(verbose) WRITE(*,*)"Computing x and b rzphi functions"
+      IF(verbose .AND. reg_div_flag .AND. reg_flag) WRITE(*,*)
+     $     "  reg_div_flag: divergence-consistent regularization"
 
       CALL idcon_build(egnum,xspmn)
 
@@ -5376,6 +5381,26 @@ c-----------------------------------------------------------------------
       DO istep=1,mstep
          IF(verbose) CALL progressbar(istep,1,mstep,op_percent=10)
          CALL gpeq_sol(psifac(istep))
+c-----------------------------------------------------------------------
+c     reg_div_flag: divergence-consistent regularization, output only.
+c     div b = 0 reads d(bwp)/dpsi + 2 pi i (m bwt - n bwz) = 0, so only
+c     the combination m*b^theta - n*b^phi is tied to the untouched bwp.
+c     gpeq_sol damps the whole singular vector (bwt,bwz) by the Lorentz
+c     -ian f, which changes that combination and breaks div b = 0 at the
+c     rational surfaces.  The singular part of the ideal solution lies
+c     along (n,m) in (bwt,bwz) space, so here only that projection T is
+c     damped: m*bmt - n*bmz is unchanged, div b = 0 holds exactly, and
+c     bwp, xi and every other output are untouched (gpeq_sol resets the
+c     module arrays on each call).
+c-----------------------------------------------------------------------
+         IF(reg_div_flag .AND. reg_flag)THEN
+            CALL spline_eval(sq,psifac(istep),0)
+            qr=sq%f(4)
+            freg_mn=(mfac-nn*qr)**2/((mfac-nn*qr)**2+reg_spot**2)
+            tproj_mn=(nn*bwt_mn+mfac*bwz_mn)/REAL(nn**2+mfac**2,r8)
+            bmt_mn=bwt_mn-(1-freg_mn)*nn*tproj_mn
+            bmz_mn=bwz_mn-(1-freg_mn)*mfac*tproj_mn
+         ENDIF
          CALL gpeq_contra(psifac(istep))
          CALL gpeq_cova(psifac(istep))
 c-----------------------------------------------------------------------
@@ -5596,8 +5621,13 @@ c-----------------------------------------------------------------------
             w(1,2)=-rzphi%fy(1)*pi*rs(istep,itheta)/(rfac*jac)
             w(2,1)=-rzphi%fx(2)*twopi**2*rs(istep,itheta)*rfac/jac
             w(2,2)=rzphi%fx(1)*pi*rs(istep,itheta)/(rfac*jac)
-            w(3,1)=rzphi%fx(3)*2*rfac
-            w(3,2)=rzphi%fy(3)/(twopi*rfac)
+c     poloidal part of grad(zeta): phi = 2 pi zeta + dphi(psi,theta), so
+c     grad(zeta)_pol = -grad(dphi)/(2 pi), grad(dphi) by the chain rule
+c     through grad(psi)=w(1,:) and grad(theta)=w(2,:).  (The previous
+c     2*rfac*dphi_psi, dphi_theta/(2 pi rfac) was a circular, rho^2=psi
+c     approximation and gave A_R, A_z inconsistent with curl A = b.)
+            w(3,1)=(rzphi%fx(3)*w(1,1)+rzphi%fy(3)*w(2,1))/twopi
+            w(3,2)=(rzphi%fx(3)*w(1,2)+rzphi%fy(3)*w(2,2))/twopi
             w(3,3)=1.0/(twopi*rs(istep,itheta))
             ear(itheta)=chi1*psifac(istep)*(qfac(istep)*w(2,1)-w(3,1))
             eat(itheta)=chi1*psifac(istep)*(qfac(istep)*w(2,2)-w(3,2))
