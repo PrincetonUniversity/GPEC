@@ -995,8 +995,9 @@ c-----------------------------------------------------------------------
 
       INTEGER, INTENT(IN) :: neqFM
       REAL(r8), INTENT(IN) :: startPsi
-      COMPLEX(r8), DIMENSION(2*mpert,2*mpert), INTENT(IN) :: uFM
-      COMPLEX(r8), DIMENSION(2*mpert,2*mpert), INTENT(OUT) :: duFM
+      COMPLEX(r8), DIMENSION(2*mpert,neqFM/(2*mpert)), INTENT(IN) :: uFM
+      COMPLEX(r8), DIMENSION(2*mpert,neqFM/(2*mpert)), INTENT(OUT) ::
+     $     duFM
       COMPLEX(r8), INTENT(IN) :: rpar, ipar
 
       INTEGER :: ipert,jpert,isol,iqty,info
@@ -1005,7 +1006,6 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), PARAMETER :: one=1
       COMPLEX(r8), DIMENSION(mpert,mpert) :: fmatb,gmatb
       COMPLEX(r8), DIMENSION(2*mband+1,mpert) :: kmatb
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: duTemp
 c-----------------------------------------------------------------------
 c     cubic spline evaluation.
 c-----------------------------------------------------------------------
@@ -1045,61 +1045,39 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
 c-----------------------------------------------------------------------
-c     Compute: [du11 | du12] = [-K*u11+Q^{-1}*u21 | -K*u12+Q^{-1}*u22]
+c     Compute: du1 = -K*u1+Q^{-1}*u2, for each column (solution).
 c-----------------------------------------------------------------------
       duFM=0
-      DO isol=1,mpert
+      DO isol=1,SIZE(uFM,2)
          duFM(1:mpert,isol)=uFM(mpert+1:2*mpert,isol)*singfac
-         duFM(1:mpert,isol+mpert)=uFM(mpert+1:2*mpert,isol+mpert)*
-     $        singfac
          CALL zgbmv('N',mpert,mpert,mband,mband,-one,kmatb,
      $        2*mband+1,uFM(1:mpert,isol),1,one,duFM(1:mpert,isol),1)
-         CALL zgbmv('N',mpert,mpert,mband,mband,-one,kmatb,
-     $        2*mband+1,uFM(1:mpert,isol+mpert),1,one,
-     $        duFM(1:mpert,isol+mpert),1)
       ENDDO
 c-----------------------------------------------------------------------
-c     Compute: [du11 | du12] = [F^{-1}*du11 | F^{-1}*du12]
+c     Compute: du1 = F^{-1}*du1
 c-----------------------------------------------------------------------
-      duTemp = duFM(1:mpert,1:mpert)
-      CALL zpbtrs('L',mpert,mband,mpert,fmatb,mband+1,duTemp,mpert,info)
-      duFM(1:mpert,1:mpert) = duTemp
-      duTemp = duFM(1:mpert,mpert+1:2*mpert)
-      CALL zpbtrs('L',mpert,mband,mpert,fmatb,mband+1,duTemp,mpert,info)
-      duFM(1:mpert,mpert+1:2*mpert) = duTemp
+      CALL zpbtrs('L',mpert,mband,SIZE(uFM,2),fmatb,mband+1,duFM,
+     $     2*mpert,info)
 c-----------------------------------------------------------------------
 c     Compute: Final loop.
 c-----------------------------------------------------------------------
-      DO isol=1,mpert
+      DO isol=1,SIZE(uFM,2)
 c-----------------------------------------------------------------------
-c     Compute: du21 = du21(==0) + G*u11
+c     Compute: du2 = du2(==0) + G*u1
 c-----------------------------------------------------------------------
          CALL zhbmv('L',mpert,mband,one,gmatb,
      $        mband+1,uFM(1:mpert,isol),1,one,
      $        duFM(mpert+1:2*mpert,isol),1)
 c-----------------------------------------------------------------------
-c     Compute: du22 = du22(==0) + G*u12
-c-----------------------------------------------------------------------
-         CALL zhbmv('L',mpert,mband,one,gmatb,
-     $        mband+1,uFM(1:mpert,isol+mpert),1,one,
-     $        duFM(mpert+1:2*mpert,isol+mpert),1)
-c-----------------------------------------------------------------------
-c     Compute: du21 = du21 + Kt*du11
+c     Compute: du2 = du2 + Kt*du1
 c-----------------------------------------------------------------------
          CALL zgbmv('C',mpert,mpert,mband,mband,one,kmatb,
      $        2*mband+1,duFM(1:mpert,isol),1,one,
      $        duFM(mpert+1:2*mpert,isol),1)
 c-----------------------------------------------------------------------
-c     Compute: du22 = du22 + Kt*du12
-c-----------------------------------------------------------------------
-         CALL zgbmv('C',mpert,mpert,mband,mband,one,kmatb,
-     $        2*mband+1,duFM(1:mpert,isol+mpert),1,one,
-     $        duFM(mpert+1:2*mpert,isol+mpert),1)
-c-----------------------------------------------------------------------
-c     Compute: [du11 | du12] = Q^{-1} * [du11 | du12]
+c     Compute: du1 = Q^{-1} * du1
 c-----------------------------------------------------------------------
          duFM(1:mpert,isol)=duFM(1:mpert,isol)*singfac
-         duFM(1:mpert,isol+mpert)=duFM(1:mpert,isol+mpert)*singfac
       ENDDO
 c-----------------------------------------------------------------------
 c     terminate.
