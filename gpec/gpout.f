@@ -3418,7 +3418,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: ximax,rmax,area
 
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,jacs,dphi
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,bwp_fun
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,bwp_fun,bwpr_fun
 
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: xmns,ymns,
      $     xnomns,bnomns,bwpmns,bwpmns_rmatch
@@ -3431,7 +3431,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: rss,zss,
      $     xnofuns,bnofuns,intbwpmns
 
-      COMPLEX(r8), DIMENSION(mpert) :: interpbwn
+      COMPLEX(r8), DIMENSION(mpert) :: interpbwn,bwpr_mn
       TYPE(cspline_type) :: fsp_sol
 c-----------------------------------------------------------------------
 c     allocation puts memory in heap, avoiding stack overfill
@@ -3532,6 +3532,13 @@ c-----------------------------------------------------------------------
          IF ((jac_out /= jac_type).OR.(tout==0)) THEN
             CALL gpeq_bcoordsout(bwpmns(istep,:),bno_mn,
      $                           psifac(istep),ji=1)
+            IF(galsol%gal_flag) THEN
+               CALL iscdftb(mfac,mpert,bwpr_fun,mthsurf,bwp_mn_rmatch)
+               bwpr_fun=bwpr_fun/(jacs*delpsi)
+               CALL iscdftf(mfac,mpert,bwpr_fun,mthsurf,bwpr_mn)
+               CALL gpeq_bcoordsout(bwpmns_rmatch(istep,:),bwpr_mn,
+     $                              psifac(istep),ji=1)
+            ENDIF
             IF (msing>0) THEN
                CALL gpeq_bcoordsout(intbwpmns(istep,:),interpbwn,
      $              psifac(istep),ji=0)
@@ -5860,7 +5867,7 @@ c-----------------------------------------------------------------------
      $      "Contravariant Clebsch angle displacement") )
          ids = (/xp_id,dp_id,xa_id/)
          DO i=1,3
-            CALL check( nf90_put_att(fncid,ids(i),"units","m") )
+            CALL check( nf90_put_att(fncid,ids(i),"units","unitless") )
             CALL check( nf90_put_att(fncid,ids(i),"jacobian",jac_out) )
          ENDDO
          CALL check( nf90_enddef(fncid) )
