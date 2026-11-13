@@ -80,21 +80,42 @@ c-----------------------------------------------------------------------
 #ifdef _OPENMP
       IF(allocThreads>0) CALL OMP_SET_NUM_THREADS(allocThreads)
 #endif
-!$OMP PARALLEL DEFAULT(NONE) SHARED(locstab,fmats,sq)
-!$OMP& COPYIN(sq_s_f,fmats_s_f,
-!$OMP& locstab_s_f,sq_s_f1,sq_s_f2,sq_s_f3,
-!$OMP& fmats_s_f1,fmats_s_f2,fmats_s_f3)
-      ALLOCATE(locstab_s_f(SIZE(locstab%f)))
-      ALLOCATE(sq_s_f(SIZE(sq%f)),sq_s_f1(SIZE(sq%f1)),
-     $     sq_s_f2(SIZE(sq%f2)),sq_s_f3(SIZE(sq%f3)))
-      ALLOCATE(fmats_s_f(SIZE(fmats%f)),fmats_s_f1(SIZE(fmats%f1)),
-     $     fmats_s_f2(SIZE(fmats%f2)),fmats_s_f3(SIZE(fmats%f3)))
+!$OMP PARALLEL
+      CALL sing_thread_alloc
 !$OMP END PARALLEL
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE sing_parallel_alloc
+c-----------------------------------------------------------------------
+c     subprogram 1a. sing_thread_alloc.
+c     allocate the calling thread's threadprivate spline work arrays,
+c     if not yet allocated.  Called inside each parallel region that
+c     uses them, since a (nested) team may contain threads that did not
+c     take part in sing_parallel_alloc.
+c-----------------------------------------------------------------------
+      SUBROUTINE sing_thread_alloc
+
+      IF(.NOT. ALLOCATED(locstab_s_f))
+     $     ALLOCATE(locstab_s_f(SIZE(locstab%f)))
+      IF(.NOT. ALLOCATED(sq_s_f)) ALLOCATE(sq_s_f(SIZE(sq%f)))
+      IF(.NOT. ALLOCATED(sq_s_f1)) ALLOCATE(sq_s_f1(SIZE(sq%f1)))
+      IF(.NOT. ALLOCATED(sq_s_f2)) ALLOCATE(sq_s_f2(SIZE(sq%f2)))
+      IF(.NOT. ALLOCATED(sq_s_f3)) ALLOCATE(sq_s_f3(SIZE(sq%f3)))
+      IF(.NOT. ALLOCATED(fmats_s_f))
+     $     ALLOCATE(fmats_s_f(SIZE(fmats%f)))
+      IF(.NOT. ALLOCATED(fmats_s_f1))
+     $     ALLOCATE(fmats_s_f1(SIZE(fmats%f1)))
+      IF(.NOT. ALLOCATED(fmats_s_f2))
+     $     ALLOCATE(fmats_s_f2(SIZE(fmats%f2)))
+      IF(.NOT. ALLOCATED(fmats_s_f3))
+     $     ALLOCATE(fmats_s_f3(SIZE(fmats%f3)))
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE sing_thread_alloc
 c-----------------------------------------------------------------------
 c     subprogram 2. sing_asymp.
 c     generates asymptotic data at each singular surface
@@ -134,8 +155,12 @@ c-----------------------------------------------------------------------
 !$OMP& nn,fmats,gmats,kmats,sTime,cr,mpert,mband,
 !$OMP& verbose_performance_output)
 !$OMP& PRIVATE(ising,fTime)
-!$OMP& COPYIN(sq_s_f,fmats_s_f,locstab_s_f,sq_s_f1,sq_s_f2,sq_s_f3,
-!$OMP& fmats_s_f1,fmats_s_f2,fmats_s_f3,locstab_s_ix,sq_s_ix,fmats_s_ix)
+!$OMP& COPYIN(locstab_s_ix,sq_s_ix,fmats_s_ix)
+c     allocate this thread's spline work arrays instead of COPYIN-ing
+c     them: their values are never needed, and COPYIN of allocated
+c     allocatable threadprivate arrays makes threads share storage with
+c     ifx (#273).
+      CALL sing_thread_alloc
 !$OMP DO SCHEDULE(GUIDED)
 c-----------------------------------------------------------------------
 c     loop over singular surfaces.
