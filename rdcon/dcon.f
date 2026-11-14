@@ -23,7 +23,7 @@ c-----------------------------------------------------------------------
       USE equil_mod
       USE equil_out_mod
       USE rdcon_bal_mod
-      USE rdcon_mercier_mod
+      USE rdcon_mre_mod
       USE rdcon_ode_mod
       USE rdcon_free_mod
       USE rdcon_resist_mod
@@ -226,8 +226,9 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: mx0
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: vx0
 
-      NAMELIST/rdcon_control/bal_flag,mat_flag,ode_flag,vac_flag,
-     $     res_flag,fft_flag,node_flag,mthvac,sing_start,nn,
+      NAMELIST/rdcon_control/bal_flag,
+     $     mat_flag,ode_flag,vac_flag,res_flag,fft_flag,node_flag,
+     $     mthvac,sing_start,nn,
      $     delta_mlow,delta_mhigh,delta_mband,thmax0,nstep,ksing,
      $     tol_nr,tol_r,crossover,ucrit,singfac_min,singfac_max,
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,sort_type,
@@ -245,7 +246,7 @@ c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
  10   FORMAT(/"ipsi",3x,"psifac",6x,"f",7x,"mu0 p",5x,"dvdpsi",
-     $     6x,"q",10x,"di",9x,"dr",8x,"ca1"/)
+     $     6x,"q",10x,"di",9x,"dr",6x,"bal_dp"/)
  20   FORMAT(i4,1p,8e11.3)
  30   FORMAT(/3x,"mlow",1x,"mhigh",1x,"mpert",1x,"mband",3x,"nn",2x,
      $     "lim_fl",2x,"dmlim",7x,"qlim",6x,"psilim"//5i6,l6,1p,3e11.3/)
@@ -335,12 +336,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     prepare local stability criteria.
 c-----------------------------------------------------------------------
-      CALL spline_alloc(locstab,mpsi,5)
+      CALL spline_alloc(locstab,mpsi,6)
       locstab%xs=sq%xs
       locstab%fs=0
       locstab%name="locstb"
-      locstab%title=(/"  di  ","  dr  ","  h   "," ca1  "," ca2  "/)
-      IF(verbose) WRITE(*,*)"Evaluating Mercier criterion"
+      locstab%title=(/"  di  ","  dr  ","  h   ","bal_dp","alpcrt",
+     $     " alpha"/)
 c-----------------------------------------------------------------------
 c     optionally compute modified Rutherford equation (MRE) terms.
 c-----------------------------------------------------------------------
@@ -371,11 +372,9 @@ c        one Zeff value (default 1.52) without psi_N_Zeff: flat profile.
          mreterms%name="mreterms"
          IF(verbose) WRITE(*,*)"Evaluating MRE terms"
       ENDIF
-      CALL mercier_scan
-      IF(bal_flag)THEN
-         IF(verbose) WRITE(*,*)"Evaluating ballooning criterion"
-         CALL bal_scan
-      ENDIF
+      IF(MRE_flag)CALL mre_scan
+      IF(verbose) WRITE(*,*)"Evaluating local stability"
+      CALL bal_scan
       CALL spline_fit(locstab,"extrap")
 c-----------------------------------------------------------------------
 c     output surface quantities.
@@ -397,7 +396,9 @@ c-----------------------------------------------------------------------
      $        REAL(asinh(locstab%fs(ipsi,2)/sq%xs(ipsi)),4),
      $        REAL(asinh(locstab%fs(ipsi,3)),4),
      $        REAL(asinh(locstab%fs(ipsi,4)),4),
-     $        REAL(-sq%fs1(ipsi,1)/twopi,4)
+     $        REAL(-sq%fs1(ipsi,1)/twopi,4),
+     $        REAL(locstab%fs(ipsi,6),4),
+     $        REAL(locstab%fs(ipsi,5),4)
       ENDDO
       WRITE(out_unit,10)
       WRITE(bin_unit)
@@ -533,4 +534,3 @@ c-----------------------------------------------------------------------
          ENDIF
          CALL dcon_run
       END SUBROUTINE dcon_interface_run
-
