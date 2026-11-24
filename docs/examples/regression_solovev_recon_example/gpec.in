@@ -61,10 +61,10 @@
    singfld_flag=f           ! Output of resonant surface quantities (flux,current,etc.)
    vsingfld_flag=f          ! Output of vacuum resonant surface quantities
 
-   pmodb_flag=f             ! Outputs delta-B_Lagrangian
+   pmodb_flag=t             ! Outputs delta-B_Lagrangian
    xbnormal_flag=f          ! Outputs normal displacement and field in plasma
    vbnormal_flag=f          ! Outputs vacuum normal displacement and field in plasma
-   xclebsch_flag=f          ! Outputs clebsch coordinate displacement for PENT
+   xclebsch_flag=t          ! Outputs clebsch coordinate displacement for PENT
    dw_flag=f                ! Outputs self-consistent energy and torque profiles (when kin_flag=t from DCON)
 
    eqbrzphi_flag=f          ! Outputs equilibrium field on regular (r,z) grid

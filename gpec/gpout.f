@@ -3201,13 +3201,14 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
      $        "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
          WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a16,1x,a4,8(1x,a16))')"psi","m",
+         WRITE(out_unit,'(1x,a24,1x,a4,8(1x,a16))')"psi","m",
      $        "real(eulb)","imag(eulb)","real(lagb)","imag(lagb)",
      $        "real(Bdivxprp)","imag(Bdivxprp)","real(Bkxprp)",
      $        "imag(Bkxprp)"
          DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
             DO ipert=1,lmpert
-               WRITE(out_unit,'(es17.8e3,1x,I4,8(es17.8e3))')
+               WRITE(out_unit,
+     $              '(1x,es24.16e3,1x,I4,8(es17.8e3))')
      $              psifac(istep),lmfac(ipert),
      $              REAL(eulbparmout(istep,ipert)),
      $              AIMAG(eulbparmout(istep,ipert)),

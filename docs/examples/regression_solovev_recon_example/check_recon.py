@@ -7,7 +7,8 @@ GPEC_RECON block of gpec.log and checks that
 
   * the recon psi range covers the DCON psi range (psilow to psilim),
   * dW_p(recon-normalize) matches DCON ep(mode) within REL_TOL, and
-  * the curl check reports PASS.
+  * the curl check reports PASS, and
+  * the field and displacement tables have matching radial knots.
 
 Exits 0 on success and 1 on failure, so it can be chained in CI.
 """
@@ -40,6 +41,28 @@ def values(block, key):
     sys.exit("FAIL: '{}' not found in GPEC_RECON block".format(key))
 
 
+def radial_modes(path):
+    with open(path) as f:
+        for line in f:
+            if line.split()[:2] == ["psi", "m"]:
+                return [(float(psi), int(mode))
+                        for psi, mode, *_ in (row.split() for row in f if row.strip())]
+    sys.exit("FAIL: psi and m headers not found in " + path)
+
+
+def check_field_knots():
+    field = radial_modes("gpec_pmodb_n1.out")
+    displacement = radial_modes("gpec_xclebsch_n1.out")
+    if not field or len(field) != len(displacement):
+        sys.exit("FAIL: inconsistent pmodb and xclebsch table lengths")
+    if any(m != n for (_, m), (_, n) in zip(field, displacement)):
+        sys.exit("FAIL: inconsistent pmodb and xclebsch mode numbers")
+    error = max(abs(psi - reference)
+                for (psi, _), (reference, _) in zip(field, displacement))
+    print("radial knot difference = {:.3e}".format(error))
+    return error <= 6e-16  # Rounding of xclebsch's ES23.15 field.
+
+
 def main():
     block = last_recon_block("gpec.log")
     dw = values(block, "dW_p(recon-normalize)")[0]
@@ -58,8 +81,9 @@ def main():
                                               else "not run"))
     ok = (range_ok and rel <= REL_TOL and bool(verdict)
           and verdict[-1] == "PASS")
-    print("PASS" if ok else "FAIL")
-    return 0 if ok else 1
+    knots_ok = check_field_knots()
+    print("PASS" if ok and knots_ok else "FAIL")
+    return 0 if ok and knots_ok else 1
 
 
 if __name__ == "__main__":
