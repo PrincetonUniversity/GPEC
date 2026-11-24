@@ -192,7 +192,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     use newton iteration to find psilim.
 c-----------------------------------------------------------------------
-      IF(qlim<qmax)THEN
+      IF(qlim<qmax .AND. (sas_flag .OR. qlim<sq%fs(mpsi,4)))THEN
          jpsi=MINLOC(ABS(sq%fs(:,4)-qlim))
          IF (jpsi(1)>= mpsi) jpsi(1)=mpsi-1
          psilim=sq%xs(jpsi(1))
@@ -214,7 +214,7 @@ c-----------------------------------------------------------------------
             CALL program_stop("Can't find psilim.")
          ENDIF
       ELSE
-         qlim = qmax
+         qlim = sq%fs(mpsi,4)
          q1lim=sq%fs1(mpsi,4)
          psilim=psihigh
       ENDIF
