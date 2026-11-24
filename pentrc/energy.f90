@@ -488,6 +488,7 @@ module energy_integration
         character(*), intent(in) :: method
 
         integer :: m, i, j, k
+        logical :: new_surface, new_harmonic
         logical, parameter :: debug = .false.
 
         if(debug) print *,"Recording method"
@@ -511,19 +512,31 @@ module energy_integration
                 endif
                 ! bump indexes
                 if(debug) print *,"   - psi,ell,leff,lambda = ",psi,ell,leff,lambda
-                if(debug) print *,"   - old i,j,k = ",i,j,k
                 k = energy_record(m)%psi_index
                 j = energy_record(m)%ell_index
                 i = energy_record(m)%lambda_index
-                if(psi/=energy_record(m)%psi(k) .or. k==0) k = k+1
-                if(ell/=energy_record(m)%ell(j) .or. j==0) j = mod(j,nell_out)+1
-                if(lambda/=energy_record(m)%lambda(i,j,k) .or. i==0) i = mod(i,nlambda_out)+1
-                if(debug) print *,"   - new i,j,k = ",i,j,k
-                ! force fail if buggy
-                if(k>npsi_out)then
-                    print *,"ERROR: Too many psi energy records for method "//trim(method)
-                    stop
+                if(debug) print *,"   - old i,j,k = ",i,j,k
+
+                new_surface = k == 0
+                if(k>0) new_surface = psi /= energy_record(m)%psi(k)
+                if(new_surface)then
+                    k = k+1
+                    j = 0
                 endif
+                if(k>npsi_out) error stop "Too many energy records for psi_out"
+
+                new_harmonic = j == 0
+                if(j>0) new_harmonic = ell /= energy_record(m)%ell(j)
+                if(new_harmonic)then
+                    j = mod(j,nell_out)+1
+                    i = 0
+                endif
+                if(i==0)then
+                    i = 1
+                elseif(lambda/=energy_record(m)%lambda(i,j,k))then
+                    i = mod(i,nlambda_out)+1
+                endif
+                if(debug) print *,"   - new i,j,k = ",i,j,k
                 ! fill in new profiles
                 energy_record(m)%fs(:,:,i,j,k) = fs(:,:)
                 energy_record(m)%lambda(i,j,k) = lambda

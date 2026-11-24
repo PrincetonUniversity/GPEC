@@ -621,6 +621,7 @@ module pitch_integration
         character(*), intent(in) :: method
 
         integer :: m, j, k
+        logical :: new_surface, new_harmonic
         logical, parameter :: debug = .false.
 
         if(debug) print *,"Recording method"
@@ -641,17 +642,22 @@ module pitch_integration
                 endif
                 ! bump indexes
                 if(debug) print *,"   - psi,ell = ",psi,ell
-                if(debug) print *,"   - old j,k = ",j,k
                 k = pitch_record(m)%psi_index
                 j = pitch_record(m)%ell_index
-                if(psi/=pitch_record(m)%psi(k) .or. k==0) k = k+1
-                if(ell/=pitch_record(m)%ell(j) .or. j==0) j = mod(j,nell_out)+1
-                if(debug) print *,"   - new j,k = ",j,k
-                ! force fail if buggy
-                if(k>npsi_out)then
-                    print *,"ERROR: Too many psi energy records for method "//trim(method)
-                    stop
+                if(debug) print *,"   - old j,k = ",j,k
+
+                new_surface = k == 0
+                if(k>0) new_surface = psi /= pitch_record(m)%psi(k)
+                if(new_surface)then
+                    k = k+1
+                    j = 0
                 endif
+                if(k>npsi_out) error stop "Too many pitch records for psi_out"
+
+                new_harmonic = j == 0
+                if(j>0) new_harmonic = ell /= pitch_record(m)%ell(j)
+                if(new_harmonic) j = mod(j,nell_out)+1
+                if(debug) print *,"   - new j,k = ",j,k
                 ! fill in new profiles
                 pitch_record(m)%fs(:,:,j,k) = fs(:,:)
                 pitch_record(m)%ell(j) = ell
