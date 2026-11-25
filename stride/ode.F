@@ -1536,6 +1536,8 @@ c     interval's propagator from its start s to its end e. Next to a
 c     singular surface (asymptotic start, P ill-conditioned) Y itself is
 c     integrated. Singular surfaces are crossed as RDCON's
 c     ode_ideal_cross. Called when calc_nzero. Sets nzero.
+c     The Morse index split is Eq. (5.19) of arXiv:2107.01928 [Elyseeva,
+c     Sepitka, Simon Hilscher, J. Dyn. Differ. Equ. 35, 2589 (2023)].
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
