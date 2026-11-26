@@ -469,6 +469,7 @@ c-----------------------------------------------------------------------
       istate=1
       istep=istep+1
       rwork(1)=psimax
+      rwork(5)=MIN(rwork(5),dpsi)
       new=.TRUE.
       u_save=u
       psi_save=psifac
@@ -544,6 +545,8 @@ c-----------------------------------------------------------------------
       istep=istep+1
       CALL lsode(sing_der,neq,u,psifac,psiout,itol,rtol,atol,
      $     itask,istate,iopt,rwork,lrw,iwork,liw,jac,mf)
+      IF(istate < 0)
+     $     CALL program_stop("RDCON STOP: LSODE integration failure.")
 c-----------------------------------------------------------------------
 c     diagnose error.
 c-----------------------------------------------------------------------
