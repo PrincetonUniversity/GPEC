@@ -415,6 +415,9 @@ c-----------------------------------------------------------------------
                   rwork=0
                   rwork(1)=endPsi
                   rwork(5)=axisPsi*1e-3*psiDirs(iInterval)
+                  !First step no longer than the distance to the surface
+                  IF (ising /= 0) rwork(5)=psiDirs(iInterval)*
+     $              MIN(axisPsi*1e-3,ABS(startPsi-sing(ising)%psifac))
                   rwork(11)=rwork(5)
                   CALL SYSTEM_CLOCK(COUNT=sTime)
                   DO WHILE(psiDirs(iInterval)*startPsi
