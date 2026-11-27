@@ -1600,7 +1600,7 @@ c-----------------------------------------------------------------------
                iwork = 0
                zrwork = 0
                zrwork(1) = psiPoints(iInterval,2)
-               zrwork(5) = axisPsi*1e-3
+               zrwork(5) = MIN(axisPsi*1e-3,ABS(t-sing(jsing)%psifac))
                DO WHILE(t < psiPoints(iInterval,2))
                   DO isol = 1,mpert
                      atol(:,isol) = MAXVAL(ABS(y(:,isol)))*rtol(1)
