@@ -54,7 +54,7 @@ c-----------------------------------------------------------------------
      $     ahb_flag,mthsurf0,msol_ahb,netcdf_out
       NAMELIST/stride_params/grid_packing,asymp_at_sing,
      $     integrate_riccati,calc_delta_prime,calc_dp_with_vac,
-     $     axis_mid_pt_skew,
+     $     axis_mid_pt_skew,calc_nzero,
      $     big_soln_err_tol, kill_big_soln_for_ideal_dW,
      $     ric_dt,ric_tol,riccati_bounce,verbose_riccati_output,
      $     riccati_match_hamiltonian_evals,verbose_performance_output,
@@ -126,6 +126,9 @@ c-----------------------------------------------------------------------
      $           "riccati integration.  Turn one of them off.")
          ENDIF
       ENDIF
+      IF (calc_nzero .AND. (integrate_riccati .OR. .NOT. asymp_at_sing))
+     $     CALL program_stop("calc_nzero needs asymp_at_sing and " //
+     $     "no riccati integration.")
 c-----------------------------------------------------------------------
 c     open output files, read, process, and diagnose equilibrium.
 c-----------------------------------------------------------------------
@@ -304,6 +307,7 @@ c-----------------------------------------------------------------------
                ELSE
                   CALL ode_propagate_LR
                   CALL ode_calc_modes_for_wp
+                  IF (calc_nzero) CALL ode_zero_crossings
                   CALL free_calc_wp
                   IF (calc_delta_prime .AND..NOT. calc_dp_with_vac) THEN
                      CALL ode_set_delta_prime_edge
@@ -426,7 +430,7 @@ c-----------------------------------------------------------------------
          ENDIF
       ENDIF
       IF(ode_flag)THEN
-         DEALLOCATE(u,uFM_all,uFM_sing_inv,uFM_sing_init,
+         DEALLOCATE(u,uFM_all,uFM_sing_inv,uFM_sing_init,nFocal,
      $        psiInters,psiDirs,psiPoints,scalc)
          IF (calc_delta_prime) THEN
             DEALLOCATE(delta_prime_mat)
